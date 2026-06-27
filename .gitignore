@@ -1,0 +1,32 @@
+# ── Gradle / build artifacts (per-project) ──
+**/build/
+**/.gradle/
+**/bin/
+**/out/
+**/run/
+**/logs/
+
+# ── IDE ──
+**/.idea/
+**/*.iml
+.vscode/
+**/.settings/
+**/.classpath
+**/.project
+
+# ── Java / Kotlin ──
+*.class
+
+# ── Python / ML (defensive) ──
+**/__pycache__/
+**/.venv/
+**/venv/
+*.pyc
+*.ckpt
+*.pt
+*.safetensors
+
+# ── OS / misc ──
+.DS_Store
+Thumbs.db
+*.log
