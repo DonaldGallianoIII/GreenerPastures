@@ -1,0 +1,77 @@
+plugins {
+    id 'fabric-loom' version '1.8-SNAPSHOT'
+    id 'java'
+}
+
+version = project.mod_version
+group = project.maven_group
+base { archivesName = project.archives_base_name }
+
+repositories {
+    maven { url = 'https://maven.fabricmc.net/' }
+    mavenCentral()
+}
+
+// Cobblemon-ecosystem jars are referenced COMPILE-ONLY from the local sandbox instance
+// (so we can write mixins against / call their APIs) and are NEVER bundled into our jar.
+def cobbleDir = "/mnt/c/Users/deuce/curseforge/minecraft/Instances/Claude Development/mods"
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Cobblemon — needed by pasture/* mixins + breeding/egg APIs. Not bundled.
+    modCompileOnly files("${cobbleDir}/Cobblemon-fabric-1.7.3+1.21.1.jar")
+    // Cobbreeding — public breeding API for Better Pasture (pasture/breeding) + egg IV reads. Not bundled.
+    modCompileOnly files("${cobbleDir}/Cobbreeding-fabric-2.2.1.jar")
+    // Kotlin stdlib so javac can read Cobblemon's Kotlin-compiled class signatures.
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+// ── Design Studio ────────────────────────────────────────────────────────────────────────────
+// Render our GUIs to a PNG WITHOUT launching Minecraft, using the exact same paint code (GpCanvas).
+// Classpath is ONLY our compiled classes (sourceSets.main.output) — no Minecraft jar — so the
+// MC-free studio classes (com.greenerpastures.studio.*, client.ui.DaemonView/GpCanvas) run on plain
+// Java + java.desktop. Fast loop for iterating the look: ~1s vs a full MC restart.
+//   ./gradlew studio                 → writes studio-daemon.png in the project dir
+//   ./gradlew studio -Pout=foo.png   → custom output path
+tasks.register('studio', JavaExec) {
+    group = 'greenerpastures'
+    description = 'Render the Daemon GUI to a PNG without Minecraft (same paint code).'
+    dependsOn 'classes'
+    classpath = sourceSets.main.output
+    mainClass = 'com.greenerpastures.studio.StudioMain'
+    systemProperty 'java.awt.headless', 'true'
+    if (project.hasProperty('out')) {
+        args(project.property('out'))
+    }
+}
+
+// Interactive window — drag/wire/zoom/right-click like in-game, same DaemonController code.
+// Needs a desktop display (WSLg on Win11, or an X server). Blocks until you close the window.
+tasks.register('studioLive', JavaExec) {
+    group = 'greenerpastures'
+    description = 'Open the interactive Daemon design window (drag/wire/zoom like in-game).'
+    dependsOn 'classes'
+    classpath = sourceSets.main.output
+    mainClass = 'com.greenerpastures.studio.StudioLive'
+    systemProperty 'java.awt.headless', 'false'
+}

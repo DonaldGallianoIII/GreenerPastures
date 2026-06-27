@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "greenerpastures",
+  "version": "${version}",
+  "name": "Greener Pastures",
+  "description": "A Data Science Mod for Cobblemon breeding — pasture & egg automation with deep, local analytics and charts that players and server admins can pull for themselves. Your data, your machine; nothing phones home.",
+  "authors": ["Deuce222XX"],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/greenerpastures",
+    "sources": "https://github.com/Deuce222XX/greener-pastures"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.greenerpastures.GreenerPastures"],
+    "client": ["com.greenerpastures.client.GreenerPasturesClient"]
+  },
+  "mixins": [
+    "greenerpastures.mixins.json",
+    {
+      "config": "greenerpastures.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "cobblemon": "*"
+  },
+  "suggests": {
+    "cobbreeding": "*"
+  }
+}
