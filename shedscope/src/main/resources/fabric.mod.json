@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "shedscope",
+  "version": "${version}",
+  "name": "ShedScope",
+  "description": "Client-side finder: highlights ores, chests, spawners and other loot with ESP boxes, a tracer line to the nearest, and a HUD distance readout.",
+  "authors": ["Shedmon"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.shedmon.shedscope.ShedScopeClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

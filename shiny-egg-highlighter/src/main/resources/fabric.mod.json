@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "shinyegghighlighter",
+  "version": "${version}",
+  "name": "Shiny Egg Highlighter",
+  "description": "Highlights shiny Cobblemon/Cobbreeding eggs in any inventory so you don't have to hover each one. Client-side, visual-only.",
+  "authors": ["deuce"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.deuce.shinyegg.ShinyEggHighlighterClient"]
+  },
+  "mixins": ["shinyegg.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

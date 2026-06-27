@@ -1,0 +1,48 @@
+{
+  "mappings": {
+    "ludichat/cobbreeding/mixin/ItemStackMixin": {
+      "matches": "Lnet/minecraft/class_1799;method_7973(Lnet/minecraft/class_1799;Lnet/minecraft/class_1799;)Z"
+    },
+    "ludichat/cobbreeding/mixin/PastureBlockMixin": {
+      "<init>": "Lcom/cobblemon/mod/common/block/PastureBlock;<init>(Lnet/minecraft/class_4970$class_2251;)V",
+      "createBlockStateDefinition": "Lcom/cobblemon/mod/common/block/PastureBlock;method_9515(Lnet/minecraft/class_2689$class_2690;)V",
+      "playerWillDestroy": "Lcom/cobblemon/mod/common/block/PastureBlock;method_9576(Lnet/minecraft/class_1937;Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lnet/minecraft/class_1657;)Lnet/minecraft/class_2680;",
+      "useWithoutItem": "Lcom/cobblemon/mod/common/block/PastureBlock;method_55766(Lnet/minecraft/class_2680;Lnet/minecraft/class_1937;Lnet/minecraft/class_2338;Lnet/minecraft/class_1657;Lnet/minecraft/class_3965;)Lnet/minecraft/class_1269;"
+    },
+    "ludichat/cobbreeding/mixin/PastureGUIMixin": {
+      "init": "Lcom/cobblemon/mod/common/client/gui/pc/PCGUI;method_25426()V"
+    },
+    "ludichat/cobbreeding/mixin/PokemonPastureBlockEntityMixin": {
+      "TICKER$lambda$0": "Lcom/cobblemon/mod/common/block/entity/PokemonPastureBlockEntity;TICKER$lambda$0(Lnet/minecraft/class_1937;Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lcom/cobblemon/mod/common/block/entity/PokemonPastureBlockEntity;)V",
+      "loadAdditional": "Lcom/cobblemon/mod/common/block/entity/PokemonPastureBlockEntity;method_11014(Lnet/minecraft/class_2487;Lnet/minecraft/class_7225$class_7874;)V",
+      "saveAdditional": "Lcom/cobblemon/mod/common/block/entity/PokemonPastureBlockEntity;method_11007(Lnet/minecraft/class_2487;Lnet/minecraft/class_7225$class_7874;)V"
+    },
+    "ludichat/cobbreeding/mixin/PokemonSummaryInfoWidgetMixin": {
+      "renderWidget": "Lcom/cobblemon/mod/common/client/gui/summary/widgets/screens/info/InfoWidget;method_48579(Lnet/minecraft/class_332;IIF)V"
+    }
+  },
+  "data": {
+    "named:intermediary": {
+      "ludichat/cobbreeding/mixin/ItemStackMixin": {
+        "matches": "Lnet/minecraft/class_1799;method_7973(Lnet/minecraft/class_1799;Lnet/minecraft/class_1799;)Z"
+      },
+      "ludichat/cobbreeding/mixin/PastureBlockMixin": {
+        "<init>": "Lcom/cobblemon/mod/common/block/PastureBlock;<init>(Lnet/minecraft/class_4970$class_2251;)V",
+        "createBlockStateDefinition": "Lcom/cobblemon/mod/common/block/PastureBlock;method_9515(Lnet/minecraft/class_2689$class_2690;)V",
+        "playerWillDestroy": "Lcom/cobblemon/mod/common/block/PastureBlock;method_9576(Lnet/minecraft/class_1937;Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lnet/minecraft/class_1657;)Lnet/minecraft/class_2680;",
+        "useWithoutItem": "Lcom/cobblemon/mod/common/block/PastureBlock;method_55766(Lnet/minecraft/class_2680;Lnet/minecraft/class_1937;Lnet/minecraft/class_2338;Lnet/minecraft/class_1657;Lnet/minecraft/class_3965;)Lnet/minecraft/class_1269;"
+      },
+      "ludichat/cobbreeding/mixin/PastureGUIMixin": {
+        "init": "Lcom/cobblemon/mod/common/client/gui/pc/PCGUI;method_25426()V"
+      },
+      "ludichat/cobbreeding/mixin/PokemonPastureBlockEntityMixin": {
+        "TICKER$lambda$0": "Lcom/cobblemon/mod/common/block/entity/PokemonPastureBlockEntity;TICKER$lambda$0(Lnet/minecraft/class_1937;Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lcom/cobblemon/mod/common/block/entity/PokemonPastureBlockEntity;)V",
+        "loadAdditional": "Lcom/cobblemon/mod/common/block/entity/PokemonPastureBlockEntity;method_11014(Lnet/minecraft/class_2487;Lnet/minecraft/class_7225$class_7874;)V",
+        "saveAdditional": "Lcom/cobblemon/mod/common/block/entity/PokemonPastureBlockEntity;method_11007(Lnet/minecraft/class_2487;Lnet/minecraft/class_7225$class_7874;)V"
+      },
+      "ludichat/cobbreeding/mixin/PokemonSummaryInfoWidgetMixin": {
+        "renderWidget": "Lcom/cobblemon/mod/common/client/gui/summary/widgets/screens/info/InfoWidget;method_48579(Lnet/minecraft/class_332;IIF)V"
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "shinyeggcollector",
+  "version": "${version}",
+  "name": "Shiny Egg Collector",
+  "description": "Adds a Shiny Egg Collector block that vacuums shiny Cobbreeding eggs from nearby containers (vanilla + Sophisticated Storage via the Fabric Transfer API) into its own inventory.",
+  "authors": ["deuce"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.deuce.shinycollector.ShinyEggCollector"]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

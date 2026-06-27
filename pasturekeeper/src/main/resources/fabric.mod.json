@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "pasturekeeper",
+  "version": "${version}",
+  "name": "PastureKeeper",
+  "description": "Stops tethered pasture Pokémon from spawning as wandering entities (per-pasture, server-lag fix) and collects their pasture drops into an accessible GUI. Breeding keeps running off the tethered data.",
+  "authors": ["Deuce222XX"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.pasturekeeper.PastureKeeper"]
+  },
+  "mixins": ["pasturekeeper.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "cobblemon": "*"
+  }
+}

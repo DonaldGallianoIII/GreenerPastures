@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "package": "ludichat.cobbreeding.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "ItemStackMixin",
+    "PastureBlockMixin",
+    "PokemonPastureBlockEntityMixin",
+    "PastureGUIMixin"
+  ],
+  "minVersion": "0.8",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "PokemonSummaryInfoWidgetMixin"
+  ],
+  "refmap": "cobbreeding-common-refmap.json"
+}

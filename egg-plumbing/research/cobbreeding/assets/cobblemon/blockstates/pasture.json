@@ -1,0 +1,68 @@
+{
+  "multipart": [
+    {
+      "when": { "facing": "south", "part": "top", "on": "false" },
+      "apply": { "model":  "cobblemon:block/pasture_top_off" }
+    },
+    {
+      "when": { "facing": "west", "part": "top", "on": "false" },
+      "apply": { "model":  "cobblemon:block/pasture_top_off", "y": 90 }
+    },
+    {
+      "when": { "facing": "north", "part": "top", "on": "false" },
+      "apply": { "model":  "cobblemon:block/pasture_top_off", "y": 180 }
+    },
+    {
+      "when": { "facing": "east", "part": "top", "on": "false" },
+      "apply": { "model":  "cobblemon:block/pasture_top_off", "y": 270 }
+    },
+    {
+      "when": { "facing": "south", "part": "top", "on": "true" },
+      "apply": { "model":  "cobblemon:block/pasture_top_on" }
+    },
+    {
+      "when": { "facing": "west", "part": "top", "on": "true" },
+      "apply": { "model":  "cobblemon:block/pasture_top_on", "y": 90 }
+    },
+    {
+      "when": { "facing": "north", "part": "top", "on": "true" },
+      "apply": { "model":  "cobblemon:block/pasture_top_on", "y": 180 }
+    },
+    {
+      "when": { "facing": "east", "part": "top", "on": "true" },
+      "apply": { "model":  "cobblemon:block/pasture_top_on", "y": 270 }
+    },
+    {
+      "when": { "facing": "south", "part": "bottom", "has_egg": "false" },
+      "apply": { "model":  "cobblemon:block/pasture_bottom" }
+    },
+    {
+      "when": { "facing": "west", "part": "bottom", "has_egg": "false" },
+      "apply": { "model":  "cobblemon:block/pasture_bottom", "y": 90 }
+    },
+    {
+      "when": { "facing": "north", "part": "bottom", "has_egg": "false" },
+      "apply": { "model":  "cobblemon:block/pasture_bottom", "y": 180 }
+    },
+    {
+      "when": { "facing": "east", "part": "bottom", "has_egg": "false" },
+      "apply": { "model":  "cobblemon:block/pasture_bottom", "y": 270 }
+    },
+    {
+      "when": { "facing": "south", "part": "bottom", "has_egg": "true" },
+      "apply": { "model":  "cobbreeding:block/pasture_bottom_egg" }
+    },
+    {
+      "when": { "facing": "west", "part": "bottom", "has_egg": "true" },
+      "apply": { "model":  "cobbreeding:block/pasture_bottom_egg", "y": 90 }
+    },
+    {
+      "when": { "facing": "north", "part": "bottom", "has_egg": "true" },
+      "apply": { "model":  "cobbreeding:block/pasture_bottom_egg", "y": 180 }
+    },
+    {
+      "when": { "facing": "east", "part": "bottom", "has_egg": "true" },
+      "apply": { "model":  "cobbreeding:block/pasture_bottom_egg", "y": 270 }
+    }
+  ]
+}

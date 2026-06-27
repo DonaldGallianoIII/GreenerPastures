@@ -1,0 +1,7 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "cobbreeding:item/ground_pokemon_egg",
+    "layer1": "cobbreeding:item/dragon_spots"
+  }
+}

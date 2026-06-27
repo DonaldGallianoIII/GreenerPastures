@@ -1,0 +1,1880 @@
+Compiled from "CobblemonConfig.java"
+public final class com.cobblemon.mod.common.config.CobblemonConfig {
+  public static final com.cobblemon.mod.common.config.CobblemonConfig$Companion Companion;
+
+  private java.lang.String lastSavedVersion;
+
+  private int maxPokemonLevel;
+
+  private int maxPokemonFriendship;
+
+  private boolean announceDropItems;
+
+  private com.cobblemon.mod.common.api.drop.ItemDropMethod defaultDropItemMethod;
+
+  private boolean dropAfterDeathAnimation;
+
+  private int ambientPokemonCryTicks;
+
+  private java.util.Set<net.minecraft.class_2960> defaultKeyItems;
+
+  private int defaultBoxCount;
+
+  private int pokemonSaveIntervalSeconds;
+
+  private java.lang.String storageFormat;
+
+  private boolean preventCompletePartyDeposit;
+
+  private java.lang.String mongoDBConnectionString;
+
+  private java.lang.String mongoDBDatabaseName;
+
+  private int maxVerticalCorrectionBlocks;
+
+  private int minimumLevelRangeMax;
+
+  private boolean enableSpawning;
+
+  private double minimumDistanceBetweenEntities;
+
+  private int maxNearbyBlocksHorizontalRange;
+
+  private int maxNearbyBlocksVerticalRange;
+
+  private int maxVerticalSpace;
+
+  private int spawningZoneDiameter;
+
+  private int spawningZoneHeight;
+
+  private float ticksBetweenSpawnAttempts;
+
+  private float minimumSpawningZoneDistanceFromPlayer;
+
+  private float maximumSpawningZoneDistanceFromPlayer;
+
+  private int maximumSpawnsPerPass;
+
+  private boolean exportSpawnConfig;
+
+  private boolean savePokemonToWorld;
+
+  private boolean exportStarterConfig;
+
+  private boolean autoUpdateShowdown;
+
+  private float defaultFleeDistance;
+
+  private boolean allowExperienceFromPvP;
+
+  private double experienceShareMultiplier;
+
+  private double luckyEggMultiplier;
+
+  private boolean allowSpectating;
+
+  private float experienceMultiplier;
+
+  private float pokemonPerChunk;
+
+  private float pokeSnackPokemonPerChunk;
+
+  private java.util.Map<java.lang.String, kotlin.ranges.IntRange> passiveStatuses;
+
+  private boolean infiniteHealerCharge;
+
+  private float maxHealerCharge;
+
+  private double secondsToChargeHealingMachine;
+
+  private int defaultFaintTimer;
+
+  private float faintAwakenHealthPercent;
+
+  private double healPercent;
+
+  private int healTimer;
+
+  private float baseApricornTreeGenerationChance;
+
+  private boolean displayEntityLevelLabel;
+
+  private boolean displayEntityNameLabel;
+
+  private boolean displayNameForUnknownPokemon;
+
+  private boolean displayEntityLabelsWhenCrouchingOnly;
+
+  private float shinyRate;
+
+  private float shinyNoticeParticlesDistance;
+
+  private com.cobblemon.mod.common.api.pokeball.catching.calculators.CaptureCalculator captureCalculator;
+
+  private boolean playerDamagePokemon;
+
+  private double appleLeftoversChance;
+
+  private int maxRootsInArea;
+
+  private double bigRootPropagationChance;
+
+  private double energyRootChance;
+
+  private int maxDynamaxLevel;
+
+  private float teraTypeRate;
+
+  private int defaultPasturedPokemonLimit;
+
+  private int pastureBlockUpdateTicks;
+
+  private int pastureMaxWanderDistance;
+
+  private float pastureMaxPerChunk;
+
+  private int maxInsertedFossilItems;
+
+  private boolean walkingInBattleAnimations;
+
+  private float battleWildMaxDistance;
+
+  private float tradeMaxDistance;
+
+  private float battlePvPMaxDistance;
+
+  private float battleSpectateMaxDistance;
+
+  private double maxPokedexScanningDetectionRange;
+
+  private boolean hideUnimplementedPokemonInThePokedex;
+
+  private boolean summaryPokemonFollowCursor;
+
+  private com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle partyPortraitAnimations;
+
+  private com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle pcProfileAnimations;
+
+  private com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle summaryProfileAnimations;
+
+  private boolean animateBattleTiles;
+
+  private boolean thirdPersonViewBobbing;
+
+  private boolean invertRoll;
+
+  private boolean invertPitch;
+
+  private boolean invertYaw;
+
+  private double xAxisSensitivity;
+
+  private double yAxisSensitivity;
+
+  private boolean swapXAndYAxes;
+
+  private double rightingDelay;
+
+  private boolean disableRoll;
+
+  private int displayControlSeconds;
+
+  private boolean infiniteRideStamina;
+
+  private boolean rememberRidingCamera;
+
+  private boolean enableInFlightDismounting;
+
+  private boolean enableDebugKeys;
+
+  private float despawnerNearDistance;
+
+  private float despawnerFarDistance;
+
+  private int despawnerMinAgeTicks;
+
+  private int despawnerMaxAgeTicks;
+
+  private static final com.google.gson.Gson GSON;
+
+  public com.cobblemon.mod.common.config.CobblemonConfig();
+    Code:
+       0: aload_0
+       1: invokespecial #512                // Method java/lang/Object."<init>":()V
+       4: aload_0
+       5: ldc_w         #514                // String 0.0.1
+       8: putfield      #516                // Field lastSavedVersion:Ljava/lang/String;
+      11: aload_0
+      12: bipush        100
+      14: putfield      #518                // Field maxPokemonLevel:I
+      17: aload_0
+      18: sipush        255
+      21: putfield      #520                // Field maxPokemonFriendship:I
+      24: aload_0
+      25: iconst_1
+      26: putfield      #522                // Field announceDropItems:Z
+      29: aload_0
+      30: getstatic     #525                // Field com/cobblemon/mod/common/api/drop/ItemDropMethod.ON_ENTITY:Lcom/cobblemon/mod/common/api/drop/ItemDropMethod;
+      33: putfield      #527                // Field defaultDropItemMethod:Lcom/cobblemon/mod/common/api/drop/ItemDropMethod;
+      36: aload_0
+      37: sipush        1080
+      40: putfield      #529                // Field ambientPokemonCryTicks:I
+      43: aload_0
+      44: new           #531                // class java/util/LinkedHashSet
+      47: dup
+      48: invokespecial #532                // Method java/util/LinkedHashSet."<init>":()V
+      51: checkcast     #534                // class java/util/Set
+      54: putfield      #536                // Field defaultKeyItems:Ljava/util/Set;
+      57: aload_0
+      58: bipush        40
+      60: putfield      #538                // Field defaultBoxCount:I
+      63: aload_0
+      64: bipush        30
+      66: putfield      #540                // Field pokemonSaveIntervalSeconds:I
+      69: aload_0
+      70: ldc_w         #542                // String nbt
+      73: putfield      #544                // Field storageFormat:Ljava/lang/String;
+      76: aload_0
+      77: ldc_w         #546                // String mongodb://localhost:27017
+      80: putfield      #548                // Field mongoDBConnectionString:Ljava/lang/String;
+      83: aload_0
+      84: ldc_w         #550                // String cobblemon
+      87: putfield      #552                // Field mongoDBDatabaseName:Ljava/lang/String;
+      90: aload_0
+      91: bipush        64
+      93: putfield      #554                // Field maxVerticalCorrectionBlocks:I
+      96: aload_0
+      97: bipush        10
+      99: putfield      #556                // Field minimumLevelRangeMax:I
+     102: aload_0
+     103: iconst_1
+     104: putfield      #558                // Field enableSpawning:Z
+     107: aload_0
+     108: ldc2_w        #559                // double 8.0d
+     111: putfield      #562                // Field minimumDistanceBetweenEntities:D
+     114: aload_0
+     115: iconst_4
+     116: putfield      #564                // Field maxNearbyBlocksHorizontalRange:I
+     119: aload_0
+     120: iconst_2
+     121: putfield      #566                // Field maxNearbyBlocksVerticalRange:I
+     124: aload_0
+     125: bipush        8
+     127: putfield      #568                // Field maxVerticalSpace:I
+     130: aload_0
+     131: bipush        8
+     133: putfield      #570                // Field spawningZoneDiameter:I
+     136: aload_0
+     137: bipush        16
+     139: putfield      #572                // Field spawningZoneHeight:I
+     142: aload_0
+     143: ldc_w         #573                // float 20.0f
+     146: putfield      #575                // Field ticksBetweenSpawnAttempts:F
+     149: aload_0
+     150: ldc_w         #576                // float 16.0f
+     153: putfield      #578                // Field minimumSpawningZoneDistanceFromPlayer:F
+     156: aload_0
+     157: ldc_w         #579                // float 64.0f
+     160: putfield      #581                // Field maximumSpawningZoneDistanceFromPlayer:F
+     163: aload_0
+     164: bipush        8
+     166: putfield      #583                // Field maximumSpawnsPerPass:I
+     169: aload_0
+     170: iconst_1
+     171: putfield      #585                // Field savePokemonToWorld:Z
+     174: aload_0
+     175: iconst_1
+     176: putfield      #587                // Field autoUpdateShowdown:Z
+     179: aload_0
+     180: ldc_w         #588                // float 32.0f
+     183: putfield      #590                // Field defaultFleeDistance:F
+     186: aload_0
+     187: iconst_1
+     188: putfield      #592                // Field allowExperienceFromPvP:Z
+     191: aload_0
+     192: ldc2_w        #593                // double 0.5d
+     195: putfield      #596                // Field experienceShareMultiplier:D
+     198: aload_0
+     199: ldc2_w        #597                // double 1.5d
+     202: putfield      #600                // Field luckyEggMultiplier:D
+     205: aload_0
+     206: iconst_1
+     207: putfield      #602                // Field allowSpectating:Z
+     210: aload_0
+     211: fconst_2
+     212: putfield      #604                // Field experienceMultiplier:F
+     215: aload_0
+     216: fconst_1
+     217: putfield      #606                // Field pokemonPerChunk:F
+     220: aload_0
+     221: fconst_2
+     222: putfield      #608                // Field pokeSnackPokemonPerChunk:F
+     225: aload_0
+     226: bipush        6
+     228: anewarray     #610                // class kotlin/Pair
+     231: astore_1
+     232: aload_1
+     233: iconst_0
+     234: getstatic     #616                // Field com/cobblemon/mod/common/api/pokemon/status/Statuses.POISON:Lcom/cobblemon/mod/common/pokemon/status/statuses/persistent/PoisonStatus;
+     237: invokevirtual #622                // Method com/cobblemon/mod/common/pokemon/status/statuses/persistent/PoisonStatus.configEntry:()Lkotlin/Pair;
+     240: aastore
+     241: aload_1
+     242: iconst_1
+     243: getstatic     #626                // Field com/cobblemon/mod/common/api/pokemon/status/Statuses.POISON_BADLY:Lcom/cobblemon/mod/common/pokemon/status/statuses/persistent/PoisonBadlyStatus;
+     246: invokevirtual #629                // Method com/cobblemon/mod/common/pokemon/status/statuses/persistent/PoisonBadlyStatus.configEntry:()Lkotlin/Pair;
+     249: aastore
+     250: aload_1
+     251: iconst_2
+     252: getstatic     #633                // Field com/cobblemon/mod/common/api/pokemon/status/Statuses.PARALYSIS:Lcom/cobblemon/mod/common/pokemon/status/statuses/persistent/ParalysisStatus;
+     255: invokevirtual #636                // Method com/cobblemon/mod/common/pokemon/status/statuses/persistent/ParalysisStatus.configEntry:()Lkotlin/Pair;
+     258: aastore
+     259: aload_1
+     260: iconst_3
+     261: getstatic     #640                // Field com/cobblemon/mod/common/api/pokemon/status/Statuses.FROZEN:Lcom/cobblemon/mod/common/pokemon/status/statuses/persistent/FrozenStatus;
+     264: invokevirtual #643                // Method com/cobblemon/mod/common/pokemon/status/statuses/persistent/FrozenStatus.configEntry:()Lkotlin/Pair;
+     267: aastore
+     268: aload_1
+     269: iconst_4
+     270: getstatic     #647                // Field com/cobblemon/mod/common/api/pokemon/status/Statuses.SLEEP:Lcom/cobblemon/mod/common/pokemon/status/statuses/persistent/SleepStatus;
+     273: invokevirtual #650                // Method com/cobblemon/mod/common/pokemon/status/statuses/persistent/SleepStatus.configEntry:()Lkotlin/Pair;
+     276: aastore
+     277: aload_1
+     278: iconst_5
+     279: getstatic     #654                // Field com/cobblemon/mod/common/api/pokemon/status/Statuses.BURN:Lcom/cobblemon/mod/common/pokemon/status/statuses/persistent/BurnStatus;
+     282: invokevirtual #657                // Method com/cobblemon/mod/common/pokemon/status/statuses/persistent/BurnStatus.configEntry:()Lkotlin/Pair;
+     285: aastore
+     286: aload_1
+     287: invokestatic  #663                // Method kotlin/collections/MapsKt.mutableMapOf:([Lkotlin/Pair;)Ljava/util/Map;
+     290: putfield      #665                // Field passiveStatuses:Ljava/util/Map;
+     293: aload_0
+     294: ldc_w         #666                // float 6.0f
+     297: putfield      #668                // Field maxHealerCharge:F
+     300: aload_0
+     301: ldc2_w        #669                // double 900.0d
+     304: putfield      #672                // Field secondsToChargeHealingMachine:D
+     307: aload_0
+     308: sipush        300
+     311: putfield      #674                // Field defaultFaintTimer:I
+     314: aload_0
+     315: ldc_w         #675                // float 0.2f
+     318: putfield      #677                // Field faintAwakenHealthPercent:F
+     321: aload_0
+     322: ldc2_w        #678                // double 0.05d
+     325: putfield      #681                // Field healPercent:D
+     328: aload_0
+     329: bipush        60
+     331: putfield      #683                // Field healTimer:I
+     334: aload_0
+     335: ldc_w         #684                // float 0.1f
+     338: putfield      #686                // Field baseApricornTreeGenerationChance:F
+     341: aload_0
+     342: iconst_1
+     343: putfield      #688                // Field displayEntityLevelLabel:Z
+     346: aload_0
+     347: iconst_1
+     348: putfield      #690                // Field displayEntityNameLabel:Z
+     351: aload_0
+     352: ldc_w         #691                // float 8192.0f
+     355: putfield      #693                // Field shinyRate:F
+     358: aload_0
+     359: ldc_w         #694                // float 24.0f
+     362: putfield      #696                // Field shinyNoticeParticlesDistance:F
+     365: aload_0
+     366: getstatic     #702                // Field com/cobblemon/mod/common/pokeball/catching/calculators/CobblemonCaptureCalculator.INSTANCE:Lcom/cobblemon/mod/common/pokeball/catching/calculators/CobblemonCaptureCalculator;
+     369: checkcast     #704                // class com/cobblemon/mod/common/api/pokeball/catching/calculators/CaptureCalculator
+     372: putfield      #706                // Field captureCalculator:Lcom/cobblemon/mod/common/api/pokeball/catching/calculators/CaptureCalculator;
+     375: aload_0
+     376: iconst_1
+     377: putfield      #708                // Field playerDamagePokemon:Z
+     380: aload_0
+     381: ldc2_w        #709                // double 0.025d
+     384: putfield      #712                // Field appleLeftoversChance:D
+     387: aload_0
+     388: bipush        9
+     390: putfield      #714                // Field maxRootsInArea:I
+     393: aload_0
+     394: ldc2_w        #593                // double 0.5d
+     397: putfield      #716                // Field bigRootPropagationChance:D
+     400: aload_0
+     401: ldc2_w        #717                // double 0.25d
+     404: putfield      #720                // Field energyRootChance:D
+     407: aload_0
+     408: bipush        10
+     410: putfield      #722                // Field maxDynamaxLevel:I
+     413: aload_0
+     414: ldc_w         #573                // float 20.0f
+     417: putfield      #724                // Field teraTypeRate:F
+     420: aload_0
+     421: bipush        16
+     423: putfield      #726                // Field defaultPasturedPokemonLimit:I
+     426: aload_0
+     427: bipush        40
+     429: putfield      #728                // Field pastureBlockUpdateTicks:I
+     432: aload_0
+     433: bipush        64
+     435: putfield      #730                // Field pastureMaxWanderDistance:I
+     438: aload_0
+     439: ldc_w         #731                // float 4.0f
+     442: putfield      #733                // Field pastureMaxPerChunk:F
+     445: aload_0
+     446: iconst_2
+     447: putfield      #735                // Field maxInsertedFossilItems:I
+     450: aload_0
+     451: ldc_w         #736                // float 12.0f
+     454: putfield      #738                // Field battleWildMaxDistance:F
+     457: aload_0
+     458: ldc_w         #736                // float 12.0f
+     461: putfield      #740                // Field tradeMaxDistance:F
+     464: aload_0
+     465: ldc_w         #588                // float 32.0f
+     468: putfield      #742                // Field battlePvPMaxDistance:F
+     471: aload_0
+     472: ldc_w         #579                // float 64.0f
+     475: putfield      #744                // Field battleSpectateMaxDistance:F
+     478: aload_0
+     479: ldc2_w        #745                // double 10.0d
+     482: putfield      #748                // Field maxPokedexScanningDetectionRange:D
+     485: aload_0
+     486: iconst_1
+     487: putfield      #750                // Field summaryPokemonFollowCursor:Z
+     490: aload_0
+     491: getstatic     #755                // Field com/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle.NEVER_ANIMATE:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+     494: putfield      #757                // Field partyPortraitAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+     497: aload_0
+     498: getstatic     #760                // Field com/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle.ANIMATE_SELECTED:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+     501: putfield      #762                // Field pcProfileAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+     504: aload_0
+     505: getstatic     #760                // Field com/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle.ANIMATE_SELECTED:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+     508: putfield      #764                // Field summaryProfileAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+     511: aload_0
+     512: iconst_1
+     513: putfield      #766                // Field thirdPersonViewBobbing:Z
+     516: aload_0
+     517: dconst_1
+     518: putfield      #768                // Field xAxisSensitivity:D
+     521: aload_0
+     522: dconst_1
+     523: putfield      #770                // Field yAxisSensitivity:D
+     526: aload_0
+     527: ldc2_w        #771                // double -1.0d
+     530: putfield      #774                // Field rightingDelay:D
+     533: aload_0
+     534: ldc_w         #588                // float 32.0f
+     537: putfield      #776                // Field despawnerNearDistance:F
+     540: aload_0
+     541: ldc_w         #777                // float 96.0f
+     544: putfield      #779                // Field despawnerFarDistance:F
+     547: aload_0
+     548: sipush        600
+     551: putfield      #781                // Field despawnerMinAgeTicks:I
+     554: aload_0
+     555: sipush        3600
+     558: putfield      #783                // Field despawnerMaxAgeTicks:I
+     561: return
+
+  public final java.lang.String getLastSavedVersion();
+    Code:
+       0: aload_0
+       1: getfield      #516                // Field lastSavedVersion:Ljava/lang/String;
+       4: areturn
+
+  public final void setLastSavedVersion(java.lang.String);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #516                // Field lastSavedVersion:Ljava/lang/String;
+      12: return
+
+  public final int getMaxPokemonLevel();
+    Code:
+       0: aload_0
+       1: getfield      #518                // Field maxPokemonLevel:I
+       4: ireturn
+
+  public final void setMaxPokemonLevel(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #518                // Field maxPokemonLevel:I
+       5: return
+
+  public final int getMaxPokemonFriendship();
+    Code:
+       0: aload_0
+       1: getfield      #520                // Field maxPokemonFriendship:I
+       4: ireturn
+
+  public final void setMaxPokemonFriendship(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #520                // Field maxPokemonFriendship:I
+       5: return
+
+  public final boolean getAnnounceDropItems();
+    Code:
+       0: aload_0
+       1: getfield      #522                // Field announceDropItems:Z
+       4: ireturn
+
+  public final void setAnnounceDropItems(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #522                // Field announceDropItems:Z
+       5: return
+
+  public final com.cobblemon.mod.common.api.drop.ItemDropMethod getDefaultDropItemMethod();
+    Code:
+       0: aload_0
+       1: getfield      #527                // Field defaultDropItemMethod:Lcom/cobblemon/mod/common/api/drop/ItemDropMethod;
+       4: areturn
+
+  public final void setDefaultDropItemMethod(com.cobblemon.mod.common.api.drop.ItemDropMethod);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #527                // Field defaultDropItemMethod:Lcom/cobblemon/mod/common/api/drop/ItemDropMethod;
+      12: return
+
+  public final boolean getDropAfterDeathAnimation();
+    Code:
+       0: aload_0
+       1: getfield      #794                // Field dropAfterDeathAnimation:Z
+       4: ireturn
+
+  public final void setDropAfterDeathAnimation(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #794                // Field dropAfterDeathAnimation:Z
+       5: return
+
+  public final int getAmbientPokemonCryTicks();
+    Code:
+       0: aload_0
+       1: getfield      #529                // Field ambientPokemonCryTicks:I
+       4: ireturn
+
+  public final void setAmbientPokemonCryTicks(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #529                // Field ambientPokemonCryTicks:I
+       5: return
+
+  public final java.util.Set<net.minecraft.class_2960> getDefaultKeyItems();
+    Code:
+       0: aload_0
+       1: getfield      #536                // Field defaultKeyItems:Ljava/util/Set;
+       4: areturn
+
+  public final void setDefaultKeyItems(java.util.Set<net.minecraft.class_2960>);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #536                // Field defaultKeyItems:Ljava/util/Set;
+      12: return
+
+  public final int getDefaultBoxCount();
+    Code:
+       0: aload_0
+       1: getfield      #538                // Field defaultBoxCount:I
+       4: ireturn
+
+  public final void setDefaultBoxCount(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #538                // Field defaultBoxCount:I
+       5: return
+
+  public final int getPokemonSaveIntervalSeconds();
+    Code:
+       0: aload_0
+       1: getfield      #540                // Field pokemonSaveIntervalSeconds:I
+       4: ireturn
+
+  public final void setPokemonSaveIntervalSeconds(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #540                // Field pokemonSaveIntervalSeconds:I
+       5: return
+
+  public final java.lang.String getStorageFormat();
+    Code:
+       0: aload_0
+       1: getfield      #544                // Field storageFormat:Ljava/lang/String;
+       4: areturn
+
+  public final void setStorageFormat(java.lang.String);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #544                // Field storageFormat:Ljava/lang/String;
+      12: return
+
+  public final boolean getPreventCompletePartyDeposit();
+    Code:
+       0: aload_0
+       1: getfield      #798                // Field preventCompletePartyDeposit:Z
+       4: ireturn
+
+  public final void setPreventCompletePartyDeposit(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #798                // Field preventCompletePartyDeposit:Z
+       5: return
+
+  public final java.lang.String getMongoDBConnectionString();
+    Code:
+       0: aload_0
+       1: getfield      #548                // Field mongoDBConnectionString:Ljava/lang/String;
+       4: areturn
+
+  public final void setMongoDBConnectionString(java.lang.String);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #548                // Field mongoDBConnectionString:Ljava/lang/String;
+      12: return
+
+  public final java.lang.String getMongoDBDatabaseName();
+    Code:
+       0: aload_0
+       1: getfield      #552                // Field mongoDBDatabaseName:Ljava/lang/String;
+       4: areturn
+
+  public final void setMongoDBDatabaseName(java.lang.String);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #552                // Field mongoDBDatabaseName:Ljava/lang/String;
+      12: return
+
+  public final int getMaxVerticalCorrectionBlocks();
+    Code:
+       0: aload_0
+       1: getfield      #554                // Field maxVerticalCorrectionBlocks:I
+       4: ireturn
+
+  public final void setMaxVerticalCorrectionBlocks(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #554                // Field maxVerticalCorrectionBlocks:I
+       5: return
+
+  public final int getMinimumLevelRangeMax();
+    Code:
+       0: aload_0
+       1: getfield      #556                // Field minimumLevelRangeMax:I
+       4: ireturn
+
+  public final void setMinimumLevelRangeMax(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #556                // Field minimumLevelRangeMax:I
+       5: return
+
+  public final boolean getEnableSpawning();
+    Code:
+       0: aload_0
+       1: getfield      #558                // Field enableSpawning:Z
+       4: ireturn
+
+  public final void setEnableSpawning(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #558                // Field enableSpawning:Z
+       5: return
+
+  public final double getMinimumDistanceBetweenEntities();
+    Code:
+       0: aload_0
+       1: getfield      #562                // Field minimumDistanceBetweenEntities:D
+       4: dreturn
+
+  public final void setMinimumDistanceBetweenEntities(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #562                // Field minimumDistanceBetweenEntities:D
+       5: return
+
+  public final int getMaxNearbyBlocksHorizontalRange();
+    Code:
+       0: aload_0
+       1: getfield      #564                // Field maxNearbyBlocksHorizontalRange:I
+       4: ireturn
+
+  public final void setMaxNearbyBlocksHorizontalRange(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #564                // Field maxNearbyBlocksHorizontalRange:I
+       5: return
+
+  public final int getMaxNearbyBlocksVerticalRange();
+    Code:
+       0: aload_0
+       1: getfield      #566                // Field maxNearbyBlocksVerticalRange:I
+       4: ireturn
+
+  public final void setMaxNearbyBlocksVerticalRange(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #566                // Field maxNearbyBlocksVerticalRange:I
+       5: return
+
+  public final int getMaxVerticalSpace();
+    Code:
+       0: aload_0
+       1: getfield      #568                // Field maxVerticalSpace:I
+       4: ireturn
+
+  public final void setMaxVerticalSpace(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #568                // Field maxVerticalSpace:I
+       5: return
+
+  public final int getSpawningZoneDiameter();
+    Code:
+       0: aload_0
+       1: getfield      #570                // Field spawningZoneDiameter:I
+       4: ireturn
+
+  public final void setSpawningZoneDiameter(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #570                // Field spawningZoneDiameter:I
+       5: return
+
+  public final int getSpawningZoneHeight();
+    Code:
+       0: aload_0
+       1: getfield      #572                // Field spawningZoneHeight:I
+       4: ireturn
+
+  public final void setSpawningZoneHeight(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #572                // Field spawningZoneHeight:I
+       5: return
+
+  public final float getTicksBetweenSpawnAttempts();
+    Code:
+       0: aload_0
+       1: getfield      #575                // Field ticksBetweenSpawnAttempts:F
+       4: freturn
+
+  public final void setTicksBetweenSpawnAttempts(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #575                // Field ticksBetweenSpawnAttempts:F
+       5: return
+
+  public final float getMinimumSpawningZoneDistanceFromPlayer();
+    Code:
+       0: aload_0
+       1: getfield      #578                // Field minimumSpawningZoneDistanceFromPlayer:F
+       4: freturn
+
+  public final void setMinimumSpawningZoneDistanceFromPlayer(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #578                // Field minimumSpawningZoneDistanceFromPlayer:F
+       5: return
+
+  public final float getMaximumSpawningZoneDistanceFromPlayer();
+    Code:
+       0: aload_0
+       1: getfield      #581                // Field maximumSpawningZoneDistanceFromPlayer:F
+       4: freturn
+
+  public final void setMaximumSpawningZoneDistanceFromPlayer(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #581                // Field maximumSpawningZoneDistanceFromPlayer:F
+       5: return
+
+  public final int getMaximumSpawnsPerPass();
+    Code:
+       0: aload_0
+       1: getfield      #583                // Field maximumSpawnsPerPass:I
+       4: ireturn
+
+  public final void setMaximumSpawnsPerPass(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #583                // Field maximumSpawnsPerPass:I
+       5: return
+
+  public final boolean getExportSpawnConfig();
+    Code:
+       0: aload_0
+       1: getfield      #800                // Field exportSpawnConfig:Z
+       4: ireturn
+
+  public final void setExportSpawnConfig(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #800                // Field exportSpawnConfig:Z
+       5: return
+
+  public final boolean getSavePokemonToWorld();
+    Code:
+       0: aload_0
+       1: getfield      #585                // Field savePokemonToWorld:Z
+       4: ireturn
+
+  public final void setSavePokemonToWorld(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #585                // Field savePokemonToWorld:Z
+       5: return
+
+  public final boolean getExportStarterConfig();
+    Code:
+       0: aload_0
+       1: getfield      #802                // Field exportStarterConfig:Z
+       4: ireturn
+
+  public final void setExportStarterConfig(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #802                // Field exportStarterConfig:Z
+       5: return
+
+  public final boolean getAutoUpdateShowdown();
+    Code:
+       0: aload_0
+       1: getfield      #587                // Field autoUpdateShowdown:Z
+       4: ireturn
+
+  public final void setAutoUpdateShowdown(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #587                // Field autoUpdateShowdown:Z
+       5: return
+
+  public final float getDefaultFleeDistance();
+    Code:
+       0: aload_0
+       1: getfield      #590                // Field defaultFleeDistance:F
+       4: freturn
+
+  public final void setDefaultFleeDistance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #590                // Field defaultFleeDistance:F
+       5: return
+
+  public final boolean getAllowExperienceFromPvP();
+    Code:
+       0: aload_0
+       1: getfield      #592                // Field allowExperienceFromPvP:Z
+       4: ireturn
+
+  public final void setAllowExperienceFromPvP(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #592                // Field allowExperienceFromPvP:Z
+       5: return
+
+  public final double getExperienceShareMultiplier();
+    Code:
+       0: aload_0
+       1: getfield      #596                // Field experienceShareMultiplier:D
+       4: dreturn
+
+  public final void setExperienceShareMultiplier(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #596                // Field experienceShareMultiplier:D
+       5: return
+
+  public final double getLuckyEggMultiplier();
+    Code:
+       0: aload_0
+       1: getfield      #600                // Field luckyEggMultiplier:D
+       4: dreturn
+
+  public final void setLuckyEggMultiplier(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #600                // Field luckyEggMultiplier:D
+       5: return
+
+  public final boolean getAllowSpectating();
+    Code:
+       0: aload_0
+       1: getfield      #602                // Field allowSpectating:Z
+       4: ireturn
+
+  public final void setAllowSpectating(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #602                // Field allowSpectating:Z
+       5: return
+
+  public final float getExperienceMultiplier();
+    Code:
+       0: aload_0
+       1: getfield      #604                // Field experienceMultiplier:F
+       4: freturn
+
+  public final void setExperienceMultiplier(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #604                // Field experienceMultiplier:F
+       5: return
+
+  public final float getPokemonPerChunk();
+    Code:
+       0: aload_0
+       1: getfield      #606                // Field pokemonPerChunk:F
+       4: freturn
+
+  public final void setPokemonPerChunk(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #606                // Field pokemonPerChunk:F
+       5: return
+
+  public final float getPokeSnackPokemonPerChunk();
+    Code:
+       0: aload_0
+       1: getfield      #608                // Field pokeSnackPokemonPerChunk:F
+       4: freturn
+
+  public final void setPokeSnackPokemonPerChunk(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #608                // Field pokeSnackPokemonPerChunk:F
+       5: return
+
+  public final java.util.Map<java.lang.String, kotlin.ranges.IntRange> getPassiveStatuses();
+    Code:
+       0: aload_0
+       1: getfield      #665                // Field passiveStatuses:Ljava/util/Map;
+       4: areturn
+
+  public final void setPassiveStatuses(java.util.Map<java.lang.String, kotlin.ranges.IntRange>);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #665                // Field passiveStatuses:Ljava/util/Map;
+      12: return
+
+  public final boolean getInfiniteHealerCharge();
+    Code:
+       0: aload_0
+       1: getfield      #806                // Field infiniteHealerCharge:Z
+       4: ireturn
+
+  public final void setInfiniteHealerCharge(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #806                // Field infiniteHealerCharge:Z
+       5: return
+
+  public final float getMaxHealerCharge();
+    Code:
+       0: aload_0
+       1: getfield      #668                // Field maxHealerCharge:F
+       4: freturn
+
+  public final void setMaxHealerCharge(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #668                // Field maxHealerCharge:F
+       5: return
+
+  public final double getSecondsToChargeHealingMachine();
+    Code:
+       0: aload_0
+       1: getfield      #672                // Field secondsToChargeHealingMachine:D
+       4: dreturn
+
+  public final void setSecondsToChargeHealingMachine(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #672                // Field secondsToChargeHealingMachine:D
+       5: return
+
+  public final int getDefaultFaintTimer();
+    Code:
+       0: aload_0
+       1: getfield      #674                // Field defaultFaintTimer:I
+       4: ireturn
+
+  public final void setDefaultFaintTimer(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #674                // Field defaultFaintTimer:I
+       5: return
+
+  public final float getFaintAwakenHealthPercent();
+    Code:
+       0: aload_0
+       1: getfield      #677                // Field faintAwakenHealthPercent:F
+       4: freturn
+
+  public final void setFaintAwakenHealthPercent(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #677                // Field faintAwakenHealthPercent:F
+       5: return
+
+  public final double getHealPercent();
+    Code:
+       0: aload_0
+       1: getfield      #681                // Field healPercent:D
+       4: dreturn
+
+  public final void setHealPercent(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #681                // Field healPercent:D
+       5: return
+
+  public final int getHealTimer();
+    Code:
+       0: aload_0
+       1: getfield      #683                // Field healTimer:I
+       4: ireturn
+
+  public final void setHealTimer(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #683                // Field healTimer:I
+       5: return
+
+  public final float getBaseApricornTreeGenerationChance();
+    Code:
+       0: aload_0
+       1: getfield      #686                // Field baseApricornTreeGenerationChance:F
+       4: freturn
+
+  public final void setBaseApricornTreeGenerationChance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #686                // Field baseApricornTreeGenerationChance:F
+       5: return
+
+  public final boolean getDisplayEntityLevelLabel();
+    Code:
+       0: aload_0
+       1: getfield      #688                // Field displayEntityLevelLabel:Z
+       4: ireturn
+
+  public final void setDisplayEntityLevelLabel(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #688                // Field displayEntityLevelLabel:Z
+       5: return
+
+  public final boolean getDisplayEntityNameLabel();
+    Code:
+       0: aload_0
+       1: getfield      #690                // Field displayEntityNameLabel:Z
+       4: ireturn
+
+  public final void setDisplayEntityNameLabel(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #690                // Field displayEntityNameLabel:Z
+       5: return
+
+  public final boolean getDisplayNameForUnknownPokemon();
+    Code:
+       0: aload_0
+       1: getfield      #808                // Field displayNameForUnknownPokemon:Z
+       4: ireturn
+
+  public final void setDisplayNameForUnknownPokemon(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #808                // Field displayNameForUnknownPokemon:Z
+       5: return
+
+  public final boolean getDisplayEntityLabelsWhenCrouchingOnly();
+    Code:
+       0: aload_0
+       1: getfield      #810                // Field displayEntityLabelsWhenCrouchingOnly:Z
+       4: ireturn
+
+  public final void setDisplayEntityLabelsWhenCrouchingOnly(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #810                // Field displayEntityLabelsWhenCrouchingOnly:Z
+       5: return
+
+  public final float getShinyRate();
+    Code:
+       0: aload_0
+       1: getfield      #693                // Field shinyRate:F
+       4: freturn
+
+  public final void setShinyRate(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #693                // Field shinyRate:F
+       5: return
+
+  public final float getShinyNoticeParticlesDistance();
+    Code:
+       0: aload_0
+       1: getfield      #696                // Field shinyNoticeParticlesDistance:F
+       4: freturn
+
+  public final void setShinyNoticeParticlesDistance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #696                // Field shinyNoticeParticlesDistance:F
+       5: return
+
+  public final com.cobblemon.mod.common.api.pokeball.catching.calculators.CaptureCalculator getCaptureCalculator();
+    Code:
+       0: aload_0
+       1: getfield      #706                // Field captureCalculator:Lcom/cobblemon/mod/common/api/pokeball/catching/calculators/CaptureCalculator;
+       4: areturn
+
+  public final void setCaptureCalculator(com.cobblemon.mod.common.api.pokeball.catching.calculators.CaptureCalculator);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #706                // Field captureCalculator:Lcom/cobblemon/mod/common/api/pokeball/catching/calculators/CaptureCalculator;
+      12: return
+
+  public final boolean getPlayerDamagePokemon();
+    Code:
+       0: aload_0
+       1: getfield      #708                // Field playerDamagePokemon:Z
+       4: ireturn
+
+  public final void setPlayerDamagePokemon(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #708                // Field playerDamagePokemon:Z
+       5: return
+
+  public final double getAppleLeftoversChance();
+    Code:
+       0: aload_0
+       1: getfield      #712                // Field appleLeftoversChance:D
+       4: dreturn
+
+  public final void setAppleLeftoversChance(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #712                // Field appleLeftoversChance:D
+       5: return
+
+  public final int getMaxRootsInArea();
+    Code:
+       0: aload_0
+       1: getfield      #714                // Field maxRootsInArea:I
+       4: ireturn
+
+  public final void setMaxRootsInArea(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #714                // Field maxRootsInArea:I
+       5: return
+
+  public final double getBigRootPropagationChance();
+    Code:
+       0: aload_0
+       1: getfield      #716                // Field bigRootPropagationChance:D
+       4: dreturn
+
+  public final void setBigRootPropagationChance(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #716                // Field bigRootPropagationChance:D
+       5: return
+
+  public final double getEnergyRootChance();
+    Code:
+       0: aload_0
+       1: getfield      #720                // Field energyRootChance:D
+       4: dreturn
+
+  public final void setEnergyRootChance(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #720                // Field energyRootChance:D
+       5: return
+
+  public final int getMaxDynamaxLevel();
+    Code:
+       0: aload_0
+       1: getfield      #722                // Field maxDynamaxLevel:I
+       4: ireturn
+
+  public final void setMaxDynamaxLevel(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #722                // Field maxDynamaxLevel:I
+       5: return
+
+  public final float getTeraTypeRate();
+    Code:
+       0: aload_0
+       1: getfield      #724                // Field teraTypeRate:F
+       4: freturn
+
+  public final void setTeraTypeRate(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #724                // Field teraTypeRate:F
+       5: return
+
+  public final int getDefaultPasturedPokemonLimit();
+    Code:
+       0: aload_0
+       1: getfield      #726                // Field defaultPasturedPokemonLimit:I
+       4: ireturn
+
+  public final void setDefaultPasturedPokemonLimit(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #726                // Field defaultPasturedPokemonLimit:I
+       5: return
+
+  public final int getPastureBlockUpdateTicks();
+    Code:
+       0: aload_0
+       1: getfield      #728                // Field pastureBlockUpdateTicks:I
+       4: ireturn
+
+  public final void setPastureBlockUpdateTicks(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #728                // Field pastureBlockUpdateTicks:I
+       5: return
+
+  public final int getPastureMaxWanderDistance();
+    Code:
+       0: aload_0
+       1: getfield      #730                // Field pastureMaxWanderDistance:I
+       4: ireturn
+
+  public final void setPastureMaxWanderDistance(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #730                // Field pastureMaxWanderDistance:I
+       5: return
+
+  public final float getPastureMaxPerChunk();
+    Code:
+       0: aload_0
+       1: getfield      #733                // Field pastureMaxPerChunk:F
+       4: freturn
+
+  public final void setPastureMaxPerChunk(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #733                // Field pastureMaxPerChunk:F
+       5: return
+
+  public final int getMaxInsertedFossilItems();
+    Code:
+       0: aload_0
+       1: getfield      #735                // Field maxInsertedFossilItems:I
+       4: ireturn
+
+  public final void setMaxInsertedFossilItems(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #735                // Field maxInsertedFossilItems:I
+       5: return
+
+  public final boolean getWalkingInBattleAnimations();
+    Code:
+       0: aload_0
+       1: getfield      #812                // Field walkingInBattleAnimations:Z
+       4: ireturn
+
+  public final void setWalkingInBattleAnimations(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #812                // Field walkingInBattleAnimations:Z
+       5: return
+
+  public final float getBattleWildMaxDistance();
+    Code:
+       0: aload_0
+       1: getfield      #738                // Field battleWildMaxDistance:F
+       4: freturn
+
+  public final void setBattleWildMaxDistance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #738                // Field battleWildMaxDistance:F
+       5: return
+
+  public final float getTradeMaxDistance();
+    Code:
+       0: aload_0
+       1: getfield      #740                // Field tradeMaxDistance:F
+       4: freturn
+
+  public final void setTradeMaxDistance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #740                // Field tradeMaxDistance:F
+       5: return
+
+  public final float getBattlePvPMaxDistance();
+    Code:
+       0: aload_0
+       1: getfield      #742                // Field battlePvPMaxDistance:F
+       4: freturn
+
+  public final void setBattlePvPMaxDistance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #742                // Field battlePvPMaxDistance:F
+       5: return
+
+  public final float getBattleSpectateMaxDistance();
+    Code:
+       0: aload_0
+       1: getfield      #744                // Field battleSpectateMaxDistance:F
+       4: freturn
+
+  public final void setBattleSpectateMaxDistance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #744                // Field battleSpectateMaxDistance:F
+       5: return
+
+  public final double getMaxPokedexScanningDetectionRange();
+    Code:
+       0: aload_0
+       1: getfield      #748                // Field maxPokedexScanningDetectionRange:D
+       4: dreturn
+
+  public final void setMaxPokedexScanningDetectionRange(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #748                // Field maxPokedexScanningDetectionRange:D
+       5: return
+
+  public final boolean getHideUnimplementedPokemonInThePokedex();
+    Code:
+       0: aload_0
+       1: getfield      #814                // Field hideUnimplementedPokemonInThePokedex:Z
+       4: ireturn
+
+  public final void setHideUnimplementedPokemonInThePokedex(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #814                // Field hideUnimplementedPokemonInThePokedex:Z
+       5: return
+
+  public final boolean getSummaryPokemonFollowCursor();
+    Code:
+       0: aload_0
+       1: getfield      #750                // Field summaryPokemonFollowCursor:Z
+       4: ireturn
+
+  public final void setSummaryPokemonFollowCursor(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #750                // Field summaryPokemonFollowCursor:Z
+       5: return
+
+  public final com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle getPartyPortraitAnimations();
+    Code:
+       0: aload_0
+       1: getfield      #757                // Field partyPortraitAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+       4: areturn
+
+  public final void setPartyPortraitAnimations(com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #757                // Field partyPortraitAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+      12: return
+
+  public final com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle getPcProfileAnimations();
+    Code:
+       0: aload_0
+       1: getfield      #762                // Field pcProfileAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+       4: areturn
+
+  public final void setPcProfileAnimations(com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #762                // Field pcProfileAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+      12: return
+
+  public final com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle getSummaryProfileAnimations();
+    Code:
+       0: aload_0
+       1: getfield      #764                // Field summaryProfileAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+       4: areturn
+
+  public final void setSummaryProfileAnimations(com.cobblemon.mod.common.client.gui.PokemonGUIAnimationStyle);
+    Code:
+       0: aload_1
+       1: ldc_w         #786                // String <set-?>
+       4: invokestatic  #792                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #764                // Field summaryProfileAnimations:Lcom/cobblemon/mod/common/client/gui/PokemonGUIAnimationStyle;
+      12: return
+
+  public final boolean getAnimateBattleTiles();
+    Code:
+       0: aload_0
+       1: getfield      #816                // Field animateBattleTiles:Z
+       4: ireturn
+
+  public final void setAnimateBattleTiles(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #816                // Field animateBattleTiles:Z
+       5: return
+
+  public final boolean getThirdPersonViewBobbing();
+    Code:
+       0: aload_0
+       1: getfield      #766                // Field thirdPersonViewBobbing:Z
+       4: ireturn
+
+  public final void setThirdPersonViewBobbing(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #766                // Field thirdPersonViewBobbing:Z
+       5: return
+
+  public final boolean getInvertRoll();
+    Code:
+       0: aload_0
+       1: getfield      #818                // Field invertRoll:Z
+       4: ireturn
+
+  public final void setInvertRoll(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #818                // Field invertRoll:Z
+       5: return
+
+  public final boolean getInvertPitch();
+    Code:
+       0: aload_0
+       1: getfield      #820                // Field invertPitch:Z
+       4: ireturn
+
+  public final void setInvertPitch(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #820                // Field invertPitch:Z
+       5: return
+
+  public final boolean getInvertYaw();
+    Code:
+       0: aload_0
+       1: getfield      #822                // Field invertYaw:Z
+       4: ireturn
+
+  public final void setInvertYaw(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #822                // Field invertYaw:Z
+       5: return
+
+  public final double getXAxisSensitivity();
+    Code:
+       0: aload_0
+       1: getfield      #768                // Field xAxisSensitivity:D
+       4: dreturn
+
+  public final void setXAxisSensitivity(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #768                // Field xAxisSensitivity:D
+       5: return
+
+  public final double getYAxisSensitivity();
+    Code:
+       0: aload_0
+       1: getfield      #770                // Field yAxisSensitivity:D
+       4: dreturn
+
+  public final void setYAxisSensitivity(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #770                // Field yAxisSensitivity:D
+       5: return
+
+  public final boolean getSwapXAndYAxes();
+    Code:
+       0: aload_0
+       1: getfield      #824                // Field swapXAndYAxes:Z
+       4: ireturn
+
+  public final void setSwapXAndYAxes(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #824                // Field swapXAndYAxes:Z
+       5: return
+
+  public final double getRightingDelay();
+    Code:
+       0: aload_0
+       1: getfield      #774                // Field rightingDelay:D
+       4: dreturn
+
+  public final void setRightingDelay(double);
+    Code:
+       0: aload_0
+       1: dload_1
+       2: putfield      #774                // Field rightingDelay:D
+       5: return
+
+  public final boolean getDisableRoll();
+    Code:
+       0: aload_0
+       1: getfield      #826                // Field disableRoll:Z
+       4: ireturn
+
+  public final void setDisableRoll(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #826                // Field disableRoll:Z
+       5: return
+
+  public final int getDisplayControlSeconds();
+    Code:
+       0: aload_0
+       1: getfield      #828                // Field displayControlSeconds:I
+       4: ireturn
+
+  public final void setDisplayControlSeconds(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #828                // Field displayControlSeconds:I
+       5: return
+
+  public final boolean getInfiniteRideStamina();
+    Code:
+       0: aload_0
+       1: getfield      #830                // Field infiniteRideStamina:Z
+       4: ireturn
+
+  public final void setInfiniteRideStamina(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #830                // Field infiniteRideStamina:Z
+       5: return
+
+  public final boolean getRememberRidingCamera();
+    Code:
+       0: aload_0
+       1: getfield      #832                // Field rememberRidingCamera:Z
+       4: ireturn
+
+  public final void setRememberRidingCamera(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #832                // Field rememberRidingCamera:Z
+       5: return
+
+  public final boolean getEnableInFlightDismounting();
+    Code:
+       0: aload_0
+       1: getfield      #834                // Field enableInFlightDismounting:Z
+       4: ireturn
+
+  public final void setEnableInFlightDismounting(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #834                // Field enableInFlightDismounting:Z
+       5: return
+
+  public final boolean getEnableDebugKeys();
+    Code:
+       0: aload_0
+       1: getfield      #836                // Field enableDebugKeys:Z
+       4: ireturn
+
+  public final void setEnableDebugKeys(boolean);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #836                // Field enableDebugKeys:Z
+       5: return
+
+  public final float getDespawnerNearDistance();
+    Code:
+       0: aload_0
+       1: getfield      #776                // Field despawnerNearDistance:F
+       4: freturn
+
+  public final void setDespawnerNearDistance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #776                // Field despawnerNearDistance:F
+       5: return
+
+  public final float getDespawnerFarDistance();
+    Code:
+       0: aload_0
+       1: getfield      #779                // Field despawnerFarDistance:F
+       4: freturn
+
+  public final void setDespawnerFarDistance(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #779                // Field despawnerFarDistance:F
+       5: return
+
+  public final int getDespawnerMinAgeTicks();
+    Code:
+       0: aload_0
+       1: getfield      #781                // Field despawnerMinAgeTicks:I
+       4: ireturn
+
+  public final void setDespawnerMinAgeTicks(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #781                // Field despawnerMinAgeTicks:I
+       5: return
+
+  public final int getDespawnerMaxAgeTicks();
+    Code:
+       0: aload_0
+       1: getfield      #783                // Field despawnerMaxAgeTicks:I
+       4: ireturn
+
+  public final void setDespawnerMaxAgeTicks(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #783                // Field despawnerMaxAgeTicks:I
+       5: return
+
+  public final com.cobblemon.mod.common.config.CobblemonConfig clone();
+    Code:
+       0: new           #2                  // class com/cobblemon/mod/common/config/CobblemonConfig
+       3: dup
+       4: invokespecial #837                // Method "<init>":()V
+       7: astore_1
+       8: ldc           #2                  // class com/cobblemon/mod/common/config/CobblemonConfig
+      10: invokestatic  #843                // Method kotlin/jvm/internal/Reflection.getOrCreateKotlinClass:(Ljava/lang/Class;)Lkotlin/reflect/KClass;
+      13: invokestatic  #849                // Method kotlin/reflect/full/KClasses.getMemberProperties:(Lkotlin/reflect/KClass;)Ljava/util/Collection;
+      16: checkcast     #851                // class java/lang/Iterable
+      19: astore_2
+      20: iconst_0
+      21: istore_3
+      22: aload_2
+      23: invokeinterface #855,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+      28: astore        4
+      30: aload         4
+      32: invokeinterface #860,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      37: ifeq          151
+      40: aload         4
+      42: invokeinterface #864,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      47: astore        5
+      49: aload         5
+      51: checkcast     #866                // class kotlin/reflect/KProperty1
+      54: astore        6
+      56: iconst_0
+      57: istore        7
+      59: aload         6
+      61: instanceof    #365                // class kotlin/reflect/KMutableProperty
+      64: ifeq          146
+      67: aload         6
+      69: checkcast     #868                // class kotlin/reflect/KCallable
+      72: iconst_1
+      73: invokestatic  #874                // Method kotlin/reflect/jvm/KCallablesJvm.setAccessible:(Lkotlin/reflect/KCallable;Z)V
+      76: aload         6
+      78: checkcast     #365                // class kotlin/reflect/KMutableProperty
+      81: invokeinterface #878,  1          // InterfaceMethod kotlin/reflect/KMutableProperty.getGetter:()Lkotlin/reflect/KProperty$Getter;
+      86: iconst_1
+      87: anewarray     #4                  // class java/lang/Object
+      90: astore        8
+      92: aload         8
+      94: iconst_0
+      95: aload_0
+      96: aastore
+      97: aload         8
+      99: invokeinterface #882,  2          // InterfaceMethod kotlin/reflect/KProperty$Getter.call:([Ljava/lang/Object;)Ljava/lang/Object;
+     104: astore        9
+     106: aload         9
+     108: ifnull        146
+     111: aload         6
+     113: checkcast     #365                // class kotlin/reflect/KMutableProperty
+     116: invokeinterface #886,  1          // InterfaceMethod kotlin/reflect/KMutableProperty.getSetter:()Lkotlin/reflect/KMutableProperty$Setter;
+     121: iconst_2
+     122: anewarray     #4                  // class java/lang/Object
+     125: astore        8
+     127: aload         8
+     129: iconst_0
+     130: aload_1
+     131: aastore
+     132: aload         8
+     134: iconst_1
+     135: aload         9
+     137: aastore
+     138: aload         8
+     140: invokeinterface #887,  2          // InterfaceMethod kotlin/reflect/KMutableProperty$Setter.call:([Ljava/lang/Object;)Ljava/lang/Object;
+     145: pop
+     146: nop
+     147: nop
+     148: goto          30
+     151: nop
+     152: aload_1
+     153: areturn
+
+  public static final com.google.gson.Gson access$getGSON$cp();
+    Code:
+       0: getstatic     #900                // Field GSON:Lcom/google/gson/Gson;
+       3: areturn
+
+  static {};
+    Code:
+       0: new           #356                // class com/cobblemon/mod/common/config/CobblemonConfig$Companion
+       3: dup
+       4: aconst_null
+       5: invokespecial #904                // Method com/cobblemon/mod/common/config/CobblemonConfig$Companion."<init>":(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+       8: putstatic     #906                // Field Companion:Lcom/cobblemon/mod/common/config/CobblemonConfig$Companion;
+      11: new           #908                // class com/google/gson/GsonBuilder
+      14: dup
+      15: invokespecial #909                // Method com/google/gson/GsonBuilder."<init>":()V
+      18: invokevirtual #913                // Method com/google/gson/GsonBuilder.disableHtmlEscaping:()Lcom/google/gson/GsonBuilder;
+      21: invokevirtual #916                // Method com/google/gson/GsonBuilder.setPrettyPrinting:()Lcom/google/gson/GsonBuilder;
+      24: ldc_w         #918                // class kotlin/ranges/IntRange
+      27: checkcast     #920                // class java/lang/reflect/Type
+      30: getstatic     #925                // Field com/cobblemon/mod/common/util/adapters/IntRangeAdapter.INSTANCE:Lcom/cobblemon/mod/common/util/adapters/IntRangeAdapter;
+      33: invokevirtual #929                // Method com/google/gson/GsonBuilder.registerTypeAdapter:(Ljava/lang/reflect/Type;Ljava/lang/Object;)Lcom/google/gson/GsonBuilder;
+      36: ldc_w         #354                // class com/cobblemon/mod/common/api/drop/ItemDropMethod
+      39: checkcast     #920                // class java/lang/reflect/Type
+      42: getstatic     #932                // Field com/cobblemon/mod/common/api/drop/ItemDropMethod.Companion:Lcom/cobblemon/mod/common/api/drop/ItemDropMethod$Companion;
+      45: invokevirtual #936                // Method com/cobblemon/mod/common/api/drop/ItemDropMethod$Companion.getAdapter:()Lcom/cobblemon/mod/common/api/serialization/StringIdentifiedObjectAdapter;
+      48: invokevirtual #929                // Method com/google/gson/GsonBuilder.registerTypeAdapter:(Ljava/lang/reflect/Type;Ljava/lang/Object;)Lcom/google/gson/GsonBuilder;
+      51: ldc_w         #704                // class com/cobblemon/mod/common/api/pokeball/catching/calculators/CaptureCalculator
+      54: checkcast     #920                // class java/lang/reflect/Type
+      57: getstatic     #941                // Field com/cobblemon/mod/common/util/adapters/CaptureCalculatorAdapter.INSTANCE:Lcom/cobblemon/mod/common/util/adapters/CaptureCalculatorAdapter;
+      60: invokevirtual #929                // Method com/google/gson/GsonBuilder.registerTypeAdapter:(Ljava/lang/reflect/Type;Ljava/lang/Object;)Lcom/google/gson/GsonBuilder;
+      63: ldc_w         #943                // class net/minecraft/class_2960
+      66: checkcast     #920                // class java/lang/reflect/Type
+      69: getstatic     #948                // Field com/cobblemon/mod/common/util/adapters/IdentifierAdapter.INSTANCE:Lcom/cobblemon/mod/common/util/adapters/IdentifierAdapter;
+      72: invokevirtual #929                // Method com/google/gson/GsonBuilder.registerTypeAdapter:(Ljava/lang/reflect/Type;Ljava/lang/Object;)Lcom/google/gson/GsonBuilder;
+      75: invokevirtual #951                // Method com/google/gson/GsonBuilder.create:()Lcom/google/gson/Gson;
+      78: putstatic     #900                // Field GSON:Lcom/google/gson/Gson;
+      81: return
+}

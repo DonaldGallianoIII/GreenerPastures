@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shiny Pasture Calculator</title>
+<style>
+  :root{
+    --bg:#13151b; --panel:#1b1e27; --panel-2:#232733; --line:#2e3340;
+    --ink:#e9ecf2; --muted:#969db0; --faint:#6a7185;
+    --t-masuda:#3a9be0; --t-cry1:#e69f00; --t-cry2:#f3e34a; --t-none:#8b93a6;
+    --star:#f3e34a; --tooltip-edge:#5a4ba0;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+    --ui:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0}
+  body{background:radial-gradient(1200px 600px at 80% -10%,#1d2030 0%,transparent 60%),var(--bg);
+    color:var(--ink);font-family:var(--ui);line-height:1.45;padding:24px 18px 56px;min-height:100vh}
+  .wrap{max-width:1120px;margin:0 auto}
+  header.top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+  header.top h1{font-size:clamp(22px,3.4vw,30px);margin:0;letter-spacing:-.02em;font-weight:800}
+  header.top .star{color:var(--star);text-shadow:0 0 14px rgba(243,227,74,.6);font-size:.9em}
+  .sub{color:var(--muted);font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 22px}
+  .grid{display:grid;grid-template-columns:415px 1fr;gap:18px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h2{margin:0 0 14px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:700;font-family:var(--mono);display:flex;justify-content:space-between;align-items:center}
+  .swatch{width:10px;height:10px;border-radius:3px;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.08);display:inline-block}
+
+  .ehead,.erow{display:grid;grid-template-columns:1fr 46px 46px 46px 24px;gap:6px;align-items:center}
+  .ehead{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);margin-bottom:8px;padding:0 2px}
+  .ehead .c{display:flex;align-items:center;justify-content:center;gap:3px}
+  .rows{display:flex;flex-direction:column;gap:7px}
+  .erow input,.erow select{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);font-size:13px;border-radius:8px;padding:7px 6px;width:100%}
+  .erow input[type=number]{text-align:right;padding:7px 5px}
+  .erow input:focus{outline:2px solid var(--t-masuda);outline-offset:1px;border-color:transparent}
+  .rm{background:none;border:1px solid var(--line);color:var(--faint);border-radius:8px;cursor:pointer;height:32px;font-size:15px;line-height:1}
+  .rm:hover{color:#ff9d9d;border-color:#5a3540}
+  .addbtn{margin-top:10px;width:100%;background:var(--panel-2);border:1px dashed var(--line);color:var(--muted);font-family:var(--mono);font-size:12px;letter-spacing:.05em;border-radius:9px;padding:9px;cursor:pointer}
+  .addbtn:hover{color:var(--ink);border-color:var(--t-masuda)}
+
+  .grow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .grow:last-of-type{border-bottom:0}
+  .grow .lab{font-size:13.5px} .grow .lab small{display:block;color:var(--faint);font-size:11px;font-family:var(--mono)}
+  .grow input{width:84px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);font-size:15px;text-align:right;border-radius:8px;padding:7px 9px}
+  .grow input:focus{outline:2px solid var(--t-masuda);outline-offset:1px;border-color:transparent}
+  details.cfg{margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
+  details.cfg summary{cursor:pointer;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 0;list-style:none}
+  details.cfg summary::-webkit-details-marker{display:none}
+  details.cfg summary::before{content:"\25B8  ";color:var(--faint)} details.cfg[open] summary::before{content:"\25BE  "}
+  .cfg .note{font-size:11.5px;color:var(--faint);font-family:var(--mono);margin:2px 0 8px;line-height:1.55}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:12px}
+  .legend span{display:flex;align-items:center;gap:5px}
+
+  .tooltip{background:linear-gradient(180deg,#1a1530,#15101f);border:2px solid var(--tooltip-edge);border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:inset 0 0 30px rgba(90,75,160,.18)}
+  .tooltip .ttl{font-family:var(--mono);font-size:13px;color:#cdbcff;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .tooltip .ttl .star{color:var(--star);text-shadow:0 0 10px rgba(243,227,74,.7)}
+  .hero{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:480px){.hero{grid-template-columns:1fr}}
+  .stat .k{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .stat .v{font-family:var(--mono);font-weight:700;font-size:clamp(26px,5vw,38px);line-height:1.05;color:var(--star);text-shadow:0 0 16px rgba(243,227,74,.35)}
+  .stat .v.cool{color:#aee0ff;text-shadow:0 0 16px rgba(58,155,224,.3)}
+  .yield{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .chip{flex:1 1 110px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .chip .k{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+  .chip .v{font-family:var(--mono);font-size:19px;font-weight:700;margin-top:2px}
+
+  .tiermix{display:flex;gap:8px;flex-wrap:wrap}
+  .tm{flex:1 1 130px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .tm .h{display:flex;align-items:center;gap:7px;font-size:12px;font-family:var(--mono)}
+  .tm .d{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);text-align:right;padding:0 0 9px;font-weight:700}
+  thead th:first-child{text-align:left}
+  tbody td{padding:9px 0;border-top:1px solid var(--line);text-align:right;font-family:var(--mono);vertical-align:middle}
+  tbody td:first-child{text-align:left;font-family:var(--ui)}
+  tbody tr.off{opacity:.4}
+  .share-cell{min-width:120px}
+  .bar{height:8px;border-radius:4px;background:var(--panel-2);overflow:hidden;margin-top:4px;display:flex}
+  .bar .fill{height:100%;display:flex;border-radius:4px;overflow:hidden}
+  .bar .fill span{display:block;height:100%}
+  .mixnote{font-size:10px;color:var(--faint);margin-top:2px}
+  tfoot td{padding:11px 0 0;border-top:2px solid var(--line);font-family:var(--mono);font-weight:700;text-align:right}
+  tfoot td:first-child{text-align:left;font-family:var(--ui);color:var(--muted);font-weight:600}
+
+  .miles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+  @media(max-width:480px){.miles{grid-template-columns:1fr}}
+  .mile{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .mile .p{font-family:var(--mono);font-size:11px;color:var(--muted)} .mile .t{font-family:var(--mono);font-size:20px;font-weight:700;margin-top:3px}
+  svg{width:100%;height:auto;display:block} .axis{stroke:var(--line)} .gridline{stroke:var(--line);stroke-dasharray:2 4;opacity:.6}
+  .axt{fill:var(--faint);font-family:var(--mono);font-size:10px} .curve{fill:none;stroke:var(--t-masuda);stroke-width:2.5} .curvefill{fill:url(#cg);opacity:.18}
+  .foot{color:var(--faint);font-size:12px;font-family:var(--mono);line-height:1.7;margin-top:22px;border-top:1px solid var(--line);padding-top:16px} .foot b{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><h1><span class="star">&#10022;</span> Shiny Pasture Calculator</h1></header>
+  <p class="sub">Cobbreeding &middot; per-species mixed-tier egg stream &amp; shiny odds</p>
+
+  <div class="grid">
+    <section class="card" aria-label="breeders">
+      <h2>Breeders</h2>
+      <div class="ehead">
+        <span>Species</span>
+        <span class="c"><span class="swatch" style="background:var(--t-masuda)"></span>Mas</span>
+        <span class="c"><span class="swatch" style="background:var(--t-cry1)"></span>+Cry</span>
+        <span class="c"><span class="swatch" style="background:var(--t-cry2)"></span>+2&times;</span>
+        <span></span>
+      </div>
+      <div class="rows" id="rows"></div>
+      <button class="addbtn" id="add">+ add species</button>
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--t-masuda)"></span>Masuda (diff-OT)</span>
+        <span><span class="swatch" style="background:var(--t-cry1)"></span>+1 shiny parent</span>
+        <span><span class="swatch" style="background:var(--t-cry2)"></span>both shiny</span>
+      </div>
+
+      <div class="grow" style="margin-top:12px">
+        <span class="lab">Eggs/min per pasture<small>~1 egg / 9 min &asymp; 0.11</small></span>
+        <input type="number" id="rate" min="0" step="0.01" value="0.11">
+      </div>
+      <details class="cfg">
+        <summary>Server config (multipliers)</summary>
+        <p class="note">Cobbreeding defaults. Edit when the server's <b>shinyMethod</b> is confirmed &mdash; the line Tinder never checked.</p>
+        <div class="grow"><span class="lab">Base shiny rate 1 in</span><input type="number" id="base" min="1" step="1" value="8192"></div>
+        <div class="grow"><span class="lab">Masuda &times;</span><input type="number" id="mMul" min="1" step="0.5" value="4"></div>
+        <div class="grow"><span class="lab">Crystal &times; / shiny parent</span><input type="number" id="cMul" min="1" step="0.5" value="4"></div>
+      </details>
+    </section>
+
+    <section style="display:grid;gap:18px">
+      <div class="tooltip">
+        <div class="ttl"><span class="star">&#10022;</span> Whole farm</div>
+        <div class="hero">
+          <div class="stat"><div class="k">Shiny eggs / hour</div><div class="v" id="shHr">&mdash;</div></div>
+          <div class="stat"><div class="k">Any shiny &mdash; mean wait</div><div class="v cool" id="eta">&mdash;</div></div>
+        </div>
+        <div class="yield">
+          <div class="chip"><div class="k">Total eggs/hr</div><div class="v" id="eggHr" style="color:#aee0ff">&mdash;</div></div>
+          <div class="chip"><div class="k">Shinies / 8h AFK</div><div class="v" id="y8" style="color:var(--star)">&mdash;</div></div>
+          <div class="chip"><div class="k">Shinies / 24h</div><div class="v" id="y24" style="color:var(--star)">&mdash;</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Per-species output <span id="totP" style="color:var(--muted)"></span></h2>
+        <table>
+          <thead><tr><th>Species</th><th>Past.</th><th class="share-cell">% of egg stream &middot; tier mix</th><th>Eff. odds</th><th>Shiny/hr</th><th>Wait for its shiny</th></tr></thead>
+          <tbody id="sbody"></tbody>
+          <tfoot><tr><td>Total</td><td id="fPas">0</td><td></td><td>&mdash;</td><td id="fSh">0</td><td id="fEta">&mdash;</td></tr></tfoot>
+        </table>
+      </div>
+
+      <div class="card"><h2>Tier mix (across all species)</h2><div class="tiermix" id="tiermix"></div></div>
+
+      <div class="card">
+        <h2>Chance of any shiny over time</h2>
+        <div class="miles">
+          <div class="mile"><div class="p">50% by</div><div class="t" id="t50">&mdash;</div></div>
+          <div class="mile"><div class="p">90% by</div><div class="t" id="t90">&mdash;</div></div>
+          <div class="mile"><div class="p">99% by</div><div class="t" id="t99">&mdash;</div></div>
+        </div>
+        <svg id="curve" viewBox="0 0 640 230" preserveAspectRatio="xMidYMid meet" role="img" aria-label="cumulative shiny probability"></svg>
+      </div>
+    </section>
+  </div>
+
+  <p class="foot">
+    <b>Mixed tiers:</b> a species can hold regular (Masuda) and shiny-parent (Crystal) pastures at once &mdash; its <b>Eff. odds</b> is the blended per-egg rate across that mix, and its bar shows the tier split inside the species' share.<br>
+    <b>Odds:</b> base &times; Masuda &times; Crystal<sup>(shiny parents)</sup>, multiplicative (defaults: Masuda 1/2048 &middot; +Crystal 1/512 &middot; +2 1/128). One shiny Eevee parent among regulars pulls that line's blended odds up sharply even at a single pasture. Waits use 1 &minus; e<sup>&minus;&lambda;t</sup>.
+  </p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const CSS=v=>getComputedStyle(document.body).getPropertyValue(v).trim();
+const TIERS=[
+  {key:"m", mult:(M,C)=>M,     color:'--t-masuda'},
+  {key:"c1",mult:(M,C)=>M*C,   color:'--t-cry1'},
+  {key:"c2",mult:(M,C)=>M*C*C, color:'--t-cry2'},
+];
+const fmtOdds=p=> p<=0?"—":p>=1?"100%":"1 in "+Math.round(1/p).toLocaleString();
+function fmtTime(hrs){
+  if(!isFinite(hrs)||hrs<=0) return "—";
+  let m=hrs*60;
+  if(m<1) return Math.round(m*60)+"s";
+  if(m<60) return Math.round(m)+"m";
+  if(hrs<24){const h=Math.floor(hrs),mm=Math.round((hrs-h)*60);return mm?h+"h "+mm+"m":h+"h";}
+  const d=Math.floor(hrs/24),h=Math.round(hrs%24);return h?d+"d "+h+"h":d+"d";
+}
+const DEFAULTS=[
+  ["Eevee",27,1,0],["Charmander",5,0,0],["Tepig",4,0,0],["Absol",2,1,0],
+  ["Ponyta",3,0,0],["Vulpix",3,0,0],["Litwick",2,0,0],["Scorbunny",2,0,0],
+  ["Ralts",2,0,0],["Magikarp",2,0,0],["Swablu",1,0,0],["Cyndaquil",1,0,0],
+  ["Minccino",0,1,0],["Duraludon",0,1,0],["Patrat",0,1,0],["Dreepy",1,0,0]
+];
+
+function addRow(sp="",m=0,c1=0,c2=0){
+  const d=document.createElement("div"); d.className="erow";
+  d.innerHTML=`<input class="r-sp" type="text" placeholder="species" value="${sp}">
+    <input class="r-m" type="number" min="0" step="1" value="${m}">
+    <input class="r-c1" type="number" min="0" step="1" value="${c1}">
+    <input class="r-c2" type="number" min="0" step="1" value="${c2}">
+    <button class="rm" title="remove">×</button>`;
+  d.querySelector(".rm").addEventListener("click",()=>{d.remove();compute();});
+  $("rows").appendChild(d);
+}
+function readRows(){
+  return [...$("rows").querySelectorAll(".erow")].map(r=>({
+    sp:r.querySelector(".r-sp").value.trim(),
+    counts:{m:+r.querySelector(".r-m").value||0, c1:+r.querySelector(".r-c1").value||0, c2:+r.querySelector(".r-c2").value||0}
+  }));
+}
+
+function compute(){
+  const base=Math.max(1,+$("base").value||8192);
+  const M=Math.max(1,+$("mMul").value||4), C=Math.max(1,+$("cMul").value||4);
+  const rate=Math.max(0,+$("rate").value||0), s=1/base;
+  const P={}; TIERS.forEach(t=>P[t.key]=Math.min(1,s*t.mult(M,C)));
+  const rows=readRows();
+
+  let totPas=0,totEgg=0,totSh=0; const tierAgg={m:0,c1:0,c2:0}, tierSh={m:0,c1:0,c2:0};
+  rows.forEach(r=>{
+    const n=r.counts.m+r.counts.c1+r.counts.c2;
+    r.n=n; r.eggHr=n*rate*60;
+    r.shHr=(r.counts.m*P.m + r.counts.c1*P.c1 + r.counts.c2*P.c2)*rate*60;
+    r.eff= r.eggHr>0? r.shHr/r.eggHr : 0;
+    totPas+=n; totEgg+=r.eggHr; totSh+=r.shHr;
+    ["m","c1","c2"].forEach(k=>{tierAgg[k]+=r.counts[k]; tierSh[k]+=r.counts[k]*P[k]*rate*60;});
+  });
+
+  const tb=$("sbody"); tb.innerHTML="";
+  rows.forEach(r=>{
+    const share= totPas>0? r.n/totPas:0;
+    const seg=["m","c1","c2"].map((k,i)=> r.counts[k]>0?`<span style="flex:${r.counts[k]};background:${CSS(TIERS[i].color)}"></span>`:"").join("");
+    const mix=["m","c1","c2"].map((k,i)=> r.counts[k]>0?`${r.counts[k]}${["M","C","2C"][i]}`:"").filter(Boolean).join(" + ");
+    const tr=document.createElement("tr"); if(r.n===0) tr.className="off";
+    tr.innerHTML=`<td>${r.sp||"<span style='color:var(--faint)'>unnamed</span>"}</td>
+      <td>${r.n}</td>
+      <td class="share-cell">${(share*100).toFixed(1)}%<div class="bar"><div class="fill" style="width:${(share*100).toFixed(1)}%">${seg}</div></div><div class="mixnote">${mix||"&mdash;"}</div></td>
+      <td>${fmtOdds(r.eff)}</td>
+      <td>${r.shHr>0?r.shHr.toFixed(3):"0"}</td>
+      <td>${r.shHr>0?fmtTime(1/r.shHr):"—"}</td>`;
+    tb.appendChild(tr);
+  });
+  $("fPas").textContent=totPas; $("fSh").textContent=totSh.toFixed(3);
+  $("fEta").textContent= totSh>0?fmtTime(1/totSh):"—";
+  $("totP").textContent= totPas?`${rows.filter(r=>r.n>0).length} species · ${totPas} pastures`:"";
+
+  const lambda=totSh;
+  $("shHr").textContent= lambda>0?lambda.toFixed(2):"0";
+  $("eggHr").textContent= Math.round(totEgg).toLocaleString();
+  $("eta").textContent= lambda>0?fmtTime(1/lambda):"—";
+  $("y8").textContent=(lambda*8).toFixed(1); $("y24").textContent=(lambda*24).toFixed(1);
+  const t=p=> lambda>0? -Math.log(1-p)/lambda:Infinity;
+  $("t50").textContent=fmtTime(t(.5)); $("t90").textContent=fmtTime(t(.9)); $("t99").textContent=fmtTime(t(.99));
+
+  const tm=$("tiermix"); tm.innerHTML="";
+  TIERS.forEach((t,i)=>{
+    if(tierAgg[t.key]===0) return;
+    const shareSh= totSh>0? tierSh[t.key]/totSh:0;
+    const label=["Masuda","Masuda + Crystal","Masuda + 2×Crystal"][i];
+    const el=document.createElement("div"); el.className="tm";
+    el.innerHTML=`<div class="h"><span class="swatch" style="background:${CSS(t.color)}"></span>${label}</div>
+      <div class="d">${tierAgg[t.key]} past. · ${fmtOdds(P[t.key])} · ${(shareSh*100).toFixed(0)}% of shinies</div>`;
+    tm.appendChild(el);
+  });
+  drawCurve(lambda,t(.99));
+}
+
+function drawCurve(lambda,tmax){
+  const svg=$("curve"),W=640,H=230,padL=44,padR=14,padT=14,padB=30;
+  const x0=padL,x1=W-padR,y0=H-padB,y1=padT;
+  const span=(isFinite(tmax)&&tmax>0)?tmax*1.02:1;
+  const X=t=>x0+(t/span)*(x1-x0), Y=p=>y0+p*(y1-y0);
+  let s=`<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a9be0"/><stop offset="1" stop-color="#3a9be0" stop-opacity="0"/></linearGradient></defs>`;
+  [0,.25,.5,.75,1].forEach(p=>{const y=Y(p);s+=`<line class="${p===0?'axis':'gridline'}" x1="${x0}" y1="${y}" x2="${x1}" y2="${y}"/><text class="axt" x="${x0-7}" y="${y+3}" text-anchor="end">${p*100}%</text>`;});
+  s+=`<line class="axis" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}"/>`;
+  if(lambda>0&&isFinite(span)){
+    for(let i=0;i<=4;i++){const tt=span*i/4;s+=`<text class="axt" x="${X(tt)}" y="${y0+16}" text-anchor="middle">${fmtTime(tt)}</text>`;}
+    let d="",fill=`M${X(0).toFixed(1)} ${Y(0).toFixed(1)} `;const N=80;
+    for(let i=0;i<=N;i++){const tt=span*i/N,p=1-Math.exp(-lambda*tt);const x=X(tt).toFixed(1),y=Y(p).toFixed(1);d+=(i?"L":"M")+x+" "+y+" ";fill+=`L${x} ${y} `;}
+    fill+=`L${X(span).toFixed(1)} ${Y(0).toFixed(1)} Z`;
+    s+=`<path class="curvefill" d="${fill}"/><path class="curve" d="${d}"/>`;
+    [[.5,'#e69f00'],[.9,'#f3e34a'],[.99,'#cc79a7']].forEach(([p,c])=>{const tt=-Math.log(1-p)/lambda,x=X(tt),y=Y(p);s+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y0}" stroke="${c}" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/><circle cx="${x}" cy="${y}" r="4" fill="${c}" stroke="#13151b" stroke-width="1.5"/>`;});
+  }else{s+=`<text class="axt" x="${(x0+x1)/2}" y="${(y0+y1)/2}" text-anchor="middle" style="font-size:13px">Add some breeders to see the curve</text>`;}
+  svg.innerHTML=s;
+}
+
+DEFAULTS.forEach(d=>addRow(...d));
+$("add").addEventListener("click",()=>{addRow();compute();});
+["rate","base","mMul","cMul"].forEach(id=>$(id).addEventListener("input",compute));
+$("rows").addEventListener("input",compute);
+compute();
+</script>
+</body>
+</html>

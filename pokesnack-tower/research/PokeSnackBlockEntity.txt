@@ -1,0 +1,1448 @@
+Compiled from "PokeSnackBlockEntity.java"
+public class com.cobblemon.mod.common.block.entity.PokeSnackBlockEntity extends com.cobblemon.mod.common.block.entity.TintBlockEntity implements com.cobblemon.mod.common.api.spawning.influence.SpawningInfluence {
+  public static final com.cobblemon.mod.common.block.entity.PokeSnackBlockEntity$Companion Companion;
+
+  private final kotlin.Lazy spawner$delegate;
+
+  private java.util.UUID placedBy;
+
+  private int amountSpawned;
+
+  private com.cobblemon.mod.common.item.components.FoodColourComponent foodColourComponent;
+
+  private com.cobblemon.mod.common.item.components.BaitEffectsComponent baitEffectsComponent;
+
+  private com.cobblemon.mod.common.item.components.IngredientComponent ingredientComponent;
+
+  private float randomTicksUntilNextSpawn;
+
+  public static final int SPAWNS_PER_BITE = 1;
+
+  public static final int RADIUS = 8;
+
+  public static final int RANDOM_TICKS_BETWEEN_SPAWNS = 2;
+
+  public static final java.lang.String POKE_SNACK_CRUMBED_ASPECT = "poke_snack_crumbed";
+
+  public com.cobblemon.mod.common.block.entity.PokeSnackBlockEntity(net.minecraft.class_2338, net.minecraft.class_2680);
+    Code:
+       0: aload_1
+       1: ldc           #159                // String pos
+       3: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       6: aload_2
+       7: ldc           #166                // String state
+       9: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+      12: aload_0
+      13: getstatic     #172                // Field com/cobblemon/mod/common/CobblemonBlockEntities.POKE_SNACK:Lnet/minecraft/class_2591;
+      16: aload_1
+      17: aload_2
+      18: invokespecial #175                // Method com/cobblemon/mod/common/block/entity/TintBlockEntity."<init>":(Lnet/minecraft/class_2591;Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;)V
+      21: aload_0
+      22: aload_0
+      23: invokedynamic #194,  0            // InvokeDynamic #0:invoke:(Lcom/cobblemon/mod/common/block/entity/PokeSnackBlockEntity;)Lkotlin/jvm/functions/Function0;
+      28: invokestatic  #200                // Method kotlin/LazyKt.lazy:(Lkotlin/jvm/functions/Function0;)Lkotlin/Lazy;
+      31: putfield      #202                // Field spawner$delegate:Lkotlin/Lazy;
+      34: aload_0
+      35: aload_0
+      36: invokevirtual #204                // Method getRandomTicksBetweenSpawns:()F
+      39: putfield      #206                // Field randomTicksUntilNextSpawn:F
+      42: return
+
+  public final com.cobblemon.mod.common.api.spawning.spawner.FixedAreaSpawner getSpawner();
+    Code:
+       0: aload_0
+       1: getfield      #202                // Field spawner$delegate:Lkotlin/Lazy;
+       4: astore_1
+       5: aload_1
+       6: invokeinterface #212,  1          // InterfaceMethod kotlin/Lazy.getValue:()Ljava/lang/Object;
+      11: checkcast     #214                // class com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner
+      14: areturn
+
+  public boolean affectSpawnable(com.cobblemon.mod.common.api.spawning.detail.SpawnDetail, com.cobblemon.mod.common.api.spawning.position.SpawnablePosition);
+    Code:
+       0: aload_1
+       1: ldc           #215                // String detail
+       3: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       6: aload_2
+       7: ldc           #216                // String spawnablePosition
+       9: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+      12: getstatic     #219                // Field com/cobblemon/mod/common/api/spawning/detail/SpawnDetail.Companion:Lcom/cobblemon/mod/common/api/spawning/detail/SpawnDetail$Companion;
+      15: invokevirtual #222                // Method com/cobblemon/mod/common/api/spawning/detail/SpawnDetail$Companion.getPokemonTypes:()Ljava/util/List;
+      18: aload_1
+      19: invokevirtual #226                // Method com/cobblemon/mod/common/api/spawning/detail/SpawnDetail.getType:()Ljava/lang/String;
+      22: invokeinterface #232,  2          // InterfaceMethod java/util/List.contains:(Ljava/lang/Object;)Z
+      27: ifeq          41
+      30: aload_1
+      31: instanceof    #234                // class com/cobblemon/mod/common/api/spawning/detail/PokemonHerdSpawnDetail
+      34: ifne          41
+      37: iconst_1
+      38: goto          42
+      41: iconst_0
+      42: ireturn
+
+  public void affectSpawn(com.cobblemon.mod.common.api.spawning.detail.SpawnAction<?>, net.minecraft.class_1297);
+    Code:
+       0: aload_1
+       1: ldc           #236                // String action
+       3: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       6: aload_2
+       7: ldc           #237                // String entity
+       9: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+      12: aload_2
+      13: instanceof    #239                // class com/cobblemon/mod/common/entity/pokemon/PokemonEntity
+      16: ifeq          189
+      19: aload_2
+      20: checkcast     #239                // class com/cobblemon/mod/common/entity/pokemon/PokemonEntity
+      23: invokevirtual #243                // Method com/cobblemon/mod/common/entity/pokemon/PokemonEntity.getPokemon:()Lcom/cobblemon/mod/common/pokemon/Pokemon;
+      26: astore_3
+      27: aload_3
+      28: aload_3
+      29: invokevirtual #249                // Method com/cobblemon/mod/common/pokemon/Pokemon.getForcedAspects:()Ljava/util/Set;
+      32: ldc           #158                // String poke_snack_crumbed
+      34: invokestatic  #255                // Method kotlin/collections/SetsKt.plus:(Ljava/util/Set;Ljava/lang/Object;)Ljava/util/Set;
+      37: invokevirtual #259                // Method com/cobblemon/mod/common/pokemon/Pokemon.setForcedAspects:(Ljava/util/Set;)V
+      40: aload_0
+      41: invokevirtual #263                // Method method_11010:()Lnet/minecraft/class_2680;
+      44: invokevirtual #269                // Method net/minecraft/class_2680.method_26204:()Lnet/minecraft/class_2248;
+      47: astore        5
+      49: aload         5
+      51: instanceof    #271                // class com/cobblemon/mod/common/block/PokeSnackBlock
+      54: ifeq          65
+      57: aload         5
+      59: checkcast     #271                // class com/cobblemon/mod/common/block/PokeSnackBlock
+      62: goto          66
+      65: aconst_null
+      66: dup
+      67: ifnonnull     72
+      70: pop
+      71: return
+      72: astore_3
+      73: aload_0
+      74: getfield      #277                // Field field_11863:Lnet/minecraft/class_1937;
+      77: dup
+      78: ifnonnull     83
+      81: pop
+      82: return
+      83: astore        4
+      85: aload_2
+      86: invokevirtual #287                // Method net/minecraft/class_1297.method_24515:()Lnet/minecraft/class_2338;
+      89: astore        5
+      91: new           #289                // class com/cobblemon/mod/common/net/messages/client/effect/PokeSnackBlockParticlesPacket
+      94: dup
+      95: aload_0
+      96: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+      99: dup
+     100: ldc_w         #294                // String getBlockPos(...)
+     103: invokestatic  #297                // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+     106: aload         5
+     108: invokespecial #300                // Method com/cobblemon/mod/common/net/messages/client/effect/PokeSnackBlockParticlesPacket."<init>":(Lnet/minecraft/class_2338;Lnet/minecraft/class_2338;)V
+     111: checkcast     #302                // class com/cobblemon/mod/common/api/net/NetworkPacket
+     114: aload_0
+     115: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+     118: invokevirtual #307                // Method net/minecraft/class_2338.method_10263:()I
+     121: i2d
+     122: aload_0
+     123: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+     126: invokevirtual #310                // Method net/minecraft/class_2338.method_10264:()I
+     129: i2d
+     130: aload_0
+     131: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+     134: invokevirtual #313                // Method net/minecraft/class_2338.method_10260:()I
+     137: i2d
+     138: ldc2_w        #314                // double 64.0d
+     141: aload         4
+     143: invokevirtual #319                // Method net/minecraft/class_1937.method_27983:()Lnet/minecraft/class_5321;
+     146: dup
+     147: ldc_w         #321                // String dimension(...)
+     150: invokestatic  #297                // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+     153: aconst_null
+     154: bipush        32
+     156: aconst_null
+     157: invokestatic  #325                // InterfaceMethod com/cobblemon/mod/common/api/net/NetworkPacket.sendToPlayersAround$default:(Lcom/cobblemon/mod/common/api/net/NetworkPacket;DDDDLnet/minecraft/class_5321;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+     160: aload_3
+     161: aload         4
+     163: aload_0
+     164: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+     167: dup
+     168: ldc_w         #294                // String getBlockPos(...)
+     171: invokestatic  #297                // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+     174: aload_0
+     175: invokevirtual #263                // Method method_11010:()Lnet/minecraft/class_2680;
+     178: dup
+     179: ldc_w         #327                // String getBlockState(...)
+     182: invokestatic  #297                // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+     185: aconst_null
+     186: invokevirtual #331                // Method com/cobblemon/mod/common/block/PokeSnackBlock.eat:(Lnet/minecraft/class_1937;Lnet/minecraft/class_2338;Lnet/minecraft/class_2680;Lnet/minecraft/class_1657;)V
+     189: return
+
+  public final java.util.UUID getPlacedBy();
+    Code:
+       0: aload_0
+       1: getfield      #337                // Field placedBy:Ljava/util/UUID;
+       4: areturn
+
+  public final void setPlacedBy(java.util.UUID);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: putfield      #337                // Field placedBy:Ljava/util/UUID;
+       5: return
+
+  public final int getAmountSpawned();
+    Code:
+       0: aload_0
+       1: getfield      #340                // Field amountSpawned:I
+       4: ireturn
+
+  public final void setAmountSpawned(int);
+    Code:
+       0: aload_0
+       1: iload_1
+       2: putfield      #340                // Field amountSpawned:I
+       5: return
+
+  public final com.cobblemon.mod.common.item.components.FoodColourComponent getFoodColourComponent();
+    Code:
+       0: aload_0
+       1: getfield      #342                // Field foodColourComponent:Lcom/cobblemon/mod/common/item/components/FoodColourComponent;
+       4: areturn
+
+  public final void setFoodColourComponent(com.cobblemon.mod.common.item.components.FoodColourComponent);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: putfield      #342                // Field foodColourComponent:Lcom/cobblemon/mod/common/item/components/FoodColourComponent;
+       5: return
+
+  public final com.cobblemon.mod.common.item.components.BaitEffectsComponent getBaitEffectsComponent();
+    Code:
+       0: aload_0
+       1: getfield      #344                // Field baitEffectsComponent:Lcom/cobblemon/mod/common/item/components/BaitEffectsComponent;
+       4: areturn
+
+  public final void setBaitEffectsComponent(com.cobblemon.mod.common.item.components.BaitEffectsComponent);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: putfield      #344                // Field baitEffectsComponent:Lcom/cobblemon/mod/common/item/components/BaitEffectsComponent;
+       5: return
+
+  public final com.cobblemon.mod.common.item.components.IngredientComponent getIngredientComponent();
+    Code:
+       0: aload_0
+       1: getfield      #346                // Field ingredientComponent:Lcom/cobblemon/mod/common/item/components/IngredientComponent;
+       4: areturn
+
+  public final void setIngredientComponent(com.cobblemon.mod.common.item.components.IngredientComponent);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: putfield      #346                // Field ingredientComponent:Lcom/cobblemon/mod/common/item/components/IngredientComponent;
+       5: return
+
+  public final float getRandomTicksUntilNextSpawn();
+    Code:
+       0: aload_0
+       1: getfield      #206                // Field randomTicksUntilNextSpawn:F
+       4: freturn
+
+  public final void setRandomTicksUntilNextSpawn(float);
+    Code:
+       0: aload_0
+       1: fload_1
+       2: putfield      #206                // Field randomTicksUntilNextSpawn:F
+       5: return
+
+  public final void initializeFromItemStack(net.minecraft.class_1799);
+    Code:
+       0: aload_1
+       1: ldc_w         #347                // String itemStack
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: getstatic     #353                // Field com/cobblemon/mod/common/CobblemonItemComponents.FOOD_COLOUR:Lnet/minecraft/class_9331;
+      12: invokevirtual #359                // Method net/minecraft/class_1799.method_57824:(Lnet/minecraft/class_9331;)Ljava/lang/Object;
+      15: checkcast     #361                // class com/cobblemon/mod/common/item/components/FoodColourComponent
+      18: putfield      #342                // Field foodColourComponent:Lcom/cobblemon/mod/common/item/components/FoodColourComponent;
+      21: aload_0
+      22: aload_1
+      23: getstatic     #364                // Field com/cobblemon/mod/common/CobblemonItemComponents.INGREDIENT:Lnet/minecraft/class_9331;
+      26: invokevirtual #359                // Method net/minecraft/class_1799.method_57824:(Lnet/minecraft/class_9331;)Ljava/lang/Object;
+      29: checkcast     #366                // class com/cobblemon/mod/common/item/components/IngredientComponent
+      32: putfield      #346                // Field ingredientComponent:Lcom/cobblemon/mod/common/item/components/IngredientComponent;
+      35: aload_0
+      36: invokevirtual #368                // Method isLure:()Z
+      39: ifeq          56
+      42: aload_0
+      43: aload_1
+      44: getstatic     #371                // Field com/cobblemon/mod/common/CobblemonItemComponents.BAIT_EFFECTS:Lnet/minecraft/class_9331;
+      47: invokevirtual #359                // Method net/minecraft/class_1799.method_57824:(Lnet/minecraft/class_9331;)Ljava/lang/Object;
+      50: checkcast     #373                // class com/cobblemon/mod/common/item/components/BaitEffectsComponent
+      53: putfield      #344                // Field baitEffectsComponent:Lcom/cobblemon/mod/common/item/components/BaitEffectsComponent;
+      56: aload_0
+      57: getfield      #342                // Field foodColourComponent:Lcom/cobblemon/mod/common/item/components/FoodColourComponent;
+      60: dup
+      61: ifnull        103
+      64: astore_2
+      65: iconst_0
+      66: istore_3
+      67: aload_2
+      68: invokevirtual #376                // Method com/cobblemon/mod/common/item/components/FoodColourComponent.getColoursAsARGB:()Ljava/util/List;
+      71: invokestatic  #382                // Method com/cobblemon/mod/common/api/cooking/FlavourColourHelperKt.getColourMixFromColors:(Ljava/util/List;)Ljava/lang/Integer;
+      74: dup
+      75: ifnull        98
+      78: checkcast     #384                // class java/lang/Number
+      81: invokevirtual #387                // Method java/lang/Number.intValue:()I
+      84: istore        4
+      86: iconst_0
+      87: istore        5
+      89: aload_0
+      90: iload         4
+      92: invokevirtual #390                // Method setTint:(I)V
+      95: goto          100
+      98: pop
+      99: nop
+     100: goto          105
+     103: pop
+     104: nop
+     105: return
+
+  public final boolean isLure();
+    Code:
+       0: aload_0
+       1: invokevirtual #263                // Method method_11010:()Lnet/minecraft/class_2680;
+       4: invokevirtual #269                // Method net/minecraft/class_2680.method_26204:()Lnet/minecraft/class_2248;
+       7: astore_1
+       8: aload_1
+       9: instanceof    #271                // class com/cobblemon/mod/common/block/PokeSnackBlock
+      12: ifeq          23
+      15: aload_1
+      16: checkcast     #271                // class com/cobblemon/mod/common/block/PokeSnackBlock
+      19: invokevirtual #397                // Method com/cobblemon/mod/common/block/PokeSnackBlock.isLure:()Z
+      22: ireturn
+      23: iconst_0
+      24: ireturn
+
+  public final void randomTick();
+    Code:
+       0: aload_0
+       1: getfield      #206                // Field randomTicksUntilNextSpawn:F
+       4: fstore_1
+       5: aload_0
+       6: fload_1
+       7: ldc_w         #399                // float -1.0f
+      10: fadd
+      11: putfield      #206                // Field randomTicksUntilNextSpawn:F
+      14: aload_0
+      15: getfield      #206                // Field randomTicksUntilNextSpawn:F
+      18: fconst_0
+      19: fcmpl
+      20: ifle          24
+      23: return
+      24: aload_0
+      25: getfield      #277                // Field field_11863:Lnet/minecraft/class_1937;
+      28: dup
+      29: ifnull        73
+      32: aload_0
+      33: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+      36: invokevirtual #307                // Method net/minecraft/class_2338.method_10263:()I
+      39: i2d
+      40: aload_0
+      41: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+      44: invokevirtual #310                // Method net/minecraft/class_2338.method_10264:()I
+      47: i2d
+      48: aload_0
+      49: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+      52: invokevirtual #313                // Method net/minecraft/class_2338.method_10260:()I
+      55: i2d
+      56: getstatic     #405                // Field com/cobblemon/mod/common/Cobblemon.INSTANCE:Lcom/cobblemon/mod/common/Cobblemon;
+      59: invokevirtual #409                // Method com/cobblemon/mod/common/Cobblemon.getConfig:()Lcom/cobblemon/mod/common/config/CobblemonConfig;
+      62: invokevirtual #414                // Method com/cobblemon/mod/common/config/CobblemonConfig.getMaximumSpawningZoneDistanceFromPlayer:()F
+      65: f2d
+      66: iconst_0
+      67: invokevirtual #418                // Method net/minecraft/class_1937.method_18459:(DDDDZ)Lnet/minecraft/class_1657;
+      70: goto          75
+      73: pop
+      74: aconst_null
+      75: astore_1
+      76: aload_1
+      77: ifnull        85
+      80: aload_0
+      81: aload_1
+      82: invokevirtual #422                // Method attemptSpawn:(Lnet/minecraft/class_1657;)V
+      85: aload_0
+      86: aload_0
+      87: invokevirtual #204                // Method getRandomTicksBetweenSpawns:()F
+      90: putfield      #206                // Field randomTicksUntilNextSpawn:F
+      93: return
+
+  public final void attemptSpawn(net.minecraft.class_1657);
+    Code:
+       0: aload_1
+       1: ldc_w         #424                // String player
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: new           #426                // class com/cobblemon/mod/common/api/spawning/SpawnCause
+      10: dup
+      11: aload_0
+      12: invokevirtual #428                // Method getSpawner:()Lcom/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner;
+      15: checkcast     #430                // class com/cobblemon/mod/common/api/spawning/spawner/Spawner
+      18: aload_1
+      19: checkcast     #281                // class net/minecraft/class_1297
+      22: invokespecial #433                // Method com/cobblemon/mod/common/api/spawning/SpawnCause."<init>":(Lcom/cobblemon/mod/common/api/spawning/spawner/Spawner;Lnet/minecraft/class_1297;)V
+      25: astore_2
+      26: aload_0
+      27: invokevirtual #428                // Method getSpawner:()Lcom/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner;
+      30: aload_2
+      31: invokevirtual #437                // Method com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner.getZoneInput:(Lcom/cobblemon/mod/common/api/spawning/SpawnCause;)Lcom/cobblemon/mod/common/api/spawning/spawner/SpawningZoneInput;
+      34: astore_3
+      35: aload_0
+      36: invokevirtual #428                // Method getSpawner:()Lcom/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner;
+      39: aload_3
+      40: iconst_1
+      41: invokestatic  #441                // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+      44: invokevirtual #445                // Method com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner.calculateSpawnActionsForArea:(Lcom/cobblemon/mod/common/api/spawning/spawner/SpawningZoneInput;Ljava/lang/Integer;)Ljava/util/List;
+      47: invokestatic  #451                // Method kotlin/collections/CollectionsKt.firstOrNull:(Ljava/util/List;)Ljava/lang/Object;
+      50: checkcast     #279                // class com/cobblemon/mod/common/api/spawning/detail/SpawnAction
+      53: astore        4
+      55: aload         4
+      57: ifnonnull     61
+      60: return
+      61: getstatic     #459                // Field com/cobblemon/mod/common/api/events/CobblemonEvents.POKE_SNACK_SPAWN_POKEMON_PRE:Lcom/cobblemon/mod/common/api/reactive/CancelableObservable;
+      64: astore        5
+      66: new           #127                // class com/cobblemon/mod/common/api/events/cooking/PokeSnackSpawnPokemonEvent$Pre
+      69: dup
+      70: aload_0
+      71: aload         4
+      73: invokespecial #462                // Method com/cobblemon/mod/common/api/events/cooking/PokeSnackSpawnPokemonEvent$Pre."<init>":(Lcom/cobblemon/mod/common/block/entity/PokeSnackBlockEntity;Lcom/cobblemon/mod/common/api/spawning/detail/SpawnAction;)V
+      76: checkcast     #464                // class com/cobblemon/mod/common/api/events/Cancelable
+      79: astore        6
+      81: nop
+      82: iconst_0
+      83: istore        7
+      85: aload         5
+      87: checkcast     #466                // class com/cobblemon/mod/common/api/reactive/EventObservable
+      90: astore        8
+      92: iconst_1
+      93: anewarray     #464                // class com/cobblemon/mod/common/api/events/Cancelable
+      96: astore        9
+      98: aload         9
+     100: iconst_0
+     101: aload         6
+     103: aastore
+     104: aload         9
+     106: astore        9
+     108: iconst_0
+     109: istore        10
+     111: aload         8
+     113: aload         9
+     115: aload         9
+     117: arraylength
+     118: invokestatic  #472                // Method java/util/Arrays.copyOf:([Ljava/lang/Object;I)[Ljava/lang/Object;
+     121: invokevirtual #476                // Method com/cobblemon/mod/common/api/reactive/EventObservable.emit:([Ljava/lang/Object;)V
+     124: aload         9
+     126: astore        11
+     128: iconst_0
+     129: istore        12
+     131: iconst_0
+     132: istore        13
+     134: aload         11
+     136: arraylength
+     137: istore        14
+     139: iload         13
+     141: iload         14
+     143: if_icmpge     351
+     146: aload         11
+     148: iload         13
+     150: aaload
+     151: astore        15
+     153: aload         15
+     155: astore        16
+     157: iconst_0
+     158: istore        17
+     160: aload         16
+     162: invokevirtual #483                // Method com/cobblemon/mod/common/api/events/Cancelable.isCanceled:()Z
+     165: ifeq          182
+     168: aload         16
+     170: checkcast     #127                // class com/cobblemon/mod/common/api/events/cooking/PokeSnackSpawnPokemonEvent$Pre
+     173: astore        18
+     175: iconst_0
+     176: istore        19
+     178: nop
+     179: goto          343
+     182: aload         16
+     184: checkcast     #127                // class com/cobblemon/mod/common/api/events/cooking/PokeSnackSpawnPokemonEvent$Pre
+     187: astore        18
+     189: iconst_0
+     190: istore        19
+     192: aload         4
+     194: invokevirtual #486                // Method com/cobblemon/mod/common/api/spawning/detail/SpawnAction.complete:()Ljava/lang/Object;
+     197: pop
+     198: aload         4
+     200: invokevirtual #490                // Method com/cobblemon/mod/common/api/spawning/detail/SpawnAction.getFuture:()Ljava/util/concurrent/CompletableFuture;
+     203: astore        20
+     205: aload         20
+     207: invokevirtual #495                // Method java/util/concurrent/CompletableFuture.get:()Ljava/lang/Object;
+     210: astore        21
+     212: aload         21
+     214: instanceof    #497                // class com/cobblemon/mod/common/api/spawning/detail/EntitySpawnResult
+     217: ifeq          341
+     220: aload         21
+     222: checkcast     #497                // class com/cobblemon/mod/common/api/spawning/detail/EntitySpawnResult
+     225: invokevirtual #500                // Method com/cobblemon/mod/common/api/spawning/detail/EntitySpawnResult.getEntities:()Ljava/util/List;
+     228: invokestatic  #451                // Method kotlin/collections/CollectionsKt.firstOrNull:(Ljava/util/List;)Ljava/lang/Object;
+     231: dup
+     232: ldc_w         #502                // String null cannot be cast to non-null type com.cobblemon.mod.common.entity.pokemon.PokemonEntity
+     235: invokestatic  #505                // Method kotlin/jvm/internal/Intrinsics.checkNotNull:(Ljava/lang/Object;Ljava/lang/String;)V
+     238: checkcast     #239                // class com/cobblemon/mod/common/entity/pokemon/PokemonEntity
+     241: astore        22
+     243: getstatic     #509                // Field com/cobblemon/mod/common/api/events/CobblemonEvents.POKE_SNACK_SPAWN_POKEMON_POST:Lcom/cobblemon/mod/common/api/reactive/EventObservable;
+     246: astore        23
+     248: iconst_1
+     249: anewarray     #122                // class com/cobblemon/mod/common/api/events/cooking/PokeSnackSpawnPokemonEvent$Post
+     252: astore        24
+     254: aload         24
+     256: iconst_0
+     257: new           #122                // class com/cobblemon/mod/common/api/events/cooking/PokeSnackSpawnPokemonEvent$Post
+     260: dup
+     261: aload_0
+     262: aload         4
+     264: aload         22
+     266: invokespecial #512                // Method com/cobblemon/mod/common/api/events/cooking/PokeSnackSpawnPokemonEvent$Post."<init>":(Lcom/cobblemon/mod/common/block/entity/PokeSnackBlockEntity;Lcom/cobblemon/mod/common/api/spawning/detail/SpawnAction;Lcom/cobblemon/mod/common/entity/pokemon/PokemonEntity;)V
+     269: aastore
+     270: aload         24
+     272: astore        24
+     274: nop
+     275: iconst_0
+     276: istore        25
+     278: aload         23
+     280: aload         24
+     282: aload         24
+     284: arraylength
+     285: invokestatic  #472                // Method java/util/Arrays.copyOf:([Ljava/lang/Object;I)[Ljava/lang/Object;
+     288: invokevirtual #476                // Method com/cobblemon/mod/common/api/reactive/EventObservable.emit:([Ljava/lang/Object;)V
+     291: aload         24
+     293: astore        26
+     295: iconst_0
+     296: istore        27
+     298: iconst_0
+     299: istore        28
+     301: aload         26
+     303: arraylength
+     304: istore        29
+     306: iload         28
+     308: iload         29
+     310: if_icmpge     339
+     313: aload         26
+     315: iload         28
+     317: aaload
+     318: astore        30
+     320: aload         30
+     322: astore        31
+     324: iconst_0
+     325: istore        32
+     327: aload         31
+     329: astore        31
+     331: nop
+     332: nop
+     333: iinc          28, 1
+     336: goto          306
+     339: nop
+     340: nop
+     341: nop
+     342: nop
+     343: nop
+     344: nop
+     345: iinc          13, 1
+     348: goto          139
+     351: nop
+     352: nop
+     353: nop
+     354: return
+
+  public final float getRandomTicksBetweenSpawns();
+    Code:
+       0: aload_0
+       1: invokevirtual #551                // Method getBiteTimeMultiplier:()F
+       4: fstore_1
+       5: iconst_2
+       6: i2f
+       7: fload_1
+       8: fmul
+       9: fconst_1
+      10: invokestatic  #557                // Method kotlin/ranges/RangesKt.coerceAtLeast:(FF)F
+      13: freturn
+
+  public final float getBiteTimeMultiplier();
+    Code:
+       0: aload_0
+       1: invokevirtual #560                // Method getBaitEffects:()Ljava/util/List;
+       4: astore_1
+       5: aload_1
+       6: checkcast     #562                // class java/lang/Iterable
+       9: astore_3
+      10: iconst_0
+      11: istore        4
+      13: aload_3
+      14: astore        5
+      16: new           #564                // class java/util/ArrayList
+      19: dup
+      20: invokespecial #566                // Method java/util/ArrayList."<init>":()V
+      23: checkcast     #568                // class java/util/Collection
+      26: astore        6
+      28: iconst_0
+      29: istore        7
+      31: aload         5
+      33: invokeinterface #572,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+      38: astore        8
+      40: aload         8
+      42: invokeinterface #577,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      47: ifeq          99
+      50: aload         8
+      52: invokeinterface #580,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      57: astore        9
+      59: aload         9
+      61: checkcast     #130                // class com/cobblemon/mod/common/api/fishing/SpawnBait$Effect
+      64: astore        10
+      66: iconst_0
+      67: istore        11
+      69: aload         10
+      71: invokevirtual #583                // Method com/cobblemon/mod/common/api/fishing/SpawnBait$Effect.getType:()Lnet/minecraft/class_2960;
+      74: getstatic     #586                // Field com/cobblemon/mod/common/api/fishing/SpawnBait$Effects.INSTANCE:Lcom/cobblemon/mod/common/api/fishing/SpawnBait$Effects;
+      77: invokevirtual #589                // Method com/cobblemon/mod/common/api/fishing/SpawnBait$Effects.getBITE_TIME:()Lnet/minecraft/class_2960;
+      80: invokestatic  #593                // Method kotlin/jvm/internal/Intrinsics.areEqual:(Ljava/lang/Object;Ljava/lang/Object;)Z
+      83: ifeq          40
+      86: aload         6
+      88: aload         9
+      90: invokeinterface #596,  2          // InterfaceMethod java/util/Collection.add:(Ljava/lang/Object;)Z
+      95: pop
+      96: goto          40
+      99: aload         6
+     101: checkcast     #228                // class java/util/List
+     104: nop
+     105: astore_2
+     106: aload_2
+     107: invokeinterface #599,  1          // InterfaceMethod java/util/List.isEmpty:()Z
+     112: ifeq          117
+     115: fconst_1
+     116: freturn
+     117: aload_2
+     118: checkcast     #568                // class java/util/Collection
+     121: getstatic     #605                // Field kotlin/random/Random.Default:Lkotlin/random/Random$Default;
+     124: checkcast     #601                // class kotlin/random/Random
+     127: invokestatic  #609                // Method kotlin/collections/CollectionsKt.random:(Ljava/util/Collection;Lkotlin/random/Random;)Ljava/lang/Object;
+     130: checkcast     #130                // class com/cobblemon/mod/common/api/fishing/SpawnBait$Effect
+     133: astore_3
+     134: invokestatic  #614                // Method java/lang/Math.random:()D
+     137: aload_3
+     138: invokevirtual #617                // Method com/cobblemon/mod/common/api/fishing/SpawnBait$Effect.getChance:()D
+     141: dcmpl
+     142: ifle          147
+     145: fconst_1
+     146: freturn
+     147: fconst_1
+     148: aload_3
+     149: invokevirtual #619                // Method com/cobblemon/mod/common/api/fishing/SpawnBait$Effect.getValue:()D
+     152: d2f
+     153: fsub
+     154: freturn
+
+  public final net.minecraft.class_1799 toItemStack();
+    Code:
+       0: new           #355                // class net/minecraft/class_1799
+       3: dup
+       4: aload_0
+       5: invokevirtual #263                // Method method_11010:()Lnet/minecraft/class_2680;
+       8: invokevirtual #269                // Method net/minecraft/class_2680.method_26204:()Lnet/minecraft/class_2248;
+      11: checkcast     #633                // class net/minecraft/class_1935
+      14: invokespecial #636                // Method net/minecraft/class_1799."<init>":(Lnet/minecraft/class_1935;)V
+      17: astore_1
+      18: aload_0
+      19: invokevirtual #368                // Method isLure:()Z
+      22: ifeq          44
+      25: aload_0
+      26: getfield      #344                // Field baitEffectsComponent:Lcom/cobblemon/mod/common/item/components/BaitEffectsComponent;
+      29: ifnull        44
+      32: aload_1
+      33: getstatic     #371                // Field com/cobblemon/mod/common/CobblemonItemComponents.BAIT_EFFECTS:Lnet/minecraft/class_9331;
+      36: aload_0
+      37: getfield      #344                // Field baitEffectsComponent:Lcom/cobblemon/mod/common/item/components/BaitEffectsComponent;
+      40: invokevirtual #640                // Method net/minecraft/class_1799.method_57379:(Lnet/minecraft/class_9331;Ljava/lang/Object;)Ljava/lang/Object;
+      43: pop
+      44: aload_0
+      45: getfield      #342                // Field foodColourComponent:Lcom/cobblemon/mod/common/item/components/FoodColourComponent;
+      48: ifnull        63
+      51: aload_1
+      52: getstatic     #353                // Field com/cobblemon/mod/common/CobblemonItemComponents.FOOD_COLOUR:Lnet/minecraft/class_9331;
+      55: aload_0
+      56: getfield      #342                // Field foodColourComponent:Lcom/cobblemon/mod/common/item/components/FoodColourComponent;
+      59: invokevirtual #640                // Method net/minecraft/class_1799.method_57379:(Lnet/minecraft/class_9331;Ljava/lang/Object;)Ljava/lang/Object;
+      62: pop
+      63: aload_0
+      64: getfield      #346                // Field ingredientComponent:Lcom/cobblemon/mod/common/item/components/IngredientComponent;
+      67: ifnull        82
+      70: aload_1
+      71: getstatic     #364                // Field com/cobblemon/mod/common/CobblemonItemComponents.INGREDIENT:Lnet/minecraft/class_9331;
+      74: aload_0
+      75: getfield      #346                // Field ingredientComponent:Lcom/cobblemon/mod/common/item/components/IngredientComponent;
+      78: invokevirtual #640                // Method net/minecraft/class_1799.method_57379:(Lnet/minecraft/class_9331;Ljava/lang/Object;)Ljava/lang/Object;
+      81: pop
+      82: aload_1
+      83: areturn
+
+  public final java.util.List<com.cobblemon.mod.common.api.fishing.SpawnBait$Effect> getBaitEffects();
+    Code:
+       0: aload_0
+       1: getfield      #344                // Field baitEffectsComponent:Lcom/cobblemon/mod/common/item/components/BaitEffectsComponent;
+       4: astore_1
+       5: aload_1
+       6: ifnull        230
+       9: aload_1
+      10: invokevirtual #645                // Method com/cobblemon/mod/common/item/components/BaitEffectsComponent.getEffects:()Ljava/util/List;
+      13: astore_2
+      14: aload_2
+      15: ifnull        230
+      18: aload_2
+      19: checkcast     #562                // class java/lang/Iterable
+      22: astore_3
+      23: nop
+      24: iconst_0
+      25: istore        4
+      27: aload_3
+      28: astore        5
+      30: new           #564                // class java/util/ArrayList
+      33: dup
+      34: invokespecial #566                // Method java/util/ArrayList."<init>":()V
+      37: checkcast     #568                // class java/util/Collection
+      40: astore        6
+      42: iconst_0
+      43: istore        7
+      45: aload         5
+      47: astore        8
+      49: iconst_0
+      50: istore        9
+      52: aload         8
+      54: invokeinterface #572,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+      59: astore        10
+      61: aload         10
+      63: invokeinterface #577,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+      68: ifeq          129
+      71: aload         10
+      73: invokeinterface #580,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+      78: astore        11
+      80: aload         11
+      82: astore        12
+      84: iconst_0
+      85: istore        13
+      87: aload         12
+      89: checkcast     #647                // class net/minecraft/class_2960
+      92: astore        14
+      94: iconst_0
+      95: istore        15
+      97: aload         14
+      99: invokestatic  #653                // Method com/cobblemon/mod/common/api/fishing/SpawnBaitEffects.getFromIdentifier:(Lnet/minecraft/class_2960;)Lcom/cobblemon/mod/common/api/fishing/SpawnBait;
+     102: dup
+     103: ifnull        124
+     106: astore        16
+     108: iconst_0
+     109: istore        17
+     111: aload         6
+     113: aload         16
+     115: invokeinterface #596,  2          // InterfaceMethod java/util/Collection.add:(Ljava/lang/Object;)Z
+     120: pop
+     121: goto          125
+     124: pop
+     125: nop
+     126: goto          61
+     129: nop
+     130: aload         6
+     132: checkcast     #228                // class java/util/List
+     135: nop
+     136: checkcast     #562                // class java/lang/Iterable
+     139: astore_3
+     140: nop
+     141: iconst_0
+     142: istore        4
+     144: aload_3
+     145: astore        5
+     147: new           #564                // class java/util/ArrayList
+     150: dup
+     151: invokespecial #566                // Method java/util/ArrayList."<init>":()V
+     154: checkcast     #568                // class java/util/Collection
+     157: astore        6
+     159: iconst_0
+     160: istore        7
+     162: aload         5
+     164: invokeinterface #572,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+     169: astore        8
+     171: aload         8
+     173: invokeinterface #577,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     178: ifeq          221
+     181: aload         8
+     183: invokeinterface #580,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     188: astore        9
+     190: aload         9
+     192: checkcast     #132                // class com/cobblemon/mod/common/api/fishing/SpawnBait
+     195: astore        10
+     197: iconst_0
+     198: istore        11
+     200: aload         10
+     202: invokevirtual #654                // Method com/cobblemon/mod/common/api/fishing/SpawnBait.getEffects:()Ljava/util/List;
+     205: checkcast     #562                // class java/lang/Iterable
+     208: astore        10
+     210: aload         6
+     212: aload         10
+     214: invokestatic  #658                // Method kotlin/collections/CollectionsKt.addAll:(Ljava/util/Collection;Ljava/lang/Iterable;)Z
+     217: pop
+     218: goto          171
+     221: aload         6
+     223: checkcast     #228                // class java/util/List
+     226: nop
+     227: goto          231
+     230: aconst_null
+     231: dup
+     232: ifnonnull     239
+     235: pop
+     236: invokestatic  #661                // Method kotlin/collections/CollectionsKt.emptyList:()Ljava/util/List;
+     239: areturn
+
+  protected void method_11007(net.minecraft.class_2487, net.minecraft.class_7225$class_7874);
+    Code:
+       0: aload_1
+       1: ldc_w         #679                // String tag
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_2
+       8: ldc_w         #680                // String registries
+      11: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+      14: aload_0
+      15: aload_1
+      16: aload_2
+      17: invokespecial #682                // Method com/cobblemon/mod/common/block/entity/TintBlockEntity.method_11007:(Lnet/minecraft/class_2487;Lnet/minecraft/class_7225$class_7874;)V
+      20: aload_1
+      21: ldc_w         #684                // String AmountSpawned
+      24: aload_0
+      25: getfield      #340                // Field amountSpawned:I
+      28: invokevirtual #690                // Method net/minecraft/class_2487.method_10569:(Ljava/lang/String;I)V
+      31: aload_0
+      32: getfield      #342                // Field foodColourComponent:Lcom/cobblemon/mod/common/item/components/FoodColourComponent;
+      35: dup
+      36: ifnull        90
+      39: astore_3
+      40: iconst_0
+      41: istore        4
+      43: getstatic     #353                // Field com/cobblemon/mod/common/CobblemonItemComponents.FOOD_COLOUR:Lnet/minecraft/class_9331;
+      46: invokeinterface #696,  1          // InterfaceMethod net/minecraft/class_9331.method_57875:()Lcom/mojang/serialization/Codec;
+      51: dup
+      52: invokestatic  #699                // Method kotlin/jvm/internal/Intrinsics.checkNotNull:(Ljava/lang/Object;)V
+      55: getstatic     #705                // Field net/minecraft/class_2509.field_11560:Lnet/minecraft/class_2509;
+      58: checkcast     #707                // class com/mojang/serialization/DynamicOps
+      61: aload_3
+      62: invokeinterface #713,  3          // InterfaceMethod com/mojang/serialization/Codec.encodeStart:(Lcom/mojang/serialization/DynamicOps;Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;
+      67: invokeinterface #718,  1          // InterfaceMethod com/mojang/serialization/DataResult.result:()Ljava/util/Optional;
+      72: aload_1
+      73: invokedynamic #730,  0            // InvokeDynamic #1:invoke:(Lnet/minecraft/class_2487;)Lkotlin/jvm/functions/Function1;
+      78: invokedynamic #740,  0            // InvokeDynamic #2:accept:(Lkotlin/jvm/functions/Function1;)Ljava/util/function/Consumer;
+      83: invokevirtual #746                // Method java/util/Optional.ifPresent:(Ljava/util/function/Consumer;)V
+      86: nop
+      87: goto          92
+      90: pop
+      91: nop
+      92: aload_0
+      93: getfield      #344                // Field baitEffectsComponent:Lcom/cobblemon/mod/common/item/components/BaitEffectsComponent;
+      96: dup
+      97: ifnull        151
+     100: astore_3
+     101: iconst_0
+     102: istore        4
+     104: getstatic     #371                // Field com/cobblemon/mod/common/CobblemonItemComponents.BAIT_EFFECTS:Lnet/minecraft/class_9331;
+     107: invokeinterface #696,  1          // InterfaceMethod net/minecraft/class_9331.method_57875:()Lcom/mojang/serialization/Codec;
+     112: dup
+     113: invokestatic  #699                // Method kotlin/jvm/internal/Intrinsics.checkNotNull:(Ljava/lang/Object;)V
+     116: getstatic     #705                // Field net/minecraft/class_2509.field_11560:Lnet/minecraft/class_2509;
+     119: checkcast     #707                // class com/mojang/serialization/DynamicOps
+     122: aload_3
+     123: invokeinterface #713,  3          // InterfaceMethod com/mojang/serialization/Codec.encodeStart:(Lcom/mojang/serialization/DynamicOps;Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;
+     128: invokeinterface #718,  1          // InterfaceMethod com/mojang/serialization/DataResult.result:()Ljava/util/Optional;
+     133: aload_1
+     134: invokedynamic #751,  0            // InvokeDynamic #3:invoke:(Lnet/minecraft/class_2487;)Lkotlin/jvm/functions/Function1;
+     139: invokedynamic #756,  0            // InvokeDynamic #4:accept:(Lkotlin/jvm/functions/Function1;)Ljava/util/function/Consumer;
+     144: invokevirtual #746                // Method java/util/Optional.ifPresent:(Ljava/util/function/Consumer;)V
+     147: nop
+     148: goto          153
+     151: pop
+     152: nop
+     153: aload_0
+     154: getfield      #346                // Field ingredientComponent:Lcom/cobblemon/mod/common/item/components/IngredientComponent;
+     157: dup
+     158: ifnull        212
+     161: astore_3
+     162: iconst_0
+     163: istore        4
+     165: getstatic     #364                // Field com/cobblemon/mod/common/CobblemonItemComponents.INGREDIENT:Lnet/minecraft/class_9331;
+     168: invokeinterface #696,  1          // InterfaceMethod net/minecraft/class_9331.method_57875:()Lcom/mojang/serialization/Codec;
+     173: dup
+     174: invokestatic  #699                // Method kotlin/jvm/internal/Intrinsics.checkNotNull:(Ljava/lang/Object;)V
+     177: getstatic     #705                // Field net/minecraft/class_2509.field_11560:Lnet/minecraft/class_2509;
+     180: checkcast     #707                // class com/mojang/serialization/DynamicOps
+     183: aload_3
+     184: invokeinterface #713,  3          // InterfaceMethod com/mojang/serialization/Codec.encodeStart:(Lcom/mojang/serialization/DynamicOps;Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;
+     189: invokeinterface #718,  1          // InterfaceMethod com/mojang/serialization/DataResult.result:()Ljava/util/Optional;
+     194: aload_1
+     195: invokedynamic #761,  0            // InvokeDynamic #5:invoke:(Lnet/minecraft/class_2487;)Lkotlin/jvm/functions/Function1;
+     200: invokedynamic #766,  0            // InvokeDynamic #6:accept:(Lkotlin/jvm/functions/Function1;)Ljava/util/function/Consumer;
+     205: invokevirtual #746                // Method java/util/Optional.ifPresent:(Ljava/util/function/Consumer;)V
+     208: nop
+     209: goto          214
+     212: pop
+     213: nop
+     214: aload_1
+     215: ldc_w         #768                // String TicksUntilNextSpawn
+     218: aload_0
+     219: getfield      #206                // Field randomTicksUntilNextSpawn:F
+     222: invokevirtual #772                // Method net/minecraft/class_2487.method_10548:(Ljava/lang/String;F)V
+     225: aload_0
+     226: getfield      #337                // Field placedBy:Ljava/util/UUID;
+     229: dup
+     230: ifnull        249
+     233: astore_3
+     234: iconst_0
+     235: istore        4
+     237: aload_1
+     238: ldc_w         #774                // String PlacedBy
+     241: aload_3
+     242: invokevirtual #778                // Method net/minecraft/class_2487.method_25927:(Ljava/lang/String;Ljava/util/UUID;)V
+     245: nop
+     246: goto          251
+     249: pop
+     250: nop
+     251: return
+
+  protected void method_11014(net.minecraft.class_2487, net.minecraft.class_7225$class_7874);
+    Code:
+       0: aload_1
+       1: ldc_w         #679                // String tag
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_2
+       8: ldc_w         #680                // String registries
+      11: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+      14: aload_0
+      15: aload_1
+      16: aload_2
+      17: invokespecial #788                // Method com/cobblemon/mod/common/block/entity/TintBlockEntity.method_11014:(Lnet/minecraft/class_2487;Lnet/minecraft/class_7225$class_7874;)V
+      20: aload_0
+      21: aload_1
+      22: ldc_w         #684                // String AmountSpawned
+      25: invokevirtual #792                // Method net/minecraft/class_2487.method_10550:(Ljava/lang/String;)I
+      28: putfield      #340                // Field amountSpawned:I
+      31: aload_1
+      32: ldc_w         #794                // String FoodColour
+      35: invokevirtual #798                // Method net/minecraft/class_2487.method_10545:(Ljava/lang/String;)Z
+      38: ifeq          114
+      41: getstatic     #353                // Field com/cobblemon/mod/common/CobblemonItemComponents.FOOD_COLOUR:Lnet/minecraft/class_9331;
+      44: invokeinterface #696,  1          // InterfaceMethod net/minecraft/class_9331.method_57875:()Lcom/mojang/serialization/Codec;
+      49: astore_3
+      50: aload_3
+      51: ifnull        113
+      54: aload_3
+      55: getstatic     #705                // Field net/minecraft/class_2509.field_11560:Lnet/minecraft/class_2509;
+      58: checkcast     #707                // class com/mojang/serialization/DynamicOps
+      61: aload_1
+      62: ldc_w         #794                // String FoodColour
+      65: invokevirtual #802                // Method net/minecraft/class_2487.method_10580:(Ljava/lang/String;)Lnet/minecraft/class_2520;
+      68: invokeinterface #805,  3          // InterfaceMethod com/mojang/serialization/Codec.parse:(Lcom/mojang/serialization/DynamicOps;Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;
+      73: astore        4
+      75: aload         4
+      77: ifnull        113
+      80: aload         4
+      82: invokeinterface #718,  1          // InterfaceMethod com/mojang/serialization/DataResult.result:()Ljava/util/Optional;
+      87: astore        5
+      89: aload         5
+      91: ifnull        113
+      94: aload         5
+      96: aload_0
+      97: invokedynamic #815,  0            // InvokeDynamic #7:invoke:(Lcom/cobblemon/mod/common/block/entity/PokeSnackBlockEntity;)Lkotlin/jvm/functions/Function1;
+     102: invokedynamic #820,  0            // InvokeDynamic #8:accept:(Lkotlin/jvm/functions/Function1;)Ljava/util/function/Consumer;
+     107: invokevirtual #746                // Method java/util/Optional.ifPresent:(Ljava/util/function/Consumer;)V
+     110: goto          114
+     113: nop
+     114: aload_1
+     115: ldc_w         #822                // String BaitEffects
+     118: invokevirtual #798                // Method net/minecraft/class_2487.method_10545:(Ljava/lang/String;)Z
+     121: ifeq          197
+     124: getstatic     #371                // Field com/cobblemon/mod/common/CobblemonItemComponents.BAIT_EFFECTS:Lnet/minecraft/class_9331;
+     127: invokeinterface #696,  1          // InterfaceMethod net/minecraft/class_9331.method_57875:()Lcom/mojang/serialization/Codec;
+     132: astore_3
+     133: aload_3
+     134: ifnull        196
+     137: aload_3
+     138: getstatic     #705                // Field net/minecraft/class_2509.field_11560:Lnet/minecraft/class_2509;
+     141: checkcast     #707                // class com/mojang/serialization/DynamicOps
+     144: aload_1
+     145: ldc_w         #822                // String BaitEffects
+     148: invokevirtual #802                // Method net/minecraft/class_2487.method_10580:(Ljava/lang/String;)Lnet/minecraft/class_2520;
+     151: invokeinterface #805,  3          // InterfaceMethod com/mojang/serialization/Codec.parse:(Lcom/mojang/serialization/DynamicOps;Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;
+     156: astore        4
+     158: aload         4
+     160: ifnull        196
+     163: aload         4
+     165: invokeinterface #718,  1          // InterfaceMethod com/mojang/serialization/DataResult.result:()Ljava/util/Optional;
+     170: astore        5
+     172: aload         5
+     174: ifnull        196
+     177: aload         5
+     179: aload_0
+     180: invokedynamic #830,  0            // InvokeDynamic #9:invoke:(Lcom/cobblemon/mod/common/block/entity/PokeSnackBlockEntity;)Lkotlin/jvm/functions/Function1;
+     185: invokedynamic #835,  0            // InvokeDynamic #10:accept:(Lkotlin/jvm/functions/Function1;)Ljava/util/function/Consumer;
+     190: invokevirtual #746                // Method java/util/Optional.ifPresent:(Ljava/util/function/Consumer;)V
+     193: goto          197
+     196: nop
+     197: aload_1
+     198: ldc_w         #837                // String Ingredients
+     201: invokevirtual #798                // Method net/minecraft/class_2487.method_10545:(Ljava/lang/String;)Z
+     204: ifeq          280
+     207: getstatic     #364                // Field com/cobblemon/mod/common/CobblemonItemComponents.INGREDIENT:Lnet/minecraft/class_9331;
+     210: invokeinterface #696,  1          // InterfaceMethod net/minecraft/class_9331.method_57875:()Lcom/mojang/serialization/Codec;
+     215: astore_3
+     216: aload_3
+     217: ifnull        279
+     220: aload_3
+     221: getstatic     #705                // Field net/minecraft/class_2509.field_11560:Lnet/minecraft/class_2509;
+     224: checkcast     #707                // class com/mojang/serialization/DynamicOps
+     227: aload_1
+     228: ldc_w         #837                // String Ingredients
+     231: invokevirtual #802                // Method net/minecraft/class_2487.method_10580:(Ljava/lang/String;)Lnet/minecraft/class_2520;
+     234: invokeinterface #805,  3          // InterfaceMethod com/mojang/serialization/Codec.parse:(Lcom/mojang/serialization/DynamicOps;Ljava/lang/Object;)Lcom/mojang/serialization/DataResult;
+     239: astore        4
+     241: aload         4
+     243: ifnull        279
+     246: aload         4
+     248: invokeinterface #718,  1          // InterfaceMethod com/mojang/serialization/DataResult.result:()Ljava/util/Optional;
+     253: astore        5
+     255: aload         5
+     257: ifnull        279
+     260: aload         5
+     262: aload_0
+     263: invokedynamic #845,  0            // InvokeDynamic #11:invoke:(Lcom/cobblemon/mod/common/block/entity/PokeSnackBlockEntity;)Lkotlin/jvm/functions/Function1;
+     268: invokedynamic #850,  0            // InvokeDynamic #12:accept:(Lkotlin/jvm/functions/Function1;)Ljava/util/function/Consumer;
+     273: invokevirtual #746                // Method java/util/Optional.ifPresent:(Ljava/util/function/Consumer;)V
+     276: goto          280
+     279: nop
+     280: aload_1
+     281: ldc_w         #768                // String TicksUntilNextSpawn
+     284: invokevirtual #798                // Method net/minecraft/class_2487.method_10545:(Ljava/lang/String;)Z
+     287: ifeq          301
+     290: aload_0
+     291: aload_1
+     292: ldc_w         #768                // String TicksUntilNextSpawn
+     295: invokevirtual #854                // Method net/minecraft/class_2487.method_10583:(Ljava/lang/String;)F
+     298: putfield      #206                // Field randomTicksUntilNextSpawn:F
+     301: aload_1
+     302: ldc_w         #774                // String PlacedBy
+     305: invokevirtual #798                // Method net/minecraft/class_2487.method_10545:(Ljava/lang/String;)Z
+     308: ifeq          322
+     311: aload_0
+     312: aload_1
+     313: ldc_w         #774                // String PlacedBy
+     316: invokevirtual #858                // Method net/minecraft/class_2487.method_25926:(Ljava/lang/String;)Ljava/util/UUID;
+     319: putfield      #337                // Field placedBy:Ljava/util/UUID;
+     322: return
+
+  public net.minecraft.class_2487 method_16887(net.minecraft.class_7225$class_7874);
+    Code:
+       0: aload_1
+       1: ldc_w         #860                // String registryLookup
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: invokevirtual #863                // Method method_38244:(Lnet/minecraft/class_7225$class_7874;)Lnet/minecraft/class_2487;
+      12: dup
+      13: ldc_w         #865                // String saveWithoutMetadata(...)
+      16: invokestatic  #297                // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+      19: areturn
+
+  public net.minecraft.class_2596<net.minecraft.class_2602> method_38235();
+    Code:
+       0: aload_0
+       1: checkcast     #869                // class net/minecraft/class_2586
+       4: invokestatic  #875                // Method net/minecraft/class_2622.method_38585:(Lnet/minecraft/class_2586;)Lnet/minecraft/class_2622;
+       7: checkcast     #877                // class net/minecraft/class_2596
+      10: areturn
+
+  public boolean isExpired();
+    Code:
+       0: aload_0
+       1: invokespecial #880                // InterfaceMethod com/cobblemon/mod/common/api/spawning/influence/SpawningInfluence.isExpired:()Z
+       4: ireturn
+
+  public void affectSpawnablePosition(com.cobblemon.mod.common.api.spawning.position.SpawnablePosition);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokespecial #884                // InterfaceMethod com/cobblemon/mod/common/api/spawning/influence/SpawningInfluence.affectSpawnablePosition:(Lcom/cobblemon/mod/common/api/spawning/position/SpawnablePosition;)V
+       5: return
+
+  public float affectWeight(com.cobblemon.mod.common.api.spawning.detail.SpawnDetail, com.cobblemon.mod.common.api.spawning.position.SpawnablePosition, float);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: fload_3
+       4: invokespecial #889                // InterfaceMethod com/cobblemon/mod/common/api/spawning/influence/SpawningInfluence.affectWeight:(Lcom/cobblemon/mod/common/api/spawning/detail/SpawnDetail;Lcom/cobblemon/mod/common/api/spawning/position/SpawnablePosition;F)F
+       7: freturn
+
+  public void affectAction(com.cobblemon.mod.common.api.spawning.detail.SpawnAction<?>);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokespecial #894                // InterfaceMethod com/cobblemon/mod/common/api/spawning/influence/SpawningInfluence.affectAction:(Lcom/cobblemon/mod/common/api/spawning/detail/SpawnAction;)V
+       5: return
+
+  public void affectBucketWeights(java.util.Map<com.cobblemon.mod.common.api.spawning.SpawnBucket, java.lang.Float>);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokespecial #900                // InterfaceMethod com/cobblemon/mod/common/api/spawning/influence/SpawningInfluence.affectBucketWeights:(Ljava/util/Map;)V
+       5: return
+
+  public void normalizeBucketWeights(java.util.Map<com.cobblemon.mod.common.api.spawning.SpawnBucket, java.lang.Float>);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokespecial #904                // InterfaceMethod com/cobblemon/mod/common/api/spawning/influence/SpawningInfluence.normalizeBucketWeights:(Ljava/util/Map;)V
+       5: return
+
+  public boolean isAllowedPosition(net.minecraft.class_3218, net.minecraft.class_2338, com.cobblemon.mod.common.api.spawning.position.calculators.SpawnablePositionCalculator<?, ?>);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: aload_3
+       4: invokespecial #911                // InterfaceMethod com/cobblemon/mod/common/api/spawning/influence/SpawningInfluence.isAllowedPosition:(Lnet/minecraft/class_3218;Lnet/minecraft/class_2338;Lcom/cobblemon/mod/common/api/spawning/position/calculators/SpawnablePositionCalculator;)Z
+       7: ireturn
+
+  public java.util.List<com.cobblemon.mod.common.api.spawning.detail.SpawnDetail> injectSpawns(com.cobblemon.mod.common.api.spawning.SpawnBucket, com.cobblemon.mod.common.api.spawning.position.SpawnablePosition);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: invokespecial #919                // InterfaceMethod com/cobblemon/mod/common/api/spawning/influence/SpawningInfluence.injectSpawns:(Lcom/cobblemon/mod/common/api/spawning/SpawnBucket;Lcom/cobblemon/mod/common/api/spawning/position/SpawnablePosition;)Ljava/util/List;
+       6: areturn
+
+  private static final com.cobblemon.mod.common.api.spawning.spawner.FixedAreaSpawner spawner_delegate$lambda$0(com.cobblemon.mod.common.block.entity.PokeSnackBlockEntity);
+    Code:
+       0: new           #214                // class com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner
+       3: dup
+       4: aload_0
+       5: getfield      #277                // Field field_11863:Lnet/minecraft/class_1937;
+       8: dup
+       9: ifnull        25
+      12: invokevirtual #319                // Method net/minecraft/class_1937.method_27983:()Lnet/minecraft/class_5321;
+      15: dup
+      16: ifnull        25
+      19: invokevirtual #926                // Method net/minecraft/class_5321.method_29177:()Lnet/minecraft/class_2960;
+      22: goto          27
+      25: pop
+      26: aconst_null
+      27: aload_0
+      28: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+      31: invokedynamic #938,  0            // InvokeDynamic #13:makeConcatWithConstants:(Lnet/minecraft/class_2960;Lnet/minecraft/class_2338;)Ljava/lang/String;
+      36: getstatic     #943                // Field com/cobblemon/mod/common/api/spawning/CobblemonSpawnPools.INSTANCE:Lcom/cobblemon/mod/common/api/spawning/CobblemonSpawnPools;
+      39: invokevirtual #947                // Method com/cobblemon/mod/common/api/spawning/CobblemonSpawnPools.getWORLD_SPAWN_POOL:()Lcom/cobblemon/mod/common/api/spawning/detail/SpawnPool;
+      42: aload_0
+      43: getfield      #277                // Field field_11863:Lnet/minecraft/class_1937;
+      46: dup
+      47: ldc_w         #949                // String null cannot be cast to non-null type net.minecraft.server.level.ServerLevel
+      50: invokestatic  #505                // Method kotlin/jvm/internal/Intrinsics.checkNotNull:(Ljava/lang/Object;Ljava/lang/String;)V
+      53: checkcast     #951                // class net/minecraft/class_3218
+      56: aload_0
+      57: invokevirtual #292                // Method method_11016:()Lnet/minecraft/class_2338;
+      60: dup
+      61: ldc_w         #294                // String getBlockPos(...)
+      64: invokestatic  #297                // Method kotlin/jvm/internal/Intrinsics.checkNotNullExpressionValue:(Ljava/lang/Object;Ljava/lang/String;)V
+      67: bipush        8
+      69: bipush        8
+      71: getstatic     #405                // Field com/cobblemon/mod/common/Cobblemon.INSTANCE:Lcom/cobblemon/mod/common/Cobblemon;
+      74: invokevirtual #409                // Method com/cobblemon/mod/common/Cobblemon.getConfig:()Lcom/cobblemon/mod/common/config/CobblemonConfig;
+      77: invokevirtual #954                // Method com/cobblemon/mod/common/config/CobblemonConfig.getPokeSnackPokemonPerChunk:()F
+      80: invokespecial #957                // Method com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner."<init>":(Ljava/lang/String;Lcom/cobblemon/mod/common/api/spawning/detail/SpawnPool;Lnet/minecraft/class_3218;Lnet/minecraft/class_2338;IIF)V
+      83: astore_1
+      84: aload_1
+      85: astore_2
+      86: iconst_0
+      87: istore_3
+      88: aload_2
+      89: invokevirtual #960                // Method com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner.getInfluences:()Ljava/util/List;
+      92: aload_0
+      93: invokeinterface #961,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+      98: pop
+      99: aload_0
+     100: invokevirtual #560                // Method getBaitEffects:()Ljava/util/List;
+     103: astore        4
+     105: aload         4
+     107: checkcast     #562                // class java/lang/Iterable
+     110: astore        5
+     112: nop
+     113: iconst_0
+     114: istore        6
+     116: aload         5
+     118: astore        7
+     120: new           #564                // class java/util/ArrayList
+     123: dup
+     124: invokespecial #566                // Method java/util/ArrayList."<init>":()V
+     127: checkcast     #568                // class java/util/Collection
+     130: astore        8
+     132: iconst_0
+     133: istore        9
+     135: aload         7
+     137: invokeinterface #572,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+     142: astore        10
+     144: aload         10
+     146: invokeinterface #577,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     151: ifeq          203
+     154: aload         10
+     156: invokeinterface #580,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     161: astore        11
+     163: aload         11
+     165: checkcast     #130                // class com/cobblemon/mod/common/api/fishing/SpawnBait$Effect
+     168: astore        12
+     170: iconst_0
+     171: istore        13
+     173: aload         12
+     175: invokevirtual #583                // Method com/cobblemon/mod/common/api/fishing/SpawnBait$Effect.getType:()Lnet/minecraft/class_2960;
+     178: getstatic     #586                // Field com/cobblemon/mod/common/api/fishing/SpawnBait$Effects.INSTANCE:Lcom/cobblemon/mod/common/api/fishing/SpawnBait$Effects;
+     181: invokevirtual #964                // Method com/cobblemon/mod/common/api/fishing/SpawnBait$Effects.getRARITY_BUCKET:()Lnet/minecraft/class_2960;
+     184: invokestatic  #593                // Method kotlin/jvm/internal/Intrinsics.areEqual:(Ljava/lang/Object;Ljava/lang/Object;)Z
+     187: ifeq          144
+     190: aload         8
+     192: aload         11
+     194: invokeinterface #596,  2          // InterfaceMethod java/util/Collection.add:(Ljava/lang/Object;)Z
+     199: pop
+     200: goto          144
+     203: aload         8
+     205: checkcast     #228                // class java/util/List
+     208: nop
+     209: checkcast     #562                // class java/lang/Iterable
+     212: astore        5
+     214: dconst_0
+     215: dstore        14
+     217: aload         5
+     219: invokeinterface #572,  1          // InterfaceMethod java/lang/Iterable.iterator:()Ljava/util/Iterator;
+     224: astore        8
+     226: aload         8
+     228: invokeinterface #577,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+     233: ifeq          276
+     236: aload         8
+     238: invokeinterface #580,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+     243: astore        9
+     245: dload         14
+     247: aload         9
+     249: checkcast     #130                // class com/cobblemon/mod/common/api/fishing/SpawnBait$Effect
+     252: astore        10
+     254: dstore        16
+     256: iconst_0
+     257: istore        11
+     259: aload         10
+     261: invokevirtual #619                // Method com/cobblemon/mod/common/api/fishing/SpawnBait$Effect.getValue:()D
+     264: dstore        18
+     266: dload         16
+     268: dload         18
+     270: dadd
+     271: dstore        14
+     273: goto          226
+     276: dload         14
+     278: d2i
+     279: istore        20
+     281: iload         20
+     283: ifle          314
+     286: aload_2
+     287: invokevirtual #960                // Method com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner.getInfluences:()Ljava/util/List;
+     290: checkcast     #568                // class java/util/Collection
+     293: new           #966                // class com/cobblemon/mod/common/api/spawning/influence/BucketNormalizingInfluence
+     296: dup
+     297: iload         20
+     299: ldc_w         #967                // float 0.2f
+     302: ldc_w         #968                // float 1.2f
+     305: invokespecial #971                // Method com/cobblemon/mod/common/api/spawning/influence/BucketNormalizingInfluence."<init>":(IFF)V
+     308: invokeinterface #596,  2          // InterfaceMethod java/util/Collection.add:(Ljava/lang/Object;)Z
+     313: pop
+     314: aload_2
+     315: invokevirtual #960                // Method com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner.getInfluences:()Ljava/util/List;
+     318: checkcast     #568                // class java/util/Collection
+     321: astore        5
+     323: new           #973                // class com/cobblemon/mod/common/api/spawning/influence/BucketMultiplyingInfluence
+     326: dup
+     327: iconst_3
+     328: anewarray     #975                // class kotlin/Pair
+     331: astore        6
+     333: aload         6
+     335: iconst_0
+     336: ldc_w         #977                // String uncommon
+     339: ldc_w         #978                // float 2.25f
+     342: invokestatic  #983                // Method java/lang/Float.valueOf:(F)Ljava/lang/Float;
+     345: invokestatic  #989                // Method kotlin/TuplesKt.to:(Ljava/lang/Object;Ljava/lang/Object;)Lkotlin/Pair;
+     348: aastore
+     349: aload         6
+     351: iconst_1
+     352: ldc_w         #991                // String rare
+     355: ldc_w         #992                // float 5.5f
+     358: invokestatic  #983                // Method java/lang/Float.valueOf:(F)Ljava/lang/Float;
+     361: invokestatic  #989                // Method kotlin/TuplesKt.to:(Ljava/lang/Object;Ljava/lang/Object;)Lkotlin/Pair;
+     364: aastore
+     365: aload         6
+     367: iconst_2
+     368: ldc_w         #994                // String ultra-rare
+     371: ldc_w         #992                // float 5.5f
+     374: invokestatic  #983                // Method java/lang/Float.valueOf:(F)Ljava/lang/Float;
+     377: invokestatic  #989                // Method kotlin/TuplesKt.to:(Ljava/lang/Object;Ljava/lang/Object;)Lkotlin/Pair;
+     380: aastore
+     381: aload         6
+     383: invokestatic  #1000               // Method kotlin/collections/MapsKt.mapOf:([Lkotlin/Pair;)Ljava/util/Map;
+     386: invokespecial #1002               // Method com/cobblemon/mod/common/api/spawning/influence/BucketMultiplyingInfluence."<init>":(Ljava/util/Map;)V
+     389: aload         5
+     391: swap
+     392: invokeinterface #596,  2          // InterfaceMethod java/util/Collection.add:(Ljava/lang/Object;)Z
+     397: pop
+     398: aload_2
+     399: invokevirtual #960                // Method com/cobblemon/mod/common/api/spawning/spawner/FixedAreaSpawner.getInfluences:()Ljava/util/List;
+     402: checkcast     #568                // class java/util/Collection
+     405: new           #1004               // class com/cobblemon/mod/common/api/spawning/influence/SpawnBaitInfluence
+     408: dup
+     409: aload         4
+     411: aconst_null
+     412: iconst_2
+     413: aconst_null
+     414: invokespecial #1007               // Method com/cobblemon/mod/common/api/spawning/influence/SpawnBaitInfluence."<init>":(Ljava/util/List;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+     417: invokeinterface #596,  2          // InterfaceMethod java/util/Collection.add:(Ljava/lang/Object;)Z
+     422: pop
+     423: nop
+     424: aload_1
+     425: areturn
+
+  private static final kotlin.Unit saveAdditional$lambda$0$0(net.minecraft.class_2487, net.minecraft.class_2520);
+    Code:
+       0: aload_1
+       1: ldc_w         #1014               // String encodedTag
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: ldc_w         #794                // String FoodColour
+      11: aload_1
+      12: invokevirtual #1018               // Method net/minecraft/class_2487.method_10566:(Ljava/lang/String;Lnet/minecraft/class_2520;)Lnet/minecraft/class_2520;
+      15: pop
+      16: getstatic     #1023               // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+      19: areturn
+
+  private static final void saveAdditional$lambda$0$1(kotlin.jvm.functions.Function1, java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokeinterface #1029,  2         // InterfaceMethod kotlin/jvm/functions/Function1.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+       7: pop
+       8: return
+
+  private static final kotlin.Unit saveAdditional$lambda$1$0(net.minecraft.class_2487, net.minecraft.class_2520);
+    Code:
+       0: aload_1
+       1: ldc_w         #1014               // String encodedTag
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: ldc_w         #822                // String BaitEffects
+      11: aload_1
+      12: invokevirtual #1018               // Method net/minecraft/class_2487.method_10566:(Ljava/lang/String;Lnet/minecraft/class_2520;)Lnet/minecraft/class_2520;
+      15: pop
+      16: getstatic     #1023               // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+      19: areturn
+
+  private static final void saveAdditional$lambda$1$1(kotlin.jvm.functions.Function1, java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokeinterface #1029,  2         // InterfaceMethod kotlin/jvm/functions/Function1.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+       7: pop
+       8: return
+
+  private static final kotlin.Unit saveAdditional$lambda$2$0(net.minecraft.class_2487, net.minecraft.class_2520);
+    Code:
+       0: aload_1
+       1: ldc_w         #1014               // String encodedTag
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: ldc_w         #837                // String Ingredients
+      11: aload_1
+      12: invokevirtual #1018               // Method net/minecraft/class_2487.method_10566:(Ljava/lang/String;Lnet/minecraft/class_2520;)Lnet/minecraft/class_2520;
+      15: pop
+      16: getstatic     #1023               // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+      19: areturn
+
+  private static final void saveAdditional$lambda$2$1(kotlin.jvm.functions.Function1, java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokeinterface #1029,  2         // InterfaceMethod kotlin/jvm/functions/Function1.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+       7: pop
+       8: return
+
+  private static final kotlin.Unit loadAdditional$lambda$0(com.cobblemon.mod.common.block.entity.PokeSnackBlockEntity, com.cobblemon.mod.common.item.components.FoodColourComponent);
+    Code:
+       0: aload_1
+       1: ldc_w         #1031               // String component
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #342                // Field foodColourComponent:Lcom/cobblemon/mod/common/item/components/FoodColourComponent;
+      12: getstatic     #1023               // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+      15: areturn
+
+  private static final void loadAdditional$lambda$1(kotlin.jvm.functions.Function1, java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokeinterface #1029,  2         // InterfaceMethod kotlin/jvm/functions/Function1.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+       7: pop
+       8: return
+
+  private static final kotlin.Unit loadAdditional$lambda$2(com.cobblemon.mod.common.block.entity.PokeSnackBlockEntity, com.cobblemon.mod.common.item.components.BaitEffectsComponent);
+    Code:
+       0: aload_1
+       1: ldc_w         #1031               // String component
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #344                // Field baitEffectsComponent:Lcom/cobblemon/mod/common/item/components/BaitEffectsComponent;
+      12: getstatic     #1023               // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+      15: areturn
+
+  private static final void loadAdditional$lambda$3(kotlin.jvm.functions.Function1, java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokeinterface #1029,  2         // InterfaceMethod kotlin/jvm/functions/Function1.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+       7: pop
+       8: return
+
+  private static final kotlin.Unit loadAdditional$lambda$4(com.cobblemon.mod.common.block.entity.PokeSnackBlockEntity, com.cobblemon.mod.common.item.components.IngredientComponent);
+    Code:
+       0: aload_1
+       1: ldc_w         #1031               // String component
+       4: invokestatic  #165                // Method kotlin/jvm/internal/Intrinsics.checkNotNullParameter:(Ljava/lang/Object;Ljava/lang/String;)V
+       7: aload_0
+       8: aload_1
+       9: putfield      #346                // Field ingredientComponent:Lcom/cobblemon/mod/common/item/components/IngredientComponent;
+      12: getstatic     #1023               // Field kotlin/Unit.INSTANCE:Lkotlin/Unit;
+      15: areturn
+
+  private static final void loadAdditional$lambda$5(kotlin.jvm.functions.Function1, java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: invokeinterface #1029,  2         // InterfaceMethod kotlin/jvm/functions/Function1.invoke:(Ljava/lang/Object;)Ljava/lang/Object;
+       7: pop
+       8: return
+
+  static {};
+    Code:
+       0: new           #142                // class com/cobblemon/mod/common/block/entity/PokeSnackBlockEntity$Companion
+       3: dup
+       4: aconst_null
+       5: invokespecial #1035               // Method com/cobblemon/mod/common/block/entity/PokeSnackBlockEntity$Companion."<init>":(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+       8: putstatic     #1037               // Field Companion:Lcom/cobblemon/mod/common/block/entity/PokeSnackBlockEntity$Companion;
+      11: return
+}

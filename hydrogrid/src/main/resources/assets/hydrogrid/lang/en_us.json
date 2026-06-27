@@ -1,0 +1,8 @@
+{
+  "category.hydrogrid": "HydroGrid",
+  "key.hydrogrid.toggle": "Toggle hydration overlay",
+  "key.hydrogrid.stamp": "Stamp field corner",
+  "key.hydrogrid.field": "Open field planner",
+  "key.hydrogrid.farmrun": "Auto-Farm: run / stop",
+  "key.hydrogrid.farmmode": "Auto-Farm: cycle mode"
+}

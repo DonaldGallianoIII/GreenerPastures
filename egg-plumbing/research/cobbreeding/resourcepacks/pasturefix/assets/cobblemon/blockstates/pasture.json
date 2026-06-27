@@ -1,0 +1,124 @@
+{
+  "variants": {
+    "facing=south,part=top,on=false,has_egg=false": {
+      "model": "cobblemon:block/pasture_top_off"
+    },
+    "facing=west,part=top,on=false,has_egg=false": {
+      "model": "cobblemon:block/pasture_top_off",
+      "y": 90
+    },
+    "facing=north,part=top,on=false,has_egg=false": {
+      "model": "cobblemon:block/pasture_top_off",
+      "y": 180
+    },
+    "facing=east,part=top,on=false,has_egg=false": {
+      "model": "cobblemon:block/pasture_top_off",
+      "y": 270
+    },
+    "facing=south,part=top,on=true,has_egg=false": {
+      "model": "cobblemon:block/pasture_top_on"
+    },
+    "facing=west,part=top,on=true,has_egg=false": {
+      "model": "cobblemon:block/pasture_top_on",
+      "y": 90
+    },
+    "facing=north,part=top,on=true,has_egg=false": {
+      "model": "cobblemon:block/pasture_top_on",
+      "y": 180
+    },
+    "facing=east,part=top,on=true,has_egg=false": {
+      "model": "cobblemon:block/pasture_top_on",
+      "y": 270
+    },
+    "facing=south,part=bottom,on=false,has_egg=false": {
+      "model": "cobblemon:block/pasture_bottom"
+    },
+    "facing=west,part=bottom,on=false,has_egg=false": {
+      "model": "cobblemon:block/pasture_bottom",
+      "y": 90
+    },
+    "facing=north,part=bottom,on=false,has_egg=false": {
+      "model": "cobblemon:block/pasture_bottom",
+      "y": 180
+    },
+    "facing=east,part=bottom,on=false,has_egg=false": {
+      "model": "cobblemon:block/pasture_bottom",
+      "y": 270
+    },
+    "facing=south,part=bottom,on=true,has_egg=false": {
+      "model": "cobblemon:block/pasture_bottom"
+    },
+    "facing=west,part=bottom,on=true,has_egg=false": {
+      "model": "cobblemon:block/pasture_bottom",
+      "y": 90
+    },
+    "facing=north,part=bottom,on=true,has_egg=false": {
+      "model": "cobblemon:block/pasture_bottom",
+      "y": 180
+    },
+    "facing=east,part=bottom,on=true,has_egg=false": {
+      "model": "cobblemon:block/pasture_bottom",
+      "y": 270
+    },
+    "facing=south,part=top,on=false,has_egg=true": {
+      "model": "cobblemon:block/pasture_top_off"
+    },
+    "facing=west,part=top,on=false,has_egg=true": {
+      "model": "cobblemon:block/pasture_top_off",
+      "y": 90
+    },
+    "facing=north,part=top,on=false,has_egg=true": {
+      "model": "cobblemon:block/pasture_top_off",
+      "y": 180
+    },
+    "facing=east,part=top,on=false,has_egg=true": {
+      "model": "cobblemon:block/pasture_top_off",
+      "y": 270
+    },
+    "facing=south,part=top,on=true,has_egg=true": {
+      "model": "cobblemon:block/pasture_top_on"
+    },
+    "facing=west,part=top,on=true,has_egg=true": {
+      "model": "cobblemon:block/pasture_top_on",
+      "y": 90
+    },
+    "facing=north,part=top,on=true,has_egg=true": {
+      "model": "cobblemon:block/pasture_top_on",
+      "y": 180
+    },
+    "facing=east,part=top,on=true,has_egg=true": {
+      "model": "cobblemon:block/pasture_top_on",
+      "y": 270
+    },
+    "facing=south,part=bottom,on=false,has_egg=true": {
+      "model": "cobbreeding:block/pasture_bottom_egg"
+    },
+    "facing=west,part=bottom,on=false,has_egg=true": {
+      "model": "cobbreeding:block/pasture_bottom_egg",
+      "y": 90
+    },
+    "facing=north,part=bottom,on=false,has_egg=true": {
+      "model": "cobbreeding:block/pasture_bottom_egg",
+      "y": 180
+    },
+    "facing=east,part=bottom,on=false,has_egg=true": {
+      "model": "cobbreeding:block/pasture_bottom_egg",
+      "y": 270
+    },
+    "facing=south,part=bottom,on=true,has_egg=true": {
+      "model": "cobbreeding:block/pasture_bottom_egg"
+    },
+    "facing=west,part=bottom,on=true,has_egg=true": {
+      "model": "cobbreeding:block/pasture_bottom_egg",
+      "y": 90
+    },
+    "facing=north,part=bottom,on=true,has_egg=true": {
+      "model": "cobbreeding:block/pasture_bottom_egg",
+      "y": 180
+    },
+    "facing=east,part=bottom,on=true,has_egg=true": {
+      "model": "cobbreeding:block/pasture_bottom_egg",
+      "y": 270
+    }
+  }
+}

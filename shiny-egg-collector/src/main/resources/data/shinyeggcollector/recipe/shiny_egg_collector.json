@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "GCG",
+    "GHG"
+  ],
+  "key": {
+    "G": { "item": "minecraft:gold_ingot" },
+    "C": { "item": "minecraft:chest" },
+    "H": { "item": "minecraft:hopper" }
+  },
+  "result": {
+    "id": "shinyeggcollector:shiny_egg_collector",
+    "count": 1
+  }
+}

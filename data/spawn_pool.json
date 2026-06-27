@@ -1,0 +1,122 @@
+{
+  "base_shiny_rate": 8192,
+  "_comment": "Machine-readable spawn pool. Entries are [species, within-bucket weight]. The % shares given in-game are used directly as weights (proportional). Types come from species_types. Maintained alongside the human notes in spawn_pool.md.",
+
+  "species_types": {
+    "ditto": ["Normal"],
+    "meowth_alolan": ["Dark"],
+    "persian_alolan": ["Dark"],
+    "mimikyu": ["Ghost", "Fairy"],
+    "eevee": ["Normal"],
+    "rotom": ["Electric", "Ghost"],
+    "vaporeon": ["Water"],
+    "jolteon": ["Electric"],
+    "flareon": ["Fire"],
+    "espeon": ["Psychic"],
+    "umbreon": ["Dark"],
+    "leafeon": ["Grass"],
+    "glaceon": ["Ice"],
+    "sylveon": ["Fairy"],
+    "minccino": ["Normal"],
+    "sinistea": ["Ghost"],
+    "spinarak": ["Bug", "Poison"],
+    "tandemaus": ["Normal"],
+    "espurr": ["Psychic"],
+    "swirlix": ["Fairy"],
+    "purrloin": ["Dark"],
+    "patrat": ["Normal"],
+    "yamask": ["Ghost"],
+    "cofagrigus": ["Ghost"],
+    "duraludon": ["Steel", "Dragon"],
+    "applin": ["Grass", "Dragon"],
+    "blacephalon": ["Fire", "Ghost"],
+    "turtwig": ["Grass"],
+    "grotle": ["Grass"],
+    "torterra": ["Grass", "Ground"],
+    "ur_remainder": [],
+    "common_remainder": []
+  },
+
+  "biomes": {
+    "mansion": {
+      "display": "Dark Forest / Haunted Mansion (default)",
+      "note": "Best biome for Ditto: Ditto is UNCOMMON here (rare everywhere else).",
+      "contexts": {
+        "grounded": {
+          "common": [
+            ["minccino", 10.0], ["sinistea", 10.0], ["spinarak", 10.0],
+            ["tandemaus", 10.0], ["espurr", 9.57], ["swirlix", 6.06],
+            ["purrloin", 5.74], ["common_remainder", 38.63]
+          ],
+          "uncommon": [
+            ["meowth_alolan", 53.010784],
+            ["ditto", 10.518013],
+            ["mimikyu", 10.518013],
+            ["persian_alolan", 10.097293],
+            ["eevee", 9.676572],
+            ["rotom", 5.2590065],
+            ["vaporeon", 0.13147517], ["jolteon", 0.13147517],
+            ["flareon", 0.13147517], ["espeon", 0.13147517],
+            ["umbreon", 0.13147517], ["leafeon", 0.13147517],
+            ["glaceon", 0.13147517], ["sylveon", 0.13147517]
+          ],
+          "rare": [
+            ["yamask", 91.0], ["cofagrigus", 9.0]
+          ],
+          "ultra_rare": [
+            ["blacephalon", 100.0]
+          ]
+        }
+      }
+    },
+
+    "mansion_duraludon": {
+      "display": "Dark Forest / Haunted Mansion (Duraludon sub-area)",
+      "inherits": "mansion",
+      "contexts": {
+        "grounded": {
+          "rare": [
+            ["yamask", 54.05], ["duraludon", 40.54], ["cofagrigus", 5.41]
+          ]
+        }
+      }
+    },
+
+    "mansion_applin": {
+      "display": "Dark Forest / Haunted Mansion (encased platform — Applin rare-roster)",
+      "inherits": "mansion",
+      "note": "Pillared + encased spawn platform above the Ditto mansion. Funnels the spawn cap onto one controlled surface; rare bucket rolls Applin in place of Duraludon. Uncommon bucket DOES shift here: in-game Ditto share reads 9.98% on the platform (vs 10.52% in the mansion) — full uncommon roster recapture pending before re-tuning the Chilan optimum. Operational win: fixed, fully-encased platform = no mansion-running, hunt becomes stationary/AFK-able (cap-saturated, zero travel dead-time).",
+      "contexts": {
+        "grounded": {
+          "rare": [
+            ["yamask", 56.18], ["applin", 38.2], ["cofagrigus", 5.62]
+          ]
+        }
+      }
+    },
+
+    "mansion_platform": {
+      "display": "Dark Forest / Haunted Mansion (water-sculpted platform — rares removed)",
+      "inherits": "mansion",
+      "note": "Encased AFK platform, terrain-sculpted with WATER to delete the entire RARE bucket: Yamask/Applin/Cofagrigus can no longer spawn (dry-grounded condition broken by water) while the uncommon Ditto bucket survives. Ditto within-uncommon back to 10.52% (= mansion baseline; the bare-platform 9.98% is gone). Ultra-rare (Blacephalon) removal under test. IMPORTANT: removing a bucket does NOT change per-bite Ditto odds — the engine treats a removed-bucket roll as empty/no-spawn (no renormalization), matching Cobblemon's spawner. The payoff is THROUGHPUT on a capped platform: junk buckets stop occupying cap slots, so uncommon (Ditto-bucket) spawns cycle faster. UPDATE (confirmed by experiment): common CANNOT be sculpted out — it survives the same conditions Ditto's bucket does (the water that deleted rare left both common and uncommon intact), so no known terrain trick splits common from uncommon. And the per-spawn 9.73x from hypothetical common-removal does NOT convert to wall-clock: common shares the cap churn, so Ditto-bucket still appears at R*P(uncommon) either way (removal cuts visual clutter, not time — the highlighter handles clutter). Governing rate: shiny Dittos/hour = (spawns/min) * K, with K~0.0025 for 1 Chilan+2 Starf and K~0.011 for 2 EGA+1 Chilan. The ONLY movable term is spawns/min (R): maximize valid spawn surface in range + Cobblemon spawn-cap/frequency config on self-admin worlds. Cap-saturation only bites if the platform is packed. Optimal snack is regime-invariant (per-bite-shiny already weighs bucket-boost vs Chilan) — do not re-tune it.",
+      "contexts": {
+        "grounded": {
+          "rare": []
+        }
+      }
+    },
+
+    "forest": {
+      "display": "Forest (customer order — Turtwig is ULTRA-RARE here)",
+      "note": "Order-fulfillment biome: a customer wants A (non-shiny) Turtwig. CAPTURED UR roster (within-UR shares if a UR procs): Turtwig 12.71%, Grotle 7.63%, Torterra 0.85% (whole line ~21.19%); rest = ur_remainder 78.81% (unlisted UR co-occupants, modeled untyped). Target = Turtwig (base form) = 12.71% of UR. Other buckets unmodeled (they don't affect Turtwig odds: P(turtwig)=P(ultra|tier)*share). Objective is RAW count (optimize --count), NOT shiny. TWO levers now: (1) bucket-boost raises P(UR) 1.01%@tier0 -> 31%@tier30; (2) the whole line is GRASS, so a rindo (Grass) berry boosts all three evos and crowds the non-Grass remainder out, lifting Turtwig's UR share 12.71% -> ~44% with one rindo. cheri (Grass egg) is an equivalent/stackable Grass lever; shuca (Ground) would only feed Torterra (a competitor) - avoid. CONFIRMED co-occupant: the Rowlet line (Rowlet/Dartrix/Decidueye — Grass TYPE, FLYING egg group) sits in the UR remainder. So Rindo (Grass type) boosts the owls too, diluting Turtwig (~44% -> ~26% share if owls mirror Turtwig's rarity); but Cheri (Grass EGG group) EXCLUDES them (owls are Flying egg) and restores Turtwig to ~44%. Cheri likely beats Rindo here. PENDING: exact owl UR shares + whether the cake kit (pokeblocks?) supports egg-group berries. ur_remainder now = the non-owl rest (still assumed non-Grass).",
+      "contexts": {
+        "grounded": {
+          "ultra_rare": [
+            ["turtwig", 12.71], ["grotle", 7.63], ["torterra", 0.85],
+            ["ur_remainder", 78.81]
+          ]
+        }
+      }
+    }
+  }
+}
