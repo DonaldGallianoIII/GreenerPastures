@@ -105,10 +105,6 @@ Restart MC first (jar reloads at startup). Then, in order:
 - Open any chest/storage with eggs → **shiny eggs glow gold**, others dimmed.
 - `G` (in container) = count eggs into lifetime tally · `Shift+G` = reset · `\` = dump held item's data (debug).
 
-## 📦 Shiny Egg Collector (block)
-- `/give @s greenerpastures:shiny_egg_collector` (⚠️ renders **missing-texture** — art is pending, function works).
-- Place beside a chest of shiny eggs → it vacuums shiny eggs into the chest.
-
 ## 📊 Analytics (the data-science core)
 - `saves/<world>/greenerpastures/events.jsonl` → JSON lines, currently: `egg_laid` (with `source`/`tier`/`pair`/`mode`/`shiny`/`proc_shiny`), `pasture_toggle`. This is the raw data the dashboards (next) will chart.
 

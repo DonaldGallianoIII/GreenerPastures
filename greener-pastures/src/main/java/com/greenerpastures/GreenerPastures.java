@@ -3,7 +3,6 @@ package com.greenerpastures;
 import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.biobank.BioBank;
 import com.greenerpastures.core.GpLog;
-import com.greenerpastures.egg.collector.ShinyEggCollector;
 import com.greenerpastures.pasture.breeding.BetterPasture;
 import com.greenerpastures.pasture.keeper.PastureKeeper;
 import net.fabricmc.api.ModInitializer;
@@ -38,9 +37,6 @@ public final class GreenerPastures implements ModInitializer {
         // pasture/
         PastureKeeper.init();   // per-pasture no-wander toggle + loot collector
         BetterPasture.init();   // opt-in multi-pair breeding (Cobbreeding bridge)
-
-        // egg/ (server-side block)
-        ShinyEggCollector.init();   // shiny-egg auto-collector block
 
         // biobank/ — AE2-style egg storage block (eggs as data, bucketed by species)
         BioBank.init();
