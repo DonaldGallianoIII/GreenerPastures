@@ -125,14 +125,14 @@ public final class DaemonView {
 
     private static void wire(GpCanvas c, double ax, double ay, double bx, double by, int color) {
         double dist = Math.hypot(bx - ax, by - ay);
-        double k = Math.max(40, Math.min(160, dist * 0.45));
-        double c1x = ax + k, c2x = bx - k;
+        double k = Math.max(28, Math.min(120, dist * 0.45 + 24));   // bow upward — both ports emanate from the top
+        double c1x = ax, c1y = ay - k, c2x = bx, c2y = by - k;
         int n = (int) Math.max(18, Math.min(72, dist / 8));
         double[] xs = new double[n + 1], ys = new double[n + 1];
         for (int i = 0; i <= n; i++) {
             double t = i / (double) n, u = 1 - t;
             xs[i] = u * u * u * ax + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * bx;
-            ys[i] = u * u * u * ay + 3 * u * u * t * ay + 3 * u * t * t * by + t * t * t * by;
+            ys[i] = u * u * u * ay + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * by;
         }
         c.stroke(xs, ys, 4f, (color & 0x00FFFFFF) | 0x2E000000);
         c.stroke(xs, ys, 1.6f, color);
@@ -171,9 +171,10 @@ public final class DaemonView {
         c.text("UNIT", x + 12, y + 30, DIM);
         dot(c, x + 14, y + 46, n.paired ? PASS : DIM);
         c.text(n.paired ? "Pair " + n.bucket : "unpaired", x + 22, y + 43, n.paired ? PASS : MUTED);
-        int my = y + h / 2;
-        diamond(c, x, my, 4, n.paired ? PAIR : 0xFF55617A);
-        diamond(c, x + w, my, 4, PAIR);
+        // wire port: an embedded pink line out the TOP-center (drag the middle to wire; sides drag-move).
+        int cxp = x + w / 2;
+        c.fill(cxp - 1, y - 8, cxp + 1, y + 1, PAIR);
+        diamond(c, cxp, y - 9, 3, PAIR);
     }
 
     private static void augment(GpCanvas c, Node n) {

@@ -14,5 +14,6 @@
   "block.greenerpastures.shiny_egg_collector": "Shiny Egg Collector",
   "item.greenerpastures.pasture_wand": "Pasture Wand",
   "block.greenerpastures.compiler": "Compiler",
-  "item.greenerpastures.augment_shiny": "Shiny Augment"
+  "item.greenerpastures.augment_shiny": "Shiny Augment",
+  "block.greenerpastures.biobank": "BioBank"
 }

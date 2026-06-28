@@ -54,31 +54,34 @@ public final class NotebookView {
             tx += tw + 3;
         }
 
-        // header row: pasture name + kernel slot
+        // header row: PASTURE name (left, flexible) + KERNEL slot/tier + threads (right). Laid out from the
+        // right using measured text widths so the blocks never overlap on small windows / high GUI scales.
         int hy = TITLE + TABS;
         c.fill(0, hy, w, hy + HEAD, DaemonView.PANEL);
         c.fill(0, hy + HEAD, w, hy + HEAD + 1, DaemonView.BORDER);
 
-        c.text("PASTURE", 10, hy + 5, D);
-        c.fill(9, hy + 15, 211, hy + 35, DaemonView.BORDER);
-        c.fill(10, hy + 16, 210, hy + 34, DaemonView.CELL);
-        boolean named = f.pastureName != null && !f.pastureName.isEmpty();
-        c.text(named ? f.pastureName : "Name Here!", 16, hy + 20, named ? T : D);
-
-        int kx = w - 300;
-        c.text("KERNEL", kx, hy + 5, D);
-        c.fill(kx - 1, hy + 14, kx + 29, hy + 34, DaemonView.BORDER_PAIR);
-        c.fill(kx, hy + 15, kx + 28, hy + 33, DaemonView.CELL);
-        c.text("K", kx + 11, hy + 20, DaemonView.PASS);
-        c.text(f.kernelTier.isEmpty() ? "no Kernel" : f.kernelTier, kx + 36, hy + 11, T);
-        int chx = kx + 36;
-        for (String a : f.kernelAugments) {
-            int cw = c.textWidth(a) + 8;
-            c.fill(chx, hy + 23, chx + cw, hy + 33, 0xFF0E1A15);
-            c.text(a, chx + 4, hy + 24, DaemonView.PASS);
-            chx += cw + 4;
+        int rightX = w - 10;
+        if (!f.threads.isEmpty()) {
+            int tw = c.textWidth(f.threads);
+            c.text(f.threads, rightX - tw, hy + 14, M);
+            rightX -= tw + 16;
         }
-        if (!f.threads.isEmpty()) c.text(f.threads, w - c.textWidth(f.threads) - 10, hy + 13, M);
+
+        String tier = f.kernelTier.isEmpty() ? "no Kernel" : f.kernelTier;
+        final int kSlot = 28;
+        int kx = Math.max(118, rightX - (kSlot + 8 + c.textWidth(tier)));
+        c.text("KERNEL", kx, hy + 5, D);
+        c.fill(kx - 1, hy + 14, kx + kSlot + 1, hy + 34, DaemonView.BORDER_PAIR);
+        c.fill(kx, hy + 15, kx + kSlot, hy + 33, DaemonView.CELL);
+        c.text("K", kx + 10, hy + 20, DaemonView.PASS);
+        c.text(c.trim(tier, Math.max(0, rightX - (kx + kSlot + 8))), kx + kSlot + 8, hy + 20, T);
+
+        c.text("PASTURE", 10, hy + 5, D);
+        int nameRight = Math.max(70, kx - 12);
+        c.fill(9, hy + 15, nameRight + 1, hy + 35, DaemonView.BORDER);
+        c.fill(10, hy + 16, nameRight, hy + 34, DaemonView.CELL);
+        boolean named = f.pastureName != null && !f.pastureName.isEmpty();
+        c.text(named ? c.trim(f.pastureName, nameRight - 16) : "Name Here!", 16, hy + 20, named ? T : D);
 
         // footer
         c.gradient(0, h - FOOTER, w, h, DaemonView.BAR_BOT, DaemonView.BAR_TOP);

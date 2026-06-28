@@ -25,8 +25,8 @@ public final class StudioMain {
         Graphics2D g = img.createGraphics();
 
         DaemonController ctrl = StudioData.demoController();
+        ctrl.setViewport(W, H, NotebookView.CHROME_TOP);
         DaemonView.Model m = ctrl.buildModel();
-        StudioData.decorate(m);
         NotebookView.paint(new Java2DGpCanvas(g), m, StudioData.frame(), W, H);
         g.dispose();
 

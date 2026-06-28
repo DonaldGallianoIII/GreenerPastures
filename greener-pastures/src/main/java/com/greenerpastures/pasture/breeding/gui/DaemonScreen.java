@@ -39,7 +39,12 @@ public class DaemonScreen extends Screen {
         List<DaemonController.Unit> units = new ArrayList<>();
         for (MonEntry m : roster) units.add(new DaemonController.Unit(m.id(), m.species(), m.label(), m.bucket()));
         this.ctrl = new DaemonController(units, maxPairs, name);
-        this.ctrl.initView(16, NotebookView.CHROME_TOP + 18, 1.0);   // frame content below the chrome
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        ctrl.setViewport(this.width, this.height, NotebookView.CHROME_TOP);   // fit-to-viewport (re-runs on resize)
     }
 
     @Override
@@ -54,13 +59,13 @@ public class DaemonScreen extends Screen {
 
     @Override public boolean mouseClicked(double mx, double my, int b) {
         if (my < NotebookView.CHROME_TOP) return super.mouseClicked(mx, my, b);   // don't pan when clicking the chrome
-        return ctrl.mouseDown(mx, my, b == 1 ? 1 : 0) || super.mouseClicked(mx, my, b);
+        return ctrl.mouseDown(mx, my, b) || super.mouseClicked(mx, my, b);   // pass real button (0 L · 1 R · 2 M)
     }
     @Override public boolean mouseDragged(double mx, double my, int b, double dx, double dy) {
         return ctrl.mouseDrag(mx, my) || super.mouseDragged(mx, my, b, dx, dy);
     }
     @Override public boolean mouseReleased(double mx, double my, int b) {
-        return ctrl.mouseUp(mx, my, b == 1 ? 1 : 0) || super.mouseReleased(mx, my, b);
+        return ctrl.mouseUp(mx, my, b) || super.mouseReleased(mx, my, b);
     }
     @Override public boolean mouseScrolled(double mx, double my, double h, double v) {
         if (my < NotebookView.CHROME_TOP) return super.mouseScrolled(mx, my, h, v);
@@ -91,7 +96,7 @@ public class DaemonScreen extends Screen {
             case 4 -> "Gold Kernel";
             case 5 -> "Diamond Kernel";
             case 6 -> "Netherite Kernel";
-            case 12 -> "Greener Kernel";
+            case 8 -> "Greener Kernel";
             default -> p <= 0 ? "no Kernel" : p + " pairs";
         };
     }

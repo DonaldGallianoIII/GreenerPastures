@@ -6,8 +6,10 @@ import net.minecraft.text.Text;
 
 /**
  * In-game {@link GpCanvas} backend — forwards to Minecraft's {@code DrawContext} + {@code TextRenderer}.
- * The other backend ({@code com.greenerpastures.studio.Java2DGpCanvas}) draws the same calls with
- * Java2D so the Design Studio previews the identical paint code outside Minecraft.
+ *
+ * <p>Text scales <b>uniformly with the canvas transform</b>, so a label always stays inside its
+ * (also-scaled) box at any zoom. Bitmap text softens a little at fractional zoom; truly crisp text at
+ * every zoom needs a bundled vector font (a separate, later task — not worth faking).
  */
 public class McGpCanvas implements GpCanvas {
     private final DrawContext ctx;
@@ -37,6 +39,7 @@ public class McGpCanvas implements GpCanvas {
             x += sx; y += sy;
         }
     }
+
     @Override public void text(String s, int x, int y, int argb) { ctx.drawText(tr, Text.literal(s), x, y, argb, false); }
     @Override public int textWidth(String s) { return tr.getWidth(s); }
     @Override public String trim(String s, int maxWidth) { return tr.trimToWidth(s, maxWidth); }

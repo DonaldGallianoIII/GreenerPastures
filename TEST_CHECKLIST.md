@@ -10,6 +10,11 @@ _Instance: **Greener Pastures Test** (CurseForge). Restart CF to see it. 98 mods
 
 ---
 
+## 🆕 NEWEST — test these FIRST (deployed 2026-06-28)
+1. ☐ **Observability pipe (GpLog)** — `tail -F ~/gp-logs/latest.log`. On MC load you get a `session_start` line; then using the BioBank should stream `biobank.*` events live. Confirms the whole debug-log pipe end-to-end.
+2. ☐ **BioBank Batch 1** (`/give @s greenerpastures:biobank`, or creative *Functional Blocks*): place → right-click holding an egg = *"Banked 1 egg"* (sneak+right-click = bank ALL inventory eggs) → empty-hand right-click = chat summary by species → **relog → summary persists** → **break → eggs scatter back** (nothing lost). Log shows `biobank.deposit/summary/break_scatter`. _(No GUI yet — Batch 2; cap 256; withdraw = break for now.)_
+3. ☐ **Greener Kernel = 8 pairs** — slot `breeding_upgrade_greener`, fill a pasture (16 mons / 8 pairs) → all **8** pairs breed (top tier now exactly fills the 16-mon pasture; was 12).
+
 ## 🔴 PENDING IN-GAME TEST QUEUE — built this session, NOT yet confirmed (do these)
 Restart MC first (jar reloads at startup). Then, in order:
 1. ☐ **No blur / custom buttons everywhere** — wand, board, Daemon, Compiler all crisp; buttons (Arrange/Daemon/Compile/Node-size) are the flat **GpButton** style; zero vanilla buttons, no menu-blur. (§A, §D)
@@ -24,7 +29,7 @@ Restart MC first (jar reloads at startup). Then, in order:
 
 **Get the items** (no crafting recipes yet — creative **Tools** tab or commands):
 - `/give @s greenerpastures:pasture_wand`
-- `/give @s greenerpastures:breeding_upgrade_copper` (…`iron`/`gold`/`diamond`/`netherite`/`greener`) — pairs per tier: **copper 2 · iron 3 · gold 4 · diamond 5 · netherite 6 · greener 12**.
+- `/give @s greenerpastures:breeding_upgrade_copper` (…`iron`/`gold`/`diamond`/`netherite`/`greener`) — pairs per tier: **copper 2 · iron 3 · gold 4 · diamond 5 · netherite 6 · greener 8**.
 
 **Setup:** place a Cobblemon pasture, tether several compatible mons (e.g. a species + Ditto ×N), and turn **breeding ON** in Cobbreeding's own pasture toggle.
 
@@ -77,15 +82,15 @@ Restart MC first (jar reloads at startup). Then, in order:
 - [ ] **Unified Notebook** opens (matches the Design Studio): a **title bar** (`pasture.ipynb · Greener Pastures` + `● Kernel · running`), a **tab strip** (Daemon · Dashboard · Compiler), and a **header row** with the **pasture name** + a **Kernel slot** (tier + `N/max threads`). Below it, the node canvas. Compare it to `./gradlew studio` — should look the same ("how much transfers").
 - [ ] Each tethered mon is a **unit node** (colored sprite letter + species + pair badge). **Wires are smooth solid lines** (no little cubes), even on curves/backwards drags.
 - ℹ️ In-game the tabs + name + Kernel slot in the chrome are **display-only for now** (edit the name via the wand still); the IV-filter/collection pipeline from the studio isn't in-game yet (backend pending).
-- [ ] **Drag a node body** → it moves. **Drag the canvas** (empty space) → everything pans (grid scrolls).
-- [ ] **Scroll wheel** → the whole graph **zooms toward the cursor** (header shows zoom %); zoom out far (down to 20%) for big graphs, back in to 250%.
+- [ ] **Opens fit-to-viewport** ✅NEW — units auto-arrange in a centered grid framed to the screen on open; **resize the window / change GUI scale** → re-fits. Resolution-independent.
+- [ ] **Zoom + pan, crisp text** ✅NEW — **scroll to zoom** toward the cursor (25–300%, header shows %); **pan with middle-drag or empty-space drag**. **Left-drag only wires** (starts on a unit), so it never fights panning. **Text stays sharp at every zoom** (old blur fixed — integer font snap); zoom way out → labels hide for a clean overview.
 - [ ] **Esc → returns to the wand menu** (Greener Pastures GUI), NOT out to the world. (Same for the Arrange board.)
-- [ ] **Wire a pair:** drag from a unit's **right-edge port** (the nub) and release **on another unit** → a purple **wire** connects them, both flip to `⮌ Pair N` (green), `threads` count goes up.
+- [ ] **Wire a pair:** **left-drag one unit onto another** (the whole node is the grab handle now — no tiny port to hit) → a purple **wire** connects them, both flip to `Pair N` (green), `threads` count goes up.
 - [ ] **Right-click a unit** → unpairs it (wire disappears, both ends back to "unpaired").
 - [ ] **Capacity:** with all pairs full, wiring one more flashes "All N threads are full".
 - [ ] **Shared data:** wire a pair in the Daemon → **Esc** (lands back on the wand menu) → **Arrange** board shows that same pair in a bucket (and vice-versa). Breeding runs those pairs (one egg each, like §E).
 - [ ] **No blur / custom buttons:** the canvas is crisp (no menu blur). Wand buttons (Arrange/Daemon), the Compiler's Compile, and the board's Node-size are all our own **GpButton** now — no vanilla MC buttons anywhere in the pasture system.
-- [ ] **Persist:** reload world → the pairs made in the Daemon survive. *(Node positions are NOT saved yet — they re-lay-out on open; only the pairings persist. Expected for increment 1.)*
+- [ ] **Persist:** reload world → the pairs survive. *(Node positions aren't stored — they auto-lay-out to fit the viewport each time; only pairings persist. By design now.)*
 - ℹ️ Not in this increment: augment/filter/collection nodes, IVs on nodes, the egg-void filter. Those are later increments.
 
 ## 🐑 PastureKeeper (being retired — don't QA)

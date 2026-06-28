@@ -1,6 +1,8 @@
 package com.greenerpastures;
 
 import com.greenerpastures.analytics.Analytics;
+import com.greenerpastures.biobank.BioBank;
+import com.greenerpastures.core.GpLog;
 import com.greenerpastures.egg.collector.ShinyEggCollector;
 import com.greenerpastures.pasture.breeding.BetterPasture;
 import com.greenerpastures.pasture.keeper.PastureKeeper;
@@ -27,6 +29,7 @@ public final class GreenerPastures implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        GpLog.init();   // observability seam — open the live debug log before anything else (OBSERVABILITY.md)
         LOG.info("Greener Pastures (A Data Science Mod) — common init");
 
         // analytics/ — open the local event log before any emitter runs
@@ -38,5 +41,8 @@ public final class GreenerPastures implements ModInitializer {
 
         // egg/ (server-side block)
         ShinyEggCollector.init();   // shiny-egg auto-collector block
+
+        // biobank/ — AE2-style egg storage block (eggs as data, bucketed by species)
+        BioBank.init();
     }
 }

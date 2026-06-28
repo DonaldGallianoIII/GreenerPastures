@@ -28,6 +28,15 @@ dependencies {
     modCompileOnly files("${cobbleDir}/Cobbreeding-fabric-2.2.1.jar")
     // Kotlin stdlib so javac can read Cobblemon's Kotlin-compiled class signatures.
     compileOnly "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
+
+    // Headless unit testing — plain JUnit 5. Our LOGIC lives in Minecraft-free core classes
+    // (e.g. DaemonController), so `./gradlew test` runs in seconds with NO game boot.
+    // (We avoid fabric-loader-junit: it boots the Fabric loader, which then refuses to start because
+    //  our hard `cobblemon` dependency isn't in the test runtime. Tests that truly need registries can
+    //  call SharedConstants.createGameVersion()/Bootstrap.initialize() in a @BeforeAll instead.)
+    testImplementation platform("org.junit:junit-bom:5.11.3")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
 processResources {
@@ -44,6 +53,12 @@ tasks.withType(JavaCompile).configureEach {
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
+}
+
+// Headless logic tests: `./gradlew test` — no Minecraft window, runs in seconds.
+test {
+    useJUnitPlatform()
+    testLogging { events 'passed', 'skipped', 'failed' }
 }
 
 // ── Design Studio ────────────────────────────────────────────────────────────────────────────

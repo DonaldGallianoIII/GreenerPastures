@@ -56,13 +56,15 @@ public final class StudioLive {
             addMouseWheelListener(e -> { ctrl.scroll(e.getX(), e.getY(), -e.getWheelRotation()); repaint(); });
         }
 
-        private static int btn(MouseEvent e) { return e.getButton() == MouseEvent.BUTTON3 ? 1 : 0; }
+        private static int btn(MouseEvent e) {
+            return e.getButton() == MouseEvent.BUTTON3 ? 1 : e.getButton() == MouseEvent.BUTTON2 ? 2 : 0;
+        }
 
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
+            ctrl.setViewport(getWidth(), getHeight(), NotebookView.CHROME_TOP);
             DaemonView.Model m = ctrl.buildModel();
-            StudioData.decorate(m);
             NotebookView.paint(new Java2DGpCanvas((Graphics2D) g), m, StudioData.frame(), getWidth(), getHeight());
         }
     }

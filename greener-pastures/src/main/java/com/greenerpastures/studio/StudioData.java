@@ -15,13 +15,12 @@ public final class StudioData {
 
     /** Interactive part: tethered units (two pre-wired pairs) the user can drag/wire. */
     public static DaemonController demoController() {
-        String[] species = {"Ditto", "Charmander", "Gible", "Eevee"};
+        String[] species = {"Ditto", "Charmander", "Gible", "Eevee", "Dratini", "Larvitar", "Riolu", "Bagon"};
         List<Unit> units = new ArrayList<>();
         for (int i = 0; i < species.length; i++) {
             units.add(new Unit(UUID.randomUUID(), species[i], species[i], (i / 2) + 1));   // pairs 1 & 2
         }
-        DaemonController c = new DaemonController(units, 5, "Shiny Farm");
-        c.initView(16, 100, 0.92);
+        DaemonController c = new DaemonController(units, 8, "Shiny Farm");
         return c;
     }
 

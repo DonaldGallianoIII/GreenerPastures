@@ -39,6 +39,7 @@ public final class EggReader {
     private static Method extractProperties;   // (ItemStack) -> PokemonProperties
     private static Method getShiny;            // PokemonProperties.getShiny() -> Boolean
     private static Method getIvs;              // PokemonProperties.getIvs() -> IVs (Iterable)
+    private static Method getSpecies;          // PokemonProperties.getSpecies() -> String
 
     private static synchronized void init() {
         if (initDone) return;
@@ -55,6 +56,7 @@ public final class EggReader {
             Class<?> props = Class.forName("com.cobblemon.mod.common.api.pokemon.PokemonProperties");
             getShiny = props.getMethod("getShiny");
             getIvs = props.getMethod("getIvs");
+            try { getSpecies = props.getMethod("getSpecies"); } catch (Throwable t) { getSpecies = null; }
             LOGGER.info("[EggOracle] Cobbreeding egg API found — IV culling enabled.");
         } catch (Throwable t) {
             extractProperties = null;
@@ -108,6 +110,41 @@ public final class EggReader {
         // so a shiny is never mistinted as keeper/cull. Cached per stack, so this runs ~once per egg.
         if (!shiny) shiny = shinyByName(stack);
         return new EggInfo(shiny, ivsKnown, ivTotal, perfect);
+    }
+
+    /**
+     * Best-effort species key for an egg (server-safe). Tries Cobbreeding's baked
+     * {@code PokemonProperties.getSpecies()}; falls back to the egg's display name. Normalized to a
+     * lowercase, namespace-free token (e.g. "charmander"). Never throws; "unknown" if undetermined.
+     */
+    public static String species(ItemStack stack) {
+        if (!isEgg(stack)) return "unknown";
+        init();
+        if (extractProperties != null && getSpecies != null) {
+            try {
+                Object props = extractProperties.invoke(eggUtils, stack);
+                if (props != null) {
+                    Object sp = getSpecies.invoke(props);
+                    if (sp instanceof String s && !s.isBlank()) return normalizeSpecies(s);
+                }
+            } catch (Throwable ignored) {
+                // fall through to the name-based guess
+            }
+        }
+        return speciesByName(stack);
+    }
+
+    private static String normalizeSpecies(String s) {
+        int c = s.indexOf(':');
+        if (c >= 0) s = s.substring(c + 1);
+        return s.trim().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private static String speciesByName(ItemStack stack) {
+        String n = stack.getName().getString().replace(String.valueOf(SHINY_STAR), "").trim();
+        int idx = n.toLowerCase(java.util.Locale.ROOT).lastIndexOf("egg");
+        if (idx > 0) n = n.substring(0, idx).trim();
+        return n.isBlank() ? "unknown" : normalizeSpecies(n);
     }
 
     private static boolean shinyByName(ItemStack stack) {
