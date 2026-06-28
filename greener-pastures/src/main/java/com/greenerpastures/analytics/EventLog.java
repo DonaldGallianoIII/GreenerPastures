@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Append-only JSONL writer for analytics events, one per server/save. Rows are queued from the server
@@ -27,7 +28,7 @@ final class EventLog {
     private final Gson gson = new Gson();
     private final Thread writer;
     private volatile boolean running = true;
-    private volatile long dropped = 0L;
+    private final AtomicLong dropped = new AtomicLong();   // queue-full drops (multi-producer safe)
 
     EventLog(Path file) {
         this.file = file;
@@ -38,12 +39,12 @@ final class EventLog {
 
     /** Enqueue a row to be serialized + written off-thread. Non-blocking; drops if the queue is full. */
     void append(Map<String, Object> row) {
-        if (!queue.offer(row)) dropped++;
+        if (!queue.offer(row)) dropped.incrementAndGet();
     }
 
     private void drainLoop() {
-        try (BufferedWriter w = Files.newBufferedWriter(file,
-                StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+        BufferedWriter w = null;
+        try {
             while (running || !queue.isEmpty()) {
                 Map<String, Object> row;
                 try {
@@ -52,20 +53,34 @@ final class EventLog {
                     continue;
                 }
                 if (row == null) continue;
-                w.write(gson.toJson(row));               // serialize off the tick thread
-                w.write('\n');
-                int batch = 0;
-                Map<String, Object> more;
-                while ((more = queue.poll()) != null) {   // drain the backlog under one flush
-                    w.write(gson.toJson(more));
+                try {
+                    if (w == null) w = Files.newBufferedWriter(file,
+                            StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                    w.write(gson.toJson(row));               // serialize off the tick thread
                     w.write('\n');
-                    if (++batch >= 512) break;
+                    int batch = 0;
+                    Map<String, Object> more;
+                    while ((more = queue.poll()) != null) {   // drain the backlog under one flush
+                        w.write(gson.toJson(more));
+                        w.write('\n');
+                        if (++batch >= 512) break;
+                    }
+                    w.flush();
+                } catch (IOException io) {
+                    // a transient disk error (full, handle revoked) must NOT permanently kill logging —
+                    // close, null the writer, and reopen on the next row so it recovers (bug-hunt #9)
+                    GreenerPastures.LOG.error("[analytics] write failed for {}; will reopen", file, io);
+                    closeQuietly(w);
+                    w = null;
                 }
-                w.flush();
             }
-        } catch (IOException e) {
-            GreenerPastures.LOG.error("[analytics] event-log writer failed for {}", file, e);
+        } finally {
+            closeQuietly(w);
         }
+    }
+
+    private static void closeQuietly(BufferedWriter w) {
+        if (w != null) try { w.close(); } catch (IOException ignored) { }
     }
 
     void close() {
@@ -76,6 +91,7 @@ final class EventLog {
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
         }
-        if (dropped > 0) GreenerPastures.LOG.warn("[analytics] dropped {} events under load (queue full)", dropped);
+        long d = dropped.get();
+        if (d > 0) GreenerPastures.LOG.warn("[analytics] dropped {} events under load (queue full)", d);
     }
 }

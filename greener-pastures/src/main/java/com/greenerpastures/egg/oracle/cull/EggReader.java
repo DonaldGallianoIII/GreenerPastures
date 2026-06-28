@@ -1,5 +1,7 @@
 package com.greenerpastures.egg.oracle.cull;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -148,6 +150,9 @@ public final class EggReader {
     }
 
     private static boolean shinyByName(ItemStack stack) {
+        // MinecraftClient is client-only; on a dedicated server this method must never touch it. Guard first
+        // so read()/species() stay server-safe even if a future caller invokes them off the client (bug-hunt #6).
+        if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT) return false;
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null) return false;
         try {

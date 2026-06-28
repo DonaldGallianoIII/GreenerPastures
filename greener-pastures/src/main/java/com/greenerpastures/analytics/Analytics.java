@@ -20,6 +20,9 @@ import java.util.Map;
 public final class Analytics {
     private Analytics() {}
 
+    /** Keys the facade stamps itself; a caller's same-named field must not overwrite them (bug-hunt #11). */
+    private static final java.util.Set<String> RESERVED = java.util.Set.of("type", "t", "gameTime", "dimension");
+
     private static volatile EventLog log;
 
     /** Opens the per-save event log on server start and closes it on stop. Call from common init. */
@@ -46,11 +49,11 @@ public final class Analytics {
         EventLog l = log;
         if (l == null || event == null || world == null || world.isClient) return;
         Map<String, Object> row = new LinkedHashMap<>();
-        row.put("type", event.type);
+        row.put("type", event.type);                                  // reserved stamps first (stable, readable order)
         row.put("t", System.currentTimeMillis());
         row.put("gameTime", world.getTime());
         row.put("dimension", world.getRegistryKey().getValue().toString());
-        row.putAll(event.fields);
+        event.fields.forEach((k, v) -> { if (!RESERVED.contains(k)) row.put(k, v); });   // caller fields can't clobber stamps
         l.append(row);   // serialized off-thread by EventLog (perf-audit H3)
     }
 }

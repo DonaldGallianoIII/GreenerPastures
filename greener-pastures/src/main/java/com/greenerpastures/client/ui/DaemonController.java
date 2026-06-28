@@ -191,6 +191,7 @@ public final class DaemonController {
         Integer b = assign.get(id);
         if (b == null) return;
         assign.values().removeIf(v -> v.equals(b)); dirty = true;
+        modelDirty = true;   // regression fix: right-click-unpair must invalidate the model cache (was stale until btn release)
     }
     private void flash(String s) { flashMsg = s; flashTicks = 80; modelDirty = true; }
 

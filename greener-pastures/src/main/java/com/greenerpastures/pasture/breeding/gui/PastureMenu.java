@@ -118,11 +118,42 @@ public class PastureMenu extends ScreenHandler {
             int invStart = 1 + MAX_FUNCTIONAL;
             if (index < invStart) {
                 if (!this.insertItem(stack, invStart, this.slots.size(), true)) return ItemStack.EMPTY;
-            } else if (!this.insertItem(stack, 0, invStart, false)) {
+            } else if (!insertIntoUpgrades(stack, invStart)) {     // respects each upgrade slot's max of 1
                 return ItemStack.EMPTY;
             }
             if (stack.isEmpty()) slot.setStack(ItemStack.EMPTY); else slot.markDirty();
         }
         return result;
+    }
+
+    /**
+     * Shift-click insert into the upgrade region (slots {@code 0..to}). Unlike vanilla {@code insertItem},
+     * this honors each slot's {@link Slot#getMaxItemCount()} — the upgrade slots cap at 1, so a shift-clicked
+     * stack of upgrades can't overfill one (bug-hunt #5). Returns whether anything moved.
+     */
+    private boolean insertIntoUpgrades(ItemStack stack, int to) {
+        boolean moved = false;
+        for (int i = 0; i < to && !stack.isEmpty(); i++) {
+            Slot s = this.slots.get(i);
+            if (!s.canInsert(stack)) continue;
+            int cap = Math.min(s.getMaxItemCount(), stack.getMaxCount());
+            ItemStack cur = s.getStack();
+            if (cur.isEmpty()) {
+                if (cap <= 0) continue;
+                ItemStack put = stack.copy();
+                put.setCount(Math.min(cap, stack.getCount()));
+                stack.decrement(put.getCount());
+                s.setStack(put);
+                s.markDirty();
+                moved = true;
+            } else if (ItemStack.areItemsAndComponentsEqual(cur, stack) && cur.getCount() < cap) {
+                int n = Math.min(cap - cur.getCount(), stack.getCount());
+                cur.increment(n);
+                stack.decrement(n);
+                s.markDirty();
+                moved = true;
+            }
+        }
+        return moved;
     }
 }

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * GpLog — the single observability seam for Greener Pastures (see {@code OBSERVABILITY.md}).
@@ -51,6 +52,7 @@ public final class GpLog {
     private static BlockingQueue<String> queue;
     private static Thread writer;
     private static volatile boolean running;
+    private static final AtomicLong dropped = new AtomicLong();   // events lost to a full queue; surfaced inline by the writer (M2)
 
     /** Open the log + start the writer thread. Call FIRST in mod init. Idempotent; never throws. */
     public static synchronized void init() {
@@ -97,7 +99,7 @@ public final class GpLog {
                 val(sb, kv[k + 1]);
             }
             sb.append('}');
-            queue.offer(sb.toString());
+            if (!queue.offer(sb.toString())) dropped.incrementAndGet();   // full queue (stalled disk): count it, don't block the game thread
         } catch (Throwable ignored) {
             // logging must never break the caller
         }
@@ -135,8 +137,8 @@ public final class GpLog {
     // ── writer thread (mirrors analytics.EventLog#drainLoop) ──
 
     private static void drainLoop(Path file) {
-        try (BufferedWriter w = Files.newBufferedWriter(file,
-                StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
+        BufferedWriter w = null;
+        try {
             while (running || !queue.isEmpty()) {
                 String line;
                 try {
@@ -144,21 +146,50 @@ public final class GpLog {
                 } catch (InterruptedException ie) {
                     continue;
                 }
-                if (line == null) continue;
-                w.write(line);
-                w.write('\n');
-                int batch = 0;
-                String more;
-                while ((more = queue.poll()) != null) {     // drain the backlog under one flush
-                    w.write(more);
-                    w.write('\n');
-                    if (++batch >= 512) break;
+                long lost = dropped.getAndSet(0);
+                if (line == null && lost == 0) continue;    // idle: nothing to write
+                try {
+                    if (w == null) w = Files.newBufferedWriter(file,
+                            StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                    if (lost > 0) {                          // surface flood gaps inline so the live tail shows the hole
+                        w.write(droppedLine(lost));
+                        w.write('\n');
+                    }
+                    if (line != null) {
+                        w.write(line);
+                        w.write('\n');
+                        int batch = 0;
+                        String more;
+                        while ((more = queue.poll()) != null) { // drain the backlog under one flush
+                            w.write(more);
+                            w.write('\n');
+                            if (++batch >= 512) break;
+                        }
+                    }
+                    w.flush();                              // ≤1s latency ⇒ live tail
+                } catch (IOException io) {
+                    // a transient disk error must not permanently kill the debug log — reopen on the next line
+                    GreenerPastures.LOG.error("[gplog] write failed for {}; will reopen", file, io);
+                    if (w != null) { try { w.close(); } catch (IOException ignored) { } w = null; }
                 }
-                w.flush();                                  // ≤1s latency ⇒ live tail
             }
-        } catch (IOException ex) {
-            GreenerPastures.LOG.error("[gplog] writer failed for {}", file, ex);
+        } finally {
+            if (w != null) try { w.close(); } catch (IOException ignored) { }
         }
+    }
+
+    /** Synthetic gap marker: emitted by the writer when the bounded queue dropped events under flood. */
+    private static String droppedLine(long n) {
+        StringBuilder sb = new StringBuilder(96);
+        sb.append('{');
+        key(sb, "t");     str(sb, LocalDateTime.now().format(TS)); sb.append(',');
+        key(sb, "lvl");   str(sb, "WARN");                         sb.append(',');
+        key(sb, "tag");   str(sb, "gplog");                        sb.append(',');
+        key(sb, "ev");    str(sb, "dropped");                      sb.append(',');
+        key(sb, "count"); sb.append(n);                           sb.append(',');
+        key(sb, "note");  str(sb, "gp-log queue full; events lost — raise QUEUE_CAP or minLevel");
+        sb.append('}');
+        return sb.toString();
     }
 
     // ── rotation: archive last session's latest.log, keep the newest KEEP_ARCHIVES ──

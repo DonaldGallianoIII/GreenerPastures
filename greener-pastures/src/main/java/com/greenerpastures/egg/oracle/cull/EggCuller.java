@@ -8,7 +8,8 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
 
-import java.util.IdentityHashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -29,15 +30,22 @@ public final class EggCuller {
 
     private static final int SUMMARY_COLOR = 0xFFE7E9F0;
 
-    private static final Map<ItemStack, EggInfo> CACHE = new IdentityHashMap<>();
+    // Per-ItemStack identity cache (stacks have no value equals, so identity is intended). Synchronized
+    // access-order LRU — gradual eviction past CACHE_MAX, no full-clear recompute storm (bug-hunt #7).
+    private static final int CACHE_MAX = 4096;
+    private static final Map<ItemStack, EggInfo> CACHE = Collections.synchronizedMap(
+            new LinkedHashMap<ItemStack, EggInfo>(256, 0.75f, true) {
+                @Override protected boolean removeEldestEntry(Map.Entry<ItemStack, EggInfo> eldest) {
+                    return size() > CACHE_MAX;
+                }
+            });
 
     private static EggInfo infoFor(ItemStack stack) {
         EggInfo cached = CACHE.get(stack);
         if (cached != null) return cached;
         EggInfo info = EggReader.read(stack);
         if (info == null) return null;             // not an egg (cheap id check; don't cache)
-        if (CACHE.size() > 8192) CACHE.clear();    // bound memory; recompute after a clear
-        CACHE.put(stack, info);
+        CACHE.put(stack, info);                     // LRU evicts the eldest past CACHE_MAX
         return info;
     }
 
