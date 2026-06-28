@@ -46,4 +46,13 @@ class DataAccountTest {
         assertEquals(0L, a.balance());
         assertTrue(a.tryDebit(0), "a zero debit is always 'paid'");
     }
+
+    @Test
+    void creditSaturatesInsteadOfOverflowingNegative() {
+        DataAccount a = new DataAccount(Long.MAX_VALUE - 5);
+        a.credit(100);                                   // would wrap to negative with a plain +=
+        assertEquals(Long.MAX_VALUE, a.balance(), "overflow saturates at MAX_VALUE");
+        assertTrue(a.balance() > 0, "balance must never go negative");
+        assertTrue(a.canAfford(Long.MAX_VALUE), "and the saturated balance still reads as affordable");
+    }
 }

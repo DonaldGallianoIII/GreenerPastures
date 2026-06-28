@@ -67,4 +67,16 @@ class ShinyOddsTest {
     void alreadyShinyNeverDoubleCounts() {
         assertFalse(ShinyOdds.procMakesShiny(true, 1.0, 0.5, 0.0, 0.0), "already shiny ⇒ proc adds nothing");
     }
+
+    @Test
+    void zeroOrNaNBaseRateMeansNeverShinyNotGuaranteed() {
+        // server disabled shinies (shinyRate=0): odds must be infinite ⇒ probability 0, NOT guaranteed.
+        assertTrue(Double.isInfinite(ShinyOdds.effectiveOdds(0, 2f, 2f, 2f, true, true, true)),
+                "base 0 ⇒ infinite odds even with every multiplier stacked");
+        assertTrue(Double.isInfinite(ShinyOdds.effectiveOdds(Double.NaN, null, null, null, false, false, false)),
+                "a NaN base rate is treated as never-shiny, not guaranteed");
+        double odds = ShinyOdds.effectiveOdds(0, null, null, null, false, false, false);
+        assertFalse(ShinyOdds.procMakesShiny(false, 1.0, odds, 0.0, 0.0),
+                "with shinies disabled, a firing proc must NOT force a guaranteed shiny");
+    }
 }

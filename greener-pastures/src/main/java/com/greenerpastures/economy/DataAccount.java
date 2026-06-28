@@ -13,8 +13,13 @@ public final class DataAccount {
 
     public long balance() { return balance; }
 
-    /** Add Data (e.g. from a Renderer). Non-positive amounts are ignored. */
-    public void credit(long amount) { if (amount > 0) balance += amount; }
+    /** Add Data (e.g. from a Renderer). Non-positive amounts are ignored; the balance saturates at
+     *  {@link Long#MAX_VALUE} rather than overflowing negative (which would break "never negative"). */
+    public void credit(long amount) {
+        if (amount <= 0) return;
+        long sum = balance + amount;
+        balance = (sum < balance) ? Long.MAX_VALUE : sum;   // wrap detected (positive add went down) → saturate
+    }
 
     /** True if the balance can cover {@code amount}. */
     public boolean canAfford(long amount) { return amount <= 0 || balance >= amount; }

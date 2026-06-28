@@ -19,6 +19,10 @@ public final class ShinyOdds {
      */
     public static double effectiveOdds(double baseRate, Float always, Float crystal, Float masuda,
                                        boolean parentAShiny, boolean parentBShiny, boolean differentOT) {
+        // base "never shiny" (server set shinyRate=0, or NaN) ⇒ infinite odds ⇒ probability 0. Without this,
+        // baseRate 0 makes shinyProbability clamp to 1.0 and every proc becomes a GUARANTEED shiny — the
+        // exact opposite of intent, and a breach of the gated-shiny invariant (bug-hunt #13).
+        if (!(baseRate > 0.0)) return Double.POSITIVE_INFINITY;
         double odds = baseRate;
         if (always != null) {
             if (always == 0f) return Double.POSITIVE_INFINITY;

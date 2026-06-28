@@ -14,7 +14,10 @@ public final class RenderValuation {
      *  Enrichment multiplier (≥1; values below 1 are floored to 1 — never negative income). */
     public static long dataFor(int eggsRendered, long baseValuePerEgg, double enrichmentMultiplier) {
         if (eggsRendered <= 0 || baseValuePerEgg <= 0) return 0L;
-        double mult = enrichmentMultiplier < 1.0 ? 1.0 : enrichmentMultiplier;
-        return (long) Math.floor(eggsRendered * (double) baseValuePerEgg * mult);
+        // floor a NaN/sub-1 multiplier to 1× (NaN >= 1.0 is false) so income is never negative or garbage.
+        double mult = (enrichmentMultiplier >= 1.0) ? enrichmentMultiplier : 1.0;
+        // double→long narrowing already saturates to Long.MAX_VALUE for huge products (JLS 5.1.3) and
+        // yields 0 for NaN — so this can't wrap negative; precision is lossy only above 2^53, acceptably.
+        return (long) Math.floor((double) eggsRendered * (double) baseValuePerEgg * mult);
     }
 }
