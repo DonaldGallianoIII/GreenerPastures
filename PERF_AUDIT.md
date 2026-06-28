@@ -6,7 +6,7 @@ _Two-agent sweep (server hot-paths + client/heap), analysis-only — nothing was
 - ~~One server-wide TPS-killer (the collector's cube scan)~~ → **✅ GONE: the Shiny Egg Collector was deleted entirely** (2026-06-28; its role → BioBank + Renderer + scripting filters). The worst offender is removed by deletion.
 - **One client per-frame offender** (the Arrange board relayouts every frame).
 - A cluster of **HIGH**s: per-tick registry rebuild+string-parse, whole-dataset NBT re-encode on every save, on-thread Gson, per-frame Daemon model+wire allocation, two leaking static maps.
-- ✅ **The pure-logic cores are clean** — economy/analytics/`EggQueue`/`CatchUp`/`ShinyOdds`/biobank: no O(n²), no leaks, all single-pass. (The test-first discipline paid off.)
+- ✅ **The pure-logic cores are clean** — economy/analytics/`EggQueue`/`ShinyOdds`/biobank: no O(n²), no leaks, all single-pass. (The test-first discipline paid off.)
 
 ---
 
@@ -43,7 +43,7 @@ Every 20 ticks each collector scans a **13×13×13 cube** (RADIUS 6), allocating
 Bounded per-row `Text.literal`/`String.format` in `FarmScreen`/`EggOracleScreen`/`CompilerScreen`/`PastureScreen` (standard MC idiom) · per-breed pair-collection rebuilds (infrequent) · `studio/StudioLive` 20fps repaint (**dev-only `JavaExec`, not in-game**).
 
 ## ✅ Confirmed clean (checked, not problems)
-economy/* (O(1) scalars) · `DashboardStats`/`RenderLedger`/`EggQueue`/`CatchUp`/`ShinyOdds`/`IvFilter`/`RenderSelection` (single-pass, bounded) · BioBank has **no ticker** · egg-read reflection resolved once + client-only + per-stack cached · hit-testing is O(nodes) not O(nodes²).
+economy/* (O(1) scalars) · `DashboardStats`/`RenderLedger`/`EggQueue`/`ShinyOdds`/`IvFilter`/`RenderSelection` (single-pass, bounded) · BioBank has **no ticker** · egg-read reflection resolved once + client-only + per-stack cached · hit-testing is O(nodes) not O(nodes²).
 
 ---
 

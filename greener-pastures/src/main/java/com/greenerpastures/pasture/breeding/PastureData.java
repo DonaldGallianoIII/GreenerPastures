@@ -30,8 +30,6 @@ public class PastureData {
     /** Bred eggs waiting to drain into the pasture's small visible tray — the FIFO from
      *  {@code EGG_STORAGE_DESIGN.md} (bounded, pause-when-full, never evict). Persisted. */
     public final EggQueue<ItemStack> eggQueue = new EggQueue<>(EggQueue.MIN_CAP);
-    /** World-time of the last successful breed, for lazy offline catch-up (see {@link CatchUp}). */
-    public long lastBred = 0L;
     /** Next world-time this pasture may breed — in-memory schedule only (NOT persisted; a missed
      *  interval after a restart is harmless). Lives here instead of a static map to avoid a leak. */
     public transient long nextBreedTick = 0L;
@@ -62,7 +60,6 @@ public class PastureData {
         NbtList qn = new NbtList();
         eggQueue.forEach(egg -> { if (!egg.isEmpty()) qn.add(egg.encode(lookup)); });
         nbt.put("eggQueue", qn);
-        nbt.putLong("lastBred", lastBred);
         return nbt;
     }
 
@@ -84,7 +81,6 @@ public class PastureData {
             ItemStack.fromNbt(lookup, el).ifPresent(queued::add);
         }
         d.eggQueue.restore(queued);
-        d.lastBred = nbt.getLong("lastBred");
         return d;
     }
 }

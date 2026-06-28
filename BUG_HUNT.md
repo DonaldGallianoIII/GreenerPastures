@@ -47,7 +47,7 @@ _Two background agents swept the whole mod after the perf pass (one **regression
 - **No NBT key mismatch** in live persistence — `PastureData`, `BioBankData`, and the registry's flat `dim|pos` keys round-trip key-for-key; malformed entries are caught and dropped, not fatal.
 - **Mod-coupling is fail-safe** — `CobbreedingBridge` guards every API call and self-disables on first egg-build failure; `MultiPairBreeder` re-checks `isAvailable()` every tick; init order is correct. (#1 was the one gap, now closed.)
 - **`EggReader.species()` never returns null** ("unknown" fallback) → no BioBank `NbtCompound.put(null,…)` crash.
-- **Dead code:** `economy/*` and `CatchUp` are unreferenced (so #8 is latent). `lastBred` is persisted but never consumed — the offline-egg **catch-up feature is not wired up** (a functional gap to revisit, not a crash).
+- **Dead code:** `economy/*` is unreferenced (so #8 is latent — it's the currency, about to be wired). `CatchUp`/`lastBred` (offline-egg catch-up) was never wired and was **removed 2026-06-28** (Deuce's call) — pastures only breed in loaded chunks.
 - **Clean:** `OddsEngine`, `ShinyEggDetector`, `IvFilter`, `DashboardStats`/`Export`, `EventReader`, the pasture mixin.
 
 ## 🛠️ Fix status — commits (2026-06-28, on `f882fba`)

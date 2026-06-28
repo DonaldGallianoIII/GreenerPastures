@@ -24,7 +24,7 @@ _Maps `~/pokemonthink` (design) against what's actually in `~/pokemon-prediction
 | **Multi-pair breeding** | ✅ | `MultiPairBreeder`. |
 | **Shiny proc** (bounded reroll) | ✅ tested | `ShinyOdds`. |
 | **24-egg FIFO** | 🟢 | `EggQueue` + breeder adapter (not deployed → QA Q1). |
-| **Offline catch-up** | 🟢 | `CatchUp` math; **not wired**; needs the symmetric 24-buffer + base-rate-only. |
+| **Offline catch-up** | ❌ cut | Was `CatchUp` math (never wired); **removed 2026-06-28** (Deuce's call) — pastures only breed in loaded chunks. |
 | **Notebook** (editor: node-graph + plots + local withdraw) | 🟡 misnamed | Built as the **"Daemon" screen** + wand + Arrange board. Needs the rename + Dashboard fold-in + local withdraw. |
 | **Dashboard** (dark telemetry plots) | 🟢 | `DashboardStats/Export/Reader`. Design wants it as a **Notebook tab**: sources-vs-sinks, net Data/hr, body count, shiny curve. |
 | **Renderer** (cull eggs in-step → Data, never materialized) | 🔴 block / 🟢 brain | **Block not built.** Its keep-filter LOGIC is built (`RenderSelection`/`ValueRule`/`IvFilter`/`RenderLedger`). The centerpiece. |
@@ -46,11 +46,10 @@ _Maps `~/pokemonthink` (design) against what's actually in `~/pokemon-prediction
 - **Data accounting** core — balance, income/drain, the one balance constant (egg→Data value vs tether burn). Pure + testable.
 - **Renderer valuation** — eggs + keep-filter → kept set + cull count → Data amount (Enrichment-aware). Mostly `RenderSelection` already.
 - **Grid telemetry** — net Data/hr, sources vs sinks, time-to-empty, body count. Extends `DashboardStats`.
-- **Offline symmetric-24-buffer** — extend `CatchUp` (trophy-pause + fuel-buffer, zero offline burn).
 
 **Gated on your decision:** Soul Tether (knob + magnitudes).
 
 **MC adapters / blocks (need the game → QA rows):** Renderer block · Daemon item · drops · enchant buffs · music · the Notebook rename/unification.
 
 ## The design's own proposed build order (STATE_AND_PLAN)
-1. Renderer block → 2. Data account + Daemon item → 3. Soul Tether (start w/ Shiny) → 4. offline catch-up → 5. **min-slice test** (Renderer keep-shinies + 1 Shiny tether + Daemon counter = prove *feed-to-amplify*) → 6. then augments, drops, grid, Dashboard plots, enchant buff, music, easter eggs, prestige.
+1. Renderer block → 2. Data account + Daemon item → 3. Soul Tether (start w/ Shiny) → 4. **min-slice test** (Renderer keep-shinies + 1 Shiny tether + Daemon counter = prove *feed-to-amplify*) → 5. then augments, drops, grid, Dashboard plots, enchant buff, music, easter eggs, prestige. _(offline catch-up was step 4 in the original spec — **cut** 2026-06-28.)_

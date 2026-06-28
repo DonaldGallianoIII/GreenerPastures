@@ -26,24 +26,22 @@ The thinner the MC layer, the more of the mod is testable in milliseconds.
 | `AugmentsTest` (4) | bounded shiny-proc clamp (0–100% — can't explode) |
 | `ShinyOddsTest` (9) | the bonus-reroll math extracted from `CobbreedingBridge` (effective odds = calcShiny, proc gates, never double-counts a shiny) |
 | `EggQueueTest` (8) | per-pasture FIFO: pause-when-full-**never-evict**, drain-to-tray, snapshot/restore |
-| `CatchUpTest` (7) | bounded offline breeding (cycles elapsed, "banks ~24 then waits") |
 | `DaemonControllerTest` (3) | pairing model: pre-wired buckets, 8-pair clamp, half-bucket ≠ pair |
 | `ValueRuleTest` (6) | "valuable egg" guard (shiny / perfect-IV / IV-total) |
 | `RenderSelectionTest` (3) | keep-vs-render split |
 | `RenderLedgerTest` (6) | Send-to-Renderer preview: per-species counts + independent safety flags |
 | `IvFilterTest` (5) | per-stat IV gate (Daemon FILTER node) |
 
-**55 green** as of 2026-06-28.
+**85 green** as of 2026-06-28.
 
 ## Extraction backlog — ✅ cores done (2026-06-28)
 - [x] **Shiny-odds math** → `ShinyOdds` (CobbreedingBridge now delegates to it).
 - [x] **Per-pasture FIFO egg-queue** → `EggQueue`.
 - [x] **IV/EV filtering + "valuable egg"** → `IvFilter` + `ValueRule`.
-- [x] **Away-from-chunk catch-up** → `CatchUp`.
 - [~] **BioBank** — value / selection / render-ledger cores done (`ValueRule` · `RenderSelection` · `RenderLedger`); what remains is the **adapter** that lifts the live store off `ItemStack` + wires these in.
 
 ## Next: the thin MC adapters (need an occasional in-game check)
 The cores are proven; wiring them into the live game is the remaining work — and the ONLY part that wants Minecraft:
-- `MultiPairBreeder` → produce via `ShinyOdds`, enqueue into `EggQueue`, drain to the tray; offline via `CatchUp`.
+- `MultiPairBreeder` → produce via `ShinyOdds`, enqueue into `EggQueue`, drain to the tray.
 - BioBank → build `EggSummary` from egg `ItemStack`s (extend `EggReader`), use `RenderSelection` + `RenderLedger` for the Send flow.
 - Then UI, last.

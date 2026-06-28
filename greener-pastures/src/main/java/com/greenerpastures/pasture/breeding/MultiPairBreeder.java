@@ -113,7 +113,6 @@ public final class MultiPairBreeder {
                     .put("x", pos.getX()).put("y", pos.getY()).put("z", pos.getZ()));
         }
         if (laid > 0) {
-            pd.lastBred = now;
             GpLog.d("breeder", "brood", "pos", pos.toShortString(), "laid", laid, "queued", pd.eggQueue.size());
         }
         return laid;
