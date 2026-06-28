@@ -16,7 +16,6 @@ import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +34,13 @@ import java.util.Map;
 public final class ShinyEggDetector {
     private ShinyEggDetector() {}
 
-    private static final Map<ItemStack, Boolean> CACHE = new IdentityHashMap<>();
+    private static final int CACHE_MAX = 4096;   // perf-audit M6: LRU bound (gradual eviction, no full-clear storm)
+    private static final Map<ItemStack, Boolean> CACHE = java.util.Collections.synchronizedMap(
+            new java.util.LinkedHashMap<ItemStack, Boolean>(256, 0.75f, true) {
+                @Override protected boolean removeEldestEntry(Map.Entry<ItemStack, Boolean> eldest) {
+                    return size() > CACHE_MAX;
+                }
+            });
 
     /** Any Cobbreeding Pokémon egg (any type, shiny or not). */
     public static boolean isEgg(ItemStack stack) {
@@ -47,12 +52,11 @@ public final class ShinyEggDetector {
 
     /** Only a SHINY egg. Cached for big-bank performance. */
     public static boolean isShinyEgg(ItemStack stack) {
-        if (!isEgg(stack)) return false;
+        if (stack == null || stack.isEmpty()) return false;
         Boolean cached = CACHE.get(stack);
-        if (cached != null) return cached;
-        boolean result = compute(stack);
-        if (CACHE.size() > 8192) CACHE.clear();   // bound memory; recompute after a clear
-        CACHE.put(stack, result);
+        if (cached != null) return cached;                  // cache hit: skip the isEgg + compute recheck (M5)
+        boolean result = isEgg(stack) && compute(stack);
+        CACHE.put(stack, result);                           // LRU evicts the eldest past CACHE_MAX (M6)
         return result;
     }
 

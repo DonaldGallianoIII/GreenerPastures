@@ -48,6 +48,8 @@ public final class DaemonController {
     private int lastX, lastY;
     private String flashMsg;
     private int flashTicks;
+    private DaemonView.Model cachedModel;   // perf-audit H4: rebuilt on input/flash only, not every frame
+    private boolean modelDirty = true;
 
     public DaemonController(List<Unit> units, int maxPairs, String pastureName) {
         this.units = units;
@@ -71,6 +73,7 @@ public final class DaemonController {
         if (w == viewW && h == viewH && top == contentTop) return;
         viewW = w; viewH = h; contentTop = top;
         relayout();
+        modelDirty = true;
     }
 
     private void relayout() {
@@ -106,7 +109,7 @@ public final class DaemonController {
         assign.forEach((id, b) -> { if (b != null && b > 0) out.put(id, b); });
         return out;
     }
-    public void tickFlash() { if (flashTicks > 0) flashTicks--; }
+    public void tickFlash() { if (flashTicks > 0 && --flashTicks == 0) modelDirty = true; }
 
     // ---- screen <-> world ----
     private double wx(double mx) { return (mx - panX) / zoom; }
@@ -120,6 +123,7 @@ public final class DaemonController {
     private double[] topPortW(UUID id) { float[] w = world(id); return new double[]{w[0] + DaemonView.NODE_W / 2.0, w[1]}; }
 
     public DaemonView.Model buildModel() {
+        if (cachedModel != null && !modelDirty && mode == Mode.NONE && flashTicks <= 0) return cachedModel;
         DaemonView.Model m = new DaemonView.Model();
         m.panX = panX; m.panY = panY; m.zoom = zoom;
         m.title = pastureName.isEmpty() ? "Daemon" : "Daemon — " + pastureName;
@@ -141,6 +145,8 @@ public final class DaemonController {
             double[] a = topPortW(wireFrom);
             m.wires.add(new DaemonView.Wire(a[0], a[1], wireWX, wireWY, DaemonView.WIRE_TEMP));
         }
+        cachedModel = m;
+        modelDirty = false;
         return m;
     }
 
@@ -186,7 +192,7 @@ public final class DaemonController {
         if (b == null) return;
         assign.values().removeIf(v -> v.equals(b)); dirty = true;
     }
-    private void flash(String s) { flashMsg = s; flashTicks = 80; }
+    private void flash(String s) { flashMsg = s; flashTicks = 80; modelDirty = true; }
 
     // ---- input (screen coords; button: 0 = left, 1 = right, 2 = middle) ----
     public boolean mouseDown(double mx, double my, int button) {
@@ -223,6 +229,7 @@ public final class DaemonController {
         }
         boolean was = mode != Mode.NONE;
         mode = Mode.NONE; wireFrom = null; dragId = null;
+        modelDirty = true;
         return was;
     }
 
@@ -233,6 +240,7 @@ public final class DaemonController {
         if (nz == old) return true;
         double X = (mx - panX) / old, Y = (my - panY) / old;
         zoom = nz; panX = mx - X * zoom; panY = my - Y * zoom;
+        modelDirty = true;
         return true;
     }
 }

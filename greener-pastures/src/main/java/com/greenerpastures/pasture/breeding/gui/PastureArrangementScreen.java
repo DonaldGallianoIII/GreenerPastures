@@ -70,6 +70,7 @@ public class PastureArrangementScreen extends Screen {
 
     private UUID dragging;
     private int dragOffX, dragOffY, dragX, dragY;
+    private boolean layoutDirty = true;   // perf-audit C2: relayout only on change, not every frame
     private boolean dirty;            // only persist pairings if the user actually changed something
     private boolean persisted;        // guard so close() + removed() don't double-send
     private String flashMsg;
@@ -94,6 +95,7 @@ public class PastureArrangementScreen extends Screen {
         }
         computeFrame();
         nodeButton = new GpButton(frameX + 16, belowBucketsY + 2, 120, 18, nodeLabel(), this::cycleNodeSize);
+        layoutDirty = true;   // re-fit on (re)open / resize
     }
 
     private void computeFrame() {
@@ -111,6 +113,7 @@ public class PastureArrangementScreen extends Screen {
     private void cycleNodeSize() {
         nodeIdx = (nodeIdx + 1) % NODE_COLS.length;
         if (nodeButton != null) nodeButton.label = nodeLabel();
+        layoutDirty = true;
     }
 
     // ---- layout ---------------------------------------------------------------------------------
@@ -174,7 +177,7 @@ public class PastureArrangementScreen extends Screen {
         for (int gx = 0; gx < this.width; gx += 24) ctx.fill(gx, 0, gx + 1, this.height, GRID);
         for (int gy = 0; gy < this.height; gy += 24) ctx.fill(0, gy, this.width, gy + 1, GRID);
 
-        relayout();
+        if (layoutDirty) { relayout(); layoutDirty = false; }
         if (flashTicks > 0) flashTicks--;
 
         // Header — trimmed so it never runs under the Back button (top-right)
@@ -247,6 +250,7 @@ public class PastureArrangementScreen extends Screen {
         if (hit != null) {
             if (button == 1) {              // right-click → unpair
                 if (assign.remove(hit) != null) dirty = true;
+                layoutDirty = true;
                 return true;
             }
             if (button == 0) {              // left-click → pick up
@@ -256,6 +260,7 @@ public class PastureArrangementScreen extends Screen {
                 dragOffY = (int) my - r[1];
                 dragX = (int) mx;
                 dragY = (int) my;
+                layoutDirty = true;         // reflow the pool without the picked-up chip
                 return true;
             }
         }
@@ -285,6 +290,7 @@ public class PastureArrangementScreen extends Screen {
         if (button == 0 && dragging != null) {
             dropAt(mx, my);
             dragging = null;
+            layoutDirty = true;
             return true;
         }
         return super.mouseReleased(mx, my, button);
