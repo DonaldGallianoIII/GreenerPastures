@@ -68,10 +68,13 @@ final class EventLog {
                     w.flush();
                 } catch (IOException io) {
                     // a transient disk error (full, handle revoked) must NOT permanently kill logging —
-                    // close, null the writer, and reopen on the next row so it recovers (bug-hunt #9)
-                    GreenerPastures.LOG.error("[analytics] write failed for {}; will reopen", file, io);
+                    // close, null the writer, and reopen on the next row so it recovers (bug-hunt #9).
+                    // Back off first: poll() returns instantly while the queue has a backlog, so without a
+                    // pause a *persistent* outage would spin a core + flood this very log (review follow-up).
+                    GreenerPastures.LOG.error("[analytics] write failed for {}; will retry in 1s", file, io);
                     closeQuietly(w);
                     w = null;
+                    try { Thread.sleep(1000L); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
                 }
             }
         } finally {

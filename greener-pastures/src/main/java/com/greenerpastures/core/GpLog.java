@@ -146,7 +146,7 @@ public final class GpLog {
                 } catch (InterruptedException ie) {
                     continue;
                 }
-                long lost = dropped.getAndSet(0);
+                long lost = dropped.get();                  // peek; cleared only after a durable flush
                 if (line == null && lost == 0) continue;    // idle: nothing to write
                 try {
                     if (w == null) w = Files.newBufferedWriter(file,
@@ -167,10 +167,14 @@ public final class GpLog {
                         }
                     }
                     w.flush();                              // ≤1s latency ⇒ live tail
+                    if (lost > 0) dropped.addAndGet(-lost); // marker durably written → clear only what we reported
                 } catch (IOException io) {
-                    // a transient disk error must not permanently kill the debug log — reopen on the next line
-                    GreenerPastures.LOG.error("[gplog] write failed for {}; will reopen", file, io);
+                    // a transient disk error must not permanently kill the debug log — reopen on the next line.
+                    // Back off so a *persistent* outage can't spin this thread (poll() returns instantly while
+                    // the queue has a backlog); the drop count is preserved above for the next attempt.
+                    GreenerPastures.LOG.error("[gplog] write failed for {}; will retry in 1s", file, io);
                     if (w != null) { try { w.close(); } catch (IOException ignored) { } w = null; }
+                    try { Thread.sleep(1000L); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
                 }
             }
         } finally {

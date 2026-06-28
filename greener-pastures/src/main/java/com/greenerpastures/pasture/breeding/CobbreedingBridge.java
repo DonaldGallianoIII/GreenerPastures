@@ -151,7 +151,8 @@ public final class CobbreedingBridge {
         try {
             DefaultedList<ItemStack> eggs = eggsAt(pos);
             if (eggs == null) return;
-            boolean has = eggs.stream().anyMatch(s -> !s.isEmpty());
+            boolean has = false;   // indexed, zero-alloc: this runs every produce/drain cycle per active pasture
+            for (int i = 0; i < eggs.size(); i++) { if (!eggs.get(i).isEmpty()) { has = true; break; } }
             BlockState st = world.getBlockState(pos);
             if (st.contains(CustomProperties.HAS_EGG) && st.get(CustomProperties.HAS_EGG) != has) {
                 world.setBlockState(pos, st.with(CustomProperties.HAS_EGG, has));
