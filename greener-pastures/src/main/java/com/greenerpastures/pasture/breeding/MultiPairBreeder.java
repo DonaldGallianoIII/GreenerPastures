@@ -3,8 +3,10 @@ package com.greenerpastures.pasture.breeding;
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.analytics.Event;
+import com.greenerpastures.core.GpLog;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -39,13 +41,16 @@ public final class MultiPairBreeder {
         if (world.getTime() % SCAN_INTERVAL != 0L) return;
 
         MinecraftServer server = world.getServer();
-        Map<BlockPos, PastureData> pastures = PastureRegistry.get(server).inWorld(world);
+        PastureRegistry reg = PastureRegistry.get(server);
+        Map<BlockPos, PastureData> pastures = reg.inWorld(world);
         if (pastures.isEmpty()) return;
 
         long now = world.getTime();
         String dim = world.getRegistryKey().getValue().toString();
+        boolean dirty = false;
         for (Map.Entry<BlockPos, PastureData> entry : pastures.entrySet()) {
-            BreedingTier tier = entry.getValue().tier();
+            PastureData pd = entry.getValue();
+            BreedingTier tier = pd.tier();
             if (tier == null) continue;                                  // no Pasture Upgrade slotted
 
             BlockPos pos = entry.getKey();
@@ -58,18 +63,27 @@ public final class MultiPairBreeder {
             // a rogue random egg by holding its timer open every scan (not just on our breed ticks).
             CobbreedingBridge.suppressNativeBreeding(pos, now);
 
-            String key = dim + "|" + pos.asLong();
-            if (now < nextBreed.getOrDefault(key, 0L)) continue;
+            int moved = drainQueueToTray(pos, pd);                       // refill the tray as it's harvested
 
-            int laid = breedPairs(world, pos, pasture, tier, entry.getValue());
-            nextBreed.put(key, now + CobbreedingBridge.nextBreedingInterval());
-            if (laid > 0) CobbreedingBridge.refreshHasEgg(world, pos);
+            int laid = 0;
+            String key = dim + "|" + pos.asLong();
+            if (now >= nextBreed.getOrDefault(key, 0L)) {
+                laid = breedPairs(world, pos, pasture, tier, pd, now);   // enqueues into the FIFO
+                nextBreed.put(key, now + CobbreedingBridge.nextBreedingInterval());
+                moved += drainQueueToTray(pos, pd);                      // top the tray straight up
+            }
+
+            if (moved > 0 || laid > 0) {
+                dirty = true;
+                CobbreedingBridge.refreshHasEgg(world, pos);
+            }
         }
+        if (dirty) reg.markDirty();
     }
 
-    /** Lay one egg per compatible configured pair, up to the tier's cap. */
+    /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue. */
     private static int breedPairs(ServerWorld world, BlockPos pos, PokemonPastureBlockEntity pasture,
-                                  BreedingTier tier, PastureData pd) {
+                                  BreedingTier tier, PastureData pd, long now) {
         List<PokemonPastureBlockEntity.Tethering> tethered = pasture.getTetheredPokemon();
         if (tethered == null || tethered.size() < 2) return 0;
 
@@ -83,7 +97,10 @@ public final class MultiPairBreeder {
         for (int i = 0; i < pairs.size(); i++) {
             CobbreedingBridge.BredEgg egg = CobbreedingBridge.buildEggForPair(pairs.get(i), proc);
             if (egg == null) continue;                              // incompatible pair, skip
-            if (!CobbreedingBridge.addEgg(pos, egg.stack())) break; // pasture egg slots full
+            if (!pd.eggQueue.offer(egg.stack())) {                  // FIFO full → pause (keep eggs aren't evicted)
+                GpLog.w("breeder", "queue_full", "pos", pos.toShortString(), "cap", pd.eggQueue.cap());
+                break;
+            }
             laid++;
             Analytics.record(world, Event.of("egg_laid")
                     .put("source", "multipair").put("tier", tier.name())
@@ -91,7 +108,24 @@ public final class MultiPairBreeder {
                     .put("shiny", egg.shiny()).put("proc_shiny", egg.procShiny())
                     .put("x", pos.getX()).put("y", pos.getY()).put("z", pos.getZ()));
         }
+        if (laid > 0) {
+            pd.lastBred = now;
+            GpLog.d("breeder", "brood", "pos", pos.toShortString(), "laid", laid, "queued", pd.eggQueue.size());
+        }
         return laid;
+    }
+
+    /** Move queued eggs into the pasture's tray while it has empty slots; returns how many moved. */
+    private static int drainQueueToTray(BlockPos pos, PastureData pd) {
+        int moved = 0;
+        ItemStack next;
+        while ((next = pd.eggQueue.peek()) != null) {
+            if (!CobbreedingBridge.addEgg(pos, next)) break;       // tray full → leave it queued (never lost)
+            pd.eggQueue.poll();                                     // committed to the tray
+            moved++;
+        }
+        if (moved > 0) GpLog.d("breeder", "drain", "pos", pos.toShortString(), "moved", moved, "queued", pd.eggQueue.size());
+        return moved;
     }
 
     /** Zero-config default: pair tether slots (2k, 2k+1), up to the tier's cap. */

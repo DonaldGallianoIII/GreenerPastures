@@ -5,9 +5,12 @@ import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.RegistryWrapper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,6 +26,12 @@ public class PastureData {
     public final SimpleInventory upgrades = new SimpleInventory(1 + PastureMenu.MAX_FUNCTIONAL);
     /** mon (tetheringId) -> pair bucket number. Set via the wand GUI's pairing board (P2). */
     public final Map<UUID, Integer> pairings = new HashMap<>();
+
+    /** Bred eggs waiting to drain into the pasture's small visible tray — the FIFO from
+     *  {@code EGG_STORAGE_DESIGN.md} (bounded, pause-when-full, never evict). Persisted. */
+    public final EggQueue<ItemStack> eggQueue = new EggQueue<>(EggQueue.MIN_CAP);
+    /** World-time of the last successful breed, for lazy offline catch-up (see {@link CatchUp}). */
+    public long lastBred = 0L;
 
     /** The installed Pasture Upgrade tier (slot 0), or null if none — drives pairs + slot count. */
     public BreedingTier tier() {
@@ -46,6 +55,11 @@ public class PastureData {
         NbtCompound pn = new NbtCompound();
         pairings.forEach((id, bucket) -> pn.putInt(id.toString(), bucket));
         nbt.put("pairings", pn);
+
+        NbtList qn = new NbtList();
+        for (ItemStack egg : eggQueue.snapshot()) if (!egg.isEmpty()) qn.add(egg.encode(lookup));
+        nbt.put("eggQueue", qn);
+        nbt.putLong("lastBred", lastBred);
         return nbt;
     }
 
@@ -61,6 +75,13 @@ public class PastureData {
                 // drop a malformed key
             }
         }
+
+        List<ItemStack> queued = new ArrayList<>();
+        for (NbtElement el : nbt.getList("eggQueue", NbtElement.COMPOUND_TYPE)) {
+            ItemStack.fromNbt(lookup, el).ifPresent(queued::add);
+        }
+        d.eggQueue.restore(queued);
+        d.lastBred = nbt.getLong("lastBred");
         return d;
     }
 }
