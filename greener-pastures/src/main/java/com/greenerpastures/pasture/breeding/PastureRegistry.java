@@ -7,36 +7,46 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.World;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * World-saved registry of {@link PastureData} keyed by dimension + position. Pasture-owned, shared,
- * persistent. The wand GUI, breeding engine, fill-check, and dashboards all read/write through here.
+ * World-saved registry of {@link PastureData}, indexed <b>dimension → position</b>. The per-dimension
+ * nesting makes the breeder's per-tick {@link #inWorld} an O(1) sub-map lookup — no map rebuild, no key
+ * parsing on the hot path (perf-audit H1). The on-disk format stays the flat {@code dim|pos.asLong()}
+ * key map, so existing saves load unchanged (parsed once on load, flattened once on save).
  */
 public final class PastureRegistry extends PersistentState {
     private static final String ID = "greenerpastures_pastures";
 
-    private final Map<String, PastureData> data = new HashMap<>();
+    private final Map<String, Map<BlockPos, PastureData>> byDim = new HashMap<>();
 
-    private static String key(World world, BlockPos pos) {
-        return world.getRegistryKey().getValue() + "|" + pos.asLong();
+    private static String dimKey(World world) {
+        return world.getRegistryKey().getValue().toString();
     }
 
     public PastureData get(World world, BlockPos pos) {
-        return data.get(key(world, pos));
+        Map<BlockPos, PastureData> m = byDim.get(dimKey(world));
+        return m == null ? null : m.get(pos);
     }
 
     public PastureData getOrCreate(World world, BlockPos pos) {
-        String k = key(world, pos);
-        PastureData d = data.get(k);
+        Map<BlockPos, PastureData> m = byDim.computeIfAbsent(dimKey(world), k -> new HashMap<>());
+        PastureData d = m.get(pos);
         if (d == null) {
             d = new PastureData();
-            d.upgrades.addListener(inv -> markDirty());   // persist when upgrades change
-            data.put(k, d);
+            d.upgrades.addListener(inv -> markDirty());
+            m.put(pos, d);
             markDirty();
         }
         return d;
+    }
+
+    /** Drop a pasture record (e.g. when its block is gone) so it doesn't linger forever. */
+    public void remove(World world, BlockPos pos) {
+        Map<BlockPos, PastureData> m = byDim.get(dimKey(world));
+        if (m != null && m.remove(pos) != null) markDirty();
     }
 
     /** Set a pasture's display name (creating the record if needed) and persist. */
@@ -47,8 +57,7 @@ public final class PastureRegistry extends PersistentState {
 
     /**
      * Replace a pasture's pair assignments (tethering id -> bucket) and persist. Only positive bucket
-     * numbers are kept; 0/negative means "unpaired" and is dropped. The {@code pairings} map has no
-     * change listener (unlike {@code upgrades}), so this is the path that marks the registry dirty.
+     * numbers are kept; 0/negative means "unpaired" and is dropped.
      */
     public void setPairings(World world, BlockPos pos, Map<java.util.UUID, Integer> pairings) {
         PastureData d = getOrCreate(world, pos);
@@ -61,23 +70,16 @@ public final class PastureRegistry extends PersistentState {
         markDirty();
     }
 
-    /** Every pasture record in the given world (dimension), as position -> data. */
+    /** Every pasture record in the given world — a live O(1) sub-map view (empty if the dim has none). */
     public Map<BlockPos, PastureData> inWorld(World world) {
-        String dim = world.getRegistryKey().getValue().toString();
-        Map<BlockPos, PastureData> out = new HashMap<>();
-        data.forEach((k, v) -> {
-            int i = k.indexOf('|');
-            if (i > 0 && k.substring(0, i).equals(dim)) {
-                out.put(BlockPos.fromLong(Long.parseLong(k.substring(i + 1))), v);
-            }
-        });
-        return out;
+        return byDim.getOrDefault(dimKey(world), Collections.emptyMap());
     }
 
     @Override
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         NbtCompound map = new NbtCompound();
-        data.forEach((k, v) -> map.put(k, v.writeNbt(new NbtCompound(), lookup)));
+        byDim.forEach((dim, m) -> m.forEach((pos, v) ->
+                map.put(dim + "|" + pos.asLong(), v.writeNbt(new NbtCompound(), lookup))));
         nbt.put("pastures", map);
         return nbt;
     }
@@ -86,9 +88,17 @@ public final class PastureRegistry extends PersistentState {
         PastureRegistry r = new PastureRegistry();
         NbtCompound map = nbt.getCompound("pastures");
         for (String k : map.getKeys()) {
-            PastureData d = PastureData.fromNbt(map.getCompound(k), lookup);
-            d.upgrades.addListener(inv -> r.markDirty());
-            r.data.put(k, d);
+            int i = k.indexOf('|');
+            if (i <= 0) continue;
+            try {
+                String dim = k.substring(0, i);
+                BlockPos pos = BlockPos.fromLong(Long.parseLong(k.substring(i + 1)));
+                PastureData d = PastureData.fromNbt(map.getCompound(k), lookup);
+                d.upgrades.addListener(inv -> r.markDirty());
+                r.byDim.computeIfAbsent(dim, x -> new HashMap<>()).put(pos, d);
+            } catch (NumberFormatException ignored) {
+                // skip a malformed key
+            }
         }
         return r;
     }

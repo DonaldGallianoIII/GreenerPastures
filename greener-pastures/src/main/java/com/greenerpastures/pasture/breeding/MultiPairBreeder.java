@@ -30,7 +30,6 @@ public final class MultiPairBreeder {
     private MultiPairBreeder() {}
 
     private static final int SCAN_INTERVAL = 20;
-    private static final Map<String, Long> nextBreed = new HashMap<>();
 
     public static void init() {
         ServerTickEvents.END_WORLD_TICK.register(MultiPairBreeder::onWorldTick);
@@ -46,7 +45,6 @@ public final class MultiPairBreeder {
         if (pastures.isEmpty()) return;
 
         long now = world.getTime();
-        String dim = world.getRegistryKey().getValue().toString();
         boolean dirty = false;
         for (Map.Entry<BlockPos, PastureData> entry : pastures.entrySet()) {
             PastureData pd = entry.getValue();
@@ -66,10 +64,9 @@ public final class MultiPairBreeder {
             int moved = drainQueueToTray(pos, pd);                       // refill the tray as it's harvested
 
             int laid = 0;
-            String key = dim + "|" + pos.asLong();
-            if (now >= nextBreed.getOrDefault(key, 0L)) {
+            if (now >= pd.nextBreedTick) {
                 laid = breedPairs(world, pos, pasture, tier, pd, now);   // enqueues into the FIFO
-                nextBreed.put(key, now + CobbreedingBridge.nextBreedingInterval());
+                pd.nextBreedTick = now + CobbreedingBridge.nextBreedingInterval();
                 moved += drainQueueToTray(pos, pd);                      // top the tray straight up
             }
 

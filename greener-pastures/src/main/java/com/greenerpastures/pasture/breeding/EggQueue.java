@@ -68,6 +68,11 @@ public final class EggQueue<T> {
      */
     public void setCap(int newCap) { this.cap = Math.max(0, newCap); }
 
+    /** Iterate in FIFO order (oldest first) without copying — for in-place persistence (perf-audit H6). */
+    public void forEach(java.util.function.Consumer<? super T> action) {
+        for (T t : q) action.accept(t);
+    }
+
     /** FIFO-ordered snapshot (oldest first) for persistence / inspection. */
     public List<T> snapshot() { return new ArrayList<>(q); }
 

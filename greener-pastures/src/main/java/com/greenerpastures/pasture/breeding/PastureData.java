@@ -32,6 +32,9 @@ public class PastureData {
     public final EggQueue<ItemStack> eggQueue = new EggQueue<>(EggQueue.MIN_CAP);
     /** World-time of the last successful breed, for lazy offline catch-up (see {@link CatchUp}). */
     public long lastBred = 0L;
+    /** Next world-time this pasture may breed — in-memory schedule only (NOT persisted; a missed
+     *  interval after a restart is harmless). Lives here instead of a static map to avoid a leak. */
+    public transient long nextBreedTick = 0L;
 
     /** The installed Pasture Upgrade tier (slot 0), or null if none — drives pairs + slot count. */
     public BreedingTier tier() {
@@ -57,7 +60,7 @@ public class PastureData {
         nbt.put("pairings", pn);
 
         NbtList qn = new NbtList();
-        for (ItemStack egg : eggQueue.snapshot()) if (!egg.isEmpty()) qn.add(egg.encode(lookup));
+        eggQueue.forEach(egg -> { if (!egg.isEmpty()) qn.add(egg.encode(lookup)); });
         nbt.put("eggQueue", qn);
         nbt.putLong("lastBred", lastBred);
         return nbt;
