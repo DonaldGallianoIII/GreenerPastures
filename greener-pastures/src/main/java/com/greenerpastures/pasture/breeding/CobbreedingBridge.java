@@ -213,15 +213,12 @@ public final class CobbreedingBridge {
     private static boolean maybeProcShiny(PokemonProperties eggData, List<Pokemon> parents, double procChance) {
         try {
             if (procChance <= 0.0 || parents.size() < 2) return false;
-            if (Boolean.TRUE.equals(eggData.getShiny())) return false;   // already shiny — nothing to add
-            if (RANDOM.nextDouble() >= procChance) return false;         // the proc didn't fire
-            double odds = effectiveShinyOdds(parents.get(0), parents.get(1));
-            double p = (odds < 1.0) ? 1.0 : 1.0 / odds;                  // mirror Cobbreeding's <1 ⇒ guaranteed
-            if (RANDOM.nextDouble() < p) {
-                eggData.setShiny(true);
-                return true;
-            }
-            return false;
+            if (Boolean.TRUE.equals(eggData.getShiny())) return false;                // already shiny — nothing to add
+            if (!ShinyOdds.procFires(procChance, RANDOM.nextDouble())) return false;  // the proc didn't fire
+            double odds = effectiveShinyOdds(parents.get(0), parents.get(1));         // (rolled only after the proc fires)
+            boolean hit = ShinyOdds.shinyHits(odds, RANDOM.nextDouble());
+            if (hit) eggData.setShiny(true);
+            return hit;
         } catch (Throwable t) {
             return false;   // a bonus roll must NEVER break egg-gen
         }
@@ -235,34 +232,23 @@ public final class CobbreedingBridge {
      * bonus contributes nothing. Falls back to the raw base rate if the multipliers are unreadable.
      */
     private static double effectiveShinyOdds(Pokemon a, Pokemon b) {
-        double odds;
+        double baseRate;
         try {
-            odds = Cobblemon.INSTANCE.getConfig().getShinyRate();
+            baseRate = Cobblemon.INSTANCE.getConfig().getShinyRate();
         } catch (Throwable t) {
             return Double.POSITIVE_INFINITY;   // can't read the base rate ⇒ no bonus
         }
         try {
             Map<String, Float> m = Cobbreeding.INSTANCE.getConfig().getShinyMethod();
-            if (m == null) return odds;
-            if (m.containsKey("always")) {
-                float f = m.get("always");
-                if (f == 0f) return Double.POSITIVE_INFINITY;
-                odds /= f;
-            }
-            if (m.containsKey("crystal")) {
-                float f = m.get("crystal");
-                if (a.getShiny()) { if (f == 0f) return Double.POSITIVE_INFINITY; odds /= f; }
-                if (b.getShiny()) { if (f == 0f) return Double.POSITIVE_INFINITY; odds /= f; }
-            }
-            if (m.containsKey("masuda") && !sameTrainer(a, b)) {
-                float f = m.get("masuda");
-                if (f == 0f) return Double.POSITIVE_INFINITY;
-                odds /= f;
-            }
+            Float always  = (m != null && m.containsKey("always"))  ? m.get("always")  : null;
+            Float crystal = (m != null && m.containsKey("crystal")) ? m.get("crystal") : null;
+            Float masuda  = (m != null && m.containsKey("masuda"))  ? m.get("masuda")  : null;
+            // Pure math (unit-tested in ShinyOddsTest); replicates Cobbreeding's calcShiny.
+            return ShinyOdds.effectiveOdds(baseRate, always, crystal, masuda,
+                    a.getShiny(), b.getShiny(), !sameTrainer(a, b));
         } catch (Throwable t) {
-            // partial read — use whatever we have (at worst the base rate); never amplify wrongly
+            return baseRate;   // partial read — fall back to the base rate; never amplify wrongly
         }
-        return odds;
     }
 
     /** Two parents count as "same trainer" exactly as Cobbreeding's masuda check compares them. */
