@@ -60,7 +60,7 @@ public final class PastureCollector {
         int size = inv.size();
         for (int s = 0; s < size && !stack.isEmpty(); s++) {            // merge into matching stacks
             ItemStack slot = inv.getStack(s);
-            if (!slot.isEmpty() && ItemStack.areItemsAndComponentsEqual(slot, stack)) {
+            if (!slot.isEmpty() && ItemStack.areItemsAndComponentsEqual(slot, stack) && inv.isValid(s, slot)) {
                 int max = Math.min(inv.getMaxCountPerStack(), slot.getMaxCount());
                 int can = max - slot.getCount();
                 if (can > 0) {
@@ -76,6 +76,7 @@ public final class PastureCollector {
                 int moved = Math.min(max, stack.getCount());
                 ItemStack put = stack.copy();
                 put.setCount(moved);
+                if (!inv.isValid(s, put)) continue;                    // respect filtered/sided containers — don't corrupt them
                 inv.setStack(s, put);
                 stack.decrement(moved);
             }

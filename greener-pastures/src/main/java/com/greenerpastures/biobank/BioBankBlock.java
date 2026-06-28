@@ -103,9 +103,8 @@ public class BioBankBlock extends BlockWithEntity {
         if (egg.isEmpty() || !EggReader.isEgg(egg)) return false;
         BioBankStore store = BioBankStore.get(world.getServer());
         BioBankData d = store.getOrCreate(world, pos);
-        if (d.total() >= BioBank.capacity()) return false;
         String species = EggReader.species(egg);
-        d.add(species, egg.copyWithCount(1));
+        if (!d.add(species, egg.copyWithCount(1))) return false;   // bank full (cap enforced inside add())
         store.markDirty();
         GpLog.d("biobank", "deposit", "pos", pos.toShortString(), "species", species, "total", d.total());
         return true;

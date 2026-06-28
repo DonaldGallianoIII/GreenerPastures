@@ -9,6 +9,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 /**
  * Wand-GUI networking. The pairing board and name field are client screens, but the pasture record is
  * server-owned ({@link PastureRegistry}); these two C2S payloads carry edits back to it. Registered
@@ -22,6 +26,8 @@ public final class PastureNet {
 
     /** Max distance² an editor may be from the pasture they're editing. */
     private static final double REACH_SQ = 64.0 * 64.0;
+    /** Highest valid pair bucket (matches the top tier's maxPairs / {@code PastureMenu.MAX_FUNCTIONAL}). */
+    private static final int MAX_BUCKET = 8;
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(SaveNamePayload.ID, SaveNamePayload.CODEC);
@@ -64,8 +70,22 @@ public final class PastureNet {
             ServerWorld world = player.getServerWorld();
             BlockPos pos = payload.pos();
             if (world == null || !withinReach(player, pos)) return;
-            PastureRegistry.get(server).setPairings(world, pos, payload.pairings());
+            PastureRegistry.get(server).setPairings(world, pos, sanitize(payload.pairings()));
         });
+    }
+
+    /** Trust boundary: keep only sane (id → bucket) entries — bucket in [1, MAX_BUCKET], size-capped.
+     *  The codec already bounds decode size; this keeps junk buckets / nulls out of the persisted record. */
+    private static Map<UUID, Integer> sanitize(Map<UUID, Integer> raw) {
+        Map<UUID, Integer> clean = new HashMap<>();
+        if (raw == null) return clean;
+        for (Map.Entry<UUID, Integer> e : raw.entrySet()) {
+            if (clean.size() >= SavePairingsPayload.MAX_PAIRINGS) break;
+            UUID id = e.getKey();
+            Integer b = e.getValue();
+            if (id != null && b != null && b >= 1 && b <= MAX_BUCKET) clean.put(id, b);
+        }
+        return clean;
     }
 
     private static boolean withinReach(ServerPlayerEntity player, BlockPos pos) {

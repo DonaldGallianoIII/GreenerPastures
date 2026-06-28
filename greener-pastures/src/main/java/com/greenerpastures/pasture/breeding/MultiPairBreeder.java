@@ -47,32 +47,39 @@ public final class MultiPairBreeder {
         long now = world.getTime();
         boolean dirty = false;
         for (Map.Entry<BlockPos, PastureData> entry : pastures.entrySet()) {
-            PastureData pd = entry.getValue();
-            BreedingTier tier = pd.tier();
-            if (tier == null) continue;                                  // no Pasture Upgrade slotted
-
             BlockPos pos = entry.getKey();
-            if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;
-            BlockEntity be = world.getBlockEntity(pos);
-            if (!(be instanceof PokemonPastureBlockEntity pasture)) continue;
-            if (!CobbreedingBridge.isBreedingActivated(be.getCachedState())) continue;
+            try {
+                PastureData pd = entry.getValue();
+                BreedingTier tier = pd.tier();
+                if (tier == null) continue;                                  // no Pasture Upgrade slotted
 
-            // Only our configured pairs should breed — keep Cobbreeding's native ticker from laying
-            // a rogue random egg by holding its timer open every scan (not just on our breed ticks).
-            CobbreedingBridge.suppressNativeBreeding(pos, now);
+                if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;
+                BlockEntity be = world.getBlockEntity(pos);
+                if (!(be instanceof PokemonPastureBlockEntity pasture)) continue;
+                if (!CobbreedingBridge.isBreedingActivated(be.getCachedState())) continue;
 
-            int moved = drainQueueToTray(pos, pd);                       // refill the tray as it's harvested
+                // Only our configured pairs should breed — keep Cobbreeding's native ticker from laying
+                // a rogue random egg by holding its timer open every scan (not just on our breed ticks).
+                CobbreedingBridge.suppressNativeBreeding(pos, now);
 
-            int laid = 0;
-            if (now >= pd.nextBreedTick) {
-                laid = breedPairs(world, pos, pasture, tier, pd, now);   // enqueues into the FIFO
-                pd.nextBreedTick = now + CobbreedingBridge.nextBreedingInterval();
-                moved += drainQueueToTray(pos, pd);                      // top the tray straight up
-            }
+                int moved = drainQueueToTray(pos, pd);                       // refill the tray as it's harvested
 
-            if (moved > 0 || laid > 0) {
-                dirty = true;
-                CobbreedingBridge.refreshHasEgg(world, pos);
+                int laid = 0;
+                if (now >= pd.nextBreedTick) {
+                    laid = breedPairs(world, pos, pasture, tier, pd, now);   // enqueues into the FIFO
+                    pd.nextBreedTick = now + CobbreedingBridge.nextBreedingInterval();
+                    moved += drainQueueToTray(pos, pd);                      // top the tray straight up
+                }
+
+                if (moved > 0 || laid > 0) {
+                    dirty = true;
+                    CobbreedingBridge.refreshHasEgg(world, pos);
+                }
+            } catch (Throwable t) {
+                // One misbehaving pasture (a tethering whose Pokémon failed to deserialize, a Cobblemon/
+                // Cobbreeding API drift, etc.) must NEVER take down the world tick — skip it, keep serving
+                // the rest. The bridge already self-disables on egg-build failure; this guards the rest.
+                GpLog.w("breeder", "pasture_skip", "pos", pos.toShortString(), "err", String.valueOf(t));
             }
         }
         if (dirty) reg.markDirty();
