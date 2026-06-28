@@ -1,6 +1,5 @@
 package com.greenerpastures.analytics;
 
-import com.google.gson.Gson;
 import com.greenerpastures.GreenerPastures;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.util.WorldSavePath;
@@ -21,7 +20,6 @@ import java.util.Map;
 public final class Analytics {
     private Analytics() {}
 
-    private static final Gson GSON = new Gson();
     private static volatile EventLog log;
 
     /** Opens the per-save event log on server start and closes it on stop. Call from common init. */
@@ -53,6 +51,6 @@ public final class Analytics {
         row.put("gameTime", world.getTime());
         row.put("dimension", world.getRegistryKey().getValue().toString());
         row.putAll(event.fields);
-        l.append(GSON.toJson(row));
+        l.append(row);   // serialized off-thread by EventLog (perf-audit H3)
     }
 }

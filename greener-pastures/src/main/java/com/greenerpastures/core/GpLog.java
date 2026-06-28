@@ -45,6 +45,7 @@ public final class GpLog {
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
     private static final int KEEP_ARCHIVES = 10;
+    private static final int QUEUE_CAP = 100_000;   // bounded so a stalled disk can't OOM us (perf-audit M2)
 
     private static volatile boolean ready;
     private static BlockingQueue<String> queue;
@@ -60,7 +61,7 @@ public final class GpLog {
             Path latest = dir.resolve("latest.log");
             rollPrevious(dir, latest);
 
-            queue = new LinkedBlockingQueue<>();
+            queue = new LinkedBlockingQueue<>(QUEUE_CAP);
             running = true;
             writer = new Thread(() -> drainLoop(latest), "GreenerPastures-GpLog");
             writer.setDaemon(true);
