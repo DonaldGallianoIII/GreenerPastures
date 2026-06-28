@@ -22,15 +22,28 @@ The thinner the MC layer, the more of the mod is testable in milliseconds.
 ## Covered now
 | Test | What it proves |
 |---|---|
-| `BreedingTierTest` | tier→pairs mapping, the **8-pair ceiling**, monotonic tiers |
-| `AugmentsTest` | the **bounded shiny-proc** math (clamps 0–100% — shiny can't explode) |
-| `DaemonControllerTest` | pairing model: pre-wired buckets, 8-pair clamp, half-bucket ≠ pair |
+| `BreedingTierTest` (4) | tier→pairs mapping, the **8-pair ceiling**, monotonic tiers |
+| `AugmentsTest` (4) | bounded shiny-proc clamp (0–100% — can't explode) |
+| `ShinyOddsTest` (9) | the bonus-reroll math extracted from `CobbreedingBridge` (effective odds = calcShiny, proc gates, never double-counts a shiny) |
+| `EggQueueTest` (8) | per-pasture FIFO: pause-when-full-**never-evict**, drain-to-tray, snapshot/restore |
+| `CatchUpTest` (7) | bounded offline breeding (cycles elapsed, "banks ~24 then waits") |
+| `DaemonControllerTest` (3) | pairing model: pre-wired buckets, 8-pair clamp, half-bucket ≠ pair |
+| `ValueRuleTest` (6) | "valuable egg" guard (shiny / perfect-IV / IV-total) |
+| `RenderSelectionTest` (3) | keep-vs-render split |
+| `RenderLedgerTest` (6) | Send-to-Renderer preview: per-species counts + independent safety flags |
+| `IvFilterTest` (5) | per-stat IV gate (Daemon FILTER node) |
 
-## Extraction backlog (tangled with MC today → pull into testable cores)
-- [ ] **Shiny-odds math** — `effectiveShinyOdds` / `maybeProcShiny` live inside `CobbreedingBridge` (MC + reflection). Extract the probability math into an MC-free `ShinyOdds` core → test the reroll thoroughly.
-- [ ] **BioBank** — species bucketing, capacity, the **render-ledger** (per-species counts + shiny/perfect-IV safety flags). Mostly pure already; lift off `ItemStack`.
-- [ ] **Per-pasture FIFO egg-queue** (the `EGG_STORAGE_DESIGN.md` queue) — pure data structure, very testable.
-- [ ] **IV/EV egg filtering** + **"valuable egg" detection** (shiny OR 31-IV) — pure predicates.
-- [ ] **Away-from-chunk catch-up** — elapsed-intervals → egg count math.
+**55 green** as of 2026-06-28.
 
-Each becomes: core class + its `*Test`, then a thin adapter.
+## Extraction backlog — ✅ cores done (2026-06-28)
+- [x] **Shiny-odds math** → `ShinyOdds` (CobbreedingBridge now delegates to it).
+- [x] **Per-pasture FIFO egg-queue** → `EggQueue`.
+- [x] **IV/EV filtering + "valuable egg"** → `IvFilter` + `ValueRule`.
+- [x] **Away-from-chunk catch-up** → `CatchUp`.
+- [~] **BioBank** — value / selection / render-ledger cores done (`ValueRule` · `RenderSelection` · `RenderLedger`); what remains is the **adapter** that lifts the live store off `ItemStack` + wires these in.
+
+## Next: the thin MC adapters (need an occasional in-game check)
+The cores are proven; wiring them into the live game is the remaining work — and the ONLY part that wants Minecraft:
+- `MultiPairBreeder` → produce via `ShinyOdds`, enqueue into `EggQueue`, drain to the tray; offline via `CatchUp`.
+- BioBank → build `EggSummary` from egg `ItemStack`s (extend `EggReader`), use `RenderSelection` + `RenderLedger` for the Send flow.
+- Then UI, last.
