@@ -47,16 +47,23 @@ economy/* (O(1) scalars) · `DashboardStats`/`RenderLedger`/`EggQueue`/`CatchUp`
 
 ---
 
-## 🛠️ Fix plan (priority = brick-risk first)
-1. ~~C1 collector scan~~ — **✅ DONE: collector deleted** (gone, not optimized). (server)
-2. **H1 registry → per-dimension map** — kills the per-tick rebuild/parse AND makes M1's leak evictable. (server)
-3. **H2 + H6 NBT dirty-tracking** — per-entry dirty + cached `NbtList` + in-place egg encode. (heap)
-4. **H3 off-thread Gson** + **M2 bounded queues / minLevel=INFO**. (server/heap)
-5. **M1 leak eviction** (folds into #2's registry work). (heap)
-6. **H4 + H5 + C2 GUI** — cache Daemon model + wire polylines; batch `stroke`; relayout-on-input only. (client jank)
-7. **M3–M7 + LOW** — polish.
+## 🛠️ Fix status — 2026-06-28 (commits `7aaa040` → `f882fba`)
+- ✅ **C1** collector scan — DELETED entirely (`7aaa040`).
+- ✅ **H1** registry → per-dimension map (Batch 1).
+- ✅ **M1** `nextBreed` leak → moved onto `PastureData.nextBreedTick` (Batch 1).
+- ✅ **H6** `EggQueue.forEach` in-place encode, no snapshot copy (Batch 1).
+- ✅ **H3** Analytics Gson moved to the writer thread (Batch 2).
+- ✅ **M2** `EventLog` + `GpLog` queues bounded (100k, drop-on-full) (Batch 2).
+- ✅ **H4** Daemon `buildModel` cached, rebuild-on-input (Batch 3; studio render byte-identical).
+- ✅ **C2** Arrange board relayout-on-input only (Batch 3).
+- ✅ **M5/M6** highlighter LRU cache + cache-first `isShinyEgg` (Batch 3).
+- ⏸️ **H2** per-pasture NBT dirty-cache — **deferred**: data-loss risk if any mutation path is missed, for a situational gain (only helps when many pastures are idle); H6 already cut the per-save cost. Revisit only if profiling shows the autosave spike matters.
+- ⏸️ **H5** Bézier stroke per-pixel — **deferred**: needs a real line primitive; cheap mitigations change the look. Client-only jank, only while the Daemon is open.
+- ⏸️ **M3** PastureCollector — PastureKeeper is being retired (cut); skip.
+- ⏸️ **M4** NotebookView textWidth — low value (stateless paint, ~10 measures/frame); skip.
+- ⏸️ **M7 + LOW** — Dashboard parse-cache (user-triggered) + bounded per-row formatting; skip.
 
-Items 1–5 are the "don't brick a server" set (server-side / heap). 6 is client FPS. Each is test-backed where the logic allows; none deployed until a QA pass.
+All fixes are pure perf (no gameplay/behavior change), test-backed, build-clean — **committed, NOT deployed** (one QA item, Q7).
 
 ## 📈 How to capture a real flame graph + heap histogram (in-game)
 A true flame graph needs a profiled JVM — do it on the live dev instance (dev greenlit).
