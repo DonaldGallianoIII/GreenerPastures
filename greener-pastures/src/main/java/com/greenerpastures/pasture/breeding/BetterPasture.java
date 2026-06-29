@@ -40,8 +40,9 @@ public final class BetterPasture {
     /** The Compiler block (apply augments to a Kernel) + its item form. */
     public static Block COMPILER_BLOCK;
     public static Item COMPILER_ITEM;
-    /** Augment "packages" (slot with a Kernel at the Compiler). v1: the Shiny augment. */
-    public static AugmentItem AUGMENT_SHINY;
+    /** Craftable augment "packages" (slot with a Kernel at the Compiler), keyed by type — one item per
+     *  live-effect AugmentFunction (Shiny / Speed / Enrichment / Drop Rate / Drop Yield). */
+    public static final Map<AugmentType, AugmentItem> AUGMENTS = new EnumMap<>(AugmentType.class);
 
     public static void init() {
         GpComponents.init();        // register greenerpastures:augments before any item can carry it
@@ -77,13 +78,16 @@ public final class BetterPasture {
                 new CompilerBlock(AbstractBlock.Settings.create().strength(2.5f).requiresTool().nonOpaque()));
         COMPILER_ITEM = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "compiler"),
                 new BlockItem(COMPILER_BLOCK, new Item.Settings()));
-        AUGMENT_SHINY = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "augment_shiny"),
-                new AugmentItem(AugmentType.SHINY, new Item.Settings()));
+        for (AugmentType type : AugmentType.values()) {
+            AugmentItem aug = new AugmentItem(type, new Item.Settings());
+            Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "augment_" + type.id()), aug);
+            AUGMENTS.put(type, aug);
+        }
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> {
             entries.add(WAND);
             ITEMS.values().forEach(entries::add);
-            entries.add(AUGMENT_SHINY);
+            AUGMENTS.values().forEach(entries::add);
             entries.add(COMPILER_ITEM);
         });
     }

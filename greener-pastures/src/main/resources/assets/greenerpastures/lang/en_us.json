@@ -18,5 +18,9 @@
   "item.greenerpastures.pasture_wand": "Pasture Wand",
   "block.greenerpastures.compiler": "Compiler",
   "item.greenerpastures.augment_shiny": "Shiny Augment",
+  "item.greenerpastures.augment_speed": "Speed Augment",
+  "item.greenerpastures.augment_enrichment": "Enrichment Augment",
+  "item.greenerpastures.augment_drop_rate": "Drop Rate Augment",
+  "item.greenerpastures.augment_drop_yield": "Drop Yield Augment",
   "block.greenerpastures.biobank": "BioBank"
 }

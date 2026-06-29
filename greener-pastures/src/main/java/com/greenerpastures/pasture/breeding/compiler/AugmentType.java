@@ -1,5 +1,6 @@
 package com.greenerpastures.pasture.breeding.compiler;
 
+import com.greenerpastures.economy.AugmentFunction;
 import com.greenerpastures.pasture.breeding.Augments;
 import com.greenerpastures.pasture.breeding.BreedingUpgradeItem;
 import com.greenerpastures.pasture.breeding.GpComponents;
@@ -7,24 +8,40 @@ import net.minecraft.item.ItemStack;
 
 /**
  * The augment "packages" a {@link CompilerBlock} can install onto a Kernel (a Pasture Upgrade item).
- * v1 ships {@link #SHINY} only — the bounded shiny proc (repo ground truth: additive/capped, NOT the
- * mockup's "×2"). Each type knows how to detect whether it's already installed and how to apply itself
- * by merging into the {@code greenerpastures:augments} data component. Adding an augment later = one
- * new constant + a branch in {@link #installedOn} and {@link #apply}.
+ * Each type names an {@link AugmentFunction} and the level/magnitude it writes; install + apply are
+ * <b>generic</b> over that function (merge into the {@code greenerpastures:augments} component), so adding
+ * an augment is just one new constant (+ a display line in {@link #effectSummary}). Ships the FIVE
+ * functions that have a live effect — IV Floor / EV join when their breeding effect exists (no pay for vapor).
+ *
+ * <p>Magnitudes are calibration (tune via config). A Drop Rate augment deliberately writes ABOVE the
+ * Kernel's base {@code drop_rate} ({@link BreedingUpgradeItem#BASE_DROP_RATE} = 25 centipercent) so it's a
+ * real upgrade rather than a silent no-op; {@link #installedOn} also keeps a higher value from being
+ * downgraded.
  */
 public enum AugmentType {
-    /** Bounded shiny proc: each non-shiny egg gets a {@code value}% chance of one extra reroll. */
-    SHINY("shiny-boost", "1.0", 30);
+    SHINY     ("shiny-boost",      "1.0", AugmentFunction.SHINY,      30),   // % chance of one bounded reroll
+    SPEED     ("speed-boost",      "1.0", AugmentFunction.SPEED,       1),   // level I → faster breeding cadence
+    ENRICHMENT("enrichment-boost", "1.0", AugmentFunction.ENRICHMENT, 20),   // +20% → 1.20× render value
+    DROP_RATE ("droprate-boost",   "1.0", AugmentFunction.DROP_RATE, 100),   // centipercent: 1.00% (base is 0.25%)
+    DROP_YIELD("dropyield-boost",  "1.0", AugmentFunction.DROP_YIELD,  1);   // +1 to the amount-budget ceiling
 
     public final String pkgName;
     public final String version;
-    /** SHINY: the proc percent this augment writes onto the Kernel. */
+    public final AugmentFunction function;
+    /** Level / magnitude written for {@link #function} — units are the function's own (% · level · centipercent · budget). */
     public final int value;
 
-    AugmentType(String pkgName, String version, int value) {
+    AugmentType(String pkgName, String version, AugmentFunction function, int value) {
         this.pkgName = pkgName;
         this.version = version;
+        this.function = function;
         this.value = value;
+    }
+
+    /** Item-id suffix (stable) — the registered item is {@code augment_<function id>}, e.g. {@code augment_shiny},
+     *  {@code augment_drop_rate}. Keeping {@code augment_shiny} byte-identical preserves the existing item. */
+    public String id() {
+        return function.id;
     }
 
     /** pip-style package id, e.g. {@code shiny-boost==1.0}. */
@@ -37,24 +54,30 @@ public enum AugmentType {
         return !kernel.isEmpty() && kernel.getItem() instanceof BreedingUpgradeItem;
     }
 
-    /** True if this augment is already on the Kernel (so re-compiling is a no-op). */
+    /** True if the Kernel's level for this function is already at/above {@code value} — so re-compiling is a
+     *  no-op AND a higher mod (incl. a future stronger augment, or a hand-set base) is never downgraded. */
     public boolean installedOn(ItemStack kernel) {
         Augments a = kernel.get(GpComponents.AUGMENTS);
-        if (a == null) return false;
-        return switch (this) {
-            case SHINY -> a.shinyProcPercent() >= value;
-        };
+        return a != null && a.level(function) >= value;
     }
 
-    /** A copy of the Kernel with this augment merged into its augments component. */
+    /** A copy of the Kernel with this augment's function set to {@code value} (replace-in-place, one per function). */
     public ItemStack apply(ItemStack kernel) {
         ItemStack out = kernel.copy();
         Augments base = out.get(GpComponents.AUGMENTS);
         if (base == null) base = Augments.NONE;
-        Augments merged = switch (this) {
-            case SHINY -> base.withShiny(value);
-        };
-        out.set(GpComponents.AUGMENTS, merged);
+        out.set(GpComponents.AUGMENTS, base.withLevel(function, value));
         return out;
+    }
+
+    /** Human one-line effect for the item tooltip (the only per-type display text). */
+    public String effectSummary() {
+        return switch (this) {
+            case SHINY      -> "✦ +" + value + "% shiny proc · bounded reroll";
+            case SPEED      -> "⚡ Speed " + value + " · faster breeding cadence";
+            case ENRICHMENT -> "❖ +" + value + "% render value (Enrichment)";
+            case DROP_RATE  -> "⛏ +" + String.format("%.2f", value / 100.0) + "% drop rate";
+            case DROP_YIELD -> "⛏ +" + value + " drop yield";
+        };
     }
 }

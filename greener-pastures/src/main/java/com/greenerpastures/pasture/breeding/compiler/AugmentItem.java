@@ -26,9 +26,7 @@ public class AugmentItem extends Item {
     public void appendTooltip(ItemStack stack, Item.TooltipContext context, List<Text> tooltip, TooltipType ttype) {
         super.appendTooltip(stack, context, tooltip, ttype);
         tooltip.add(Text.literal(type.pkg()).formatted(Formatting.AQUA));
-        if (type == AugmentType.SHINY) {
-            tooltip.add(Text.literal("✦ +" + type.value + "% shiny proc · bounded reroll").formatted(Formatting.GRAY));
-        }
+        tooltip.add(Text.literal(type.effectSummary()).formatted(Formatting.GRAY));
         tooltip.add(Text.literal("Compile onto a Kernel at a Compiler").formatted(Formatting.DARK_GRAY));
     }
 }
