@@ -2,7 +2,10 @@ package com.greenerpastures.drops;
 
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.economy.AugmentFunction;
+import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.EffectiveAugments;
+import com.greenerpastures.economy.TetherRuntime;
 import com.greenerpastures.pasture.breeding.CobbreedingBridge;
 import com.greenerpastures.pasture.breeding.PastureData;
 import com.greenerpastures.pasture.breeding.PastureRegistry;
@@ -28,8 +31,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * The Harvester's block entity — placed touching a pasture, once an IRL minute each tethered mon has a small
@@ -38,6 +45,11 @@ import java.util.Random;
  * spawns a world item, so nothing despawns and there's no ground-item lag. Opens as a vanilla chest GUI (no
  * custom UI). Materials only — drops never feed Data.
  *
+ * <p>The Kernel's Drop Rate / Drop Yield augments feed the two levers; a matching Soul Tether amplifies
+ * them while the operator's Daemon is fed, draining Data on THIS block's clock (the breeder/Renderer drain
+ * their own tethers — never double-charged). Starved → the free base rate, never a pause. The harvested
+ * items stay materials-only: they never feed Data, they only ever cost it (the tether burn).
+ *
  * <p>Pause-when-full: if the container has no free slot it harvests nothing (no roll, no loss) — empty it
  * to resume. Break scatters the contents (in {@code HarvesterBlock}).
  */
@@ -45,6 +57,11 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
     private static final int INTERVAL = 1200;                // a harvest "tick" every IRL minute (1200 ticks)
     private static final double BASE_PROC = 0.03;            // LEVER 1: 3% per mon per minute to proc a drop event
     static final int SLOTS = 27;                             // 9×3, a single chest
+
+    /** The tether functions the Harvester owns — the only tethers it amplifies + pays burn for (the breeder
+     *  owns shiny/speed, the Renderer enrichment), so a tether is billed on exactly one clock. */
+    private static final Set<AugmentFunction> DROP_FUNCTIONS =
+            EnumSet.of(AugmentFunction.DROP_RATE, AugmentFunction.DROP_YIELD);
 
     private final SimpleInventory inv = new SimpleInventory(SLOTS);
     private final Random rng = new Random();
@@ -65,9 +82,9 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
             BlockPos pasturePos = adjacentPasture(world, pos);
             if (pasturePos == null) return;
             if (!(world.getBlockEntity(pasturePos) instanceof PokemonPastureBlockEntity pasture)) return;
-            EffectiveAugments eff = effectiveAt(sw, pasturePos);          // the pasture Kernel's drop mods
-            double proc = BASE_PROC + eff.dropRateFraction();            // LEVER 1: +0.25% kernel base etc.
-            int yield = eff.dropYieldBonus();                           // LEVER 2: widen the amount budget
+            DropPlan plan = dropPlan(sw, pasturePos);                     // Kernel base × any FED drop tether
+            double proc = BASE_PROC + plan.eff().dropRateFraction();      // LEVER 1: +0.25% base + amplified rate
+            int yield = plan.eff().dropYieldBonus();                      // LEVER 2: amplified amount budget
             Map<String, Integer> harvested = DropsBridge.harvest(pasture, be.rng, proc, yield);
             if (harvested.isEmpty()) return;
             int added = be.deposit(harvested);
@@ -75,6 +92,11 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
                 be.markDirty();
                 GpLog.d("harvester", "harvest", "pos", pos.toShortString(),
                         "pasture", pasturePos.toShortString(), "items", added);
+                if (plan.drain() > 0 && plan.owner() != null) {          // the fed drop tethers earned their burn
+                    DataStore.get(sw.getServer()).tryDebit(plan.owner(), plan.drain());
+                    GpLog.d("tether", "drain", "pos", pos.toShortString(),
+                            "data", plan.drain(), "owner", plan.owner().toString(), "src", "harvester");
+                }
             }
         } catch (Throwable t) {
             // a Cobblemon API edge must never crash the world tick (mirrors the breeder/Renderer guards)
@@ -136,13 +158,23 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
         return null;
     }
 
-    /** The adjacent pasture's effective drop augments (Kernel base + any compiled Drop Rate / Drop Yield
-     *  augment) — one registry lookup feeding both levers. Tether-amplified drop rate/yield (with their Data
-     *  drain) is a later step, so no tethers are passed yet (base augments only). */
-    private static EffectiveAugments effectiveAt(ServerWorld world, BlockPos pasturePos) {
+    /** The amplified drop augments + the Data to burn for the adjacent pasture this harvest tick: the Kernel's
+     *  base drop mods × any FED Drop Rate / Drop Yield tether, resolved against the operator's Data on the
+     *  Harvester's OWN clock (one registry lookup feeds both levers). Drains only drop tethers — the breeder
+     *  and Renderer drain theirs — so nothing is double-charged. No operator, or a starved account → free base,
+     *  no drain (harvesting never pauses for Data; hunger only drops you to the base rate). */
+    private static DropPlan dropPlan(ServerWorld world, BlockPos pasturePos) {
         PastureData pd = PastureRegistry.get(world.getServer()).get(world, pasturePos);
-        return EffectiveAugments.of(pd == null ? java.util.Map.of() : pd.baseAugmentLevels(), java.util.List.of());
+        if (pd == null) return new DropPlan(EffectiveAugments.of(Map.of(), List.of()), 0L, null);
+        long balance = (pd.owner != null) ? DataStore.get(world.getServer()).balanceOf(pd.owner) : 0L;
+        TetherRuntime.Resolution res =
+                TetherRuntime.resolveFor(pd.baseAugmentLevels(), pd.slottedTethers(), balance, DROP_FUNCTIONS);
+        return new DropPlan(res.effective(), res.drain(), pd.owner);
     }
+
+    /** What to harvest with this tick: the (possibly tether-amplified) drop augments, the Data to debit, and
+     *  whose account ({@code owner}) pays it. {@code drain == 0} / {@code owner == null} ⇒ run the free base. */
+    private record DropPlan(EffectiveAugments eff, long drain, UUID owner) {}
 
     // --- vanilla 9×3 chest GUI (no custom screen) ---
     @Override public Text getDisplayName() { return Text.translatable("block.greenerpastures.harvester"); }

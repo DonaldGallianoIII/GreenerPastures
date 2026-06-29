@@ -4,6 +4,7 @@ import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.analytics.Event;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.economy.AugmentFunction;
 import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.TetherRuntime;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -14,9 +15,11 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The multi-pair breeding engine. Driven by a stable Fabric server-tick event (no mixin) over the
@@ -32,6 +35,13 @@ public final class MultiPairBreeder {
     private MultiPairBreeder() {}
 
     private static final int SCAN_INTERVAL = 20;
+
+    /** The augment functions the breeder actually applies — and therefore the only tethers it pays burn for.
+     *  Drop Rate/Yield belong to the Harvester, Enrichment to the Renderer: each consumer drains its own set
+     *  on its own clock ({@link TetherRuntime#resolveFor}), so a tether is never double-charged. IV Floor / EV
+     *  join here when their breeding effect ships (until then they amplify + drain nowhere — no pay for vapor). */
+    private static final Set<AugmentFunction> BREEDING_FUNCTIONS =
+            EnumSet.of(AugmentFunction.SHINY, AugmentFunction.SPEED);
 
     public static void init() {
         ServerTickEvents.END_WORLD_TICK.register(MultiPairBreeder::onWorldTick);
@@ -76,9 +86,10 @@ public final class MultiPairBreeder {
                 if (now >= pd.nextBreedTick) {
                     // Resolve the Kernel's base mods × slotted Soul Tethers against the operator's Data:
                     // fed → amplify + drain; starved → free base, no drain (TetherRuntime — all tested).
+                    // Only the breeding-function tethers (shiny/speed) — the Harvester/Renderer drain theirs.
                     long balance = (pd.owner != null) ? DataStore.get(server).balanceOf(pd.owner) : 0L;
-                    TetherRuntime.Resolution res =
-                            TetherRuntime.resolve(pd.baseAugmentLevels(), pd.slottedTethers(), balance);
+                    TetherRuntime.Resolution res = TetherRuntime.resolveFor(
+                            pd.baseAugmentLevels(), pd.slottedTethers(), balance, BREEDING_FUNCTIONS);
 
                     laid = breedPairs(world, pos, pasture, tier, pd, now, res.effective().shinyProcChance());
                     long interval = speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),

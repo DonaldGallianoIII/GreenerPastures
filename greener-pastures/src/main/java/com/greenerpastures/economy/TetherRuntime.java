@@ -1,7 +1,9 @@
 package com.greenerpastures.economy;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The per-breeding-cycle Soul-Tether decision, Minecraft-free + unit-tested. Given a Kernel's base
@@ -39,5 +41,34 @@ public final class TetherRuntime {
         }
         // STARVED or no tethers: run the free base, drain nothing.
         return new Resolution(EffectiveAugments.of(base, List.of()), 0L, false);
+    }
+
+    /** The tethers whose function is in {@code functions} — the subset a single consumer owns. Blank or
+     *  unknown-function tethers are dropped. */
+    public static List<SoulTether> select(List<SoulTether> tethers, Set<AugmentFunction> functions) {
+        List<SoulTether> out = new ArrayList<>();
+        if (tethers != null && functions != null) {
+            for (SoulTether t : tethers) {
+                if (t == null || t.isBlank()) continue;
+                AugmentFunction f = AugmentFunction.byId(t.function());
+                if (f != null && functions.contains(f)) out.add(t);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * {@link #resolve} restricted to the tethers a consumer owns ({@code functions}) — the per-consumer,
+     * per-clock entry point. Because the Kernel's tethers are shared but each consumer runs on its own
+     * clock (breeder per breeding cycle · Harvester per IRL minute · Renderer per cull), every consumer
+     * resolves + drains ONLY its own functions so a tether is billed exactly once.
+     *
+     * <p><b>Contract:</b> the consumer function sets MUST be disjoint — {@code SHINY/SPEED} = breeder ·
+     * {@code DROP_RATE/DROP_YIELD} = Harvester · {@code ENRICHMENT} = Renderer. Overlapping sets would
+     * charge one tether on two clocks.
+     */
+    public static Resolution resolveFor(Map<AugmentFunction, Integer> base, List<SoulTether> tethers,
+                                        long balance, Set<AugmentFunction> functions) {
+        return resolve(base, select(tethers, functions), balance);
     }
 }

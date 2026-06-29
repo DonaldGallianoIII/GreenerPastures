@@ -2,6 +2,7 @@ package com.greenerpastures.economy;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TetherRuntimeTest {
 
     private static SoulTether shiny(int tier) { return new SoulTether("shiny", TetherClass.QUALITY, tier); }
+    private static SoulTether dropRate(int tier) { return new SoulTether("drop_rate", TetherClass.THROUGHPUT, tier); }
     private static final Map<AugmentFunction, Integer> SHINY5 = Map.of(AugmentFunction.SHINY, 5);
 
     @Test
@@ -60,5 +62,48 @@ class TetherRuntimeTest {
         assertEquals(0L, TetherRuntime.totalBurn(List.of(SoulTether.blank())));
         assertFalse(r.amplified());
         assertEquals(5.0, r.effective().magnitude(AugmentFunction.SHINY), 1e-9);
+    }
+
+    @Test
+    void selectKeepsOnlyTheNamedFunctions() {
+        List<SoulTether> all = List.of(shiny(2), dropRate(2), SoulTether.blank());
+        List<SoulTether> drops = TetherRuntime.select(all, EnumSet.of(AugmentFunction.DROP_RATE));
+        assertEquals(1, drops.size());
+        assertEquals("drop_rate", drops.get(0).function(), "blanks + non-matching functions dropped");
+    }
+
+    @Test
+    void resolveForChargesOnlyTheConsumersOwnTethers() {
+        // a Kernel carrying BOTH a shiny mod+tether (the breeder's) and a drop-rate mod+tether (the Harvester's)
+        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.SHINY, 5, AugmentFunction.DROP_RATE, 25);
+        List<SoulTether> tethers = List.of(shiny(2), dropRate(2));   // burns: shiny 16 (quality), drop_rate 6 (throughput)
+        long balance = 1000;
+
+        // Harvester resolves only DROP_RATE → drains 6, amplifies drop-rate (25×1.2=30), leaves shiny at base
+        TetherRuntime.Resolution drops =
+                TetherRuntime.resolveFor(base, tethers, balance, EnumSet.of(AugmentFunction.DROP_RATE));
+        assertEquals(6L, drops.drain(), "only the drop-rate tether's burn");
+        assertEquals(30.0, drops.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9);
+        assertEquals(5.0, drops.effective().magnitude(AugmentFunction.SHINY), 1e-9, "shiny is the breeder's — not amplified here");
+
+        // breeder resolves only SHINY → drains 16, amplifies shiny, leaves drop-rate at base
+        TetherRuntime.Resolution breed =
+                TetherRuntime.resolveFor(base, tethers, balance, EnumSet.of(AugmentFunction.SHINY));
+        assertEquals(16L, breed.drain(), "only the shiny tether's burn");
+        assertEquals(6.0, breed.effective().magnitude(AugmentFunction.SHINY), 1e-9);
+        assertEquals(25.0, breed.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9);
+
+        // disjoint sets ⇒ each tether billed exactly once across the two clocks (no double-charge, no gap)
+        assertEquals(TetherRuntime.totalBurn(tethers), drops.drain() + breed.drain());
+    }
+
+    @Test
+    void resolveForStarvesWhenItCantCoverItsOwnBurn() {
+        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.DROP_RATE, 25);
+        TetherRuntime.Resolution r =
+                TetherRuntime.resolveFor(base, List.of(dropRate(2)), 5, EnumSet.of(AugmentFunction.DROP_RATE)); // 5 < 6
+        assertFalse(r.amplified());
+        assertEquals(0L, r.drain());
+        assertEquals(25.0, r.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9, "starved → base drop rate, no drain");
     }
 }
