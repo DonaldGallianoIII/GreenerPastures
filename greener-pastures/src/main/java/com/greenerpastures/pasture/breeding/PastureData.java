@@ -63,10 +63,14 @@ public class PastureData {
         return a == null ? Map.of() : a.toLevels();
     }
 
-    /** The Soul Tethers slotted into the functional slots (1..), as runtime tethers (blanks dropped). */
+    /** The Soul Tethers slotted into the Kernel's UNLOCKED functional slots, as runtime tethers (blanks
+     *  dropped). Gated by the current tier's slot count, so a tether left in a slot a Kernel downgrade has
+     *  since hidden is NOT read or drained (it's inaccessible in the GUI — never bill an unreachable slot). */
     public List<SoulTether> slottedTethers() {
         List<SoulTether> out = new ArrayList<>();
-        for (int i = 1; i < upgrades.size(); i++) {
+        BreedingTier tier = tier();
+        int active = (tier == null) ? 0 : Math.min(tier.slots, upgrades.size() - 1);
+        for (int i = 1; i <= active; i++) {
             Tether t = upgrades.getStack(i).get(DarkEconomy.TETHER);
             if (t != null && !t.isBlank()) out.add(t.toSoulTether());
         }

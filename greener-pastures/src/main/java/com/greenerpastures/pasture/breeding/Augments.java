@@ -28,7 +28,11 @@ public record Augments(Map<String, Integer> levels) {
     public Augments {
         Map<String, Integer> clean = new LinkedHashMap<>();
         if (levels != null) {
-            levels.forEach((k, v) -> { if (k != null && v != null && v > 0) clean.put(k, v); });
+            for (Map.Entry<String, Integer> e : levels.entrySet()) {
+                if (clean.size() >= MAX_ENTRIES) break;   // bound BOTH the wire AND the disk codec (decode → ctor)
+                Integer v = e.getValue();
+                if (e.getKey() != null && v != null && v > 0) clean.put(e.getKey(), v);
+            }
         }
         levels = Map.copyOf(clean);
     }

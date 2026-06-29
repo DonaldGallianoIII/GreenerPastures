@@ -9,6 +9,8 @@ import com.greenerpastures.core.GpLog;
 import com.greenerpastures.egg.oracle.cull.EggInfo;
 import com.greenerpastures.egg.oracle.cull.EggReader;
 import com.greenerpastures.pasture.breeding.CobbreedingBridge;
+import com.greenerpastures.pasture.breeding.PastureData;
+import com.greenerpastures.pasture.breeding.PastureRegistry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.ItemStack;
@@ -33,7 +35,10 @@ import java.util.UUID;
  */
 public class RendererBlockEntity extends BlockEntity {
     private static final int INTERVAL = 20;              // cull once a second
-    static final long BASE_DATA_PER_EGG = 10L;           // balance constant (placeholder; tune vs tether burn)
+    // ⭐ THE balance constant: kept BELOW the per-cycle tether burn (8/16/24 quality) so a trophy pasture's
+    // own non-keeper renders can't self-fund its tethers — dedicated FUEL pastures are required
+    // (DAEMON_AND_TETHERS.md "the single number is the balance"). Config-tunable; pin exactly in QA.
+    static final long BASE_DATA_PER_EGG = 2L;
     private static final ValueRule KEEP = ValueRule.DEFAULT;   // keep shiny OR ≥1 perfect IV
 
     private UUID owner;
@@ -62,9 +67,10 @@ public class RendererBlockEntity extends BlockEntity {
         for (int i = 0; i < tray.size(); i++) {
             ItemStack s = tray.get(i);
             if (s.isEmpty() || !EggReader.isEgg(s)) continue;
-            EggInfo info = EggReader.read(s);
+            EggInfo info = EggReader.read(s);                              // one Cobbreeding decrypt per egg
             if (info == null || info.shiny()) continue;                     // SACRED #2: never touch a shiny
-            EggSummary egg = new EggSummary(EggReader.species(s), false, info.ivTotal(), info.perfectCount());
+            // species isn't part of the cull decision (ValueRule keys on shiny/IV only) → skip a 2nd decrypt
+            EggSummary egg = new EggSummary("", false, info.ivTotal(), info.perfectCount());
             if (RenderRun.isRendered(egg, KEEP)) {                          // SACRED #3: decision refuses shinies too
                 tray.set(i, ItemStack.EMPTY);                              // culled → destroyed (becomes Data)
                 culled++;
@@ -73,7 +79,8 @@ public class RendererBlockEntity extends BlockEntity {
         if (culled == 0) return;
 
         CobbreedingBridge.refreshHasEgg(world, pasturePos);
-        long data = RenderValuation.dataFor(culled, BASE_DATA_PER_EGG, 1.0);
+        double enrichment = enrichmentMultiplierAt(sw, pasturePos);        // base Enrichment augment (tether-amp later)
+        long data = RenderValuation.dataFor(culled, BASE_DATA_PER_EGG, enrichment);
         DataStore.get(sw.getServer()).credit(be.owner, data);
         GpLog.i("renderer", "render", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
                 "culled", culled, "data", data, "owner", be.owner.toString());
@@ -90,6 +97,15 @@ public class RendererBlockEntity extends BlockEntity {
             if (world.getBlockEntity(n) instanceof PokemonPastureBlockEntity) return n;
         }
         return null;
+    }
+
+    /** Base Enrichment augment on the touching pasture's Kernel → render-Data multiplier (≥1). The
+     *  TETHER-amplified enrichment (which would also drain Data, on the breeder's clock) is a later step;
+     *  this wires the FREE base so a compiled Enrichment augment isn't a silent dead stat. */
+    private static double enrichmentMultiplierAt(ServerWorld world, BlockPos pasturePos) {
+        PastureData pd = PastureRegistry.get(world.getServer()).get(world, pasturePos);
+        return (pd == null) ? 1.0
+                : EffectiveAugments.of(pd.baseAugmentLevels(), java.util.List.of()).enrichmentMultiplier();
     }
 
     @Override
