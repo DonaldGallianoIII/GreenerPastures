@@ -6,6 +6,7 @@
   "mixins": [
     "BlockDropBoostMixin",
     "EnchantmentLevelMixin",
+    "EnchantmentValueBoostMixin",
     "PokemonPastureBlockEntityMixin",
     "PotionDurationMixin",
     "XpBoostMixin"

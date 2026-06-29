@@ -47,14 +47,17 @@ public final class DaemonBuffs {
     /** Status effects are refreshed every second; give them slack so they never flicker between applications. */
     private static final int EFFECT_DURATION = INTERVAL * 3;
     /** The buffs this adapter can currently deliver — drain is billed only for these. Widens as we wire more.
-     *  FORTUNE/AUTO_SMELT/XP_BOOST/VEIN_MINE are delivered by mixins/events via {@link #paidBuffs}; the EFFECT +
-     *  MAGNET here; the attribute enchants (Respiration/Swift Sneak/Feather Falling) by {@link DaemonAttributeBuffs}
-     *  (folded in via its {@code DELIVERED} set so the bill can never drift from what's actually applied). */
+     *  FORTUNE/AUTO_SMELT/XP_BOOST/VEIN_MINE + the value-effect enchants (LURE/LUCK_OF_THE_SEA/FROST_WALKER) are
+     *  delivered by mixins/events via {@link #paidBuffs}; the EFFECT + MAGNET here; the attribute enchants
+     *  (Respiration/Swift Sneak/Feather Falling) by {@link DaemonAttributeBuffs} (folded in via its
+     *  {@code DELIVERED} set so the bill can never drift from what's actually applied). LOOTING is intentionally
+     *  excluded (combat-adjacent — pending Deuce's OK; its read seam is already wired in {@link DaemonValueBoost}). */
     private static final Set<BuffId> SUPPORTED;
     static {
         EnumSet<BuffId> s = EnumSet.of(
                 BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET,
-                BuffId.FORTUNE, BuffId.AUTO_SMELT, BuffId.XP_BOOST, BuffId.VEIN_MINE, BuffId.POTION_DURATION);
+                BuffId.FORTUNE, BuffId.AUTO_SMELT, BuffId.XP_BOOST, BuffId.VEIN_MINE, BuffId.POTION_DURATION,
+                BuffId.LURE, BuffId.LUCK_OF_THE_SEA, BuffId.FROST_WALKER);
         s.addAll(DaemonAttributeBuffs.DELIVERED);
         SUPPORTED = s;
     }
