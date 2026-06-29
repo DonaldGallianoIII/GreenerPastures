@@ -33,15 +33,29 @@ gear or persist NBT, so no dupe surface). QA rows **Q23–Q28**.
   `ENCHANT_BOOST.md` (the rejected component-edit approach + why).
 - **Auto-Smelt** (HOOK, `58612c5`) — smelts mined drops; same block-drop mixin window, composes with Fortune.
 - **XP Boost** (HOOK, `725bce0`) — `XpBoostMixin` +25%/tier on `addExperience`.
-- **Vein-Miner** (HOOK, `28e9b83`) — `DaemonVeinMine` via `PlayerBlockBreakEvents.AFTER`; **heavily fenced**
-  (ores `c:ores` + logs only, same-block flood-fill, cap tier×32≤96, suitable-tool, re-entrancy guard). Data
+- **Vein-Miner** (HOOK, `28e9b83`, hardened) — `DaemonVeinMine` via `PlayerBlockBreakEvents.AFTER`; **heavily
+  fenced** (ores `c:ores` + logs only, same-block flood-fill, cap tier×32≤96, suitable-tool, re-entrancy guard).
+  **Whole-vein compliant:** every block routes through `Block.getDroppedStacks(…, player, tool)` (the same path
+  a normal break uses), so Fortune + auto-smelt AND the tool's own enchants (Silk Touch etc.) apply to *every*
+  block, not just the first; per-block try/catch + boost-window cleanup so one odd block can't abort it. Data
   rental = the cost (no tool durability v1).
 - **Potion Duration+** (HOOK, `bd7d252`) — `PotionDurationMixin` +50%/tier on a **utility allowlist only**
   (NightVision/WaterBreathing/FireRes/Conduit/Dolphin/SlowFall/Luck) → PvP-neutral.
-**REMAINING = v2 enchants only (deferred, lower value, `ENCHANT_BOOST.md`):** Looting (mob-death path),
-the attribute enchants (Efficiency [≈ already covered by Haste]/Respiration/Swift Sneak via direct
-`EntityAttributeModifier`s — no mixin), and the value-effect enchants (Unbreaking/Lure/Luck of the Sea/Feather
-Falling/Frost Walker — need per-effect interception). Add each to `DaemonBuffs.SUPPORTED` as it lands.
+
+### ▶️ NEXT TASK (Deuce's directive, post-compaction): finish the **v2 enchants** (task #30)
+Lower-value enchant buffs, spec'd in `ENCHANT_BOOST.md`. In rough priority:
+1. **Attribute enchants** (cleanest, NO mixin) — Respiration (`OXYGEN_BONUS`), Swift Sneak (`SNEAKING_SPEED`),
+   Soul Speed (`MOVEMENT_SPEED`, soul-block-gated → maybe skip), Efficiency (`MINING_EFFICIENCY`, ≈ already
+   covered by Haste). Deliver via direct transient `EntityAttributeModifier`s added/removed in the
+   `DaemonBuffs` settle loop (add when the buff is paid, remove when it lapses — manage by a stable modifier id).
+2. **Value-effect enchants** — Unbreaking, Lure, Luck of the Sea, Feather Falling, Frost Walker. These read the
+   raw component level via `forEachEnchantment` (no entity ctx), so each needs its own interception point
+   (verify the per-effect getters in the jar: `getItemDamage`/`getFishingTimeReduction`/`getProtectionAmount`/
+   `getFishingLuckBonus`/the frost-walker radius). Hardest tier.
+3. **Looting** — mob-death loot path (`getEquipmentLevel(weapon, attacker)`); a ThreadLocal scoped around the
+   mob-drop loot resolution (mirror the Fortune `Block.getDroppedStacks` pattern, but for the entity-loot path).
+   Combat-adjacent — confirm with Deuce whether to include before shipping.
+Add each new `BuffId` to `DaemonBuffs.SUPPORTED` as its adapter lands (so it's billed only when delivered).
 
 _(original spec below — still the source of truth for the buff list)_
 

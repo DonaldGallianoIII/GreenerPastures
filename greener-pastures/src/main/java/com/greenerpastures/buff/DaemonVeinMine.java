@@ -82,17 +82,25 @@ public final class DaemonVeinMine {
                 BlockPos p = frontier.poll();
                 BlockState s = world.getBlockState(p);
                 if (!s.isOf(block)) continue;
+                enqueueNeighbors(p, seen, frontier);         // keep crawling the vein regardless of break outcome
 
-                BlockEntity be = s.hasBlockEntity() ? world.getBlockEntity(p) : null;
-                // route through getDroppedStacks with the real tool so Fortune + auto-smelt apply per block
-                List<ItemStack> drops = Block.getDroppedStacks(s, world, p, be, player, tool);
-                world.breakBlock(p, false, player, 512);     // remove + particles; we drop manually
-                for (ItemStack drop : drops) spawn(world, p, drop);
-
-                broken++;
-                enqueueNeighbors(p, seen, frontier);
+                try {
+                    BlockEntity be = s.hasBlockEntity() ? world.getBlockEntity(p) : null;
+                    // Route EVERY block through getDroppedStacks with the real tool — the exact path a normal
+                    // break takes — so the whole vein is compliant: the Daemon Fortune boost + auto-smelt (via
+                    // BlockDropBoostMixin, which fires per call) AND the tool's own enchants (Silk Touch, its
+                    // own Fortune, …) all apply to each block, not just the first one the player hit.
+                    List<ItemStack> drops = Block.getDroppedStacks(s, world, p, be, player, tool);
+                    world.breakBlock(p, false, player, 512);     // remove + particles; we drop manually
+                    for (ItemStack drop : drops) spawn(world, p, drop);
+                    broken++;
+                } catch (Throwable t) {
+                    // one odd/modded block must never abort the vein (or strand a boost window mid-run)
+                    GpLog.w("buff", "vein_skip", "pos", p.toString(), "err", String.valueOf(t));
+                }
             }
         } finally {
+            DaemonEnchantBoost.end();   // belt-and-suspenders: never let a boost window leak past vein mining
             ACTIVE.set(false);
         }
         if (broken > 0) GpLog.d("buff", "vein_mine", "block", block.toString(), "broken", broken, "limit", limit);
