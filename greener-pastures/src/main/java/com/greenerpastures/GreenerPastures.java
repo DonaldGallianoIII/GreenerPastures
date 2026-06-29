@@ -7,6 +7,7 @@ import com.greenerpastures.drops.Harvester;
 import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.pasture.breeding.BetterPasture;
 import com.greenerpastures.pasture.keeper.PastureKeeper;
+import com.greenerpastures.ritual.RitualSystem;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,9 @@ public final class GreenerPastures implements ModInitializer {
 
         // economy/ — dark economy min-slice: Renderer block (eggs → Data) + Daemon item + per-player Data
         DarkEconomy.init();
+
+        // ritual/ — load the custom-drop config (type-drops + gacha rituals) the Harvester reads
+        RitualSystem.init();
 
         // drops/ — passive-drops Harvester block (rolls tethered mons' drop tables → its own chest)
         Harvester.init();

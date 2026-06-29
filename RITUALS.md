@@ -72,6 +72,9 @@ literally looks like one. 😅
 
 **Ideas parked for later:** `beacon` (full legendary roster?), `heart_of_the_sea`✅ already drops,
 `music_disc_*` (a "Player" ritual), seasonal/anomaly rituals tying into the dark-economy easter eggs.
+**Enchanted Golden Apple recipe (Deuce, 2026-06-29):** a **legendary Grass** + a **legendary Fairy** + a
+**gold-dropping** mon — replace/augment the current "5 distinct types" Forbidden Orchard gate. (Recipes are
+deferred for fine-tuning — all just config rows, no code.)
 
 ---
 
@@ -101,10 +104,14 @@ chat/`GpLog` readout in the interim).**
 - **Type-drop rates/qty** (Tier 1 table).
 - Do rituals consume anything (pure time, or also Data/an item cost per pull)?
 
-## Build order (proposed)
-1. Pin this doc with Deuce (content + the knobs above).
-2. `RitualBook` + `Gacha` pure cores + tests (no MC, no GUI).
-3. Composition-read adapter (verify the Cobblemon type API) + `RitualState` persistence + Harvester banking.
-4. Tier-1 type-drops (extend `DropsBridge` with a type→items overlay).
-5. Sim extension → tune.
-6. Gacha GUI (when at PC) — or a `GpLog`/chat readout first so it's playable on RC.
+## Status / build order
+1. ✅ Doc pinned (recipes still tunable via config — deferred for fine-tuning).
+2. ✅ Pure cores — `Gacha` (pull/pity), `Requirement`/`Composition`/`RitualBook`, `TypeDropTable` + tests (148 green).
+3. ✅ Composition-read adapter (`drops/CompositionReader`, Cobblemon `getTypes()`/`getShowdownId()` verified) +
+   Harvester pull-banking + per-ritual pity persistence (Harvester NBT, survives relog).
+4. ✅ Tier-1 type-drops (config `TypeDropTable`, rolled per-mon each Harvester tick).
+5. ✅ Config — `config/greenerpastures/rituals.json` (`RitualConfig`/`RitualSystem`): master + per-tier +
+   per-ritual toggles; re-map which types/species → which items, counts, odds, pity. **Auto-pull** is the
+   interim default (rolls banked pulls each tick so it's playable now); set `autoPull:false` for manual.
+6. ⏳ Sim extension (ritual mode: pulls/hr → items/hr *with pity*) — to tune odds headlessly.
+7. ⏳ Manual-pull gacha **GUI** on the Harvester (live %/pity + PULL buttons) — when at PC.

@@ -15,12 +15,14 @@ import java.util.Map;
  * which types / species produce which items, change counts / odds / pity, disable individual rituals or
  * type-drops, or switch the whole system off — all without touching code or a rebuild.
  *
- * <p>{@link #defaults()} ships the RITUALS.md roster. {@link #load} is <b>fail-safe</b>: a missing file is
- * written from defaults; a corrupt file logs and falls back to defaults (it does NOT overwrite the admin's
- * file), and never crashes the server. Gson is loaded lazily (a holder) so the pure cores + {@code defaults()}
- * stay usable in the headless test JVM, which has no Gson on its runtime classpath.
+ * <p>{@code autoPull} rolls banked ritual pulls automatically (the interim while there's no gacha GUI — so
+ * rituals are fully playable now); set it false once the manual-pull screen exists to let pulls bank and be
+ * spent by hand. {@link #defaults()} ships the RITUALS.md roster. {@link #load} is <b>fail-safe</b>: a missing
+ * file is written from defaults; a corrupt file logs and falls back to defaults (it does NOT overwrite the
+ * admin's file), and never crashes the server. Gson is loaded lazily (a holder) so the pure cores +
+ * {@code defaults()} stay usable in the headless test JVM, which has no Gson on its runtime classpath.
  */
-public record RitualConfig(boolean enabled, TypeDropTable typeDrops, RitualBook rituals) {
+public record RitualConfig(boolean enabled, boolean autoPull, TypeDropTable typeDrops, RitualBook rituals) {
 
     public RitualConfig {
         if (typeDrops == null) typeDrops = new TypeDropTable(false, List.of());
@@ -69,7 +71,7 @@ public record RitualConfig(boolean enabled, TypeDropTable typeDrops, RitualBook 
 
     // ── built-in defaults (the RITUALS.md roster — tuning, edit via the JSON) ─
     public static RitualConfig defaults() {
-        return new RitualConfig(true, defaultTypeDrops(), defaultRituals());
+        return new RitualConfig(true, true, defaultTypeDrops(), defaultRituals());
     }
 
     private static TypeDropTable defaultTypeDrops() {

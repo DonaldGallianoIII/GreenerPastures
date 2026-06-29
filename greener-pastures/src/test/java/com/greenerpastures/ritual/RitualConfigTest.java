@@ -34,7 +34,7 @@ class RitualConfigTest {
     @Test
     void masterToggleGatesBothTiersButKeepsTheData() {
         RitualConfig def = RitualConfig.defaults();
-        RitualConfig off = new RitualConfig(false, def.typeDrops(), def.rituals());
+        RitualConfig off = new RitualConfig(false, true, def.typeDrops(), def.rituals());
         assertFalse(off.activeRituals().enabled(), "master off ⇒ rituals inert");
         assertFalse(off.activeTypeDrops().enabled(), "master off ⇒ type-drops inert");
         assertFalse(off.rituals().rituals().isEmpty(), "data preserved so flipping master back on restores it");

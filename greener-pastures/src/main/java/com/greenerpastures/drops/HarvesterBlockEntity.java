@@ -9,6 +9,12 @@ import com.greenerpastures.economy.TetherRuntime;
 import com.greenerpastures.pasture.breeding.CobbreedingBridge;
 import com.greenerpastures.pasture.breeding.PastureData;
 import com.greenerpastures.pasture.breeding.PastureRegistry;
+import com.greenerpastures.ritual.Gacha;
+import com.greenerpastures.ritual.Ritual;
+import com.greenerpastures.ritual.RitualConfig;
+import com.greenerpastures.ritual.RitualSystem;
+import com.greenerpastures.ritual.TypeDrop;
+import com.greenerpastures.ritual.TypeDropTable;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -32,6 +38,8 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -50,6 +58,11 @@ import java.util.UUID;
  * their own tethers — never double-charged). Starved → the free base rate, never a pause. The harvested
  * items stay materials-only: they never feed Data, they only ever cost it (the tether burn).
  *
+ * <p><b>Custom drops</b> (config-driven — {@code config/greenerpastures/rituals.json}): on top of the
+ * Cobblemon-table harvest, a mon's elemental TYPE can add staple drops (Tier 1) and the pasture's
+ * COMPOSITION banks gacha pulls toward rare/boss items with pity (Tier 2 — see {@code RITUALS.md}). Fully
+ * admin-toggleable; still materials only, never Data.
+ *
  * <p>Pause-when-full: if the container has no free slot it harvests nothing (no roll, no loss) — empty it
  * to resume. Break scatters the contents (in {@code HarvesterBlock}).
  */
@@ -65,6 +78,8 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
 
     private final SimpleInventory inv = new SimpleInventory(SLOTS);
     private final Random rng = new Random();
+    /** Per-ritual gacha progress (id → banked pulls + pity), persisted with the block. */
+    private final Map<String, Gacha.PullState> ritualPulls = new HashMap<>();
 
     public HarvesterBlockEntity(BlockPos pos, BlockState state) {
         super(Harvester.BE, pos, state);
@@ -82,22 +97,27 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
             BlockPos pasturePos = adjacentPasture(world, pos);
             if (pasturePos == null) return;
             if (!(world.getBlockEntity(pasturePos) instanceof PokemonPastureBlockEntity pasture)) return;
+            // 1) staple harvest — each mon's Cobblemon drop table (LEVER 1 proc + LEVER 2 yield)
             DropPlan plan = dropPlan(sw, pasturePos);                     // Kernel base × any FED drop tether
             double proc = BASE_PROC + plan.eff().dropRateFraction();      // LEVER 1: +0.25% base + amplified rate
             int yield = plan.eff().dropYieldBonus();                      // LEVER 2: amplified amount budget
             Map<String, Integer> harvested = DropsBridge.harvest(pasture, be.rng, proc, yield);
-            if (harvested.isEmpty()) return;
-            int added = be.deposit(harvested);
-            if (added > 0) {
-                be.markDirty();
-                GpLog.d("harvester", "harvest", "pos", pos.toShortString(),
-                        "pasture", pasturePos.toShortString(), "items", added);
-                if (plan.drain() > 0 && plan.owner() != null) {          // the fed drop tethers earned their burn
-                    DataStore.get(sw.getServer()).tryDebit(plan.owner(), plan.drain());
-                    GpLog.d("tether", "drain", "pos", pos.toShortString(),
-                            "data", plan.drain(), "owner", plan.owner().toString(), "src", "harvester");
+            if (!harvested.isEmpty()) {
+                int added = be.deposit(harvested);
+                if (added > 0) {
+                    be.markDirty();
+                    GpLog.d("harvester", "harvest", "pos", pos.toShortString(),
+                            "pasture", pasturePos.toShortString(), "items", added);
+                    if (plan.drain() > 0 && plan.owner() != null) {      // the fed drop tethers earned their burn
+                        DataStore.get(sw.getServer()).tryDebit(plan.owner(), plan.drain());
+                        GpLog.d("tether", "drain", "pos", pos.toShortString(),
+                                "data", plan.drain(), "owner", plan.owner().toString(), "src", "harvester");
+                    }
                 }
             }
+            // 2) custom drops — config type-drops (by mon type) + gacha rituals (by composition); runs even
+            //    if the staple roll was empty, since rituals bank pulls on their own clock
+            be.customDrops(pasture, pos);
         } catch (Throwable t) {
             // a Cobblemon API edge must never crash the world tick (mirrors the breeder/Renderer guards)
             GpLog.w("harvester", "skip", "pos", pos.toShortString(), "err", String.valueOf(t));
@@ -176,6 +196,57 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
      *  whose account ({@code owner}) pays it. {@code drain == 0} / {@code owner == null} ⇒ run the free base. */
     private record DropPlan(EffectiveAugments eff, long drain, UUID owner) {}
 
+    /**
+     * The custom-drop pass (config-driven): Tier-1 <b>type-drops</b> (each mon rolls the drops matching one of
+     * its elemental types) + Tier-2 <b>rituals</b> (the pasture composition banks gacha pulls toward rare
+     * items). Materials only — never Data. Banks one pull per active ritual; with {@code autoPull} on (the
+     * interim until the manual gacha GUI) it rolls them immediately, depositing any hit. Pity / banked-pull
+     * progress persists per ritual. Whole thing is gated by the master / per-tier / per-ritual config toggles.
+     */
+    private void customDrops(PokemonPastureBlockEntity pasture, BlockPos pos) {
+        RitualConfig cfg = RitualSystem.config();
+        if (!cfg.enabled()) return;
+        CompositionReader.PastureMons mons = CompositionReader.read(pasture);
+        Map<String, Integer> out = new LinkedHashMap<>();
+
+        // Tier 1 — type-drops: per mon, each config drop whose type the mon has gets a roll.
+        TypeDropTable tdt = cfg.activeTypeDrops();
+        if (tdt.enabled()) {
+            for (Set<String> types : mons.perMonTypes()) {
+                for (TypeDrop d : tdt.forTypes(types)) {
+                    if (rng.nextDouble() * 100.0 < d.chancePercent()) {
+                        int span = d.maxQty() - d.minQty();
+                        int qty = d.minQty() + (span > 0 ? rng.nextInt(span + 1) : 0);
+                        if (qty > 0) out.merge(d.item(), qty, Integer::sum);
+                    }
+                }
+            }
+        }
+
+        // Tier 2 — rituals: bank +1 pull per satisfied ritual; auto-pull rolls it now (else it waits for the GUI).
+        boolean stateChanged = false;
+        for (Ritual r : cfg.activeRituals().active(mons.aggregate())) {
+            Gacha.PullState st = ritualPulls.getOrDefault(r.id(), Gacha.PullState.EMPTY).bank(1);
+            if (cfg.autoPull()) {
+                Gacha.Session sess = Gacha.pullAll(st, r.baseChancePercent(), r.hardPity(), r.softPityStart(), rng::nextDouble);
+                if (sess.hits() > 0) {
+                    out.merge(r.outputItem(), r.outputQty() * sess.hits(), Integer::sum);
+                    GpLog.i("ritual", "hit", "pos", pos.toShortString(), "ritual", r.id(),
+                            "item", r.outputItem(), "n", sess.hits());
+                }
+                st = sess.state();
+            }
+            ritualPulls.put(r.id(), st);
+            stateChanged = true;
+        }
+
+        if (!out.isEmpty()) {
+            int stored = deposit(out);
+            if (stored > 0) GpLog.d("ritual", "drops", "pos", pos.toShortString(), "items", stored);
+        }
+        if (stateChanged || !out.isEmpty()) markDirty();
+    }
+
     // --- vanilla 9×3 chest GUI (no custom screen) ---
     @Override public Text getDisplayName() { return Text.translatable("block.greenerpastures.harvester"); }
 
@@ -189,11 +260,27 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         super.writeNbt(nbt, lookup);
         nbt.put("inv", inv.toNbtList(lookup));
+        if (!ritualPulls.isEmpty()) {
+            NbtCompound rp = new NbtCompound();
+            ritualPulls.forEach((id, st) -> {
+                NbtCompound e = new NbtCompound();
+                e.putInt("banked", st.bankedPulls());
+                e.putInt("pity", st.pity());
+                rp.put(id, e);
+            });
+            nbt.put("ritualPulls", rp);
+        }
     }
 
     @Override
     protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         super.readNbt(nbt, lookup);
         inv.readNbtList(nbt.getList("inv", NbtElement.COMPOUND_TYPE), lookup);
+        ritualPulls.clear();
+        NbtCompound rp = nbt.getCompound("ritualPulls");
+        for (String id : rp.getKeys()) {
+            NbtCompound e = rp.getCompound(id);
+            ritualPulls.put(id, new Gacha.PullState(e.getInt("banked"), e.getInt("pity")));
+        }
     }
 }
