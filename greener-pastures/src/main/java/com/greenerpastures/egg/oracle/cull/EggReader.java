@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -80,13 +82,34 @@ public final class EggReader {
                 || (id.getNamespace().contains("cobb") && id.getPath().contains("egg"));
     }
 
-    /** Read what we can off an egg. Returns null if it isn't an egg. Never throws. */
-    public static EggInfo read(ItemStack stack) {
-        if (!isEgg(stack)) return null;
+    // Per-ItemStack identity cache (an egg's baked properties are immutable once bred). The Renderer
+    // re-reads the same tray stacks every cull tick and BioBank bulk-deposits many at once — without this,
+    // each call re-ran Cobbreeding's reflective decrypt. Synchronized access-order LRU, bounded (re-audit N1).
+    private static final int CACHE_MAX = 4096;
+    private static final Map<ItemStack, Decoded> CACHE = Collections.synchronizedMap(
+            new LinkedHashMap<ItemStack, Decoded>(256, 0.75f, true) {
+                @Override protected boolean removeEldestEntry(Map.Entry<ItemStack, Decoded> e) {
+                    return size() > CACHE_MAX;
+                }
+            });
+
+    /** One egg's decoded properties (species + IV/shiny), from a single decrypt. */
+    private record Decoded(String species, EggInfo info) {}
+
+    private static Decoded decode(ItemStack stack) {
+        Decoded cached = CACHE.get(stack);
+        if (cached != null) return cached;
+        Decoded d = decodeUncached(stack);
+        CACHE.put(stack, d);
+        return d;
+    }
+
+    /** Read everything off an egg in ONE reflective decrypt — the only place that invokes Cobbreeding. */
+    private static Decoded decodeUncached(ItemStack stack) {
         init();
         boolean shiny = false, ivsKnown = false;
         int ivTotal = 0, perfect = 0;
-
+        String species = null;
         if (extractProperties != null) {
             try {
                 Object props = extractProperties.invoke(eggUtils, stack);
@@ -103,37 +126,34 @@ public final class EggReader {
                             }
                         }
                     }
+                    if (getSpecies != null) {
+                        Object sp = getSpecies.invoke(props);
+                        if (sp instanceof String s && !s.isBlank()) species = normalizeSpecies(s);
+                    }
                 }
             } catch (Throwable t) {
-                // fall through to the name-based shiny check below
+                // fall through to the name-based fallbacks
             }
         }
-        // Shiny ALWAYS wins: a ★ in the name flags it even when the API's shiny flag is missing,
-        // so a shiny is never mistinted as keeper/cull. Cached per stack, so this runs ~once per egg.
-        if (!shiny) shiny = shinyByName(stack);
-        return new EggInfo(shiny, ivsKnown, ivTotal, perfect);
+        if (!shiny) shiny = shinyByName(stack);            // ★ in the name flags a shiny even if the API missed it
+        if (species == null) species = speciesByName(stack);
+        return new Decoded(species, new EggInfo(shiny, ivsKnown, ivTotal, perfect));
+    }
+
+    /** Read what we can off an egg. Returns null if it isn't an egg. Never throws. Cached per stack. */
+    public static EggInfo read(ItemStack stack) {
+        if (!isEgg(stack)) return null;
+        return decode(stack).info();
     }
 
     /**
-     * Best-effort species key for an egg (server-safe). Tries Cobbreeding's baked
-     * {@code PokemonProperties.getSpecies()}; falls back to the egg's display name. Normalized to a
-     * lowercase, namespace-free token (e.g. "charmander"). Never throws; "unknown" if undetermined.
+     * Best-effort species key for an egg (server-safe). Cobbreeding's baked {@code getSpecies()} with a
+     * display-name fallback, normalized to a lowercase namespace-free token (e.g. "charmander"). Never
+     * throws; "unknown" if undetermined. Cached per stack — shares the one decrypt with {@link #read}.
      */
     public static String species(ItemStack stack) {
         if (!isEgg(stack)) return "unknown";
-        init();
-        if (extractProperties != null && getSpecies != null) {
-            try {
-                Object props = extractProperties.invoke(eggUtils, stack);
-                if (props != null) {
-                    Object sp = getSpecies.invoke(props);
-                    if (sp instanceof String s && !s.isBlank()) return normalizeSpecies(s);
-                }
-            } catch (Throwable ignored) {
-                // fall through to the name-based guess
-            }
-        }
-        return speciesByName(stack);
+        return decode(stack).species();
     }
 
     private static String normalizeSpecies(String s) {

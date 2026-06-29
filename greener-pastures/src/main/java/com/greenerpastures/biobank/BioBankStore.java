@@ -1,5 +1,6 @@
 package com.greenerpastures.biobank;
 
+import com.greenerpastures.core.GpLog;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
@@ -47,7 +48,14 @@ public final class BioBankStore extends PersistentState {
     private static BioBankStore fromNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         BioBankStore s = new BioBankStore();
         NbtCompound map = nbt.getCompound("banks");
-        for (String k : map.getKeys()) s.data.put(k, BioBankData.fromNbt(map.getCompound(k), lookup));
+        for (String k : map.getKeys()) {
+            try {
+                s.data.put(k, BioBankData.fromNbt(map.getCompound(k), lookup));
+            } catch (Exception e) {
+                // one malformed bank must not fail the whole world load (re-audit M2); skip + log it
+                GpLog.w("biobank", "load_skip_malformed", "key", k, "err", String.valueOf(e));
+            }
+        }
         return s;
     }
 

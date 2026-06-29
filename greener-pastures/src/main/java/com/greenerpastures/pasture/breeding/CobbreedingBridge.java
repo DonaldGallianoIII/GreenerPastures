@@ -302,7 +302,7 @@ public final class CobbreedingBridge {
         java.util.List<MonEntry> out = new java.util.ArrayList<>();
         if (be == null) return out;
         try {
-            for (PokemonPastureBlockEntity.Tethering t : be.getTetheredPokemon()) {
+            for (PokemonPastureBlockEntity.Tethering t : new java.util.ArrayList<>(be.getTetheredPokemon())) {
                 java.util.UUID id = t.getTetheringId();
                 String species;
                 try {

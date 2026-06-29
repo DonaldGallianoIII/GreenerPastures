@@ -117,8 +117,11 @@ public final class MultiPairBreeder {
      *  {@code proc} is the EFFECTIVE shiny chance (base augment × any fed Shiny Tether) from onWorldTick. */
     private static int breedPairs(ServerWorld world, BlockPos pos, PokemonPastureBlockEntity pasture,
                                   BreedingTier tier, PastureData pd, long now, double proc) {
-        List<PokemonPastureBlockEntity.Tethering> tethered = pasture.getTetheredPokemon();
-        if (tethered == null || tethered.size() < 2) return 0;
+        // snapshot — getTetheredPokemon() hands back Cobblemon's LIVE backing list; iterating it directly
+        // while Cobblemon mutates it (tether / release / checkPokemon) risks a CME (re-audit M1)
+        List<PokemonPastureBlockEntity.Tethering> live = pasture.getTetheredPokemon();
+        if (live == null || live.size() < 2) return 0;
+        List<PokemonPastureBlockEntity.Tethering> tethered = new ArrayList<>(live);
 
         List<List<PokemonPastureBlockEntity.Tethering>> pairs = pd.pairings.isEmpty()
                 ? adjacencyPairs(tethered, tier.maxPairs)

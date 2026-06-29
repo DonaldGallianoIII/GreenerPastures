@@ -29,9 +29,11 @@ import java.util.UUID;
  * culls every NON-keeper egg in place (destroyed, never materialized) and credits the owner's
  * {@link DataStore} balance with {@link RenderValuation}. Keeps + shinies are left in the tray.
  *
- * <p><b>SACRED shiny rule, triple-guarded:</b> (1) it does nothing unless {@link EggReader} can actually
- * read eggs (never cull blind), (2) it skips any egg read as shiny before deciding, and (3) the decision
- * itself ({@link RenderRun#isRendered}) refuses to render a shiny. A bred shiny is never destroyed.
+ * <p><b>SACRED shiny rule, guarded four ways:</b> (1) nothing runs unless {@link EggReader} can read eggs
+ * at all (never cull blind), (2) it skips any egg read as shiny, (3) it skips any egg whose decrypt
+ * FAILED — a failed read reports {@code shiny=false}/{@code ivsKnown=false} and can't be trusted, so it's
+ * never culled — and (4) the decision ({@link RenderRun#isRendered}) refuses a shiny too. A bred shiny is
+ * never destroyed. The whole tick is also wrapped so a Cobblemon API edge can't crash the world tick.
  */
 public class RendererBlockEntity extends BlockEntity {
     private static final int INTERVAL = 20;              // cull once a second
@@ -57,37 +59,43 @@ public class RendererBlockEntity extends BlockEntity {
         if (world.getTime() % INTERVAL != 0L) return;
         if (!(world instanceof ServerWorld sw)) return;
         if (!CobbreedingBridge.isAvailable() || !EggReader.apiAvailable()) return;   // never cull blind (SACRED #1)
+        try {
+            BlockPos pasturePos = adjacentPasture(world, pos);
+            if (pasturePos == null) return;
+            DefaultedList<ItemStack> tray = CobbreedingBridge.eggsAt(pasturePos);
+            if (tray == null) return;
 
-        BlockPos pasturePos = adjacentPasture(world, pos);
-        if (pasturePos == null) return;
-        DefaultedList<ItemStack> tray = CobbreedingBridge.eggsAt(pasturePos);
-        if (tray == null) return;
-
-        int culled = 0;
-        for (int i = 0; i < tray.size(); i++) {
-            ItemStack s = tray.get(i);
-            if (s.isEmpty() || !EggReader.isEgg(s)) continue;
-            EggInfo info = EggReader.read(s);                              // one Cobbreeding decrypt per egg
-            if (info == null || info.shiny()) continue;                     // SACRED #2: never touch a shiny
-            // species isn't part of the cull decision (ValueRule keys on shiny/IV only) → skip a 2nd decrypt
-            EggSummary egg = new EggSummary("", false, info.ivTotal(), info.perfectCount());
-            if (RenderRun.isRendered(egg, KEEP)) {                          // SACRED #3: decision refuses shinies too
-                tray.set(i, ItemStack.EMPTY);                              // culled → destroyed (becomes Data)
-                culled++;
+            int culled = 0;
+            for (int i = 0; i < tray.size(); i++) {
+                ItemStack s = tray.get(i);
+                if (s.isEmpty() || !EggReader.isEgg(s)) continue;
+                EggInfo info = EggReader.read(s);                              // one Cobbreeding decrypt per egg
+                // SACRED #2/#3: never cull a shiny, and never cull on a FAILED read — a failed decrypt reads
+                // as shiny=false / ivsKnown=false, indistinguishable from a worthless egg, so it MUST be skipped.
+                if (info == null || info.shiny() || !info.ivsKnown()) continue;
+                // species isn't part of the cull decision (ValueRule keys on shiny/IV only) → skip a 2nd decrypt
+                EggSummary egg = new EggSummary("", false, info.ivTotal(), info.perfectCount());
+                if (RenderRun.isRendered(egg, KEEP)) {                          // SACRED #4: decision refuses shinies too
+                    tray.set(i, ItemStack.EMPTY);                              // culled → destroyed (becomes Data)
+                    culled++;
+                }
             }
-        }
-        if (culled == 0) return;
+            if (culled == 0) return;
 
-        CobbreedingBridge.refreshHasEgg(world, pasturePos);
-        double enrichment = enrichmentMultiplierAt(sw, pasturePos);        // base Enrichment augment (tether-amp later)
-        long data = RenderValuation.dataFor(culled, BASE_DATA_PER_EGG, enrichment);
-        DataStore.get(sw.getServer()).credit(be.owner, data);
-        GpLog.i("renderer", "render", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
-                "culled", culled, "data", data, "owner", be.owner.toString());
-        Analytics.record(world, Event.of("egg_rendered")
-                .put("culled", culled).put("data", data)
-                .put("x", pos.getX()).put("y", pos.getY()).put("z", pos.getZ())
-                .player(be.owner));
+            CobbreedingBridge.refreshHasEgg(world, pasturePos);
+            double enrichment = enrichmentMultiplierAt(sw, pasturePos);        // base Enrichment augment (tether-amp later)
+            long data = RenderValuation.dataFor(culled, BASE_DATA_PER_EGG, enrichment);
+            DataStore.get(sw.getServer()).credit(be.owner, data);
+            GpLog.i("renderer", "render", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
+                    "culled", culled, "data", data, "owner", be.owner.toString());
+            Analytics.record(world, Event.of("egg_rendered")
+                    .put("culled", culled).put("data", data)
+                    .put("x", pos.getX()).put("y", pos.getY()).put("z", pos.getZ())
+                    .player(be.owner));
+        } catch (Throwable t) {
+            // a Cobblemon/Cobbreeding API edge must never crash the world tick (twin of the breeder guard)
+            GpLog.w("renderer", "skip", "pos", pos.toShortString(), "err", String.valueOf(t));
+        }
     }
 
     /** First neighbour that is a Cobblemon pasture (its block-entity sits at the bottom block). */

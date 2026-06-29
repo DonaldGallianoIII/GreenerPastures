@@ -18,7 +18,7 @@ public record SaveNamePayload(BlockPos pos, String name) implements CustomPayloa
 
     public static final PacketCodec<RegistryByteBuf, SaveNamePayload> CODEC = PacketCodec.tuple(
             BlockPos.PACKET_CODEC, SaveNamePayload::pos,
-            PacketCodecs.STRING, SaveNamePayload::name,
+            PacketCodecs.string(64), SaveNamePayload::name,   // bound at the wire (server also truncates to 64)
             SaveNamePayload::new
     );
 
