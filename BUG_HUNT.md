@@ -52,3 +52,33 @@ _Two background agents swept the whole mod after the perf pass (one **regression
 
 ## 🛠️ Fix status — commits (2026-06-28, on `f882fba`)
 All 11 actioned findings + the regression LOW are **fixed, test-backed (92 green), build-clean, committed, NOT deployed.** Tracked for in-game verification as **Q8** in `QA_PENDING.md`. Pure-logic (#8, #13) excluded from QA — proven by unit tests.
+
+---
+
+# 🌊 Wave 2 — three more agents (2026-06-28)
+
+After Wave 1, three more analysis-only agents ran: **(a)** an adversarial review of the Wave-1 *fixes themselves*, **(b)** a **2nd perf pass** with an MP/dedicated-server-scale lens, **(c)** an adversarial **SP-vs-MP** edge-case + ideas pass. Headline: **side-safety came back CLEAN** (a dedicated server loads no client class — verified file-by-file), and the Wave-1 fixes verified correct against real 1.21.1 bytecode **except two defects in the new log-reopen code**, both fixed.
+
+## Fixed (commits on `aeeca44` → `78175f0`)
+- **[MED] Log busy-spin on a *persistent* disk outage** — the #9 reopen loop had no backoff; `poll(1s)` returns instantly with a backlog, so a sustained outage would pin a core + flood SLF4J. Both drain loops now `Thread.sleep(1000)` after a failed reopen.
+- **[LOW] GpLog drop-count lost on reopen failure** — `getAndSet(0)` cleared it before the write; now peek-then-`addAndGet(-lost)` only after a durable flush, so the gap-marker survives the outage.
+- **[PERF N2] `refreshHasEgg`** — replaced `eggs.stream().anyMatch` with an indexed loop (zero-alloc on the one hot server path).
+- **[HIGH H1] Pasture break = item loss + record leak** — breaking/pistoning a pasture destroyed its slotted upgrade + augmented Kernels + queued eggs, and orphaned the `PastureData` (re-saved + rescanned forever). Added `PlayerBlockBreakEvents.AFTER`: scatter the upgrades + eggs, then `remove()` the record. `BetterPasture.registerBreakCleanup`.
+- **[MED H2] Phantom records via packets** — `SaveName`/`SavePairings` checked reach but not block type → a client could mint `PastureData` at any nearby pos. Both handlers now require a real `PokemonPastureBlockEntity` at pos.
+- **[MED H3] EventLog Gson-death** — the writer caught only `IOException`; a non-finite double (likely once the economy feeds doubles) would kill it permanently. `safeJson()` turns a bad row into a valid-JSON breadcrumb.
+- **[LOW I1] `Analytics.init` idempotent** — a double-init would have raced two writer threads on one file.
+- **[N1 decision] Pasture loot-sweep CUT** — `PastureCollector` deleted, mixin hook stripped (no-wander stays). Replaced later by the %-chance loot block.
+
+## Deferred / tracked (not done — by choice)
+- **[MED M1] Menus never `canUse`-expire** — `CompilerMenu`/`PastureMenu` `return true`. Largely mitigated by H2 (packets now reject a gone block) + server-authoritative menu logic; proper fix is a real `canUse` (reach + block-type). **Backlog.**
+- **[LOW N3]** `Analytics.record` row-assembly still on the tick thread (residual of perf H3) — enqueue the `Event`, build the map on the writer thread. **Backlog.**
+- **[LOW N4]** `BioBankBlock.depositAll` re-fetches the store + reflects species per egg; hoist out of the loop, cache species per stack. One-shot action, bounded by the 256 cap. **Backlog.**
+- **[IDEA I2]** capture `Finder.target` once (it's `volatile`; not a live race today). **[IDEA I3]** validate/coerce `Event.put` values at the boundary (pairs with H3). **Backlog.**
+- **Perf H2/H5** — re-confirmed **stay deferred** at MP scale (H2 is off-tick autosave only, H6 de-fanged it; H5 is one client's local frame, MP doesn't multiply it).
+
+## Verified NON-issues (Wave 2 — don't re-chase)
+- **Side-safety across the whole tree** — every `net.minecraft.client.*` importer is a genuine client-only class registered only from the client entrypoint; `studio/*` is a desktop dev tool never classloaded by the mod. The biggest SP-vs-MP risk is clean.
+- **Compiler compile path** — server-authoritative, augment consumed in-place, inputs returned `onClosed` → the sub-agents' two "CRITICAL dupe" flags were **false positives**.
+- **`PastureBreedingData.registry` plain HashMap** — server world-ticks are sequential on one thread → no race. `Registries.ITEM.getId()`/`stack.getName()` null fears — false positives in 1.21.1.
+
+**Status:** all Wave-2 fixes **build-clean, 85 tests green, committed, NOT deployed.** New MC-bound items tracked as **Q9** in `QA_PENDING.md`.

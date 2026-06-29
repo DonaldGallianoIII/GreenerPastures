@@ -32,7 +32,7 @@ _Maps `~/pokemonthink` (design) against what's actually in `~/pokemon-prediction
 | **Daemon** (NEW runtime item: Data account + buffs) | 🔴 | Distinct from our "Daemon" screen (= the Notebook). |
 | **Soul Tether** (amplifier; slots; burns Data) | ⏸️ | Design PROPOSED, not locked — your knob + magnitudes. |
 | **Global "root" buffs** (enchant +1/+2/+3, auto-smelt, vein-mine, magnet, haste, XP, potion-dur, saturation) | 🔴 | Enchant include/exclude list is SETTLED in design; nothing built. Worker-not-fighter, config-gated. |
-| **Drops → materials** (headless `getDrops` → store in `PastureData` → local withdraw) | 🔴 | Materials only, never Data. |
+| **Loot block** (%-chance of what WOULD have dropped → straight into a container) | 🔴 | NEW design (Deuce, 2026-06-28) — **replaces the cut pasture loot-sweep**. Our own drop table + roll, yields modulated by augments/tethers, species-combo easter eggs (e.g. Groudon+Darkrai+Ditto → a joke drop). Full control = the drops arm of the dark economy. Materials only, never Data. |
 | **Data grid** (fuel/trophy/material economy) | 🔴 | Emerges from Renderer keep-filters + tethers + Data. |
 | **BioBank** (AE2 egg storage) | ✅ / ❓ | Built (Batch 1), **off-spec** — reconcile role. |
 | **Music player** (discs + Notebook "Player" tab + ambient) | 🔴 | Deuce supplies tracks. |
