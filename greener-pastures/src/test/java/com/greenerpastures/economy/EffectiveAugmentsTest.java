@@ -87,6 +87,30 @@ class EffectiveAugmentsTest {
     }
 
     @Test
+    void ivFloorCountsGuaranteedPerfectsCappedAtSix() {
+        assertEquals(2, EffectiveAugments.of(Map.of(AugmentFunction.IV_FLOOR, 2), List.of()).ivFloorCount(), "flat base");
+        // an IV Floor tether (quality) tier II ×1.20 → 2×1.2 = 2.4 → rounds to 2
+        assertEquals(2, EffectiveAugments.of(Map.of(AugmentFunction.IV_FLOOR, 2),
+                List.of(tether("iv_floor", TetherClass.QUALITY, 2))).ivFloorCount());
+        // base 5 × tier III (×1.30) = 6.5 → 7 → capped at the 6 stats
+        assertEquals(6, EffectiveAugments.of(Map.of(AugmentFunction.IV_FLOOR, 5),
+                List.of(tether("iv_floor", TetherClass.QUALITY, 3))).ivFloorCount());
+        assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).ivFloorCount(), "no mod → no floor");
+    }
+
+    @Test
+    void evFloorPerStatClampedToFitTheFiveTenTotal() {
+        assertEquals(20, EffectiveAugments.of(Map.of(AugmentFunction.EV, 20), List.of()).evFloorPerStat(), "flat base");
+        // an EV tether (quality) tier I ×1.10 → 20×1.1 = 22
+        assertEquals(22, EffectiveAugments.of(Map.of(AugmentFunction.EV, 20),
+                List.of(tether("ev", TetherClass.QUALITY, 1))).evFloorPerStat());
+        // base 80 × tier III (×1.30) = 104 → clamped to 85 (6×85 = 510 total)
+        assertEquals(85, EffectiveAugments.of(Map.of(AugmentFunction.EV, 80),
+                List.of(tether("ev", TetherClass.QUALITY, 3))).evFloorPerStat());
+        assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).evFloorPerStat(), "no mod → no floor");
+    }
+
+    @Test
     void dropYieldIsAFlatBudgetBonusAmplifiedByItsTether() {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.DROP_YIELD, 2);   // +2 budget ceiling
         assertEquals(2, EffectiveAugments.of(base, List.of()).dropYieldBonus(), "flat base, no tether");

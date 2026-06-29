@@ -6,6 +6,7 @@ import com.greenerpastures.analytics.Event;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.economy.AugmentFunction;
 import com.greenerpastures.economy.DataStore;
+import com.greenerpastures.economy.EffectiveAugments;
 import com.greenerpastures.economy.TetherRuntime;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.entity.BlockEntity;
@@ -36,12 +37,13 @@ public final class MultiPairBreeder {
 
     private static final int SCAN_INTERVAL = 20;
 
-    /** The augment functions the breeder actually applies — and therefore the only tethers it pays burn for.
-     *  Drop Rate/Yield belong to the Harvester, Enrichment to the Renderer: each consumer drains its own set
-     *  on its own clock ({@link TetherRuntime#resolveFor}), so a tether is never double-charged. IV Floor / EV
-     *  join here when their breeding effect ships (until then they amplify + drain nowhere — no pay for vapor). */
+    /** The augment functions the breeder actually applies to the egg — and therefore the only tethers it pays
+     *  burn for: Shiny (proc), Speed (cadence), IV Floor (perfect IVs) and EV (EV head-start). Drop Rate/Yield
+     *  belong to the Harvester, Enrichment to the Renderer: each consumer drains its own set on its own clock
+     *  ({@link TetherRuntime#resolveFor}), so a tether is never double-charged. */
     private static final Set<AugmentFunction> BREEDING_FUNCTIONS =
-            EnumSet.of(AugmentFunction.SHINY, AugmentFunction.SPEED);
+            EnumSet.of(AugmentFunction.SHINY, AugmentFunction.SPEED,
+                    AugmentFunction.IV_FLOOR, AugmentFunction.EV);
 
     public static void init() {
         ServerTickEvents.END_WORLD_TICK.register(MultiPairBreeder::onWorldTick);
@@ -91,7 +93,7 @@ public final class MultiPairBreeder {
                     TetherRuntime.Resolution res = TetherRuntime.resolveFor(
                             pd.baseAugmentLevels(), pd.slottedTethers(), balance, BREEDING_FUNCTIONS);
 
-                    laid = breedPairs(world, pos, pasture, tier, pd, now, res.effective().shinyProcChance());
+                    laid = breedPairs(world, pos, pasture, tier, pd, now, res.effective());
                     long interval = speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
                             res.effective().speedLevel());
                     pd.nextBreedTick = now + interval;
@@ -138,9 +140,10 @@ public final class MultiPairBreeder {
     }
 
     /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue.
-     *  {@code proc} is the EFFECTIVE shiny chance (base augment × any fed Shiny Tether) from onWorldTick. */
+     *  {@code eff} is the resolved effective augments (base × any fed breeding Tether) from onWorldTick — it
+     *  shapes each egg's shiny proc, IV floor and EV floor. */
     private static int breedPairs(ServerWorld world, BlockPos pos, PokemonPastureBlockEntity pasture,
-                                  BreedingTier tier, PastureData pd, long now, double proc) {
+                                  BreedingTier tier, PastureData pd, long now, EffectiveAugments eff) {
         // snapshot — getTetheredPokemon() hands back Cobblemon's LIVE backing list; iterating it directly
         // while Cobblemon mutates it (tether / release / checkPokemon) risks a CME (re-audit M1)
         List<PokemonPastureBlockEntity.Tethering> live = pasture.getTetheredPokemon();
@@ -154,7 +157,8 @@ public final class MultiPairBreeder {
         String mode = pd.pairings.isEmpty() ? "auto" : "buckets";
         int laid = 0;
         for (int i = 0; i < pairs.size(); i++) {
-            CobbreedingBridge.BredEgg egg = CobbreedingBridge.buildEggForPair(pairs.get(i), proc);
+            CobbreedingBridge.BredEgg egg = CobbreedingBridge.buildEggForPair(
+                    pairs.get(i), eff.shinyProcChance(), eff.ivFloorCount(), eff.evFloorPerStat());
             if (egg == null) continue;                              // incompatible pair, skip
             if (!pd.eggQueue.offer(egg.stack())) {                  // FIFO full → pause (keep eggs aren't evicted)
                 GpLog.w("breeder", "queue_full", "pos", pos.toShortString(), "cap", pd.eggQueue.cap());

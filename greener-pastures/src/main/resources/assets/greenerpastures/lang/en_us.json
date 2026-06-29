@@ -22,5 +22,7 @@
   "item.greenerpastures.augment_enrichment": "Enrichment Augment",
   "item.greenerpastures.augment_drop_rate": "Drop Rate Augment",
   "item.greenerpastures.augment_drop_yield": "Drop Yield Augment",
+  "item.greenerpastures.augment_iv_floor": "IV Floor Augment",
+  "item.greenerpastures.augment_ev": "EV Augment",
   "block.greenerpastures.biobank": "BioBank"
 }

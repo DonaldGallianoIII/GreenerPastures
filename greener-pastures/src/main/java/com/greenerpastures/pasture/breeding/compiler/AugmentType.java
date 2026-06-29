@@ -10,8 +10,9 @@ import net.minecraft.item.ItemStack;
  * The augment "packages" a {@link CompilerBlock} can install onto a Kernel (a Pasture Upgrade item).
  * Each type names an {@link AugmentFunction} and the level/magnitude it writes; install + apply are
  * <b>generic</b> over that function (merge into the {@code greenerpastures:augments} component), so adding
- * an augment is just one new constant (+ a display line in {@link #effectSummary}). Ships the FIVE
- * functions that have a live effect — IV Floor / EV join when their breeding effect exists (no pay for vapor).
+ * an augment is just one new constant (+ a display line in {@link #effectSummary}). Ships all SEVEN v1
+ * functions — each now has a live effect (shiny / speed / IV floor / EV at the breeder, drop rate / drop
+ * yield at the Harvester, enrichment at the Renderer).
  *
  * <p>Magnitudes are calibration (tune via config). A Drop Rate augment deliberately writes ABOVE the
  * Kernel's base {@code drop_rate} ({@link BreedingUpgradeItem#BASE_DROP_RATE} = 25 centipercent) so it's a
@@ -23,7 +24,9 @@ public enum AugmentType {
     SPEED     ("speed-boost",      "1.0", AugmentFunction.SPEED,       1),   // level I → faster breeding cadence
     ENRICHMENT("enrichment-boost", "1.0", AugmentFunction.ENRICHMENT, 20),   // +20% → 1.20× render value
     DROP_RATE ("droprate-boost",   "1.0", AugmentFunction.DROP_RATE, 100),   // centipercent: 1.00% (base is 0.25%)
-    DROP_YIELD("dropyield-boost",  "1.0", AugmentFunction.DROP_YIELD,  1);   // +1 to the amount-budget ceiling
+    DROP_YIELD("dropyield-boost",  "1.0", AugmentFunction.DROP_YIELD,  1),   // +1 to the amount-budget ceiling
+    IV_FLOOR  ("ivfloor-boost",    "1.0", AugmentFunction.IV_FLOOR,    3),   // guarantee 3 perfect (31) IVs
+    EV        ("ev-boost",         "1.0", AugmentFunction.EV,         20);   // +20 EVs on every permanent stat
 
     public final String pkgName;
     public final String version;
@@ -78,6 +81,8 @@ public enum AugmentType {
             case ENRICHMENT -> "❖ +" + value + "% render value (Enrichment)";
             case DROP_RATE  -> "⛏ +" + String.format("%.2f", value / 100.0) + "% drop rate";
             case DROP_YIELD -> "⛏ +" + value + " drop yield";
+            case IV_FLOOR   -> "✦ " + value + " perfect IV" + (value == 1 ? "" : "s") + " guaranteed";
+            case EV         -> "✦ +" + value + " EV on every stat";
         };
     }
 }

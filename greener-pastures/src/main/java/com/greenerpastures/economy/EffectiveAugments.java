@@ -75,6 +75,18 @@ public final class EffectiveAugments {
         return magnitude(AugmentFunction.DROP_RATE) / 10000.0;
     }
 
+    /** IV Floor: the number of IVs (0..6) the breeder guarantees at the perfect value (31) on a bred egg —
+     *  base level × any fed IV Floor tether (rounded, capped at the 6 stats); 0 when the Kernel has none. */
+    public int ivFloorCount() {
+        return Math.max(0, Math.min(6, (int) Math.round(magnitude(AugmentFunction.IV_FLOOR))));
+    }
+
+    /** EV Floor: the EVs (0..85 per stat) the breeder pre-sets on EVERY one of the 6 permanent stats of a bred
+     *  egg — a flat head-start, clamped so all six fit Cobblemon's 510 EV total. Base × tether; 0 when none. */
+    public int evFloorPerStat() {
+        return Math.max(0, Math.min(85, (int) Math.round(magnitude(AugmentFunction.EV))));
+    }
+
     /** Drop-yield bonus = a flat integer ADDED to Cobblemon's {@code amount} budget ceiling per drop event
      *  (LEVER 2): level 1 = a chance at +1 more budget → more items per proc, never fewer (the floor is
      *  untouched). A Drop Yield tether amplifies the base level the same as any mod; 0 when the Kernel has

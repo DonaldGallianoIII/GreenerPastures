@@ -3,8 +3,12 @@ package com.greenerpastures.pasture.breeding;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
+import com.cobblemon.mod.common.api.pokemon.stats.Stat;
+import com.cobblemon.mod.common.api.pokemon.stats.Stats;
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
+import com.cobblemon.mod.common.pokemon.EVs;
 import com.cobblemon.mod.common.pokemon.FormData;
+import com.cobblemon.mod.common.pokemon.IVs;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
 import com.greenerpastures.GreenerPastures;
@@ -177,11 +181,14 @@ public final class CobbreedingBridge {
      * <p>The trick: {@code getPossibleEggs} on just these two mons yields only this pair's outcomes,
      * so {@code chooseEgg} (which picks randomly across the collection) is forced to this pair's egg.
      *
-     * <p>{@code shinyProcChance} (0..1, from the slotted upgrade's augment) then applies our bounded
-     * bonus shiny reroll — see {@link #maybeProcShiny}.
+     * <p>The effective augments then shape the egg: {@code shinyProcChance} (0..1) fires our bounded bonus
+     * shiny reroll ({@link #maybeProcShiny}); {@code ivFloor} guarantees that many perfect (31) IVs
+     * ({@link #applyIvFloor}); {@code evFloorPerStat} pre-sets that many EVs on every permanent stat
+     * ({@link #applyEvFloor}). All three mutate the egg's properties BEFORE it's encrypted, so Cobbreeding
+     * carries them to the hatchling.
      */
     public static BredEgg buildEggForPair(List<? extends PokemonPastureBlockEntity.Tethering> pairSlots,
-                                          double shinyProcChance) {
+                                          double shinyProcChance, int ivFloor, int evFloorPerStat) {
         if (!available) return null;
         try {
             List<Pokemon> pokemon = BreedingUtilities.getPokemon(pairSlots);
@@ -190,6 +197,8 @@ public final class CobbreedingBridge {
             PokemonProperties eggData = BreedingUtilities.chooseEgg(possible);
             if (eggData == null || eggData.getSpecies() == null) return null;
             boolean procShiny = maybeProcShiny(eggData, pokemon, shinyProcChance);
+            applyIvFloor(eggData, ivFloor);                 // guarantee N perfect (31) IVs — raise-only
+            applyEvFloor(eggData, evFloorPerStat);          // pre-set a flat EV floor on every permanent stat
             boolean shiny = Boolean.TRUE.equals(eggData.getShiny());
             ItemStack stack = assembleEgg(eggData);
             if (stack == null) return null;
@@ -222,6 +231,56 @@ public final class CobbreedingBridge {
             return hit;
         } catch (Throwable t) {
             return false;   // a bonus roll must NEVER break egg-gen
+        }
+    }
+
+    /**
+     * IV Floor augment: guarantee at least {@code count} perfect (31) IVs on the egg. A true FLOOR — IVs the
+     * parents already passed at 31 count toward it, and we never lower an existing IV; we only promote enough
+     * not-yet-perfect stats to reach {@code count}. Mutates {@code eggData.getIvs()} in place (Cobbreeding
+     * applies it at hatch via {@code PokemonProperties.apply → setIV}). Never throws — egg-gen must not break.
+     */
+    private static void applyIvFloor(PokemonProperties eggData, int count) {
+        if (count <= 0) return;
+        try {
+            IVs ivs = eggData.getIvs();
+            if (ivs == null) {                              // no inherited spread (rare) → full random with N perfects
+                eggData.setIvs(IVs.createRandomIVs(Math.min(6, count)));
+                return;
+            }
+            int already = 0;
+            for (Stat s : Stats.Companion.getPERMANENT()) {
+                Integer v = ivs.get(s);
+                if (v != null && v >= 31) already++;
+            }
+            int need = count - already;                     // inheritance may already satisfy the floor
+            for (Stat s : Stats.Companion.getPERMANENT()) {
+                if (need <= 0) break;
+                Integer v = ivs.get(s);
+                if (v == null || v < 31) { ivs.set(s, 31); need--; }
+            }
+        } catch (Throwable t) {
+            // egg-shaping must never abort egg-gen
+        }
+    }
+
+    /**
+     * EV Floor augment: pre-set {@code perStat} EVs on every one of the 6 permanent stats (a flat head-start).
+     * {@code EVs.set} is absolute and silently caps the running total at Cobblemon's 510, so even an
+     * over-large value can't corrupt the spread; {@link com.greenerpastures.economy.EffectiveAugments} already
+     * clamps {@code perStat} to ≤85 (6×85 = 510). Raise-only. Carried at hatch via {@code apply → setEV}.
+     */
+    private static void applyEvFloor(PokemonProperties eggData, int perStat) {
+        if (perStat <= 0) return;
+        try {
+            EVs evs = eggData.getEvs();
+            if (evs == null) { evs = new EVs(); eggData.setEvs(evs); }
+            int target = Math.min(perStat, 252);
+            for (Stat s : Stats.Companion.getPERMANENT()) {
+                if (evs.getOrDefault(s) < target) evs.set(s, target);   // set() no-ops if it would exceed 510 total
+            }
+        } catch (Throwable t) {
+            // egg-shaping must never abort egg-gen
         }
     }
 
