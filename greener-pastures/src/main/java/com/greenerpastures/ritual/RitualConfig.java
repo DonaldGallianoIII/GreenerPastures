@@ -17,14 +17,20 @@ import java.util.Map;
  *
  * <p>{@code autoPull} rolls banked ritual pulls automatically (the interim while there's no gacha GUI — so
  * rituals are fully playable now); set it false once the manual-pull screen exists to let pulls bank and be
- * spent by hand. {@link #defaults()} ships the RITUALS.md roster. {@link #load} is <b>fail-safe</b>: a missing
+ * spent by hand. {@code rarityFactor} makes ritual pulls accrue THIS-many-times rarer than a typical staple
+ * drop (default 3): per Harvester tick, per mon, the pull-proc = {@code (Harvester base proc + Drop Rate
+ * augments/tethers) / rarityFactor}, and Drop Yield adds pulls-per-proc — so the SAME drop augments that speed
+ * up staple drops also feed the gacha (and a richer/fuller pasture works the ritual faster). {@link #defaults()}
+ * ships the RITUALS.md roster. {@link #load} is <b>fail-safe</b>: a missing
  * file is written from defaults; a corrupt file logs and falls back to defaults (it does NOT overwrite the
  * admin's file), and never crashes the server. Gson is loaded lazily (a holder) so the pure cores +
  * {@code defaults()} stay usable in the headless test JVM, which has no Gson on its runtime classpath.
  */
-public record RitualConfig(boolean enabled, boolean autoPull, TypeDropTable typeDrops, RitualBook rituals) {
+public record RitualConfig(boolean enabled, boolean autoPull, double rarityFactor,
+                           TypeDropTable typeDrops, RitualBook rituals) {
 
     public RitualConfig {
+        if (rarityFactor <= 0) rarityFactor = 3.0;   // rituals are 3× rarer than typical drops by default
         if (typeDrops == null) typeDrops = new TypeDropTable(false, List.of());
         if (rituals == null) rituals = new RitualBook(false, List.of());
     }
@@ -71,7 +77,7 @@ public record RitualConfig(boolean enabled, boolean autoPull, TypeDropTable type
 
     // ── built-in defaults (the RITUALS.md roster — tuning, edit via the JSON) ─
     public static RitualConfig defaults() {
-        return new RitualConfig(true, true, defaultTypeDrops(), defaultRituals());
+        return new RitualConfig(true, true, 3.0, defaultTypeDrops(), defaultRituals());
     }
 
     private static TypeDropTable defaultTypeDrops() {

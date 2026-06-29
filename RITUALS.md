@@ -44,8 +44,11 @@ safety net.
 ### The loop
 1. **Compose.** Fill a pasture so it satisfies a ritual's requirement (a set of **types**, optional **min
    counts**, and for the rarest, a **signature species**).
-2. **Bank pulls.** Each Harvester tick the composition holds, that ritual banks **+1 pull** (accrual rate is a
-   knob; richer comps could bank faster). Pulls persist per-pasture.
+2. **Bank pulls.** Each Harvester tick, per mon, the ritual rolls a pull-proc =
+   `(Harvester base 3% + Drop Rate augments/tethers) / rarityFactor` — **3× rarer than a typical staple drop**
+   by default (`rarityFactor`, config). Each proc banks `1 + Drop Yield` pulls. So **Drop Rate speeds the
+   gacha · Drop Yield fattens each proc · a fuller pasture pulls faster** — the same drop augments/tethers that
+   boost staples feed the rituals. Pulls (+ pity) persist per-Harvester (NBT).
 3. **Pull.** Open the Harvester's **Ritual** tab → see each active ritual's **% per pull**, your **banked
    pulls**, and **pity progress (x/N)**. Hit **PULL ×1 / PULL ALL** to spend.
 4. **Roll.** Each pull rolls the base %; **hit → the item drops into the Harvester chest** + pity resets.
@@ -97,7 +100,8 @@ chat/`GpLog` readout in the interim).**
   pulls/hr and items/hr (with pity) so we tune odds without grinding.
 
 ## Open knobs (your calls)
-- **Pull accrual rate** (pulls per tick the comp holds; flat vs comp-richness-scaled; per-ritual vs shared).
+- **`rarityFactor`** (default 3 — how many × rarer ritual pulls accrue vs a staple drop) + whether to also let
+  Drop Rate/Yield scale the type-drops (currently rituals only).
 - **Base % + hard-pity N** per ritual (table above) · whether to add **soft pity**.
 - **Manual pull vs auto-pull** (gacha dopamine vs idle farm) — propose both, default manual.
 - **Signature species** picks for the legendary-gated rituals.
