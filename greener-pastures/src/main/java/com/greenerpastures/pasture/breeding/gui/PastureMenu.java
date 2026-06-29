@@ -2,13 +2,10 @@ package com.greenerpastures.pasture.breeding.gui;
 
 import com.greenerpastures.GreenerPastures;
 import com.greenerpastures.pasture.breeding.BreedingUpgradeItem;
-import com.greenerpastures.pasture.breeding.PastureData;
-import com.greenerpastures.pasture.breeding.PastureRegistry;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -111,22 +108,8 @@ public class PastureMenu extends ScreenHandler {
     @Override
     public boolean canUse(PlayerEntity player) { return true; }
 
-    @Override
-    public void onClosed(PlayerEntity player) {
-        super.onClosed(player);
-        // The tether-slotter becomes the pasture operator (whose Data account pays the burn). Recorded on
-        // close whenever a Soul Tether sits in a functional slot (server-authoritative).
-        if (player instanceof ServerPlayerEntity sp && sp.getServer() != null) {
-            PastureRegistry reg = PastureRegistry.get(sp.getServer());
-            PastureData pd = reg.get(sp.getServerWorld(), pasturePos);
-            if (pd != null) {
-                // Operator = the slotter while a tether is active in an unlocked slot; cleared when none
-                // remain, so a stale owner never keeps paying (slottedTethers() is the gated source).
-                java.util.UUID next = pd.slottedTethers().isEmpty() ? null : sp.getUuid();
-                if (!java.util.Objects.equals(pd.owner, next)) { pd.owner = next; reg.markDirty(); }
-            }
-        }
-    }
+    // Operator ownership (who pays the tether cost) is NOT set here — it's an explicit locked-boolean
+    // claim via ClaimOperatorPayload / PastureClaim, so passively opening a shared pasture never bills you.
 
     @Override
     public ItemStack quickMove(PlayerEntity player, int index) {

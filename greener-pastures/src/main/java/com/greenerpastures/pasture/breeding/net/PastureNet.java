@@ -1,6 +1,8 @@
 package com.greenerpastures.pasture.breeding.net;
 
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
+import com.greenerpastures.pasture.breeding.PastureClaim;
+import com.greenerpastures.pasture.breeding.PastureData;
 import com.greenerpastures.pasture.breeding.PastureRegistry;
 import com.greenerpastures.pasture.breeding.PastureWand;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -8,6 +10,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.HashMap;
@@ -19,8 +22,9 @@ import java.util.UUID;
  * server-owned ({@link PastureRegistry}); these two C2S payloads carry edits back to it. Registered
  * from the common entrypoint so the codecs exist on both sides and the receivers run server-side.
  *
- * <p>Pastures are shared ("anyone with a wand edits it"), so we only sanity-check the editor is near
- * the pasture — no ownership model.
+ * <p>Pastures are shared ("anyone with a wand edits it"); we sanity-check the editor is near the pasture.
+ * The ONE ownership bit is the <b>operator claim</b> (who pays the Soul-Tether cost) — an explicit
+ * locked-boolean toggle ({@link PastureClaim}), never set implicitly.
  */
 public final class PastureNet {
     private PastureNet() {}
@@ -34,10 +38,12 @@ public final class PastureNet {
         PayloadTypeRegistry.playC2S().register(SaveNamePayload.ID, SaveNamePayload.CODEC);
         PayloadTypeRegistry.playC2S().register(SavePairingsPayload.ID, SavePairingsPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(OpenPasturePayload.ID, OpenPasturePayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ClaimOperatorPayload.ID, ClaimOperatorPayload.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(SaveNamePayload.ID, PastureNet::onName);
         ServerPlayNetworking.registerGlobalReceiver(SavePairingsPayload.ID, PastureNet::onPairings);
         ServerPlayNetworking.registerGlobalReceiver(OpenPasturePayload.ID, PastureNet::onOpen);
+        ServerPlayNetworking.registerGlobalReceiver(ClaimOperatorPayload.ID, PastureNet::onClaim);
     }
 
     private static void onOpen(OpenPasturePayload payload, ServerPlayNetworking.Context ctx) {
@@ -74,6 +80,33 @@ public final class PastureNet {
             if (world == null || !withinReach(player, pos)) return;
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;   // no phantom records at arbitrary pos
             PastureRegistry.get(server).setPairings(world, pos, sanitize(payload.pairings()));
+        });
+    }
+
+    /** Toggle the operator claim — the locked-boolean tether-cost "box". Server-authoritative + validated;
+     *  only the current owner can release their lock (see {@link PastureClaim}). */
+    private static void onClaim(ClaimOperatorPayload payload, ServerPlayNetworking.Context ctx) {
+        ServerPlayerEntity player = ctx.player();
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        server.execute(() -> {
+            ServerWorld world = player.getServerWorld();
+            BlockPos pos = payload.pos();
+            if (world == null || !withinReach(player, pos)) return;
+            if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;
+            PastureRegistry reg = PastureRegistry.get(server);
+            PastureData pd = reg.getOrCreate(world, pos);
+            PastureClaim.Result r = PastureClaim.toggle(pd.owner, player.getUuid());
+            if (r.changed()) {
+                pd.owner = r.owner();
+                reg.markDirty();
+                player.sendMessage(Text.literal(r.outcome() == PastureClaim.Outcome.CLAIMED
+                        ? "§a[Greener Pastures]§r You now pay this pasture's tether cost — locked to you."
+                        : "§a[Greener Pastures]§r Released — this pasture's tether cost is free to claim."), false);
+            } else {
+                player.sendMessage(Text.literal(
+                        "§c[Greener Pastures]§r This pasture's tether cost is claimed by someone else."), false);
+            }
         });
     }
 
