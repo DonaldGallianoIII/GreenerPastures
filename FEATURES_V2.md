@@ -102,10 +102,17 @@ All four write the trait onto the egg `PokemonProperties` pre-encrypt (same seam
 
 ---
 
-## F2 — Notifications  🥇  (cheapest love)
+## F2 — Notifications  🥇  ✅ v1 SHIPPED (shiny ping)
 
 > It's an idle mod; people walk away. Ping on: **shiny hatched**, **Data crossed a threshold**, **ritual pulls ready**.
 > Toast + sound + optional chat, all config-gated.
+
+**✅ Shipped (this session):** the **shiny-egg-laid ping** — `notify/` package (`NotifyRules` pure + tested,
+`NotifyConfig` lazy-Gson, `NotifySystem` holder, `Notifier` MC adapter), hooked into `Analytics.record` as a
+general event-stream observer. Chat/actionbar/both + chime, broadcast or ops-only, all in
+`notifications.json`. QA Q35. **Follow-ons (signals to add):** Data-threshold crossing (needs per-player last-balance
+state + the balance on the `egg_rendered` event or a DataStore read) and ritual-pulls-ready (needs the pull state);
+both slot into `NotifyRules` as new trigger branches. Toast deferred to the UI wave (needs a client component).
 
 ### Implementation
 1. We already have the analytics event stream (`analytics/` — `Event`, `EggEvent`, `EventLog`, `EventReader`) and

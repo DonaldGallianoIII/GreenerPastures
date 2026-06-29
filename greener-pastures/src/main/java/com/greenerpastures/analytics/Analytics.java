@@ -58,5 +58,6 @@ public final class Analytics {
         row.put("dimension", world.getRegistryKey().getValue().toString());
         event.fields.forEach((k, v) -> { if (!RESERVED.contains(k)) row.put(k, v); });   // caller fields can't clobber stamps
         l.append(row);   // serialized off-thread by EventLog (perf-audit H3)
+        com.greenerpastures.notify.Notifier.observe(world, row);   // fire any player notification off this event
     }
 }

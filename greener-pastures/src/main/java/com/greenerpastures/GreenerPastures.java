@@ -4,6 +4,7 @@ import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.biobank.BioBank;
 import com.greenerpastures.buff.BuffSystem;
 import com.greenerpastures.buff.DaemonBuffs;
+import com.greenerpastures.notify.NotifySystem;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.drops.Harvester;
 import com.greenerpastures.economy.DarkEconomy;
@@ -38,6 +39,8 @@ public final class GreenerPastures implements ModInitializer {
 
         // analytics/ — open the local event log before any emitter runs
         Analytics.init();
+        NotifySystem.init();    // player notifications observe the analytics event stream
+
 
         // pasture/
         PastureKeeper.init();   // per-pasture no-wander toggle + loot collector
