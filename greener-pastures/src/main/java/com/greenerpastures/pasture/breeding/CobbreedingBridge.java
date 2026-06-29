@@ -12,6 +12,7 @@ import com.cobblemon.mod.common.pokemon.IVs;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
 import com.greenerpastures.GreenerPastures;
+import com.greenerpastures.core.GpLog;
 import com.greenerpastures.pasture.breeding.gui.MonEntry;
 import ludichat.cobbreeding.BreedingUtilities;
 import ludichat.cobbreeding.Cobbreeding;
@@ -188,7 +189,7 @@ public final class CobbreedingBridge {
      * carries them to the hatchling.
      */
     public static BredEgg buildEggForPair(List<? extends PokemonPastureBlockEntity.Tethering> pairSlots,
-                                          double shinyProcChance, int ivFloor, int evFloorPerStat) {
+                                          double shinyProcChance, int ivFloor, int evFloorPerStat, String nature) {
         if (!available) return null;
         try {
             List<Pokemon> pokemon = BreedingUtilities.getPokemon(pairSlots);
@@ -199,6 +200,7 @@ public final class CobbreedingBridge {
             boolean procShiny = maybeProcShiny(eggData, pokemon, shinyProcChance);
             applyIvFloor(eggData, ivFloor);                 // guarantee N perfect (31) IVs — raise-only
             applyEvFloor(eggData, evFloorPerStat);          // pre-set a flat EV floor on every permanent stat
+            applyNature(eggData, nature);                   // lock the egg's nature (Nature selector augment)
             boolean shiny = Boolean.TRUE.equals(eggData.getShiny());
             ItemStack stack = assembleEgg(eggData);
             if (stack == null) return null;
@@ -279,6 +281,23 @@ public final class CobbreedingBridge {
             for (Stat s : Stats.Companion.getPERMANENT()) {
                 if (evs.getOrDefault(s) < target) evs.set(s, target);   // set() no-ops if it would exceed 510 total
             }
+        } catch (Throwable t) {
+            // egg-shaping must never abort egg-gen
+        }
+    }
+
+    /**
+     * Nature lock (the Nature selector augment): force the bred egg's nature to {@code natureId} (a Cobblemon
+     * nature spec token, e.g. {@code "adamant"}). Writes it onto the egg's {@code PokemonProperties}, exactly as
+     * IV/EV are written — Cobbreeding carries it to the hatchling via {@code PokemonProperties.apply → nature},
+     * overriding vanilla nature inheritance. {@code null}/blank ⇒ no lock (vanilla inheritance). Cobblemon
+     * validates the token at hatch, so a bad id simply lapses rather than corrupting the egg. Never throws.
+     */
+    private static void applyNature(PokemonProperties eggData, String natureId) {
+        if (natureId == null || natureId.isBlank()) return;
+        try {
+            eggData.setNature(natureId);
+            GpLog.d("breeding", "nature_lock", "species", String.valueOf(eggData.getSpecies()), "nature", natureId);
         } catch (Throwable t) {
             // egg-shaping must never abort egg-gen
         }

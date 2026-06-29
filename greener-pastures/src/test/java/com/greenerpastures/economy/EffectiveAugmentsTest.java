@@ -122,4 +122,21 @@ class EffectiveAugmentsTest {
                 EffectiveAugments.of(base, List.of(tether("drop_yield", TetherClass.THROUGHPUT, 1))).dropYieldBonus());
         assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).dropYieldBonus(), "no mod → no bonus");
     }
+
+    @Test
+    void natureSelectorReadsTheRawBaseIndex() {
+        assertEquals(4, EffectiveAugments.of(Map.of(AugmentFunction.NATURE, 4), List.of()).natureIndex(),
+                "level IS the 1-based catalog index");
+        assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).natureIndex(), "no Nature augment → 0 (no lock)");
+    }
+
+    @Test
+    void natureSelectorIsNeverAmplifiedByATether() {
+        // A selector encodes a CHOICE, not a magnitude — even a (hypothetical) Nature tether must not scale the
+        // index, or Adamant (4) would silently become a different nature. The raw base index passes through.
+        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.NATURE, 4);
+        EffectiveAugments amped = EffectiveAugments.of(base, List.of(tether("nature", TetherClass.QUALITY, 3)));
+        assertEquals(4, amped.natureIndex(), "selector index stays exactly 4 despite a tier-III tether");
+        assertEquals(4.0, amped.magnitude(AugmentFunction.NATURE), 1e-9, "magnitude unscaled for a selector");
+    }
 }

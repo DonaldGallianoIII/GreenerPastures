@@ -32,12 +32,14 @@ public final class EffectiveAugments {
                 if (f != null) amp.merge(f, t.amplification(), (a, b) -> a * b);
             }
         }
-        // 2) effective = base × amplification, only where a base mod actually exists
+        // 2) effective = base × amplification, only where a base mod actually exists. A SELECTOR augment
+        //    (Nature: level = a catalog index) is never amplified — scaling a choice is meaningless and would
+        //    corrupt the index (Adamant×1.2 → a different nature), so it passes through at its raw base level.
         Map<AugmentFunction, Double> eff = new EnumMap<>(AugmentFunction.class);
         if (base != null) {
             base.forEach((f, lvl) -> {
                 if (f != null && lvl != null && lvl > 0) {
-                    eff.put(f, lvl * amp.getOrDefault(f, 1.0));
+                    eff.put(f, lvl * (f.selector ? 1.0 : amp.getOrDefault(f, 1.0)));
                 }
             });
         }
@@ -85,6 +87,12 @@ public final class EffectiveAugments {
      *  egg — a flat head-start, clamped so all six fit Cobblemon's 510 EV total. Base × tether; 0 when none. */
     public int evFloorPerStat() {
         return Math.max(0, Math.min(85, (int) Math.round(magnitude(AugmentFunction.EV))));
+    }
+
+    /** Nature selector: the 1-based catalog index of the nature to lock the bred egg to (0 = no lock). A SELECTOR
+     *  augment, so this is the raw base level — never tether-amplified. The breeder maps it via {@code NatureCatalog}. */
+    public int natureIndex() {
+        return Math.max(0, (int) Math.round(magnitude(AugmentFunction.NATURE)));
     }
 
     /** Drop-yield bonus = a flat integer ADDED to Cobblemon's {@code amount} budget ceiling per drop event
