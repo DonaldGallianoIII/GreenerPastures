@@ -6,7 +6,8 @@
   "mixins": [
     "BlockDropBoostMixin",
     "EnchantmentLevelMixin",
-    "PokemonPastureBlockEntityMixin"
+    "PokemonPastureBlockEntityMixin",
+    "XpBoostMixin"
   ],
   "injectors": {
     "defaultRequire": 1

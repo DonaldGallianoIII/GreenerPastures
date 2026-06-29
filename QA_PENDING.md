@@ -40,6 +40,8 @@ _A running tally of changes that need a real in-game pass. **Pure-logic cores ar
 
 | Q25 | **Daemon HOOK buff — Auto-Smelt** (held + fed Daemon with auto_smelt → mined blocks drop **smelted**: raw_iron→iron_ingot, sand→glass, cobblestone→stone, etc.). Same read-only block-drop mixin window as Fortune — rewrites the loot list, **never touches your gear**; composes with Fortune (Fortune fattens the raw count, then it smelts). Binary (tier only sets cost, not effect). | ❌ not yet | Hold a fed Daemon, mine **iron/gold/copper ore** (or raw blocks, sand, cobblestone) → the **ingot/glass/stone** lands instead of the raw drop; `~/gp-logs/latest.log` shows `buff auto_smelt to:…`. **With Fortune too:** mine ore → multiple **ingots** (Fortune count × smelt). Blocks with no furnace recipe drop normally. Data at 0 or no Daemon → raw drops. Mobs/other players unaffected (block path only) | ☐ |
 
+| Q26 | **Daemon HOOK buff — XP Boost** (held + fed Daemon with xp_boost → +25%/tier experience gain; Mk III = +75%). Read-only multiply on the incoming XP amount (`ServerPlayerEntity.addExperience`), no gear touched. | ❌ not yet | Hold a fed Daemon (xp_boost on), pick up **XP orbs** (mine ore, smelt, breed, etc.) → XP bar climbs faster than vanilla; `~/gp-logs/latest.log` shows `buff xp_boost from:N to:M tier:T`. Cycle Mk I→III → the multiplier grows (+25/50/75%). Data at 0 or no Daemon → vanilla XP | ☐ |
+
 > When you're free for a QA pass: tell me and I'll `build` + deploy the latest (folds in Q1/Q2), then you run down the list.
 
 ## ✅ Verified
