@@ -17,14 +17,15 @@ seam as IV/EV), fail-safe + non-destructive; all 4 Cobblemon APIs verified again
 params refactor. QA rows Q31–Q34.
 
 ### ▶️ ACTIVE — v2 feature wave (Deuce: "do all of it + keep adding to QA"; spec = `FEATURES_V2.md`)
-Build order **F1 breeding-meta ✅ → F2 Notifications ✅ → F3 Goal tracker (NEXT)**, then re-sync before wave-2
-(hopper interop, dashboards #6, economy, guide). **F2 shipped** the shiny-egg ping (`notify/` package observing
-`Analytics.record`; `notifications.json`; QA Q35) — Data-threshold + ritual-pulls are spec'd follow-ons.
-**F3 plan (the uniquely-ours differentiator):** pure `BreedingGoal` (target species/nature/IVs/shiny/ability) +
-`GoalProgress` (fold the hatch/egg events → progress + eggs-to-go via the odds engine), goal stored on a Daemon/
-Project item, auto-cull off-target eggs through the Renderer→Data path (shiny 4-guard intact), surfaces via F2
-notify + F5 dashboards. Pure cores first (heavily testable), MC wiring after. **Breeding-meta install UX
-(pick nature/ball etc.) + all GUIs remain deferred to the Compiler-UI wave.**
+Build order **F1 breeding-meta ✅ → F2 Notifications ✅ → F3 Goal tracker (cores ✅, WIRING NEXT)**, then re-sync
+before wave-2 (hopper interop, dashboards #6, economy, guide). **F2 shipped** shiny + Data-milestone pings
+(`notify/`; QA Q35–Q36). **F3 — Deuce chose TRACK-ONLY v1** (non-destructive, no auto-cull): pure cores done +
+tested (`goal/BreedingGoal` + `GoalProgress`, `c3a385a`). **Next = the MC wiring** (a focused increment, all
+integration points verified — see `FEATURES_V2.md` F3): the mod's **first `/gp goal` command** (no command system
+yet → `CommandRegistrationCallback`), an in-memory `GoalStore` (per-UUID goal+progress), egg observation attributed
+to `PastureData.owner` (prefer: add species/ivTotal/perfectIvs to `BredEgg` + enrich `egg_laid`, then a `GoalTracker`
+observes the stream like `Notifier`), and a "goal reached" ping reusing `notify/`. Auto-cull stays the deferred
+follow-on. **All GUIs + the breeding-meta install UX remain deferred to the Compiler-UI wave.**
 
 ## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =

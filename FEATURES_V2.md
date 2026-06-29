@@ -139,10 +139,31 @@ wave (needs a client component).
 
 ---
 
-## F3 — Breeding Goal / Project tracker  🥈  (the uniquely-ours one)
+## F3 — Breeding Goal / Project tracker  🥈  (the uniquely-ours one) — ⏳ CORES SHIPPED, WIRING NEXT
 
 > "I want a 6IV shiny Adamant Garchomp." Define the target; the mod shows live progress + expected eggs-to-go and
 > **auto-culls everything off-target into Data**. This is the data-science pitch made playable — and mostly *wiring*.
+
+**Deuce's call: TRACK-ONLY v1** (non-destructive — watch + report, NO auto-cull; auto-cull is the follow-on).
+
+**✅ Shipped (`c3a385a`):** the pure cores — `goal/BreedingGoal` (species/shiny/min-perfect-IVs/min-IV-total/count,
+all optional; `matches(EggSummary)`) + `goal/GoalProgress` (immutable fold: checked/matched/best-IV-total, `reached`).
+Reuse the existing `EggSummary`. 11 tests.
+
+**⏳ MC wiring next (integration points all verified) — a focused multi-file increment:**
+1. **`/gp goal` command** — the mod's FIRST command (no command subsystem exists yet → set up
+   `CommandRegistrationCallback`). Sub-commands: `set <species?> <shiny?> <ivs?> <count?>`, `show`, `clear`. Build a
+   `BreedingGoal` from the args; print `goal.describe()` + progress on `show`.
+2. **Per-player store** — `GoalStore`: `Map<UUID, (BreedingGoal, GoalProgress)>`. In-memory for v1 (note: persist
+   later via a `PersistentState` like `DataStore`).
+3. **Egg observation** — attribute each laid egg to the pasture owner (`PastureData.owner`, a UUID — verified) and
+   fold it into that player's progress. Two clean options: (a) add `species/ivTotal/perfectIvs` to the `BredEgg`
+   record (computed in `buildEggForPair` from `eggData`) and enrich the `egg_laid` event, then a `GoalTracker`
+   observes the event stream like `Notifier`; or (b) the breeder reads the stack via `EggReader.read(stack)` +
+   `EggReader.species(stack)` → `EggSummary`. Prefer (a) — no re-decrypt, reuses the observer pattern.
+4. **"Goal reached" ping** — reuse the `notify/` infra (owner-targeted), fire on `progress.reached(goal)`.
+5. QA row. Auto-cull stays OUT (the deferred destructive follow-on; when built: off-target non-shiny → Renderer→Data,
+   shiny 4-guard intact, opt-in).
 
 ### Implementation
 1. **Pure `BreedingGoal`** (record) — target: species + optional nature + per-stat IV minimums + shiny? + ability/ball.
