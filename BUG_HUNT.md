@@ -106,3 +106,33 @@ Three agents over the new dark-economy + tether code (perf · correctness · des
 SACRED shiny holds through the tether path (a Shiny Tether amplifies only the bred reroll, never wild — traced); base=free / rented / starved→base-never-pauses; offline-cut confirmed (nothing drains or amplifies offline); side-safety; the economy cores (single-pass, bounded, saturating); packet codecs bounded.
 
 **Status:** all Wave-3 fixes **build-clean, 110 tests green, committed, NOT deployed.** Folds into Q11/Q12 + new **Q13** in `QA_PENDING.md`.
+
+---
+
+# 🌊 Wave 4 — full re-audit "over everything" (2026-06-28)
+
+Three fresh agents (none ran the prior waves) over the WHOLE tree + the latest fix commit: one verified `f33656f` + the new economy↔breeding seams, one holistic perf, one holistic correctness/side-safety (it spawned 5 sub-agents and **decompiled Cobblemon 1.7.3 / Cobbreeding 2.2.1** to verify lifecycle/threading). **Side-safety came back CLEAN a third time.** The prior six agents' fixes all hold; this wave caught lifecycle/robustness bugs they missed — including a **SACRED-rule hole**.
+
+## Fixed (commits `a153db7`, `c64b6d6`)
+- **[CRITICAL C1] Renderer destroyed a keeper/shiny on a read failure** — `EggReader.read` returns `shiny=false/ivsKnown=false` on a decrypt error; the cull read that as worthless → culled. The SACRED rule broke on a corrupt/edge egg. Now `!ivsKnown()` skips it — cull only on a positive read. (My triple-guard didn't cover this; it's a 4th guard.)
+- **[CRITICAL C2] Compiler lost a Kernel+Augment on disconnect** — `onClosed` doesn't fire on crash/drop/kick (decompile-verified). Added a `ServerPlayConnectionEvents.DISCONNECT` hook that drops open-bench inputs into the world.
+- **[HIGH H1] Renderer ticker had no try/catch** — one Cobblemon API edge crashed the world tick every second. Wrapped (twin of the breeder guard).
+- **[HIGH H2] Non-player removal leaked the pasture record** — break-cleanup was player-only; TNT/creeper/command/piston lost items + leaked the record forever. Extracted `BetterPasture.reclaim`; the breeder reclaims orphans (chunk-loaded + pasture-BE-gone), collect-then-remove to avoid a CME.
+- **[HIGH/perf N1] `EggReader` re-decrypted unchanged eggs at 1 Hz** — added the per-`ItemStack` LRU it already (falsely) claimed; `read`+`species` now share one decrypt.
+- **[MED M1] Live-list aliasing** — `getTetheredPokemon()`/`getEggs()` return Cobblemon's backing lists; snapshot before iterating (CME guard).
+- **[MED M2] `BioBankStore.fromNbt` unguarded** — one bad bank failed world load; now per-entry try/catch (matches its siblings).
+- **[LOW N5] `SaveNamePayload`** string codec bounded to 64 at the wire.
+
+## Verified NON-issue (don't re-chase)
+- **H3 (debit-after-amplify)** — the breeder reads the balance **fresh per pasture inside the loop**, and `tryDebit` can't fail after `resolve` checked it on the same thread → no stale cross-pasture snapshot, no amplify-without-pay. Not a bug.
+- **L2 (init order)** — `DarkEconomy.init` after `BetterPasture.init` is order-fragile but safe (reads happen post-init); no static-init cycle.
+
+## Deferred — latent / by-design
+- **Owner transfer on a passive open** (a viewer who closes the wand becomes the payer) — **latent**: tethers can't be FED until inscription is wired, so it can't bite yet. Fix lands with the Compiler inscription GUI (snapshot tethers at open, only reassign on a real change).
+- **Renderer credits a departed/offline owner forever** (M3) — ghost-account growth; needs an "owner online/decommission" gate. Design decision.
+- **Farm-overlay per-frame reflective scans** (perf N2/N3) — client-only, off-by-default; throttle later.
+
+## ⚠️ Completeness gaps for Deuce (a decision, not a bug)
+The economy has **income but no sink/effect yet**: `TetherInscription` is called from tests only (no Compiler inscribe UI), so a `Tether` can never become non-blank → tethers never amplify/drain. And only the **Shiny** augment is craftable (Enrichment/Speed/IV/EV/Drops have no item). Yet the **Soul Tether ships in the creative menu with a tooltip promising "inscribe at a Compiler"** — an action that doesn't exist. **Choose:** build the inscription GUI + more augment items, **or** hide the Soul Tether / unfinished augment surfaces until they do something, so nothing advertises an unimplemented mechanic.
+
+**Status:** all Wave-4 fixes **build-clean, 110 tests green, committed, NOT deployed.** New in-game checks → **Q14** in `QA_PENDING.md`.
