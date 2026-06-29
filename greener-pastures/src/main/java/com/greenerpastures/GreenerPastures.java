@@ -2,6 +2,7 @@ package com.greenerpastures;
 
 import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.biobank.BioBank;
+import com.greenerpastures.buff.BuffSystem;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.drops.Harvester;
 import com.greenerpastures.economy.DarkEconomy;
@@ -46,6 +47,9 @@ public final class GreenerPastures implements ModInitializer {
 
         // economy/ — dark economy min-slice: Renderer block (eggs → Data) + Daemon item + per-player Data
         DarkEconomy.init();
+
+        // buff/ — load the Daemon "root" buff rules (the held+fed Daemon's rented QOL/farming buffs)
+        BuffSystem.init();
 
         // ritual/ — load the custom-drop config (type-drops + gacha rituals) the Harvester reads
         RitualSystem.init();
