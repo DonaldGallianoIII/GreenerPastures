@@ -117,5 +117,8 @@ chat/`GpLog` readout in the interim).**
 5. ✅ Config — `config/greenerpastures/rituals.json` (`RitualConfig`/`RitualSystem`): master + per-tier +
    per-ritual toggles; re-map which types/species → which items, counts, odds, pity. **Auto-pull** is the
    interim default (rolls banked pulls each tick so it's playable now); set `autoPull:false` for manual.
-6. ⏳ Sim extension (ritual mode: pulls/hr → items/hr *with pity*) — to tune odds headlessly.
+6. ✅ Sim — `cobblemon-drops-ref/sim_rituals.py`: a composition + augment loadout → **pulls/h + items/h per
+   ritual** (with pity), plus which rituals are inactive and why. Reads the built-in default roster or a
+   game-written `--config rituals.json`. Tune odds/pity/rarity headlessly. (e.g. base Nether Forge ≈ 1
+   `netherite_scrap`/1.6h; Drop Rate 1% + Yield 1 → 1/0.6h.)
 7. ⏳ Manual-pull gacha **GUI** on the Harvester (live %/pity + PULL buttons) — when at PC.
