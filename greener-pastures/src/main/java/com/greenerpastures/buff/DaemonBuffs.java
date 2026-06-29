@@ -47,10 +47,10 @@ public final class DaemonBuffs {
     /** Status effects are refreshed every second; give them slack so they never flicker between applications. */
     private static final int EFFECT_DURATION = INTERVAL * 3;
     /** The buffs this adapter can currently deliver — drain is billed only for these. Widens as we wire more.
-     *  FORTUNE/AUTO_SMELT/XP_BOOST are delivered by mixins via {@link #paidBuffs}; HASTE/SATURATION/MAGNET here. */
+     *  FORTUNE/AUTO_SMELT/XP_BOOST/VEIN_MINE are delivered by mixins/events via {@link #paidBuffs}; the rest here. */
     private static final Set<BuffId> SUPPORTED = EnumSet.of(
             BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET,
-            BuffId.FORTUNE, BuffId.AUTO_SMELT, BuffId.XP_BOOST);
+            BuffId.FORTUNE, BuffId.AUTO_SMELT, BuffId.XP_BOOST, BuffId.VEIN_MINE);
 
     /** Fractional Data carried between seconds, so sub-1/sec drains accrue honestly instead of rounding to free. */
     private static final Map<UUID, Double> drainCarry = new HashMap<>();
@@ -61,6 +61,7 @@ public final class DaemonBuffs {
 
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(DaemonBuffs::onServerTick);
+        DaemonVeinMine.init();   // event-driven HOOK (block-break), reads the same paid-buff state
         GpLog.i("buff", "adapter_init", "interval", INTERVAL, "supported", SUPPORTED.toString());
     }
 
