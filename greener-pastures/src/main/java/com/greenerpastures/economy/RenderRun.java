@@ -1,7 +1,6 @@
 package com.greenerpastures.economy;
 
 import com.greenerpastures.biobank.EggSummary;
-import com.greenerpastures.biobank.RenderSelection;
 import com.greenerpastures.biobank.ValueRule;
 
 import java.util.ArrayList;
@@ -35,14 +34,22 @@ public final class RenderRun {
      * @param enrichmentMultiplier ≥1 Enrichment-tether multiplier (sub-1 / NaN floors to 1×)
      */
     public static Plan plan(List<EggSummary> eggs, ValueRule keep, long baseValuePerEgg, double enrichmentMultiplier) {
-        RenderSelection.Result split = RenderSelection.partition(eggs, keep);
-        List<EggSummary> keptList = new ArrayList<>(split.keep());
+        List<EggSummary> keptList = new ArrayList<>();
         List<EggSummary> renderList = new ArrayList<>();
-        for (EggSummary e : split.render()) {
-            if (e.shiny()) keptList.add(e);   // SACRED: a shiny is never rendered, whatever the rule says
-            else renderList.add(e);
+        for (EggSummary e : eggs) {
+            (isRendered(e, keep) ? renderList : keptList).add(e);
         }
         long data = RenderValuation.dataFor(renderList.size(), baseValuePerEgg, enrichmentMultiplier);
         return new Plan(List.copyOf(keptList), List.copyOf(renderList), data);
+    }
+
+    /**
+     * The per-egg decision the Renderer uses: an egg is RENDERED (culled → Data) iff the value rule
+     * doesn't keep it AND it isn't shiny. <b>SACRED</b> — a shiny short-circuits to "never rendered",
+     * whatever the rule says. The block adapter calls this per tray slot so the sacred-shiny invariant
+     * has exactly one tested home, shared with {@link #plan}.
+     */
+    public static boolean isRendered(EggSummary e, ValueRule keep) {
+        return !e.shiny() && !keep.isValuable(e);
     }
 }

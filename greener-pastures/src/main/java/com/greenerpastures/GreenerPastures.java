@@ -3,6 +3,7 @@ package com.greenerpastures;
 import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.biobank.BioBank;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.pasture.breeding.BetterPasture;
 import com.greenerpastures.pasture.keeper.PastureKeeper;
 import net.fabricmc.api.ModInitializer;
@@ -40,5 +41,8 @@ public final class GreenerPastures implements ModInitializer {
 
         // biobank/ — AE2-style egg storage block (eggs as data, bucketed by species)
         BioBank.init();
+
+        // economy/ — dark economy min-slice: Renderer block (eggs → Data) + Daemon item + per-player Data
+        DarkEconomy.init();
     }
 }

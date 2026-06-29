@@ -60,4 +60,13 @@ class RenderRunTest {
         assertEquals(0, p.renderCount());
         assertEquals(0L, p.data());
     }
+
+    @Test
+    void isRenderedIsTheSharedPerEggPredicate() {
+        assertTrue(RenderRun.isRendered(plain("a"), ValueRule.DEFAULT), "a plain egg renders");
+        assertFalse(RenderRun.isRendered(shiny("b"), ValueRule.DEFAULT), "a shiny never renders");
+        assertFalse(RenderRun.isRendered(perfect("c"), ValueRule.DEFAULT), "a kept (perfect-IV) egg doesn't render");
+        assertFalse(RenderRun.isRendered(shiny("d"), new ValueRule(false, 0, 187)),
+                "a shiny survives even a render-everything rule");
+    }
 }

@@ -1,4 +1,6 @@
 {
+  "block.greenerpastures.renderer": "Renderer",
+  "item.greenerpastures.daemon": "Daemon",
   "item.greenerpastures.breeding_upgrade_copper": "Copper Pasture Upgrade",
   "item.greenerpastures.breeding_upgrade_iron": "Iron Pasture Upgrade",
   "item.greenerpastures.breeding_upgrade_gold": "Gold Pasture Upgrade",
