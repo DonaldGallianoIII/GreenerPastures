@@ -1,5 +1,9 @@
 package com.greenerpastures.pasture.breeding;
 
+import com.greenerpastures.economy.AugmentFunction;
+import com.greenerpastures.economy.DarkEconomy;
+import com.greenerpastures.economy.SoulTether;
+import com.greenerpastures.economy.Tether;
 import com.greenerpastures.pasture.breeding.gui.PastureMenu;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
@@ -33,6 +37,9 @@ public class PastureData {
     /** Next world-time this pasture may breed — in-memory schedule only (NOT persisted; a missed
      *  interval after a restart is harmless). Lives here instead of a static map to avoid a leak. */
     public transient long nextBreedTick = 0L;
+    /** The pasture's operator — the player who last slotted a Soul Tether here; their Data account pays
+     *  the tether burn (rented amplification). Null = no operator → tethers stay inert (free base). */
+    public UUID owner;
 
     /** The installed Pasture Upgrade tier (slot 0), or null if none — drives pairs + slot count. */
     public BreedingTier tier() {
@@ -50,6 +57,22 @@ public class PastureData {
         return a == null ? 0.0 : a.shinyProcChance();
     }
 
+    /** The Kernel's base augment levels (slot 0), as a function→level map for the amplification core. */
+    public Map<AugmentFunction, Integer> baseAugmentLevels() {
+        Augments a = upgrades.getStack(0).get(GpComponents.AUGMENTS);
+        return a == null ? Map.of() : a.toLevels();
+    }
+
+    /** The Soul Tethers slotted into the functional slots (1..), as runtime tethers (blanks dropped). */
+    public List<SoulTether> slottedTethers() {
+        List<SoulTether> out = new ArrayList<>();
+        for (int i = 1; i < upgrades.size(); i++) {
+            Tether t = upgrades.getStack(i).get(DarkEconomy.TETHER);
+            if (t != null && !t.isBlank()) out.add(t.toSoulTether());
+        }
+        return out;
+    }
+
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         nbt.putString("name", name);
         nbt.put("upgrades", upgrades.toNbtList(lookup));
@@ -60,6 +83,7 @@ public class PastureData {
         NbtList qn = new NbtList();
         eggQueue.forEach(egg -> { if (!egg.isEmpty()) qn.add(egg.encode(lookup)); });
         nbt.put("eggQueue", qn);
+        if (owner != null) nbt.putUuid("owner", owner);
         return nbt;
     }
 
@@ -81,6 +105,7 @@ public class PastureData {
             ItemStack.fromNbt(lookup, el).ifPresent(queued::add);
         }
         d.eggQueue.restore(queued);
+        if (nbt.containsUuid("owner")) d.owner = nbt.getUuid("owner");
         return d;
     }
 }

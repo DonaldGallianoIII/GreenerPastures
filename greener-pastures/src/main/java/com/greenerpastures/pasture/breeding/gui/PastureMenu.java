@@ -1,11 +1,15 @@
 package com.greenerpastures.pasture.breeding.gui;
 
 import com.greenerpastures.GreenerPastures;
+import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.pasture.breeding.BreedingUpgradeItem;
+import com.greenerpastures.pasture.breeding.PastureData;
+import com.greenerpastures.pasture.breeding.PastureRegistry;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -107,6 +111,24 @@ public class PastureMenu extends ScreenHandler {
 
     @Override
     public boolean canUse(PlayerEntity player) { return true; }
+
+    @Override
+    public void onClosed(PlayerEntity player) {
+        super.onClosed(player);
+        // The tether-slotter becomes the pasture operator (whose Data account pays the burn). Recorded on
+        // close whenever a Soul Tether sits in a functional slot (server-authoritative).
+        if (player instanceof ServerPlayerEntity sp && sp.getServer() != null) {
+            boolean hasTether = false;
+            for (int i = 1; i < upgrades.size(); i++) {
+                if (upgrades.getStack(i).get(DarkEconomy.TETHER) != null) { hasTether = true; break; }
+            }
+            if (hasTether) {
+                PastureRegistry reg = PastureRegistry.get(sp.getServer());
+                PastureData pd = reg.get(sp.getServerWorld(), pasturePos);
+                if (pd != null) { pd.owner = sp.getUuid(); reg.markDirty(); }
+            }
+        }
+    }
 
     @Override
     public ItemStack quickMove(PlayerEntity player, int index) {

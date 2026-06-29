@@ -4,6 +4,8 @@ import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.analytics.Event;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.economy.DataStore;
+import com.greenerpastures.economy.TetherRuntime;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.ItemStack;
@@ -66,8 +68,22 @@ public final class MultiPairBreeder {
 
                 int laid = 0;
                 if (now >= pd.nextBreedTick) {
-                    laid = breedPairs(world, pos, pasture, tier, pd, now);   // enqueues into the FIFO
-                    pd.nextBreedTick = now + CobbreedingBridge.nextBreedingInterval();
+                    // Resolve the Kernel's base mods × slotted Soul Tethers against the operator's Data:
+                    // fed → amplify + drain; starved → free base, no drain (TetherRuntime — all tested).
+                    long balance = (pd.owner != null) ? DataStore.get(server).balanceOf(pd.owner) : 0L;
+                    TetherRuntime.Resolution res =
+                            TetherRuntime.resolve(pd.baseAugmentLevels(), pd.slottedTethers(), balance);
+
+                    laid = breedPairs(world, pos, pasture, tier, pd, now, res.effective().shinyProcChance());
+                    long interval = speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
+                            res.effective().speedLevel());
+                    pd.nextBreedTick = now + interval;
+
+                    if (laid > 0 && res.drain() > 0 && pd.owner != null) {   // tethers earned their burn this cycle
+                        DataStore.get(server).tryDebit(pd.owner, res.drain());
+                        GpLog.d("tether", "drain", "pos", pos.toShortString(),
+                                "data", res.drain(), "owner", pd.owner.toString());
+                    }
                     moved += drainQueueToTray(pos, pd);                      // top the tray straight up
                 }
 
@@ -85,9 +101,22 @@ public final class MultiPairBreeder {
         if (dirty) reg.markDirty();
     }
 
-    /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue. */
+    /** Speed augment → faster cadence: ×1.5/×2/×3 by effective level, floored so breeding never runs
+     *  absurdly fast (magnitudes are config-tunable; the floor protects the server). */
+    private static long speedAdjustedInterval(long baseInterval, int speedLevel) {
+        double factor = switch (Math.max(0, Math.min(3, speedLevel))) {
+            case 1 -> 1.5;
+            case 2 -> 2.0;
+            case 3 -> 3.0;
+            default -> 1.0;
+        };
+        return Math.max(3000L, Math.round(baseInterval / factor));   // ~2.5 min floor
+    }
+
+    /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue.
+     *  {@code proc} is the EFFECTIVE shiny chance (base augment × any fed Shiny Tether) from onWorldTick. */
     private static int breedPairs(ServerWorld world, BlockPos pos, PokemonPastureBlockEntity pasture,
-                                  BreedingTier tier, PastureData pd, long now) {
+                                  BreedingTier tier, PastureData pd, long now, double proc) {
         List<PokemonPastureBlockEntity.Tethering> tethered = pasture.getTetheredPokemon();
         if (tethered == null || tethered.size() < 2) return 0;
 
@@ -95,7 +124,6 @@ public final class MultiPairBreeder {
                 ? adjacencyPairs(tethered, tier.maxPairs)
                 : bucketPairs(tethered, pd, tier.maxPairs);
 
-        double proc = pd.shinyProcChance();   // shiny augment on the slotted upgrade (0 if none)
         String mode = pd.pairings.isEmpty() ? "auto" : "buckets";
         int laid = 0;
         for (int i = 0; i < pairs.size(); i++) {
