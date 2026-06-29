@@ -24,8 +24,9 @@ import java.util.Set;
  * stays low, which also clears Cobblemon's "too many Pokémon nearby" placement cap.
  *
  * <p>Toggle a pasture by sneaking + right-clicking it with an empty hand. State is in-memory for now
- * (resets on restart) — NBT/PersistentState persistence is a tracked follow-up. Loot collection is
- * handled by {@link PastureCollector}: drop a chest next to a pasture and its loot sweeps into it.
+ * (resets on restart) — NBT/PersistentState persistence is a tracked follow-up. (Loot collection used
+ * to live here via {@code PastureCollector}; it was removed 2026-06-28 — loot moves to a dedicated
+ * %-chance loot block under the dark-economy drops system.)
  */
 public final class PastureKeeper {
     private PastureKeeper() {}
