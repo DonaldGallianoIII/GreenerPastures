@@ -12,21 +12,25 @@ import java.nio.file.Path;
  * fail-safe lazy-Gson pattern as {@code BuffConfig} (missing → write defaults, corrupt → fall back, never crash;
  * Gson via a holder so the pure cores stay test-runnable on the headless JVM).
  *
- * @param enabled master on/off
- * @param shiny   ping when a shiny egg is laid
- * @param sound   also play a chime
- * @param channel {@code "chat"} | {@code "actionbar"} | {@code "both"}
- * @param target  {@code "all"} | {@code "ops"}
+ * @param enabled        master on/off
+ * @param shiny          ping when a shiny egg is laid (broadcast per {@code target})
+ * @param dataMilestone  ping the owner each time their Data crosses another {@code dataMilestoneStep}
+ * @param dataMilestoneStep the Data interval between milestone pings (e.g. 1000 → ping at 1000, 2000, …)
+ * @param sound          also play a chime
+ * @param channel        {@code "chat"} | {@code "actionbar"} | {@code "both"}
+ * @param target         {@code "all"} | {@code "ops"} (shiny broadcast only; milestones always go to the owner)
  */
-public record NotifyConfig(boolean enabled, boolean shiny, boolean sound, String channel, String target) {
+public record NotifyConfig(boolean enabled, boolean shiny, boolean dataMilestone, long dataMilestoneStep,
+                           boolean sound, String channel, String target) {
 
     public NotifyConfig {
         if (channel == null || channel.isBlank()) channel = "chat";
         if (target == null || target.isBlank()) target = "all";
+        if (dataMilestoneStep <= 0) dataMilestoneStep = 1000;
     }
 
     public static NotifyConfig defaults() {
-        return new NotifyConfig(true, true, true, "chat", "all");
+        return new NotifyConfig(true, true, true, 1000, true, "chat", "all");
     }
 
     // ── persistence (fail-safe; Gson lazily loaded so the cores stay test-runnable) ──

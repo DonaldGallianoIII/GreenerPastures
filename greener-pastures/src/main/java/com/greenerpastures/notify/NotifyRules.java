@@ -32,6 +32,23 @@ public final class NotifyRules {
         return Optional.empty();
     }
 
+    /**
+     * Decide a <b>Data milestone</b> ping: fires when a credit moves a player from one {@code step}-sized block of
+     * Data into a higher one (e.g. step 1000 → a ping each time they pass 1000, 2000, …). Stateless — the caller
+     * passes the balance before and after this credit, so dips-and-recrosses aside, no per-player state is kept.
+     * Returns the highest milestone newly reached.
+     */
+    public static Optional<Notification> dataMilestone(long prevBalance, long newBalance, NotifyConfig cfg) {
+        if (cfg == null || !cfg.enabled() || !cfg.dataMilestone()) return Optional.empty();
+        long step = cfg.dataMilestoneStep();
+        if (step <= 0 || newBalance <= prevBalance) return Optional.empty();
+        long prevBlock = Math.max(0, prevBalance) / step;
+        long newBlock = Math.max(0, newBalance) / step;
+        if (newBlock <= prevBlock) return Optional.empty();
+        long milestone = newBlock * step;
+        return Optional.of(new Notification("💾 Data milestone: " + milestone + "!", cfg.sound()));
+    }
+
     private static String coords(Map<String, Object> row) {
         Object x = row.get("x"), y = row.get("y"), z = row.get("z");
         if (x == null || y == null || z == null) return "";
