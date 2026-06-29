@@ -29,16 +29,18 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * The Harvester's block entity — placed touching a pasture, every harvest interval it rolls each tethered
- * mon's drop table ({@link DropsBridge} → our {@link DropTable}) and deposits the result STRAIGHT into its
- * own 9×3 inventory. Never spawns a world item, so nothing despawns and there's no ground-item lag. Opens
- * as a vanilla chest GUI (no custom UI). Materials only — drops never feed Data.
+ * The Harvester's block entity — placed touching a pasture, once an IRL minute each tethered mon has a small
+ * chance ({@code BASE_PROC} = 3%) to proc a drop EVENT — Cobblemon's own faithful roll ({@link DropsBridge}:
+ * amount budget + per-entry %) — and the result is deposited STRAIGHT into its own 9×3 inventory. Never
+ * spawns a world item, so nothing despawns and there's no ground-item lag. Opens as a vanilla chest GUI (no
+ * custom UI). Materials only — drops never feed Data.
  *
  * <p>Pause-when-full: if the container has no free slot it harvests nothing (no roll, no loss) — empty it
  * to resume. Break scatters the contents (in {@code HarvesterBlock}).
  */
 public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHandlerFactory {
-    private static final int INTERVAL = 600;                 // a passive trickle ~every 30s (tune in QA)
+    private static final int INTERVAL = 1200;                // a harvest "tick" every IRL minute (1200 ticks)
+    private static final double BASE_PROC = 0.03;            // LEVER 1: 3% per mon per minute to proc a drop event
     static final int SLOTS = 27;                             // 9×3, a single chest
 
     private final SimpleInventory inv = new SimpleInventory(SLOTS);
@@ -60,7 +62,7 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
             BlockPos pasturePos = adjacentPasture(world, pos);
             if (pasturePos == null) return;
             if (!(world.getBlockEntity(pasturePos) instanceof PokemonPastureBlockEntity pasture)) return;
-            Map<String, Integer> harvested = DropsBridge.harvest(pasture, be.rng);
+            Map<String, Integer> harvested = DropsBridge.harvest(pasture, be.rng, BASE_PROC);
             if (harvested.isEmpty()) return;
             int added = be.deposit(harvested);
             if (added > 0) {

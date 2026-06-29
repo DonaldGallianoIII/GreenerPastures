@@ -15,15 +15,18 @@ import java.util.Random;
 
 /**
  * The ONE place Greener Pastures reads Cobblemon's drop tables — isolated + fail-safe (mirrors
- * {@code CobbreedingBridge}). It converts a tethered mon's Cobblemon {@code DropTable} into our own tested
- * {@link DropTable} (item id + chance + qty range), so WE own the roll: cadence + yield are ours to
- * modulate later (Drop Rate / Drop Yield augments, species-combo easter eggs), and nothing ever spawns a
- * world item. Item entries only — command / evolution drop entries are skipped.
+ * {@code CobbreedingBridge}). The Harvester's base roll uses Cobblemon's OWN {@code getDrops} (faithful to
+ * vanilla rates: amount budget + per-entry %), gated by OUR per-mon <b>proc cadence</b> — the two levers
+ * (cadence + amount/yield). The pasture has no defeats, so the proc IS our invention. Nothing ever spawns a
+ * world item. {@link #dropTableFor} converts a species' table into our tested {@link DropTable} for the
+ * planned override / easter-egg overlay. Item entries only — command / evolution entries are skipped.
  */
 public final class DropsBridge {
     private DropsBridge() {}
 
-    /** Build our drop table from a mon's Cobblemon species drops (item entries only). Never throws. */
+    /** Convert a species' Cobblemon drops into our {@link DropTable} — for the planned override / easter-egg
+     *  overlay (inspect or extend a mon's base table). Never throws. (The base harvest rolls Cobblemon's
+     *  {@code getDrops} directly; this is the toolkit for custom / combo tables.) */
     public static DropTable dropTableFor(Pokemon pokemon) {
         try {
             Species species = pokemon.getSpecies();
@@ -46,18 +49,51 @@ public final class DropsBridge {
         }
     }
 
-    /** Roll the drops for every tethered mon in a pasture → {@code item id → total count}. Never throws. */
-    public static Map<String, Integer> harvest(PokemonPastureBlockEntity pasture, Random rng) {
+    /**
+     * Harvest a pasture for one tick: each tethered mon has {@code procChance} to roll a drop EVENT
+     * (LEVER 1 — cadence; replaces the wild "on defeat" trigger, since a pasture has no defeats). A procced
+     * mon rolls Cobblemon's OWN {@code getDrops} (amount budget + per-entry %, faithful to vanilla — LEVER 2),
+     * and we resolve quantities exactly as Cobblemon does. → {@code item id → total count}. Never throws.
+     */
+    public static Map<String, Integer> harvest(PokemonPastureBlockEntity pasture, Random rng, double procChance) {
         Map<String, Integer> out = new LinkedHashMap<>();
         try {
             for (PokemonPastureBlockEntity.Tethering t : new ArrayList<>(pasture.getTetheredPokemon())) {
+                if (rng.nextDouble() >= procChance) continue;     // this mon didn't proc a drop this tick
                 Pokemon p = t.getPokemon();
-                if (p == null) continue;
-                dropTableFor(p).roll(rng).forEach((id, n) -> out.merge(id, n, Integer::sum));
+                if (p != null) rollEvent(p, rng).forEach((id, n) -> out.merge(id, n, Integer::sum));
             }
         } catch (Throwable ex) {
-            GreenerPastures.LOG.debug("[harvester] roster read failed", ex);
+            GreenerPastures.LOG.debug("[harvester] harvest failed", ex);
         }
         return out;
+    }
+
+    /** One drop EVENT via Cobblemon's faithful {@code getDrops} (amount budget + per-entry % + canDrop);
+     *  item entries only, quantities rolled like Cobblemon ({@code RangesKt.random} over the range). */
+    private static Map<String, Integer> rollEvent(Pokemon pokemon, Random rng) {
+        Map<String, Integer> out = new LinkedHashMap<>();
+        try {
+            com.cobblemon.mod.common.api.drop.DropTable cdrops = pokemon.getSpecies().getDrops();
+            for (com.cobblemon.mod.common.api.drop.DropEntry e : cdrops.getDrops(cdrops.getAmount(), pokemon)) {
+                if (!(e instanceof ItemDropEntry item)) continue;
+                Identifier id = item.getItem();
+                if (id == null) continue;
+                int qty = rollQty(item, rng);
+                if (qty > 0) out.merge(id.toString(), qty, Integer::sum);
+            }
+        } catch (Throwable t) {
+            // one mon's odd drop table must not abort the whole pasture's harvest
+        }
+        return out;
+    }
+
+    /** An item entry's quantity, resolved exactly as Cobblemon: uniform over its range, else its fixed qty. */
+    private static int rollQty(ItemDropEntry item, Random rng) {
+        kotlin.ranges.IntRange r = item.getQuantityRange();
+        if (r == null) return item.getQuantity();
+        int min = r.getFirst(), max = r.getLast();
+        if (max <= min) return Math.max(0, min);
+        return min + rng.nextInt(max - min + 1);
     }
 }
