@@ -82,3 +82,27 @@ After Wave 1, three more analysis-only agents ran: **(a)** an adversarial review
 - **`PastureBreedingData.registry` plain HashMap** — server world-ticks are sequential on one thread → no race. `Registries.ITEM.getId()`/`stack.getName()` null fears — false positives in 1.21.1.
 
 **Status:** all Wave-2 fixes **build-clean, 85 tests green, committed, NOT deployed.** New MC-bound items tracked as **Q9** in `QA_PENDING.md`.
+
+---
+
+# 🌊 Wave 3 — Soul-Tether swarm (2026-06-28)
+
+Three agents over the new dark-economy + tether code (perf · correctness · design-conformance + SP/MP side-safety). **Side-safety came back CLEAN again** — no client class reaches a dedicated server, the `TETHER`/`AUGMENTS` components register common-side, `EggReader` stays env-guarded. No CRITICAL.
+
+## Fixed (commit `f33656f`)
+- **[HIGH] Tether read from a downgrade-hidden slot** — `slottedTethers()` iterated *all* functional slots; a tether in a slot a Kernel downgrade hid still amplified + **drained Data from an inaccessible slot** (silent loss). Now gated by `tier().slots`.
+- **[HIGH · design] Balance constant inverted** — `BASE_DATA_PER_EGG=10` let a trophy pasture self-fund its tethers (8 eggs × 10 = 80 vs a tier-III quality tether's 24/cycle burn), breaking the design's one hard rule. Lowered to **2** (tunable; pin in QA).
+- **[HIGH · perf] Renderer double-decrypt** — culling did *two* reflective Cobbreeding decrypts per egg at 1 Hz (`read` + `species`); species is unused by the cull (`ValueRule` keys on shiny/IV) → dropped the 2nd.
+- **[MED] Stale owner** — `PastureMenu.onClosed` now sets the operator symmetrically (cleared when no tether remains) — no stale billing / silent ownership grief.
+- **[MED · design] Enrichment dead stat** — wired the base Enrichment augment into the Renderer's valuation so a compiled Enrichment isn't silently inert (tether-amplified enrichment + its drain is a later step).
+- **[LOW] Augments save codec** bounded in the ctor (the packet codec was already capped).
+
+## Deferred (by-design / immeasurable)
+- Shared-owner multi-pasture drain is order-dependent (unordered map) but **safe** — degrades to free base, no double-spend. Document, don't fix.
+- `DataStore.get` twice/cycle (cached lookup), `AugmentFunction.byId` linear scan, per-cycle EnumMap allocs — all behind the **~2.5–20 min breed gate**; immeasurable.
+- **Tether-amplified Enrichment + its drain** — the income (Renderer, 1 Hz) and drain (breeder, per breed cycle) run on different clocks; reconcile before amplifying enrichment.
+
+## Verified CLEAN (don't re-chase)
+SACRED shiny holds through the tether path (a Shiny Tether amplifies only the bred reroll, never wild — traced); base=free / rented / starved→base-never-pauses; offline-cut confirmed (nothing drains or amplifies offline); side-safety; the economy cores (single-pass, bounded, saturating); packet codecs bounded.
+
+**Status:** all Wave-3 fixes **build-clean, 110 tests green, committed, NOT deployed.** Folds into Q11/Q12 + new **Q13** in `QA_PENDING.md`.
