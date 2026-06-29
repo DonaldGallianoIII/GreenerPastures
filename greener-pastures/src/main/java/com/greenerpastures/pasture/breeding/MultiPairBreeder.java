@@ -48,16 +48,22 @@ public final class MultiPairBreeder {
 
         long now = world.getTime();
         boolean dirty = false;
+        java.util.List<BlockPos> orphans = null;
         for (Map.Entry<BlockPos, PastureData> entry : pastures.entrySet()) {
             BlockPos pos = entry.getKey();
             try {
                 PastureData pd = entry.getValue();
-                BreedingTier tier = pd.tier();
-                if (tier == null) continue;                                  // no Pasture Upgrade slotted
-
                 if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;
                 BlockEntity be = world.getBlockEntity(pos);
-                if (!(be instanceof PokemonPastureBlockEntity pasture)) continue;
+                if (!(be instanceof PokemonPastureBlockEntity pasture)) {
+                    // chunk loaded but the pasture block is GONE (TNT / creeper / command / piston — none
+                    // fire PlayerBlockBreakEvents). Reclaim its items + record AFTER the loop (removing from
+                    // the live sub-map mid-iteration would CME). (re-audit H2)
+                    (orphans != null ? orphans : (orphans = new java.util.ArrayList<>())).add(pos);
+                    continue;
+                }
+                BreedingTier tier = pd.tier();
+                if (tier == null) continue;                                  // present but no Pasture Upgrade slotted
                 if (!CobbreedingBridge.isBreedingActivated(be.getCachedState())) continue;
 
                 // Only our configured pairs should breed — keep Cobbreeding's native ticker from laying
@@ -97,6 +103,13 @@ public final class MultiPairBreeder {
                 // the rest. The bridge already self-disables on egg-build failure; this guards the rest.
                 GpLog.w("breeder", "pasture_skip", "pos", pos.toShortString(), "err", String.valueOf(t));
             }
+        }
+        if (orphans != null) {
+            for (BlockPos op : orphans) {
+                PastureData opd = reg.get(world, op);
+                if (opd != null) BetterPasture.reclaim(world, op, opd, reg);   // non-player removal cleanup (H2)
+            }
+            dirty = true;
         }
         if (dirty) reg.markDirty();
     }

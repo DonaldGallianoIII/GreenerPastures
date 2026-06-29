@@ -2,6 +2,7 @@ package com.greenerpastures.pasture.breeding.compiler;
 
 import com.greenerpastures.GreenerPastures;
 import com.greenerpastures.pasture.breeding.BreedingUpgradeItem;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -30,6 +31,11 @@ public class CompilerMenu extends ScreenHandler {
     public static void register() {
         Registry.register(Registries.SCREEN_HANDLER,
                 Identifier.of(GreenerPastures.MOD_ID, "compiler_menu"), TYPE);
+        // onClosed does NOT fire on disconnect (MC 1.21.1) — return the open bench's inputs so a paid-for
+        // Kernel + augment aren't lost if a player drops / crashes / is kicked with the bench open (re-audit C2).
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            if (handler.player.currentScreenHandler instanceof CompilerMenu cm) cm.dropInputs(handler.player);
+        });
     }
 
     // Bench geometry — MUST match CompilerScreen.
@@ -91,6 +97,15 @@ public class CompilerMenu extends ScreenHandler {
         for (int i = 0; i < inputs.size(); i++) {
             ItemStack s = inputs.removeStack(i);
             if (!s.isEmpty() && !player.getInventory().insertStack(s)) player.dropItem(s, false);
+        }
+    }
+
+    /** Drop the bench inputs into the world — used on DISCONNECT, where {@link #onClosed} never fires and
+     *  inserting into the leaving player's already-saved inventory wouldn't persist (re-audit C2). */
+    private void dropInputs(PlayerEntity player) {
+        for (int i = 0; i < inputs.size(); i++) {
+            ItemStack s = inputs.removeStack(i);
+            if (!s.isEmpty()) player.dropItem(s, false);
         }
     }
 

@@ -98,13 +98,23 @@ public final class BetterPasture {
                         : reg.get(sw, pos.down()) != null ? pos.down() : null;
             if (at == null) return;
             PastureData pd = reg.get(sw, at);
-            ItemScatterer.spawn(sw, at, pd.upgrades);   // drops + empties the upgrade inventory
-            int eggs = pd.eggQueue.size();
-            pd.eggQueue.forEach(egg -> {
-                if (!egg.isEmpty()) ItemScatterer.spawn(sw, at.getX(), at.getY(), at.getZ(), egg);
-            });
-            reg.remove(sw, at);
-            GpLog.i("pasture", "break_cleanup", "pos", at.toShortString(), "eggsDropped", eggs);
+            if (pd != null) reclaim(sw, at, pd, reg);
         });
+    }
+
+    /**
+     * Return a pasture's items (the slotted Pasture Upgrade + augmented Kernels + any queued eggs) to the
+     * world and free its record. Shared by the player-break hook above and the breeder's non-player-removal
+     * reclaim — TNT / creeper / {@code /setblock} / piston don't fire {@code PlayerBlockBreakEvents}
+     * (re-audit H2). Caller must not be mid-iterating the registry's live sub-map (this calls remove()).
+     */
+    public static void reclaim(ServerWorld world, BlockPos at, PastureData pd, PastureRegistry reg) {
+        ItemScatterer.spawn(world, at, pd.upgrades);   // drops + empties the upgrade inventory
+        int eggs = pd.eggQueue.size();
+        pd.eggQueue.forEach(egg -> {
+            if (!egg.isEmpty()) ItemScatterer.spawn(world, at.getX(), at.getY(), at.getZ(), egg);
+        });
+        reg.remove(world, at);
+        GpLog.i("pasture", "reclaim", "pos", at.toShortString(), "eggsDropped", eggs);
     }
 }
