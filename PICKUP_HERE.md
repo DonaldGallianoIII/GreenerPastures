@@ -14,7 +14,27 @@ Renderer tether-amp enrichment · **craftable augment items** (all 7 functions C
 EV** breeding effects (egg IVs/EVs shaped pre-encrypt, verified to survive Cobbreeding hatch) · **rituals + type-drops
 gacha system** (engine → runtime → config → 3× rarity → drop-augment scaling → `sim_rituals.py`).
 
-## ▶️ ACTIVE TASK — Daemon global "root" buffs
+## ▶️ ACTIVE TASK — Daemon global "root" buffs  _(IN PROGRESS — 4 commits, 161 tests)_
+**Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =
+**tier-scaled & summed** (`Σ tier × costPerSec`/sec).
+**Built + committed so far (all QA-pending = Q23):**
+- `buff/` pure cores (`5ba97e8`): `BuffId` catalog (11 ENCHANT / 2 EFFECT / 5 HOOK — the catalog IS the
+  worker-not-fighter allow-list, no combat/binary enchant present), `BuffSetting`, `BuffConfig` (lazy-Gson,
+  `config/greenerpastures/buffs.json`), `BuffResolver` (level→tier, per-buff cap, summed drain), `BuffSystem`.
+- EFFECT adapter (`0b4684d`): `DaemonBuffs` server-tick loop → held+fed Daemon grants **Haste + Saturation**,
+  bills Data/sec (fractional carry, broke→no buffs). `daemon_level` int component + creative sneak-RC cycles
+  Mk I→II→III (QA affordance; survival upgrade recipe = publish-phase). `DaemonItem.levelOf()`.
+- Magnet HOOK (`a796175`): item magnet (radius 4/6/8 by tier); resolver filter is now **per-`BuffId`**
+  (`SUPPORTED` set) so categories ship piecemeal without over-billing. `lastPaid` cache drives per-tick hooks.
+**NEXT (in order):** (1) **ENCHANT boost** — the marquee (Fortune VI etc.); fully researched + spec'd in
+`ENCHANT_BOOST.md` (edit the held stack's enchant component +tier, tick-bracketed; verified vs 1.21.1). One
+timing Q (does equipment-sync run inside the tick window?) is being confirmed by a bg agent before the mixin is
+written. ⚠ highest dupe/desync risk → needs a careful live QA. (2) remaining hooks: **auto-smelt, vein-mine,
+XP boost, potion-duration** (all mixin/event-hook, untestable headless → build as a QA-pending batch).
+Add each ENCHANT/HOOK `BuffId` to `DaemonBuffs.SUPPORTED` as its adapter lands.
+
+_(original spec below — still the source of truth for the buff list)_
+
 Deuce: *"handle all the daemon global buffs now."* **Spec is SETTLED in `~/pokemonthink/AUGMENTS_AND_BUFFS.md`**
 (read it). The `DaemonItem` (`economy/DaemonItem.java`) currently only shows the Data balance on right-click — add the
 buffs it grants **while held + fed** (rented via Data: lose fuel → lose buff; **config-gated; "worker-not-fighter" —
