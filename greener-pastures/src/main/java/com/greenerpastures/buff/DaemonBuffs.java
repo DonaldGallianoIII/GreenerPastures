@@ -47,10 +47,17 @@ public final class DaemonBuffs {
     /** Status effects are refreshed every second; give them slack so they never flicker between applications. */
     private static final int EFFECT_DURATION = INTERVAL * 3;
     /** The buffs this adapter can currently deliver — drain is billed only for these. Widens as we wire more.
-     *  FORTUNE/AUTO_SMELT/XP_BOOST/VEIN_MINE are delivered by mixins/events via {@link #paidBuffs}; the rest here. */
-    private static final Set<BuffId> SUPPORTED = EnumSet.of(
-            BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET,
-            BuffId.FORTUNE, BuffId.AUTO_SMELT, BuffId.XP_BOOST, BuffId.VEIN_MINE, BuffId.POTION_DURATION);
+     *  FORTUNE/AUTO_SMELT/XP_BOOST/VEIN_MINE are delivered by mixins/events via {@link #paidBuffs}; the EFFECT +
+     *  MAGNET here; the attribute enchants (Respiration/Swift Sneak/Feather Falling) by {@link DaemonAttributeBuffs}
+     *  (folded in via its {@code DELIVERED} set so the bill can never drift from what's actually applied). */
+    private static final Set<BuffId> SUPPORTED;
+    static {
+        EnumSet<BuffId> s = EnumSet.of(
+                BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET,
+                BuffId.FORTUNE, BuffId.AUTO_SMELT, BuffId.XP_BOOST, BuffId.VEIN_MINE, BuffId.POTION_DURATION);
+        s.addAll(DaemonAttributeBuffs.DELIVERED);
+        SUPPORTED = s;
+    }
 
     /** Fractional Data carried between seconds, so sub-1/sec drains accrue honestly instead of rounding to free. */
     private static final Map<UUID, Double> drainCarry = new HashMap<>();
@@ -82,34 +89,38 @@ public final class DaemonBuffs {
     /** Once per second: resolve the player's buffs, bill the Data, apply status effects, cache what they paid for. */
     private static void settle(ServerPlayerEntity player, BuffConfig cfg, DataStore data) {
         UUID id = player.getUuid();
-        if (player.isSpectator() || !cfg.enabled()) { clear(id); return; }
+        if (player.isSpectator() || !cfg.enabled()) { clear(player); return; }
 
         int level = heldDaemonLevel(player);
-        if (level <= 0) { clear(id); return; }              // no Daemon in hand
+        if (level <= 0) { clear(player); return; }              // no Daemon in hand
 
         ResolvedBuffs buffs = BuffResolver.resolve(cfg, level, SUPPORTED);
-        if (buffs.isEmpty()) { clear(id); return; }
+        if (buffs.isEmpty()) { clear(player); return; }
 
         // Rented-while-fed: a truly broke account gets nothing, even for a sub-1/sec drain.
-        if (data.balanceOf(id) <= 0) { clear(id); return; }
+        if (data.balanceOf(id) <= 0) { clear(player); return; }
 
         double owed = buffs.dataPerSec() + drainCarry.getOrDefault(id, 0.0);
         long pay = (long) Math.floor(owed);
         if (pay > 0) {
-            if (!data.tryDebit(id, pay)) { clear(id); return; }   // can't afford the whole owed → starve
+            if (!data.tryDebit(id, pay)) { clear(player); return; }   // can't afford the whole owed → starve
             owed -= pay;
         }
         drainCarry.put(id, owed);                            // keep the fractional remainder for next second
         lastPaid.put(id, buffs);
 
         applyEffects(player, buffs);
+        DaemonAttributeBuffs.reconcile(player, buffs);       // attribute enchants: grant/scale/strip to match the bill
         GpLog.d("buff", "tick", "player", id.toString(), "lvl", level,
                 "buffs", buffs.tiers().size(), "paid", pay);
     }
 
-    private static void clear(UUID id) {
+    /** Drop a player's buff state — clears the per-tick caches AND strips any attribute modifiers we added. */
+    private static void clear(ServerPlayerEntity player) {
+        UUID id = player.getUuid();
         lastPaid.remove(id);
         drainCarry.remove(id);
+        DaemonAttributeBuffs.clear(player);
     }
 
     /**

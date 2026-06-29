@@ -14,11 +14,11 @@ Renderer tether-amp enrichment · **craftable augment items** (all 7 functions C
 EV** breeding effects (egg IVs/EVs shaped pre-encrypt, verified to survive Cobbreeding hatch) · **rituals + type-drops
 gacha system** (engine → runtime → config → 3× rarity → drop-augment scaling → `sim_rituals.py`).
 
-## ▶️ ACTIVE TASK — Daemon global "root" buffs  _(8 BUFFS LIVE — QA-pending; v2 enchants remain)_
+## ▶️ ACTIVE TASK — Daemon global "root" buffs  _(11 BUFFS LIVE — QA-pending; v2 value-effect enchants + Looting remain)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =
-**tier-scaled & summed** (`Σ tier × costPerSec`/sec). All committed (`5ba97e8`→`bd7d252`), 161 tests, nothing
-deployed. **All 8 delivered buffs are non-destructive** (effects/attributes/read-interception — none rewrite
-gear or persist NBT, so no dupe surface). QA rows **Q23–Q28**.
+**tier-scaled & summed** (`Σ tier × costPerSec`/sec). All committed (`5ba97e8`→HEAD), 167 tests, nothing
+deployed. **All 11 delivered buffs are non-destructive** (effects/attributes/read-interception — none rewrite
+gear or persist NBT, so no dupe surface). QA rows **Q23–Q29**.
 **DELIVERED (held + fed Daemon, billed only for what's in `DaemonBuffs.SUPPORTED`):**
 - cores (`5ba97e8`): `BuffId` catalog (11 ENCHANT / 2 EFFECT / 5 HOOK — the catalog IS the worker-not-fighter
   allow-list), `BuffSetting`/`BuffConfig` (lazy-Gson, `config/greenerpastures/buffs.json`), `BuffResolver`
@@ -41,21 +41,27 @@ gear or persist NBT, so no dupe surface). QA rows **Q23–Q28**.
   rental = the cost (no tool durability v1).
 - **Potion Duration+** (HOOK, `bd7d252`) — `PotionDurationMixin` +50%/tier on a **utility allowlist only**
   (NightVision/WaterBreathing/FireRes/Conduit/Dolphin/SlowFall/Luck) → PvP-neutral.
+- **Attribute enchants** (ENCHANT, this commit) — **Respiration / Swift Sneak / Feather Falling** delivered as
+  transient `EntityAttributeModifier`s (NO mixin) reconciled in the `DaemonBuffs` settle loop. Pure
+  `AttributeBuff` table (tested) → `DaemonAttributeBuffs` (binds `GENERIC_OXYGEN_BONUS`/`PLAYER_SNEAKING_SPEED`/
+  `GENERIC_FALL_DAMAGE_MULTIPLIER`, all verified consumed in the 1.21.1 jar). Granted **flat** + stack on top of
+  real gear (beyond vanilla max, like Fortune); temporary (never saved); `DELIVERED` folded into `SUPPORTED` so
+  the bill can't drift from what's applied. Feather Falling floored so it can never heal on a fall.
 
-### ▶️ NEXT TASK (Deuce's directive, post-compaction): finish the **v2 enchants** (task #30)
-Lower-value enchant buffs, spec'd in `ENCHANT_BOOST.md`. In rough priority:
-1. **Attribute enchants** (cleanest, NO mixin) — Respiration (`OXYGEN_BONUS`), Swift Sneak (`SNEAKING_SPEED`),
-   Soul Speed (`MOVEMENT_SPEED`, soul-block-gated → maybe skip), Efficiency (`MINING_EFFICIENCY`, ≈ already
-   covered by Haste). Deliver via direct transient `EntityAttributeModifier`s added/removed in the
-   `DaemonBuffs` settle loop (add when the buff is paid, remove when it lapses — manage by a stable modifier id).
-2. **Value-effect enchants** — Unbreaking, Lure, Luck of the Sea, Feather Falling, Frost Walker. These read the
-   raw component level via `forEachEnchantment` (no entity ctx), so each needs its own interception point
-   (verify the per-effect getters in the jar: `getItemDamage`/`getFishingTimeReduction`/`getProtectionAmount`/
-   `getFishingLuckBonus`/the frost-walker radius). Hardest tier.
-3. **Looting** — mob-death loot path (`getEquipmentLevel(weapon, attacker)`); a ThreadLocal scoped around the
+### ▶️ NEXT TASK: finish the **v2 enchants** — value-effect tier + Looting (task #30)
+Spec'd in `ENCHANT_BOOST.md`. ✅ **Tier-1 attribute enchants DONE** (Respiration/Swift Sneak/Feather Falling;
+Efficiency skipped = Haste covers mining, Soul Speed skipped = soul-block-gated). Remaining, in rough priority:
+1. **Value-effect enchants** — Unbreaking, Lure, Luck of the Sea, Frost Walker (Feather Falling already shipped
+   via the fall-damage attribute). These read the raw component level via `forEachEnchantment` (no entity ctx),
+   so each needs its own interception point — verify the per-effect getters in the jar
+   (`getItemDamage`/`getFishingTimeReduction`/`getFishingLuckBonus`/frost-walker radius). _Note: **Luck of the
+   Sea** may have a clean attribute analog too (`GENERIC_LUCK` influences fishing loot) — check before doing the
+   hard value-effect interception._ Hardest tier; lower value.
+2. **Looting** — mob-death loot path (`getEquipmentLevel(weapon, attacker)`); a ThreadLocal scoped around the
    mob-drop loot resolution (mirror the Fortune `Block.getDroppedStacks` pattern, but for the entity-loot path).
-   Combat-adjacent — confirm with Deuce whether to include before shipping.
-Add each new `BuffId` to `DaemonBuffs.SUPPORTED` as its adapter lands (so it's billed only when delivered).
+   **Combat-adjacent — confirm with Deuce whether to include before shipping.**
+Add each new `BuffId` to `DaemonAttributeBuffs.DELIVERED` (attribute) or `DaemonBuffs.SUPPORTED` (other) as its
+adapter lands (so it's billed only when delivered).
 
 _(original spec below — still the source of truth for the buff list)_
 
