@@ -86,9 +86,25 @@ Nature/Ability/Ball are **selectors** — "which one", not "how much". Lowest-ri
   **Ball** (`setPokeball(id)` — selector or "inherit mother's ball"), **Egg Moves** (`setMoves(List)` — needs the
   param-map; spec its UX when we get there: likely "preserve all eligible parent egg moves" as the v1 binary).
 
-### Batch sequencing
-Nature (this session) → **Hidden Ability** (binary-ish, `setAbility`) → **Ball** (selector) → **Egg Moves** (the
-list-param one; may land with the param-map upgrade or a "preserve parent egg moves" binary first).
+### Batch sequencing & status
+- ✅ **Nature** (`6a7df50`) — `NATURE` selector + `NatureCatalog` (25) + `applyNature`. Tested. QA Q31.
+- ✅ **Ball** (this commit) — `BALL` selector + `BallCatalog` (32 namespaced ids, ancient_* omitted) + `applyBall`.
+  Tested. QA Q32. ⚠ verify the egg-spec ball-id format (`cobblemon:poke_ball` vs bare path) — fails *safe* either way.
+- ⏳ **Hidden Ability** — NEXT. Verified `Species.getAbilities()` returns an `AbilityPool`; still to verify before
+  building: (a) how to pull the **hidden** ability name out of the pool (the `AbilityPool` is at
+  `com.cobblemon.mod.common.api.abilities.AbilityPool` — javap it for a hidden/priority accessor), and (b) the
+  `PokemonProperties.setAbility(String)` token — does it take the ability NAME (needs the species' HA name, looked
+  up at build time from `eggData.getSpecies().getAbilities()`), or a slot token like `"h"`/`"hidden"`. Likely a
+  **binary** augment ("force hidden ability"), not a selector. Build once both are confirmed.
+- ⏳ **Egg Moves** — last + hardest: `setMoves(List<String>)`. Needs a list param, which is the trigger to do the
+  **`EggShape` refactor** (see below). v1 candidate = "preserve all eligible parent egg moves" (a binary) before a
+  full move-picker.
+
+### ⚙️ Refactor flagged: `buildEggForPair` → an `EggShape` params object
+`buildEggForPair` is now at **6 positional params** (2 of them adjacent Strings: nature, ball — a swap footgun).
+**Before adding the 7th/8th** (ability, egg-moves), refactor to `buildEggForPair(pairSlots, EggShape shape)` where
+`EggShape` is a small record `(double shinyProcChance, int ivFloor, int evFloorPerStat, String nature, String ball,
+…)`. The breeder builds it from `eff`. Do this as the first step of the Hidden Ability increment.
 
 ---
 

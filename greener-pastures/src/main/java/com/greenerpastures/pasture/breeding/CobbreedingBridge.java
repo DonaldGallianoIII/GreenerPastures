@@ -189,7 +189,8 @@ public final class CobbreedingBridge {
      * carries them to the hatchling.
      */
     public static BredEgg buildEggForPair(List<? extends PokemonPastureBlockEntity.Tethering> pairSlots,
-                                          double shinyProcChance, int ivFloor, int evFloorPerStat, String nature) {
+                                          double shinyProcChance, int ivFloor, int evFloorPerStat,
+                                          String nature, String ball) {
         if (!available) return null;
         try {
             List<Pokemon> pokemon = BreedingUtilities.getPokemon(pairSlots);
@@ -201,6 +202,7 @@ public final class CobbreedingBridge {
             applyIvFloor(eggData, ivFloor);                 // guarantee N perfect (31) IVs — raise-only
             applyEvFloor(eggData, evFloorPerStat);          // pre-set a flat EV floor on every permanent stat
             applyNature(eggData, nature);                   // lock the egg's nature (Nature selector augment)
+            applyBall(eggData, ball);                       // lock the egg's ball (Ball selector augment)
             boolean shiny = Boolean.TRUE.equals(eggData.getShiny());
             ItemStack stack = assembleEgg(eggData);
             if (stack == null) return null;
@@ -298,6 +300,22 @@ public final class CobbreedingBridge {
         try {
             eggData.setNature(natureId);
             GpLog.d("breeding", "nature_lock", "species", String.valueOf(eggData.getSpecies()), "nature", natureId);
+        } catch (Throwable t) {
+            // egg-shaping must never abort egg-gen
+        }
+    }
+
+    /**
+     * Ball lock (the Ball selector augment): force the bred egg to hatch in {@code ballId} (a Cobblemon ball spec
+     * token, e.g. {@code "cobblemon:poke_ball"}). Same seam as nature — writes {@code PokemonProperties.setPokeball},
+     * carried at hatch via {@code apply → caughtBall}, overriding vanilla "inherit mother's ball". {@code null}/blank
+     * ⇒ no lock; a bad id lapses to the default ball rather than corrupting. Never throws.
+     */
+    private static void applyBall(PokemonProperties eggData, String ballId) {
+        if (ballId == null || ballId.isBlank()) return;
+        try {
+            eggData.setPokeball(ballId);
+            GpLog.d("breeding", "ball_lock", "species", String.valueOf(eggData.getSpecies()), "ball", ballId);
         } catch (Throwable t) {
             // egg-shaping must never abort egg-gen
         }

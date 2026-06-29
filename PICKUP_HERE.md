@@ -4,15 +4,23 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ STATE — 2026-06-29 (end of a big drops/rituals/augments session)
-**148 headless tests green** (`./gradlew test`). **All committed on `main`, NOTHING deployed** — QA is batched
-(Deuce's call, [[batch-qa-workflow]]). Latest commit `3cf0cb2`. Tree clean. Deuce is on **remote-control (phone,
-at the doctor's office)** → standing rule: **functionality-first, NO custom UI** (defer all GUIs).
+## ⚡ STATE — 2026-06-29 (Daemon buffs v2 + breeding-meta augments started)
+**178 headless tests green** (`./gradlew test`). **All committed on `main`, NOTHING deployed** — QA is batched
+(Deuce's call, [[batch-qa-workflow]]). Tree clean. Deuce is on **remote-control (phone)** → standing rule:
+**functionality-first, NO custom UI** (defer all GUIs).
 
-**Built this session (9 commits, 116→148 tests):** Drop Yield augment · Harvester tether-amp drop rate/yield ·
-Renderer tether-amp enrichment · **craftable augment items** (all 7 functions Compiler-installable) · **IV Floor +
-EV** breeding effects (egg IVs/EVs shaped pre-encrypt, verified to survive Cobbreeding hatch) · **rituals + type-drops
-gacha system** (engine → runtime → config → 3× rarity → drop-augment scaling → `sim_rituals.py`).
+**Most recent work (this session):** finished the **Daemon buff system** (15 buffs — enchant set complete; see the
+DONE-task section below) → then started the **v2 feature wave** Deuce surfaced (predicted asks). Wrote the full
+spec **`FEATURES_V2.md`** (`glow` it — implement/test/QA for all 7 features). Shipped the first two breeding-meta
+augments: **Nature lock** (`6a7df50`) + **Ball lock** (HEAD) — selector augments writing the trait onto the egg
+spec pre-encrypt (verified `PokemonProperties.setNature/setPokeball`), same seam as IV/EV.
+
+### ▶️ ACTIVE — v2 feature wave (Deuce: "do all of it"; spec = `FEATURES_V2.md`)
+Build order **F1 breeding-meta (Nature ✅ · Ball ✅ · Hidden Ability ⏳ · Egg Moves ⏳) → F2 Notifications → F3 Goal
+tracker**, then re-sync before wave-2 (hopper interop, dashboards #6, economy, guide). **Next concrete step:** the
+`EggShape` params refactor (buildEggForPair is at 6 params) → then Hidden Ability (verify AbilityPool hidden-getter
++ the setAbility token first). F2 Notifications can hook the existing shiny `egg_laid` event (needs operator-target
++ threshold state). All verified API facts + per-feature plans are in `FEATURES_V2.md`.
 
 ## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =

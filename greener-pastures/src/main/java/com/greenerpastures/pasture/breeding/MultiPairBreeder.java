@@ -159,7 +159,8 @@ public final class MultiPairBreeder {
         for (int i = 0; i < pairs.size(); i++) {
             CobbreedingBridge.BredEgg egg = CobbreedingBridge.buildEggForPair(
                     pairs.get(i), eff.shinyProcChance(), eff.ivFloorCount(), eff.evFloorPerStat(),
-                    NatureCatalog.byIndex(eff.natureIndex()));   // Nature selector → nature id (null = no lock)
+                    NatureCatalog.byIndex(eff.natureIndex()),     // Nature selector → nature id (null = no lock)
+                    BallCatalog.byIndex(eff.ballIndex()));        // Ball selector → ball id (null = no lock)
             if (egg == null) continue;                              // incompatible pair, skip
             if (!pd.eggQueue.offer(egg.stack())) {                  // FIFO full → pause (keep eggs aren't evicted)
                 GpLog.w("breeder", "queue_full", "pos", pos.toShortString(), "cap", pd.eggQueue.cap());

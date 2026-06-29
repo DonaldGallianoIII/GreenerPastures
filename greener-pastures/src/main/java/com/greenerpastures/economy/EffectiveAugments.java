@@ -95,6 +95,12 @@ public final class EffectiveAugments {
         return Math.max(0, (int) Math.round(magnitude(AugmentFunction.NATURE)));
     }
 
+    /** Ball selector: the 1-based catalog index of the ball to lock the bred egg to (0 = no lock). SELECTOR →
+     *  raw base level, never tether-amplified; the breeder maps it via {@code BallCatalog}. */
+    public int ballIndex() {
+        return Math.max(0, (int) Math.round(magnitude(AugmentFunction.BALL)));
+    }
+
     /** Drop-yield bonus = a flat integer ADDED to Cobblemon's {@code amount} budget ceiling per drop event
      *  (LEVER 2): level 1 = a chance at +1 more budget → more items per proc, never fewer (the floor is
      *  untouched). A Drop Yield tether amplifies the base level the same as any mod; 0 when the Kernel has
