@@ -9,6 +9,10 @@ _A running tally of changes that need a real in-game pass. **Pure-logic cores ar
 - **Deployed?** = is it in the live test jar yet. Items marked *not deployed* need a `./gradlew build` + copy first (I'll do that whenever you're ready to test).
 - Older, broad in-game tests live in `TEST_CHECKLIST.md`; this file is the focused "did the recent changes actually work" tally.
 
+### 🛠️ New QA/admin commands (this build)
+- **`/gp augment set <function> <level>`** — the no-UI install path: hold a **Kernel** (breeding upgrade), run it to set an augment, then slot the Kernel into a pasture. Selectors use the level as an index — e.g. `/gp augment set nature 4` → Adamant, `/gp augment set ball 4` → master_ball; binaries `set ability 1` / `set egg_move 1`. `/gp augment list` shows the held Kernel; `set … 0` removes one; `/gp augment clear` strips all. **This is how you install Q31–Q34.**
+- **`/gp goal set <species|any> <shiny> <minPerfectIvs> <count>`** — the breeding-goal tracker (Q37); `/gp goal` shows progress, `/gp goal clear` clears.
+
 ## ☐ Pending
 | # | Change | Deployed? | How to verify | Status |
 |---|--------|-----------|---------------|--------|
