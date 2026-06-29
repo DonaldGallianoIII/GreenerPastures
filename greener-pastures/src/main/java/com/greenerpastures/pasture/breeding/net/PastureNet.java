@@ -1,5 +1,6 @@
 package com.greenerpastures.pasture.breeding.net;
 
+import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import com.greenerpastures.pasture.breeding.PastureRegistry;
 import com.greenerpastures.pasture.breeding.PastureWand;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -56,6 +57,7 @@ public final class PastureNet {
             ServerWorld world = player.getServerWorld();
             BlockPos pos = payload.pos();
             if (world == null || !withinReach(player, pos)) return;
+            if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;   // no phantom records at arbitrary pos
             String name = payload.name();
             if (name.length() > 64) name = name.substring(0, 64);
             PastureRegistry.get(server).setName(world, pos, name);
@@ -70,6 +72,7 @@ public final class PastureNet {
             ServerWorld world = player.getServerWorld();
             BlockPos pos = payload.pos();
             if (world == null || !withinReach(player, pos)) return;
+            if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;   // no phantom records at arbitrary pos
             PastureRegistry.get(server).setPairings(world, pos, sanitize(payload.pairings()));
         });
     }

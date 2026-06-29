@@ -1,12 +1,14 @@
 package com.greenerpastures.pasture.breeding;
 
 import com.greenerpastures.GreenerPastures;
+import com.greenerpastures.core.GpLog;
 import com.greenerpastures.pasture.breeding.compiler.AugmentItem;
 import com.greenerpastures.pasture.breeding.compiler.AugmentType;
 import com.greenerpastures.pasture.breeding.compiler.CompilerBlock;
 import com.greenerpastures.pasture.breeding.compiler.CompilerMenu;
 import com.greenerpastures.pasture.breeding.gui.PastureMenu;
 import com.greenerpastures.pasture.breeding.net.PastureNet;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
@@ -15,7 +17,10 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.ItemScatterer;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -43,6 +48,7 @@ public final class BetterPasture {
         PastureMenu.register();
         CompilerMenu.register();    // the Compiler bench container
         PastureNet.init();          // C2S: save pasture name + pair assignments
+        registerBreakCleanup();     // return a broken pasture's items + eggs, free its record (review H1)
         registerItems();
         if (CobbreedingBridge.isAvailable()) {
             MultiPairBreeder.init();
@@ -74,6 +80,31 @@ public final class BetterPasture {
             ITEMS.values().forEach(entries::add);
             entries.add(AUGMENT_SHINY);
             entries.add(COMPILER_ITEM);
+        });
+    }
+
+    /**
+     * When a managed pasture's block is broken, return our items (the slotted Pasture Upgrade + any
+     * augmented Kernels) and any queued eggs to the world, then free the record — otherwise both are lost
+     * and the record lingers in the save + is rescanned every breeding tick forever (review H1).
+     */
+    private static void registerBreakCleanup() {
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, be) -> {
+            if (!(world instanceof ServerWorld sw)) return;
+            PastureRegistry reg = PastureRegistry.get(sw.getServer());
+            // the record is keyed at the pasture's bottom (block-entity) pos; the player may break the
+            // bottom OR the top half, so resolve both before doing any work.
+            BlockPos at = reg.get(sw, pos) != null ? pos
+                        : reg.get(sw, pos.down()) != null ? pos.down() : null;
+            if (at == null) return;
+            PastureData pd = reg.get(sw, at);
+            ItemScatterer.spawn(sw, at, pd.upgrades);   // drops + empties the upgrade inventory
+            int eggs = pd.eggQueue.size();
+            pd.eggQueue.forEach(egg -> {
+                if (!egg.isEmpty()) ItemScatterer.spawn(sw, at.getX(), at.getY(), at.getZ(), egg);
+            });
+            reg.remove(sw, at);
+            GpLog.i("pasture", "break_cleanup", "pos", at.toShortString(), "eggsDropped", eggs);
         });
     }
 }

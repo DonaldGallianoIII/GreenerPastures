@@ -56,12 +56,12 @@ final class EventLog {
                 try {
                     if (w == null) w = Files.newBufferedWriter(file,
                             StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-                    w.write(gson.toJson(row));               // serialize off the tick thread
+                    w.write(safeJson(row));                  // serialize off the tick thread (never throws)
                     w.write('\n');
                     int batch = 0;
                     Map<String, Object> more;
                     while ((more = queue.poll()) != null) {   // drain the backlog under one flush
-                        w.write(gson.toJson(more));
+                        w.write(safeJson(more));
                         w.write('\n');
                         if (++batch >= 512) break;
                     }
@@ -84,6 +84,17 @@ final class EventLog {
 
     private static void closeQuietly(BufferedWriter w) {
         if (w != null) try { w.close(); } catch (IOException ignored) { }
+    }
+
+    /** Serialize a row, never throwing: a non-serializable value (e.g. a NaN/Infinity double) would
+     *  otherwise escape the writer loop and permanently kill the thread (review H3). On failure we emit a
+     *  compact, valid-JSON breadcrumb instead of dropping the event silently. */
+    private String safeJson(Map<String, Object> row) {
+        try {
+            return gson.toJson(row);
+        } catch (RuntimeException ex) {
+            return "{\"type\":\"_unserializable\",\"err\":" + gson.toJson(String.valueOf(ex.getMessage())) + "}";
+        }
     }
 
     void close() {

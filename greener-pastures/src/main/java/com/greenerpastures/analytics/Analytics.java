@@ -24,9 +24,12 @@ public final class Analytics {
     private static final java.util.Set<String> RESERVED = java.util.Set.of("type", "t", "gameTime", "dimension");
 
     private static volatile EventLog log;
+    private static boolean initialized;   // guard against double-registering the lifecycle callbacks (review I1)
 
     /** Opens the per-save event log on server start and closes it on stop. Call from common init. */
     public static void init() {
+        if (initialized) return;
+        initialized = true;
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             Path dir = server.getSavePath(WorldSavePath.ROOT).resolve("greenerpastures");
             try {
