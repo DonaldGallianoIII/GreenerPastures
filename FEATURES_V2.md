@@ -86,25 +86,19 @@ Nature/Ability/Ball are **selectors** — "which one", not "how much". Lowest-ri
   **Ball** (`setPokeball(id)` — selector or "inherit mother's ball"), **Egg Moves** (`setMoves(List)` — needs the
   param-map; spec its UX when we get there: likely "preserve all eligible parent egg moves" as the v1 binary).
 
-### Batch sequencing & status
-- ✅ **Nature** (`6a7df50`) — `NATURE` selector + `NatureCatalog` (25) + `applyNature`. Tested. QA Q31.
-- ✅ **Ball** (this commit) — `BALL` selector + `BallCatalog` (32 namespaced ids, ancient_* omitted) + `applyBall`.
-  Tested. QA Q32. ⚠ verify the egg-spec ball-id format (`cobblemon:poke_ball` vs bare path) — fails *safe* either way.
-- ⏳ **Hidden Ability** — NEXT. Verified `Species.getAbilities()` returns an `AbilityPool`; still to verify before
-  building: (a) how to pull the **hidden** ability name out of the pool (the `AbilityPool` is at
-  `com.cobblemon.mod.common.api.abilities.AbilityPool` — javap it for a hidden/priority accessor), and (b) the
-  `PokemonProperties.setAbility(String)` token — does it take the ability NAME (needs the species' HA name, looked
-  up at build time from `eggData.getSpecies().getAbilities()`), or a slot token like `"h"`/`"hidden"`. Likely a
-  **binary** augment ("force hidden ability"), not a selector. Build once both are confirmed.
-- ⏳ **Egg Moves** — last + hardest: `setMoves(List<String>)`. Needs a list param, which is the trigger to do the
-  **`EggShape` refactor** (see below). v1 candidate = "preserve all eligible parent egg moves" (a binary) before a
-  full move-picker.
+### Batch sequencing & status — ✅ COMPLETE (all four shipped)
+- ✅ **Nature** (`6a7df50`) — `NATURE` selector + `NatureCatalog` (25) + `applyNature`. QA Q31.
+- ✅ **Ball** (`5425318`) — `BALL` selector + `BallCatalog` (32 namespaced ids) + `applyBall`. QA Q32.
+  ⚠ verify the egg-spec ball-id format (`cobblemon:poke_ball` vs bare path) — fails *safe* either way.
+- ✅ **Hidden Ability** (`950c8ad`) — `ABILITY` binary toggle; resolves the species' hidden ability by scanning the
+  `AbilityPool` for the entry whose `getType() != CommonAbilityType.INSTANCE`. ⚠ heuristic to confirm in QA.
+- ✅ **Egg Moves** (`4a06bac`) — `EGG_MOVE` binary toggle; writes `Learnset.getEggMoves()` (first ≤4) via `setMoves`.
+- ✅ **`EggShape` refactor done** (`950c8ad`) — `buildEggForPair(pairSlots, EggShape shape)`; the record carries all
+  7 shaping inputs. No more positional-param creep.
 
-### ⚙️ Refactor flagged: `buildEggForPair` → an `EggShape` params object
-`buildEggForPair` is now at **6 positional params** (2 of them adjacent Strings: nature, ball — a swap footgun).
-**Before adding the 7th/8th** (ability, egg-moves), refactor to `buildEggForPair(pairSlots, EggShape shape)` where
-`EggShape` is a small record `(double shinyProcChance, int ivFloor, int evFloorPerStat, String nature, String ball,
-…)`. The breeder builds it from `eff`. Do this as the first step of the Hidden Ability increment.
+All four write the trait onto the egg `PokemonProperties` pre-encrypt (same seam as IV/EV), fail-safe, non-destructive.
+**Remaining for the batch = the install UX** (pick the nature/ball; toggle ability/egg-moves) — part of the deferred
+**Compiler UI**; for QA, set augment levels via creative/command. **Next: F2 Notifications.**
 
 ---
 

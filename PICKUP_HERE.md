@@ -4,23 +4,26 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ STATE — 2026-06-29 (Daemon buffs v2 + breeding-meta augments started)
-**178 headless tests green** (`./gradlew test`). **All committed on `main`, NOTHING deployed** — QA is batched
+## ⚡ STATE — 2026-06-29 (Daemon buffs v2 done · breeding-meta augment batch done)
+**181 headless tests green** (`./gradlew test`). **All committed on `main`, NOTHING deployed** — QA is batched
 (Deuce's call, [[batch-qa-workflow]]). Tree clean. Deuce is on **remote-control (phone)** → standing rule:
 **functionality-first, NO custom UI** (defer all GUIs).
 
-**Most recent work (this session):** finished the **Daemon buff system** (15 buffs — enchant set complete; see the
-DONE-task section below) → then started the **v2 feature wave** Deuce surfaced (predicted asks). Wrote the full
-spec **`FEATURES_V2.md`** (`glow` it — implement/test/QA for all 7 features). Shipped the first two breeding-meta
-augments: **Nature lock** (`6a7df50`) + **Ball lock** (HEAD) — selector augments writing the trait onto the egg
-spec pre-encrypt (verified `PokemonProperties.setNature/setPokeball`), same seam as IV/EV.
+**Most recent work (this session):** finished the **Daemon buff system** (15 buffs — see the DONE-task section) →
+then the **v2 feature wave** Deuce surfaced. Wrote the full spec **`FEATURES_V2.md`** (`glow` it). **Completed F1 —
+the whole breeding-meta augment batch:** **Nature** (`6a7df50`) · **Ball** (`5425318`) · **Hidden Ability**
+(`950c8ad`) · **Egg Moves** (`4a06bac`). Each writes the trait onto the egg `PokemonProperties` pre-encrypt (same
+seam as IV/EV), fail-safe + non-destructive; all 4 Cobblemon APIs verified against the jar. Also did the `EggShape`
+params refactor. QA rows Q31–Q34.
 
-### ▶️ ACTIVE — v2 feature wave (Deuce: "do all of it"; spec = `FEATURES_V2.md`)
-Build order **F1 breeding-meta (Nature ✅ · Ball ✅ · Hidden Ability ⏳ · Egg Moves ⏳) → F2 Notifications → F3 Goal
-tracker**, then re-sync before wave-2 (hopper interop, dashboards #6, economy, guide). **Next concrete step:** the
-`EggShape` params refactor (buildEggForPair is at 6 params) → then Hidden Ability (verify AbilityPool hidden-getter
-+ the setAbility token first). F2 Notifications can hook the existing shiny `egg_laid` event (needs operator-target
-+ threshold state). All verified API facts + per-feature plans are in `FEATURES_V2.md`.
+### ▶️ ACTIVE — v2 feature wave (Deuce: "do all of it + keep adding to QA"; spec = `FEATURES_V2.md`)
+Build order **F1 breeding-meta ✅ → F2 Notifications (NEXT) → F3 Goal tracker**, then re-sync before wave-2 (hopper
+interop, dashboards #6, economy, guide). **F2 plan:** we emit `egg_laid` (with a `shiny` flag), `egg_rendered`,
+`pasture_toggle` — no hatch event, so the shiny **money-ping fires on shiny `egg_laid`**. Build a pure `NotifyRules`
+(threshold-crossing + debounce) + `notifications.json` config + an MC `Notifier` observing the event sink; v1 target
+model = **broadcast to ops / all** (sidesteps needing the pasture operator UUID — add operator-targeting later).
+Channels: chat + actionbar + sound (toast deferred to the UI wave). All per-feature plans + verified API facts in
+`FEATURES_V2.md`. **Breeding-meta install UX (pick nature/ball etc.) is deferred to the Compiler UI.**
 
 ## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =
