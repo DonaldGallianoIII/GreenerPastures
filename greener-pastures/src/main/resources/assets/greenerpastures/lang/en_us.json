@@ -1,5 +1,6 @@
 {
   "block.greenerpastures.renderer": "Renderer",
+  "block.greenerpastures.harvester": "Harvester",
   "item.greenerpastures.daemon": "Daemon",
   "item.greenerpastures.soul_tether": "Soul Tether",
   "item.greenerpastures.breeding_upgrade_copper": "Copper Pasture Upgrade",

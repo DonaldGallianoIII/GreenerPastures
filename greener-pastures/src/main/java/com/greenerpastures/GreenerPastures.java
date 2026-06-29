@@ -3,6 +3,7 @@ package com.greenerpastures;
 import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.biobank.BioBank;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.drops.Harvester;
 import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.pasture.breeding.BetterPasture;
 import com.greenerpastures.pasture.keeper.PastureKeeper;
@@ -44,5 +45,8 @@ public final class GreenerPastures implements ModInitializer {
 
         // economy/ — dark economy min-slice: Renderer block (eggs → Data) + Daemon item + per-player Data
         DarkEconomy.init();
+
+        // drops/ — passive-drops Harvester block (rolls tethered mons' drop tables → its own chest)
+        Harvester.init();
     }
 }
