@@ -14,11 +14,12 @@ Renderer tether-amp enrichment · **craftable augment items** (all 7 functions C
 EV** breeding effects (egg IVs/EVs shaped pre-encrypt, verified to survive Cobbreeding hatch) · **rituals + type-drops
 gacha system** (engine → runtime → config → 3× rarity → drop-augment scaling → `sim_rituals.py`).
 
-## ▶️ ACTIVE TASK — Daemon global "root" buffs  _(14 BUFFS LIVE — QA-pending; only Looting (confirm) + Unbreaking (no clean seam) remain)_
+## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =
 **tier-scaled & summed** (`Σ tier × costPerSec`/sec). All committed (`5ba97e8`→HEAD), 167 tests, nothing
-deployed. **All 14 delivered buffs are non-destructive** (effects/attributes/read-interception — none rewrite
-gear or persist NBT, so no dupe surface). QA rows **Q23–Q30**.
+deployed. **All 15 delivered buffs are non-destructive** (effects/attributes/read-interception — none rewrite
+gear or persist NBT, so no dupe surface). QA rows **Q23–Q30**. **Only undelivered catalog enchant = Unbreaking**
+(Deuce deferred it — no entity-scoped seam). **Looting = live, default-on** (Deuce opted in; the one combat buff).
 **DELIVERED (held + fed Daemon, billed only for what's in `DaemonBuffs.SUPPORTED`):**
 - cores (`5ba97e8`): `BuffId` catalog (11 ENCHANT / 2 EFFECT / 5 HOOK — the catalog IS the worker-not-fighter
   allow-list), `BuffSetting`/`BuffConfig` (lazy-Gson, `config/greenerpastures/buffs.json`), `BuffResolver`
@@ -47,24 +48,22 @@ gear or persist NBT, so no dupe surface). QA rows **Q23–Q30**.
   `GENERIC_FALL_DAMAGE_MULTIPLIER`, all verified consumed in the 1.21.1 jar). Granted **flat** + stack on top of
   real gear (beyond vanilla max, like Fortune); temporary (never saved); `DELIVERED` folded into `SUPPORTED` so
   the bill can't drift from what's applied. Feather Falling floored so it can never heal on a fall.
-- **Value-effect enchants** (ENCHANT, this commit) — **Lure / Luck of the Sea / Frost Walker** via entity-scoped
+- **Value-effect enchants** (ENCHANT, `02e1501`) — **Lure / Luck of the Sea / Frost Walker** via entity-scoped
   read interception of `EnchantmentHelper` (`getFishingTimeReduction` +5s/tier · `getFishingLuckBonus` +tier ·
   `getEquipmentLevel` +tier for frost_walker, granted from nothing). `DaemonValueBoost` + `EnchantmentValueBoostMixin`
   (3 `@Inject RETURN`). Same read-only safety as Fortune (no stack write). These seams **carry the entity**, so
   no ThreadLocal needed — gated directly on `paidBuffs`. Server-side only.
+- **Looting** (ENCHANT, this commit — Deuce opted in, **default-on**) — the one combat-adjacent buff; +tier mob-loot
+  via the SAME `getEquipmentLevel` seam (`EnchantedCountIncreaseLootFunction` → `getEquipmentLevel(LOOTING, killer)`,
+  verified). 2-line enable: `Enchantments.LOOTING → BuffId.LOOTING` in `DaemonValueBoost.EQUIP` + `BuffId.LOOTING`
+  in `DaemonBuffs.SUPPORTED`. (No effect on Deuce's no-mob server; it's for public servers.)
 
-### ▶️ NEXT TASK: v2 enchants — only two left, both need a decision (task #30)
-Spec'd in `ENCHANT_BOOST.md`. ✅ **DONE:** attribute tier (Respiration/Swift Sneak/Feather Falling) + value-effect
-tier (Lure/LotS/Frost Walker). Efficiency skipped (Haste covers mining), Soul Speed skipped (soul-block-gated).
-**Remaining (waiting on Deuce, NOT blindly build):**
-1. **Looting** — rides the same `getEquipmentLevel` seam (already wired in `DaemonValueBoost`/`EnchantmentValueBoostMixin`);
-   enabling it is a **2-line change**: add `Enchantments.LOOTING → BuffId.LOOTING` to `DaemonValueBoost.EQUIP` +
-   `BuffId.LOOTING` to `DaemonBuffs.SUPPORTED`. **Combat-adjacent → held until Deuce green-lights** (worker-not-fighter
-   line). _Asked him; act on his answer._
-2. **Unbreaking** — its only seam is `getItemDamage(ServerWorld, ItemStack, int)` which carries **no entity**, so it
-   can't be gated to a Daemon holder cleanly (would need a separate ThreadLocal scope from a higher hook — hacky,
-   lowest value). **Deferred** unless Deuce specifically wants it.
-When enabling either, add its `BuffId` to `DaemonValueBoost.EQUIP`/`DaemonBuffs.SUPPORTED` so it's billed only when delivered.
+### ✅ TASK #30 COMPLETE — enchant set finished
+Spec'd in `ENCHANT_BOOST.md`. **All decided:** attribute tier (Respiration/Swift Sneak/Feather Falling) + value-effect
+tier (Lure/LotS/Frost Walker) + **Looting (in, default-on)**. **Skipped/deferred (closed decisions):** Efficiency
+(Haste covers mining), Soul Speed (soul-block-gated), **Unbreaking (Deuce deferred — `getItemDamage` carries no entity
+to scope it; only a hacky ThreadLocal would work)**. The buff system is feature-complete pending QA (Q23–Q30).
+Next real work is elsewhere (analytics dashboards #6, or whatever Deuce points at) — NOT more buffs.
 
 _(original spec below — still the source of truth for the buff list)_
 

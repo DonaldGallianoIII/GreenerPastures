@@ -19,10 +19,9 @@ import java.util.Map;
  * or NBT</b>, so there is no dupe/desync surface, and it only ever fires server-side for a paid holder.
  *
  * <p>Covers <b>Lure</b> ({@code getFishingTimeReduction}), <b>Luck of the Sea</b> ({@code getFishingLuckBonus}),
- * and <b>Frost Walker</b> ({@code getEquipmentLevel}). <b>Looting deliberately is NOT here</b> — it rides the same
- * {@code getEquipmentLevel} seam but is combat-adjacent, so it stays out until Deuce green-lights it (see
- * {@code ENCHANT_BOOST.md}). Unbreaking is absent because its seam ({@code getItemDamage}) carries no entity, so
- * it can't be scoped to a holder cleanly.
+ * <b>Frost Walker</b> and <b>Looting</b> (both via {@code getEquipmentLevel}). Looting is the one combat-adjacent
+ * buff — Deuce opted it in (default-on); it boosts drops from mobs the holder kills. Unbreaking is absent because
+ * its seam ({@code getItemDamage}) carries no entity, so it can't be scoped to a holder cleanly.
  */
 public final class DaemonValueBoost {
     private DaemonValueBoost() {}
@@ -30,10 +29,12 @@ public final class DaemonValueBoost {
     /** Vanilla Lure reduces fishing time 5s per level; the Daemon mirrors that per tier. */
     private static final float LURE_SECONDS_PER_TIER = 5.0f;
 
-    /** Equipment-level enchants the Daemon boosts (enchant → buff). Frost Walker only — Looting is intentionally
-     *  withheld (combat-adjacent) until confirmed; add {@code Enchantments.LOOTING → BuffId.LOOTING} here then. */
+    /** Equipment-level enchants the Daemon boosts (enchant → buff): Frost Walker (movement QOL) and Looting
+     *  (Deuce opted Looting in, default-on — it's the one combat-adjacent buff, boosting drops from mobs the
+     *  holder kills via the {@code EnchantedCountIncreaseLootFunction} → {@code getEquipmentLevel(LOOTING, killer)} seam). */
     private static final Map<RegistryKey<Enchantment>, BuffId> EQUIP = Map.of(
-            Enchantments.FROST_WALKER, BuffId.FROST_WALKER);
+            Enchantments.FROST_WALKER, BuffId.FROST_WALKER,
+            Enchantments.LOOTING, BuffId.LOOTING);
 
     /** +tier fishing luck (treasure odds) for a fed-Daemon holder running Luck of the Sea. */
     public static int fishingLuck(Entity owner, int original) {
@@ -53,10 +54,10 @@ public final class DaemonValueBoost {
     }
 
     /**
-     * +tier to an equipment-level read for a boosted enchant on a fed-Daemon holder. Unlike Fortune, these
-     * movement QOL enchants grant <i>from nothing</i> (you needn't already wear the boots) — the Daemon makes the
-     * holder a better worker. Only enchants in {@link #EQUIP} are ever touched; every other {@code getEquipmentLevel}
-     * query fast-fails the key check and returns unchanged.
+     * +tier to an equipment-level read for a boosted enchant on a fed-Daemon holder (Frost Walker, Looting).
+     * Unlike Fortune, these grant <i>from nothing</i> (no boots / no looting weapon needed) — the Daemon itself is
+     * the source. Only enchants in {@link #EQUIP} are ever touched; every other {@code getEquipmentLevel} query
+     * fast-fails the key check and returns unchanged.
      */
     public static int equipmentLevel(RegistryEntry<Enchantment> enchantment, LivingEntity entity, int original) {
         if (enchantment == null) return original;
