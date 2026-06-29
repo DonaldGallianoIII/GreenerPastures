@@ -12,6 +12,7 @@ Examples:
   python3 sim_drops.py --fill Gible --hours 8
   python3 sim_drops.py --roster Froakie,Greninja,Pikachu,Eevee,Ditto --proc 3 --droprate 0.25
   python3 sim_drops.py --fill Froakie --droprate 1.0     # what a Drop-Rate-augmented kernel feels like
+  python3 sim_drops.py --fill Froakie --yield 1          # what a Drop-Yield-augmented kernel feels like
 """
 import argparse, json, os, random, collections
 
@@ -35,11 +36,14 @@ def stack_qty(e, rng):                   # the actual count dropped (RangesKt.ra
         a, b = parse_range(e["quantityRange"]); return rng.randint(a, b)
     return int(e.get("quantity", 1))
 
-def get_drops(table, rng):
+def get_drops(table, rng, yield_bonus=0):
     """Replicates com.cobblemon...DropTable.getDrops(amount, pokemon): amount = quantity budget; walk
-       entries in order, select if random*100 < percentage, spend budget by getQuantity(), stop when full."""
+       entries in order, select if random*100 < percentage, spend budget by getQuantity(), stop when full.
+       yield_bonus widens the budget CEILING (Drop Yield mod — a chance at more, never fewer; floor stays)."""
     amt = table.get("amount", 1)
-    chosen = amt if isinstance(amt, int) else rng.randint(*parse_range(amt))
+    lo, hi = (amt, amt) if isinstance(amt, int) else parse_range(amt)
+    hi += max(0, yield_bonus)
+    chosen = lo if hi <= lo else rng.randint(lo, hi)
     possible = [e for e in table.get("entries", []) if "item" in e and budget_qty(e) <= chosen]
     out = []
     count = 0
@@ -60,6 +64,8 @@ def main():
     ap.add_argument("--count", type=int, default=16, help="mons in the pasture (with --fill or default); cap 16")
     ap.add_argument("--proc", type=float, default=3.0, help="base proc %% per mon per minute")
     ap.add_argument("--droprate", type=float, default=0.25, help="drop-rate bonus %% (kernel base + augments)")
+    ap.add_argument("--yield", type=int, default=0, dest="yield_",
+                    help="drop-YIELD bonus: widen the amount budget ceiling (augments/tethers); +1 ≈ a chance at one more item/event")
     ap.add_argument("--hours", type=float, default=1.0)
     ap.add_argument("--trials", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=1)
@@ -88,7 +94,7 @@ def main():
             for _key, tbl in roster:
                 if rng.random() < eff:
                     events += 1
-                    for item, q in get_drops(tbl, rng):
+                    for item, q in get_drops(tbl, rng, a.yield_):
                         totals[item] += q
     T = a.trials
 
@@ -96,7 +102,7 @@ def main():
     rost = collections.Counter(k for k, _ in roster)
     print("roster: " + ", ".join(f"{c}× {k}" for k, c in rost.items()))
     print(f"proc {a.proc}% + droprate {a.droprate}% = {a.proc + a.droprate}%/mon/min · "
-          f"{a.hours}h ({minutes} min) · {T} trials")
+          f"yield +{a.yield_} budget · {a.hours}h ({minutes} min) · {T} trials")
     print(f"\nexpected drop EVENTS: {events / T:.1f} over {a.hours}h  ({events / T / a.hours:.1f}/h)\n")
     print(f"  {'item':40} {'per ' + str(a.hours) + 'h':>10} {'/hour':>8}")
     print("  " + "-" * 60)

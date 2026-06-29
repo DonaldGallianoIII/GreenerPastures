@@ -65,8 +65,10 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
             BlockPos pasturePos = adjacentPasture(world, pos);
             if (pasturePos == null) return;
             if (!(world.getBlockEntity(pasturePos) instanceof PokemonPastureBlockEntity pasture)) return;
-            double proc = BASE_PROC + dropRateBonusAt(sw, pasturePos);   // + the pasture Kernel's drop-rate mod
-            Map<String, Integer> harvested = DropsBridge.harvest(pasture, be.rng, proc);
+            EffectiveAugments eff = effectiveAt(sw, pasturePos);          // the pasture Kernel's drop mods
+            double proc = BASE_PROC + eff.dropRateFraction();            // LEVER 1: +0.25% kernel base etc.
+            int yield = eff.dropYieldBonus();                           // LEVER 2: widen the amount budget
+            Map<String, Integer> harvested = DropsBridge.harvest(pasture, be.rng, proc, yield);
             if (harvested.isEmpty()) return;
             int added = be.deposit(harvested);
             if (added > 0) {
@@ -134,12 +136,12 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
         return null;
     }
 
-    /** The adjacent pasture's effective drop-rate mod (Kernel base +0.25% + any compiled Drop Rate augment)
-     *  as a proc-bonus fraction. Tether-amplified drop rate (with its Data drain) is a later step. */
-    private static double dropRateBonusAt(ServerWorld world, BlockPos pasturePos) {
+    /** The adjacent pasture's effective drop augments (Kernel base + any compiled Drop Rate / Drop Yield
+     *  augment) — one registry lookup feeding both levers. Tether-amplified drop rate/yield (with their Data
+     *  drain) is a later step, so no tethers are passed yet (base augments only). */
+    private static EffectiveAugments effectiveAt(ServerWorld world, BlockPos pasturePos) {
         PastureData pd = PastureRegistry.get(world.getServer()).get(world, pasturePos);
-        return pd == null ? 0.0
-                : EffectiveAugments.of(pd.baseAugmentLevels(), java.util.List.of()).dropRateFraction();
+        return EffectiveAugments.of(pd == null ? java.util.Map.of() : pd.baseAugmentLevels(), java.util.List.of());
     }
 
     // --- vanilla 9×3 chest GUI (no custom screen) ---

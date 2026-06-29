@@ -46,6 +46,10 @@ public class BreedingUpgradeItem extends Item {
             if (dr > 0) {
                 tooltip.add(Text.literal("⛏ +" + String.format("%.2f", dr / 100.0) + "% drop rate").formatted(Formatting.GREEN));
             }
+            int dy = a.level(AugmentFunction.DROP_YIELD);
+            if (dy > 0) {
+                tooltip.add(Text.literal("⛏ +" + dy + " drop yield").formatted(Formatting.GREEN));
+            }
         }
     }
 }

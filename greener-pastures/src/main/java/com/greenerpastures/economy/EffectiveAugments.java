@@ -74,4 +74,12 @@ public final class EffectiveAugments {
     public double dropRateFraction() {
         return magnitude(AugmentFunction.DROP_RATE) / 10000.0;
     }
+
+    /** Drop-yield bonus = a flat integer ADDED to Cobblemon's {@code amount} budget ceiling per drop event
+     *  (LEVER 2): level 1 = a chance at +1 more budget → more items per proc, never fewer (the floor is
+     *  untouched). A Drop Yield tether amplifies the base level the same as any mod; 0 when the Kernel has
+     *  none. Rounded because a tether multiplies the integer base (e.g. 2 × 1.2 = 2.4 → 2). */
+    public int dropYieldBonus() {
+        return (int) Math.round(magnitude(AugmentFunction.DROP_YIELD));
+    }
 }

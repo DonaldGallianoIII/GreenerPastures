@@ -53,15 +53,18 @@ public final class DropsBridge {
      * Harvest a pasture for one tick: each tethered mon has {@code procChance} to roll a drop EVENT
      * (LEVER 1 — cadence; replaces the wild "on defeat" trigger, since a pasture has no defeats). A procced
      * mon rolls Cobblemon's OWN {@code getDrops} (amount budget + per-entry %, faithful to vanilla — LEVER 2),
-     * and we resolve quantities exactly as Cobblemon does. → {@code item id → total count}. Never throws.
+     * and we resolve quantities exactly as Cobblemon does. {@code yieldBonus} widens that amount budget's
+     * ceiling (the Kernel's Drop Yield mod — a chance at more items per event, never fewer). →
+     * {@code item id → total count}. Never throws.
      */
-    public static Map<String, Integer> harvest(PokemonPastureBlockEntity pasture, Random rng, double procChance) {
+    public static Map<String, Integer> harvest(PokemonPastureBlockEntity pasture, Random rng,
+                                               double procChance, int yieldBonus) {
         Map<String, Integer> out = new LinkedHashMap<>();
         try {
             for (PokemonPastureBlockEntity.Tethering t : new ArrayList<>(pasture.getTetheredPokemon())) {
                 if (rng.nextDouble() >= procChance) continue;     // this mon didn't proc a drop this tick
                 Pokemon p = t.getPokemon();
-                if (p != null) rollEvent(p, rng).forEach((id, n) -> out.merge(id, n, Integer::sum));
+                if (p != null) rollEvent(p, rng, yieldBonus).forEach((id, n) -> out.merge(id, n, Integer::sum));
             }
         } catch (Throwable ex) {
             GreenerPastures.LOG.debug("[harvester] harvest failed", ex);
@@ -70,12 +73,14 @@ public final class DropsBridge {
     }
 
     /** One drop EVENT via Cobblemon's faithful {@code getDrops} (amount budget + per-entry % + canDrop);
-     *  item entries only, quantities rolled like Cobblemon ({@code RangesKt.random} over the range). */
-    private static Map<String, Integer> rollEvent(Pokemon pokemon, Random rng) {
+     *  item entries only, quantities rolled like Cobblemon ({@code RangesKt.random} over the range). The
+     *  amount budget is widened by {@code yieldBonus} (LEVER 2 — the Drop Yield mod). */
+    private static Map<String, Integer> rollEvent(Pokemon pokemon, Random rng, int yieldBonus) {
         Map<String, Integer> out = new LinkedHashMap<>();
         try {
             com.cobblemon.mod.common.api.drop.DropTable cdrops = pokemon.getSpecies().getDrops();
-            for (com.cobblemon.mod.common.api.drop.DropEntry e : cdrops.getDrops(cdrops.getAmount(), pokemon)) {
+            kotlin.ranges.IntRange amount = widenAmount(cdrops.getAmount(), yieldBonus);
+            for (com.cobblemon.mod.common.api.drop.DropEntry e : cdrops.getDrops(amount, pokemon)) {
                 if (!(e instanceof ItemDropEntry item)) continue;
                 Identifier id = item.getItem();
                 if (id == null) continue;
@@ -86,6 +91,13 @@ public final class DropsBridge {
             // one mon's odd drop table must not abort the whole pasture's harvest
         }
         return out;
+    }
+
+    /** Widen a species' {@code amount} budget by raising ONLY the ceiling (the floor stays, so Drop Yield
+     *  only ever adds a <i>chance</i> at more budget, never removes any). {@code yieldBonus ≤ 0} is a no-op. */
+    static kotlin.ranges.IntRange widenAmount(kotlin.ranges.IntRange base, int yieldBonus) {
+        if (yieldBonus <= 0) return base;
+        return new kotlin.ranges.IntRange(base.getFirst(), base.getLast() + yieldBonus);
     }
 
     /** An item entry's quantity, resolved exactly as Cobblemon: uniform over its range, else its fixed qty. */

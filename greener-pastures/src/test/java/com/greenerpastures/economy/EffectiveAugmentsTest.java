@@ -85,4 +85,17 @@ class EffectiveAugmentsTest {
                 EffectiveAugments.of(base, List.of(tether("drop_rate", TetherClass.THROUGHPUT, 2))).dropRateFraction(), 1e-9);
         assertEquals(0.0, EffectiveAugments.of(Map.of(), List.of()).dropRateFraction(), 1e-9, "no mod → no bonus");
     }
+
+    @Test
+    void dropYieldIsAFlatBudgetBonusAmplifiedByItsTether() {
+        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.DROP_YIELD, 2);   // +2 budget ceiling
+        assertEquals(2, EffectiveAugments.of(base, List.of()).dropYieldBonus(), "flat base, no tether");
+        // a Drop Yield tether (throughput) tier III ×1.30 → 2.6 → rounds to 3
+        assertEquals(3,
+                EffectiveAugments.of(base, List.of(tether("drop_yield", TetherClass.THROUGHPUT, 3))).dropYieldBonus());
+        // tier I ×1.10 → 2.2 → rounds back down to 2 (integer budget)
+        assertEquals(2,
+                EffectiveAugments.of(base, List.of(tether("drop_yield", TetherClass.THROUGHPUT, 1))).dropYieldBonus());
+        assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).dropYieldBonus(), "no mod → no bonus");
+    }
 }
