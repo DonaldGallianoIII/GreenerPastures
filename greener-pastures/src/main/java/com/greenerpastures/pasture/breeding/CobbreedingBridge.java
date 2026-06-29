@@ -176,7 +176,32 @@ public final class CobbreedingBridge {
      * final shiny state; {@code procShiny} is true only when OUR upgrade's bonus reroll is what made
      * it shiny (powers the dashboard's "shinies this upgrade earned you" stat).
      */
-    public record BredEgg(ItemStack stack, boolean shiny, boolean procShiny) {}
+    public record BredEgg(ItemStack stack, boolean shiny, boolean procShiny,
+                          String species, int ivTotal, int perfectIvs) {}
+
+    /** Sum of the egg's 6 IVs (0 if the spread is unknown) — for the goal tracker, computed off {@code eggData}. */
+    private static int ivTotal(PokemonProperties eggData) {
+        IVs ivs = eggData.getIvs();
+        if (ivs == null) return 0;
+        int total = 0;
+        for (Stat s : Stats.Companion.getPERMANENT()) {
+            Integer v = ivs.get(s);
+            if (v != null) total += v;
+        }
+        return total;
+    }
+
+    /** Count of the egg's 31-IV stats (0..6) — for the goal tracker, computed off {@code eggData}. */
+    private static int perfectIvs(PokemonProperties eggData) {
+        IVs ivs = eggData.getIvs();
+        if (ivs == null) return 0;
+        int perfect = 0;
+        for (Stat s : Stats.Companion.getPERMANENT()) {
+            Integer v = ivs.get(s);
+            if (v != null && v >= 31) perfect++;
+        }
+        return perfect;
+    }
 
     /**
      * Build one egg for a single breeding pair (the two given tethered slots), using Cobbreeding's
@@ -211,7 +236,7 @@ public final class CobbreedingBridge {
             boolean shiny = Boolean.TRUE.equals(eggData.getShiny());
             ItemStack stack = assembleEgg(eggData);
             if (stack == null) return null;
-            return new BredEgg(stack, shiny, procShiny);
+            return new BredEgg(stack, shiny, procShiny, eggData.getSpecies(), ivTotal(eggData), perfectIvs(eggData));
         } catch (Throwable t) {
             GreenerPastures.LOG.error("[better-pasture] egg build failed; disabling to stay safe.", t);
             available = false;

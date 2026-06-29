@@ -139,7 +139,7 @@ wave (needs a client component).
 
 ---
 
-## F3 — Breeding Goal / Project tracker  🥈  (the uniquely-ours one) — ⏳ CORES SHIPPED, WIRING NEXT
+## F3 — Breeding Goal / Project tracker  🥈  (the uniquely-ours one) — ✅ v1 SHIPPED (track-only)
 
 > "I want a 6IV shiny Adamant Garchomp." Define the target; the mod shows live progress + expected eggs-to-go and
 > **auto-culls everything off-target into Data**. This is the data-science pitch made playable — and mostly *wiring*.

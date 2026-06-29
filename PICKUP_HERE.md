@@ -4,8 +4,9 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ STATE — 2026-06-29 (Daemon buffs v2 · breeding-meta batch · F2 notifications — all done)
-**189 headless tests green** (`./gradlew test`). **All committed on `main`, NOTHING deployed** — QA is batched
+## ⚡ STATE — 2026-06-29 (Daemon buffs v2 · breeding-meta batch · F2 notifications · F3 goal tracker — all done)
+**204 headless tests green** (`./gradlew test`). **Committed on `main`; a QA-deploy pass is NEXT** (Deuce: "1 and
+then we qa after this" → F3 wiring done, now build+deploy Q1–Q37). QA is batched
 (Deuce's call, [[batch-qa-workflow]]). Tree clean. Deuce is on **remote-control (phone)** → standing rule:
 **functionality-first, NO custom UI** (defer all GUIs).
 
@@ -17,15 +18,14 @@ seam as IV/EV), fail-safe + non-destructive; all 4 Cobblemon APIs verified again
 params refactor. QA rows Q31–Q34.
 
 ### ▶️ ACTIVE — v2 feature wave (Deuce: "do all of it + keep adding to QA"; spec = `FEATURES_V2.md`)
-Build order **F1 breeding-meta ✅ → F2 Notifications ✅ → F3 Goal tracker (cores ✅, WIRING NEXT)**, then re-sync
-before wave-2 (hopper interop, dashboards #6, economy, guide). **F2 shipped** shiny + Data-milestone pings
-(`notify/`; QA Q35–Q36). **F3 — Deuce chose TRACK-ONLY v1** (non-destructive, no auto-cull): pure cores done +
-tested (`goal/BreedingGoal` + `GoalProgress`, `c3a385a`). **Next = the MC wiring** (a focused increment, all
-integration points verified — see `FEATURES_V2.md` F3): the mod's **first `/gp goal` command** (no command system
-yet → `CommandRegistrationCallback`), an in-memory `GoalStore` (per-UUID goal+progress), egg observation attributed
-to `PastureData.owner` (prefer: add species/ivTotal/perfectIvs to `BredEgg` + enrich `egg_laid`, then a `GoalTracker`
-observes the stream like `Notifier`), and a "goal reached" ping reusing `notify/`. Auto-cull stays the deferred
-follow-on. **All GUIs + the breeding-meta install UX remain deferred to the Compiler-UI wave.**
+Build order **F1 breeding-meta ✅ → F2 Notifications ✅ → F3 Goal tracker ✅ (track-only)** — all shipped. Re-sync
+before wave-2 (hopper interop, dashboards #6, economy, guide). **F3 v1 done** (`/gp goal` — the mod's first command;
+`goal/` package: `BreedingGoal`+`GoalProgress` pure cores, `GoalStore` per-player, `GoalTracker` folds each laid egg
+into the pasture owner's progress + pings on reached; `BredEgg` enriched with species/ivTotal/perfectIvs). QA Q37.
+**Non-destructive** — auto-cull is the deferred follow-on (off-target non-shiny → Renderer→Data, shiny 4-guard, opt-in).
+**▶️ IMMEDIATE NEXT: the QA-deploy pass Deuce asked for** — `./gradlew build` + deploy the jar to the live instance,
+then run down `QA_PENDING.md` Q1–Q37. (Follow-ons after QA: F3 auto-cull + persistence, F2 pulls-ready ping, the
+breeding-meta Compiler-UI install UX, wave-2 features. All GUIs still deferred.)
 
 ## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =

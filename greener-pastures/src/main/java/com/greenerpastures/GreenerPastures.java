@@ -4,6 +4,7 @@ import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.biobank.BioBank;
 import com.greenerpastures.buff.BuffSystem;
 import com.greenerpastures.buff.DaemonBuffs;
+import com.greenerpastures.goal.GoalCommand;
 import com.greenerpastures.notify.NotifySystem;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.drops.Harvester;
@@ -40,6 +41,7 @@ public final class GreenerPastures implements ModInitializer {
         // analytics/ — open the local event log before any emitter runs
         Analytics.init();
         NotifySystem.init();    // player notifications observe the analytics event stream
+        GoalCommand.init();     // /gp goal — set + track a breeding hunt (track-only, non-destructive)
 
 
         // pasture/

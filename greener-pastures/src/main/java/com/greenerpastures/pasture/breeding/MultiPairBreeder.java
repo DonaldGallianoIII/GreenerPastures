@@ -5,6 +5,7 @@ import com.greenerpastures.analytics.Analytics;
 import com.greenerpastures.analytics.Event;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.economy.AugmentFunction;
+import com.greenerpastures.goal.GoalTracker;
 import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.EffectiveAugments;
 import com.greenerpastures.economy.TetherRuntime;
@@ -175,6 +176,7 @@ public final class MultiPairBreeder {
                     .put("pair", i + 1).put("mode", mode)
                     .put("shiny", egg.shiny()).put("proc_shiny", egg.procShiny())
                     .put("x", pos.getX()).put("y", pos.getY()).put("z", pos.getZ()));
+            GoalTracker.recordLaid(world, pd.owner, egg);          // fold this egg into the owner's breeding goal
         }
         if (laid > 0) {
             GpLog.d("breeder", "brood", "pos", pos.toShortString(), "laid", laid, "queued", pd.eggQueue.size());
