@@ -2,6 +2,17 @@
 
 _Building **Greener Pastures** — unified, public-release Cobblemon mod ("A Data Science Mod"), Fabric 1.21.1, MIT. Now **mod #1 of a planned data-science SERIES**. Read this first, then the design docs below. Memory: `greener-pastures-project`, `idle-breeding-idea`. `glow PICKUP_HERE.md`._
 
+## ⚡ LATEST — 2026-06-28 (dark economy + Soul Tethers built & swarm-reviewed)
+Since the older notes below: built the **dark economy** + the **Soul Tether** system, logic test-first → **110 headless tests green** (`./gradlew test`). All **committed, NOT deployed** — QA is batched (Deuce's call; see [[batch-qa-workflow]]).
+- **Renderer block** culls non-keeper eggs → **Data** (SACRED-shiny triple-guarded) · **Daemon item** shows your per-player Data balance · **`DataStore`** persists it.
+- **Soul Tethers** — tested brain (`AugmentFunction` · `EffectiveAugments` · `TetherRuntime` · `TetherInscription` + `SoulTether`/`TetherEconomics`/`GridBalance`); the `soul_tether` item + `[function,tier]` component; **breeder wired**: a slotted tether amplifies the Kernel's base mod + drains the operator's Data when fed, free base when starved. **Owner = the tether-slotter.**
+- **`Augments`** is now the full `{function→level}` catalog (was shiny-only), back-compat.
+- **3-agent swarm** reviewed it (perf · correctness · design + side-safety): **side-safety clean**; fixed slot-drain, balance constant (`BASE_DATA_PER_EGG` 10→2), Renderer double-decrypt, stale owner, enrichment dead-stat → `BUG_HUNT.md` Wave 3.
+- **Cut since:** offline catch-up (`CatchUp`) + the pasture loot-sweep (`PastureCollector`).
+- **QA queue = Q1–Q13** in `QA_PENDING.md` (run next session). Build: `JAVA_HOME=~/jdks/jdk-21.0.11+10 ./gradlew build`.
+- **Next build stack:** Compiler **tether-inscription GUI** (logic done — calls `TetherInscription`) · more **base-augment items** (Enrichment/IV/EV/Drops) · **tether-amplified Enrichment**.
+- ⚠️ The notes below are **pre-2026-06-28 and partly superseded** (the loot-culler became the Renderer; the Daemon *item* is distinct from the old "Daemon" node-graph *screen*).
+
 ## TL;DR
 The **core breeding engine is DONE and confirmed in-game** (Task #13 passed): multi-pair breeding, bucket pairing, server persistence, AND suppression of Cobbreeding's native ticker so **only your configured pairs breed (no rogue egg)**. Builds clean + deployed to the test instance. **🆕 Task #14 SLICE A is built + deployed (2026-06-25):** the `greenerpastures:augments` data component + the bounded **shiny-proc reroll** — the first augment, mechanics-complete and mockup-independent. **What's left of #14 = SLICE B** (rename `pasture_wand`→Notebook + `breeding_upgrade`→Kernel; the `Compiler` block + combine GUI that *writes* augments; collapse the pasture GUI to a single Kernel slot). The **React mockup ARRIVED 2026-06-25** → `mockups/GreenerPasturesNotebook.jsx`, fully analysed in `VISUAL_SCRIPTING_UI_IDEA.md` (port map + decisions; **repo = ground truth, mockup = shape/look only** per Deuce). The **Compiler is now BUILT + deployed (2026-06-25)** as a bench block — Kernel + Shiny augment → ▸ Compile → augmented Kernel, with the pip-install ceremony — closing the augment-authoring loop (no more hand-`/give`). **Next port: the Daemon node-graph** (absorbs the bucket board + culler) → then Dashboard. Still pending in #14: the `pasture_wand`→Notebook / `breeding_upgrade`→Kernel **renames** + the single-Kernel-slot GUI collapse.
 
