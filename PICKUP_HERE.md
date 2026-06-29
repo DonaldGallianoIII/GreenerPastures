@@ -4,8 +4,8 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ STATE — 2026-06-29 (Daemon buffs v2 done · breeding-meta augment batch done)
-**181 headless tests green** (`./gradlew test`). **All committed on `main`, NOTHING deployed** — QA is batched
+## ⚡ STATE — 2026-06-29 (Daemon buffs v2 · breeding-meta batch · F2 notifications — all done)
+**189 headless tests green** (`./gradlew test`). **All committed on `main`, NOTHING deployed** — QA is batched
 (Deuce's call, [[batch-qa-workflow]]). Tree clean. Deuce is on **remote-control (phone)** → standing rule:
 **functionality-first, NO custom UI** (defer all GUIs).
 
