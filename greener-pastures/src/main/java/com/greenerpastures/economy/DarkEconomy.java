@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityT
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.component.ComponentType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
@@ -28,6 +29,9 @@ public final class DarkEconomy {
     public static Block RENDERER;
     public static BlockEntityType<RendererBlockEntity> BE;
     public static Item DAEMON;
+    /** The {@code greenerpastures:tether} data component a Soul Tether item carries ([function, tier]). */
+    public static ComponentType<Tether> TETHER;
+    public static Item SOUL_TETHER;
 
     public static void init() {
         RENDERER = Registry.register(Registries.BLOCK, RENDERER_ID,
@@ -38,9 +42,15 @@ public final class DarkEconomy {
 
         DAEMON = Registry.register(Registries.ITEM, DAEMON_ID, new DaemonItem(new Item.Settings().maxCount(1)));
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(e -> e.add(RENDERER));
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(e -> e.add(DAEMON));
+        // Soul Tether: the [function, tier] data component + the (blank-until-inscribed) item.
+        TETHER = Registry.register(Registries.DATA_COMPONENT_TYPE, Identifier.of(GreenerPastures.MOD_ID, "tether"),
+                ComponentType.<Tether>builder().codec(Tether.CODEC).packetCodec(Tether.PACKET_CODEC).build());
+        SOUL_TETHER = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "soul_tether"),
+                new SoulTetherItem(new Item.Settings().maxCount(16)));
 
-        GreenerPastures.LOG.info("[dark-economy] min-slice loaded — Renderer + Daemon + per-player Data store.");
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(e -> e.add(RENDERER));
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(e -> { e.add(DAEMON); e.add(SOUL_TETHER); });
+
+        GreenerPastures.LOG.info("[dark-economy] loaded — Renderer + Daemon + Data store + Soul Tether item.");
     }
 }
