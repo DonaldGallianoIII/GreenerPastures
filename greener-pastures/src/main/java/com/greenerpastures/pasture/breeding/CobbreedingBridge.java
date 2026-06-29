@@ -3,6 +3,7 @@ package com.greenerpastures.pasture.breeding;
 import com.cobblemon.mod.common.Cobblemon;
 import com.cobblemon.mod.common.api.abilities.CommonAbilityType;
 import com.cobblemon.mod.common.api.abilities.PotentialAbility;
+import com.cobblemon.mod.common.api.moves.MoveTemplate;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.api.pokemon.stats.Stat;
@@ -33,6 +34,7 @@ import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -205,6 +207,7 @@ public final class CobbreedingBridge {
             applyNature(eggData, shape.nature());            // lock the egg's nature (Nature selector augment)
             applyBall(eggData, shape.ball());                // lock the egg's ball (Ball selector augment)
             applyHiddenAbility(eggData, shape.forceHiddenAbility());   // force the species' hidden ability
+            applyEggMoves(eggData, shape.teachEggMoves());             // teach the species' egg moves
             boolean shiny = Boolean.TRUE.equals(eggData.getShiny());
             ItemStack stack = assembleEgg(eggData);
             if (stack == null) return null;
@@ -345,6 +348,33 @@ public final class CobbreedingBridge {
             if (hidden == null || hidden.isBlank()) return;          // no hidden ability for this species → no lock
             eggData.setAbility(hidden);
             GpLog.d("breeding", "ability_lock", "species", String.valueOf(eggData.getSpecies()), "ability", hidden);
+        } catch (Throwable t) {
+            // egg-shaping must never abort egg-gen
+        }
+    }
+
+    /**
+     * Egg Moves teaching (the Egg Moves augment): give the hatchling the moves it can normally only inherit by
+     * chain-breeding. Looks up the egg's species, reads {@code Learnset.getEggMoves()}, and writes the first few
+     * (capped at the 4 move slots) onto the egg via {@code setMoves} — carried at hatch via {@code apply → moves}.
+     * Fails safe: a species with no egg moves (or any hiccup) is left with its normal level-up moveset. Never throws.
+     */
+    private static void applyEggMoves(PokemonProperties eggData, boolean teach) {
+        if (!teach) return;
+        try {
+            Species species = PokemonSpecies.getByName(eggData.getSpecies());
+            if (species == null) return;
+            List<MoveTemplate> eggMoves = species.getMoves().getEggMoves();
+            if (eggMoves == null || eggMoves.isEmpty()) return;
+            List<String> names = new ArrayList<>(4);
+            for (MoveTemplate mt : eggMoves) {
+                if (names.size() >= 4) break;                        // a Pokémon has only 4 move slots
+                String n = mt == null ? null : mt.getName();
+                if (n != null && !n.isBlank()) names.add(n);
+            }
+            if (names.isEmpty()) return;
+            eggData.setMoves(names);
+            GpLog.d("breeding", "egg_moves", "species", String.valueOf(eggData.getSpecies()), "moves", String.join(",", names));
         } catch (Throwable t) {
             // egg-shaping must never abort egg-gen
         }

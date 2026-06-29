@@ -161,7 +161,8 @@ public final class MultiPairBreeder {
                     eff.shinyProcChance(), eff.ivFloorCount(), eff.evFloorPerStat(),
                     NatureCatalog.byIndex(eff.natureIndex()),     // Nature selector → nature id (null = no lock)
                     BallCatalog.byIndex(eff.ballIndex()),         // Ball selector → ball id (null = no lock)
-                    eff.forceHiddenAbility());                    // Ability toggle → force the hidden ability
+                    eff.forceHiddenAbility(),                     // Ability toggle → force the hidden ability
+                    eff.teachEggMoves());                         // Egg Moves toggle → teach species egg moves
             CobbreedingBridge.BredEgg egg = CobbreedingBridge.buildEggForPair(pairs.get(i), shape);
             if (egg == null) continue;                              // incompatible pair, skip
             if (!pd.eggQueue.offer(egg.stack())) {                  // FIFO full → pause (keep eggs aren't evicted)

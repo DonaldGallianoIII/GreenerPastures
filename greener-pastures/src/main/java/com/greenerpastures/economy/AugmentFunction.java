@@ -26,7 +26,8 @@ public enum AugmentFunction {
     DROP_YIELD("drop_yield", "Drop Yield",     TetherClass.THROUGHPUT),
     NATURE    ("nature",     "Nature",         TetherClass.QUALITY, true),
     BALL      ("ball",       "Poké Ball",      TetherClass.QUALITY, true),
-    ABILITY   ("ability",    "Hidden Ability", TetherClass.QUALITY, true);
+    ABILITY   ("ability",    "Hidden Ability", TetherClass.QUALITY, true),
+    EGG_MOVE  ("egg_move",   "Egg Moves",      TetherClass.QUALITY, true);
 
     public final String id;
     public final String label;

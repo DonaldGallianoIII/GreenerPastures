@@ -107,6 +107,12 @@ public final class EffectiveAugments {
         return magnitude(AugmentFunction.ABILITY) >= 1.0;
     }
 
+    /** Egg Moves: a binary toggle (any level ⇒ on) that teaches the bred egg its species' egg moves. Selector →
+     *  never tether-amplified. */
+    public boolean teachEggMoves() {
+        return magnitude(AugmentFunction.EGG_MOVE) >= 1.0;
+    }
+
     /** Drop-yield bonus = a flat integer ADDED to Cobblemon's {@code amount} budget ceiling per drop event
      *  (LEVER 2): level 1 = a chance at +1 more budget → more items per proc, never fewer (the floor is
      *  untouched). A Drop Yield tether amplifies the base level the same as any mod; 0 when the Kernel has

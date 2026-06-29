@@ -14,10 +14,11 @@ package com.greenerpastures.pasture.breeding;
  * @param nature            nature id to lock, or {@code null} for vanilla inheritance (Nature selector)
  * @param ball              ball id to lock, or {@code null} for vanilla inheritance (Ball selector)
  * @param forceHiddenAbility force the species' hidden ability (Ability augment)
+ * @param teachEggMoves     teach the species' egg moves to the hatchling (Egg Moves augment)
  */
 public record EggShape(double shinyProcChance, int ivFloor, int evFloorPerStat,
-                       String nature, String ball, boolean forceHiddenAbility) {
+                       String nature, String ball, boolean forceHiddenAbility, boolean teachEggMoves) {
 
     /** No shaping — plain vanilla egg-gen (used when a pasture has no breeding augments). */
-    public static final EggShape NONE = new EggShape(0.0, 0, 0, null, null, false);
+    public static final EggShape NONE = new EggShape(0.0, 0, 0, null, null, false, false);
 }

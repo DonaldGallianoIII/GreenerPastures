@@ -154,4 +154,10 @@ class EffectiveAugmentsTest {
         assertTrue(EffectiveAugments.of(Map.of(AugmentFunction.ABILITY, 1),
                 List.of(tether("ability", TetherClass.QUALITY, 3))).forceHiddenAbility());
     }
+
+    @Test
+    void eggMovesIsABinaryToggle() {
+        assertFalse(EffectiveAugments.of(Map.of(), List.of()).teachEggMoves(), "absent → off");
+        assertTrue(EffectiveAugments.of(Map.of(AugmentFunction.EGG_MOVE, 1), List.of()).teachEggMoves(), "level 1 → on");
+    }
 }
