@@ -75,4 +75,14 @@ class EffectiveAugmentsTest {
         // 2 × 1.30 = 2.6 → rounds to 3
         assertEquals(3, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 3))).speedLevel());
     }
+
+    @Test
+    void dropRateCentipercentBecomesAProcFraction() {
+        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.DROP_RATE, 25);   // 25 centipercent = 0.25%
+        assertEquals(0.0025, EffectiveAugments.of(base, List.of()).dropRateFraction(), 1e-9);
+        // a Drop Rate tether (throughput) tier II ×1.20 → 30 → 0.30%
+        assertEquals(0.0030,
+                EffectiveAugments.of(base, List.of(tether("drop_rate", TetherClass.THROUGHPUT, 2))).dropRateFraction(), 1e-9);
+        assertEquals(0.0, EffectiveAugments.of(Map.of(), List.of()).dropRateFraction(), 1e-9, "no mod → no bonus");
+    }
 }

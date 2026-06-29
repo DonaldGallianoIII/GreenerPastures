@@ -2,7 +2,10 @@ package com.greenerpastures.drops;
 
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.economy.EffectiveAugments;
 import com.greenerpastures.pasture.breeding.CobbreedingBridge;
+import com.greenerpastures.pasture.breeding.PastureData;
+import com.greenerpastures.pasture.breeding.PastureRegistry;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -55,14 +58,15 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
 
     public static void serverTick(World world, BlockPos pos, BlockState state, HarvesterBlockEntity be) {
         if (world.getTime() % INTERVAL != 0L) return;
-        if (!(world instanceof ServerWorld)) return;
+        if (!(world instanceof ServerWorld sw)) return;
         if (!CobbreedingBridge.isAvailable()) return;
         if (firstEmpty(be.inv) < 0) return;                  // full → pause (no roll, no loss, no ground items)
         try {
             BlockPos pasturePos = adjacentPasture(world, pos);
             if (pasturePos == null) return;
             if (!(world.getBlockEntity(pasturePos) instanceof PokemonPastureBlockEntity pasture)) return;
-            Map<String, Integer> harvested = DropsBridge.harvest(pasture, be.rng, BASE_PROC);
+            double proc = BASE_PROC + dropRateBonusAt(sw, pasturePos);   // + the pasture Kernel's drop-rate mod
+            Map<String, Integer> harvested = DropsBridge.harvest(pasture, be.rng, proc);
             if (harvested.isEmpty()) return;
             int added = be.deposit(harvested);
             if (added > 0) {
@@ -128,6 +132,14 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
             if (world.getBlockEntity(n) instanceof PokemonPastureBlockEntity) return n;
         }
         return null;
+    }
+
+    /** The adjacent pasture's effective drop-rate mod (Kernel base +0.25% + any compiled Drop Rate augment)
+     *  as a proc-bonus fraction. Tether-amplified drop rate (with its Data drain) is a later step. */
+    private static double dropRateBonusAt(ServerWorld world, BlockPos pasturePos) {
+        PastureData pd = PastureRegistry.get(world.getServer()).get(world, pasturePos);
+        return pd == null ? 0.0
+                : EffectiveAugments.of(pd.baseAugmentLevels(), java.util.List.of()).dropRateFraction();
     }
 
     // --- vanilla 9×3 chest GUI (no custom screen) ---

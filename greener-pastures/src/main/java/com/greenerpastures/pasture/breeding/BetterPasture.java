@@ -2,6 +2,7 @@ package com.greenerpastures.pasture.breeding;
 
 import com.greenerpastures.GreenerPastures;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.economy.AugmentFunction;
 import com.greenerpastures.pasture.breeding.compiler.AugmentItem;
 import com.greenerpastures.pasture.breeding.compiler.AugmentType;
 import com.greenerpastures.pasture.breeding.compiler.CompilerBlock;
@@ -59,8 +60,12 @@ public final class BetterPasture {
     }
 
     private static void registerItems() {
+        // every Kernel ships with a base +0.25% drop rate (a default augments component) — visible on the
+        // tooltip, read by the Harvester, and amplifiable by a Drop Rate tether (Deuce, 2026-06-29).
+        Augments kernelBase = Augments.NONE.withLevel(AugmentFunction.DROP_RATE, BreedingUpgradeItem.BASE_DROP_RATE);
         for (BreedingTier tier : BreedingTier.values()) {
-            BreedingUpgradeItem item = new BreedingUpgradeItem(tier, new Item.Settings().maxCount(16));
+            BreedingUpgradeItem item = new BreedingUpgradeItem(tier,
+                    new Item.Settings().maxCount(16).component(GpComponents.AUGMENTS, kernelBase));
             Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "breeding_upgrade_" + tier.id()), item);
             ITEMS.put(tier, item);
         }

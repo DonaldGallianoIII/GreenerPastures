@@ -68,4 +68,10 @@ public final class EffectiveAugments {
     public int speedLevel() {
         return (int) Math.round(magnitude(AugmentFunction.SPEED));
     }
+
+    /** Drop-rate bonus as a 0..1 fraction ADDED to the Harvester's per-mon proc. Stored in centipercent
+     *  ({@code 25} = 0.25%), so a tether amplifies it the same as any mod; 0 when the Kernel has none. */
+    public double dropRateFraction() {
+        return magnitude(AugmentFunction.DROP_RATE) / 10000.0;
+    }
 }
