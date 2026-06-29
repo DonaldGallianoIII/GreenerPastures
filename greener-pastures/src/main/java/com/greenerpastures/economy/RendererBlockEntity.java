@@ -22,12 +22,20 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * The Renderer's block entity — the "eater". Once a second it reads the adjacent pasture's egg tray,
  * culls every NON-keeper egg in place (destroyed, never materialized) and credits the owner's
  * {@link DataStore} balance with {@link RenderValuation}. Keeps + shinies are left in the tray.
+ *
+ * <p>The touching pasture's base <b>Enrichment</b> augment multiplies the render value; a slotted
+ * <b>Enrichment</b> Soul Tether amplifies that further while the pasture OPERATOR's Daemon is fed, draining
+ * the operator's Data per render on THIS block's clock (the breeder/Harvester drain their own tethers — a
+ * tether is billed exactly once). Starved → the free base multiplier, no drain. The render <i>reward</i> is
+ * separate — it always credits the Renderer's own {@code owner}.
  *
  * <p><b>SACRED shiny rule, guarded four ways:</b> (1) nothing runs unless {@link EggReader} can read eggs
  * at all (never cull blind), (2) it skips any egg read as shiny, (3) it skips any egg whose decrypt
@@ -42,6 +50,9 @@ public class RendererBlockEntity extends BlockEntity {
     // (DAEMON_AND_TETHERS.md "the single number is the balance"). Config-tunable; pin exactly in QA.
     static final long BASE_DATA_PER_EGG = 2L;
     private static final ValueRule KEEP = ValueRule.DEFAULT;   // keep shiny OR ≥1 perfect IV
+    /** The tether function the Renderer owns — the only tether it amplifies + pays burn for (the breeder
+     *  owns shiny/speed, the Harvester drop_rate/drop_yield), so a tether is billed on exactly one clock. */
+    private static final Set<AugmentFunction> ENRICH_FUNCTIONS = EnumSet.of(AugmentFunction.ENRICHMENT);
 
     private UUID owner;
 
@@ -83,9 +94,14 @@ public class RendererBlockEntity extends BlockEntity {
             if (culled == 0) return;
 
             CobbreedingBridge.refreshHasEgg(world, pasturePos);
-            double enrichment = enrichmentMultiplierAt(sw, pasturePos);        // base Enrichment augment (tether-amp later)
-            long data = RenderValuation.dataFor(culled, BASE_DATA_PER_EGG, enrichment);
-            DataStore.get(sw.getServer()).credit(be.owner, data);
+            EnrichPlan plan = enrichPlan(sw, pasturePos);                      // base Enrichment × any FED tether
+            long data = RenderValuation.dataFor(culled, BASE_DATA_PER_EGG, plan.multiplier());
+            DataStore.get(sw.getServer()).credit(be.owner, data);             // the render reward → the Renderer's owner
+            if (plan.drain() > 0 && plan.operator() != null) {                // the fed Enrichment tether earned its burn
+                DataStore.get(sw.getServer()).tryDebit(plan.operator(), plan.drain());   // …billed to the pasture operator
+                GpLog.d("tether", "drain", "pos", pos.toShortString(),
+                        "data", plan.drain(), "owner", plan.operator().toString(), "src", "renderer");
+            }
             GpLog.i("renderer", "render", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
                     "culled", culled, "data", data, "owner", be.owner.toString());
             Analytics.record(world, Event.of("egg_rendered")
@@ -107,14 +123,24 @@ public class RendererBlockEntity extends BlockEntity {
         return null;
     }
 
-    /** Base Enrichment augment on the touching pasture's Kernel → render-Data multiplier (≥1). The
-     *  TETHER-amplified enrichment (which would also drain Data, on the breeder's clock) is a later step;
-     *  this wires the FREE base so a compiled Enrichment augment isn't a silent dead stat. */
-    private static double enrichmentMultiplierAt(ServerWorld world, BlockPos pasturePos) {
+    /** The render-Data multiplier (≥1) + the Data to burn for the touching pasture this render: the base
+     *  Enrichment augment × any FED Enrichment tether, resolved against the pasture OPERATOR's Data on the
+     *  Renderer's OWN clock. Drains only enrichment tethers (the breeder/Harvester drain theirs), billed to
+     *  the operator — the box-clicker who pays all this pasture's tether cost (twin of the breeder/harvester
+     *  owner). No operator, or a starved account → the free base multiplier, no drain. */
+    private static EnrichPlan enrichPlan(ServerWorld world, BlockPos pasturePos) {
         PastureData pd = PastureRegistry.get(world.getServer()).get(world, pasturePos);
-        return (pd == null) ? 1.0
-                : EffectiveAugments.of(pd.baseAugmentLevels(), java.util.List.of()).enrichmentMultiplier();
+        if (pd == null) return new EnrichPlan(1.0, 0L, null);
+        long balance = (pd.owner != null) ? DataStore.get(world.getServer()).balanceOf(pd.owner) : 0L;
+        TetherRuntime.Resolution res =
+                TetherRuntime.resolveFor(pd.baseAugmentLevels(), pd.slottedTethers(), balance, ENRICH_FUNCTIONS);
+        return new EnrichPlan(res.effective().enrichmentMultiplier(), res.drain(), pd.owner);
     }
+
+    /** What to value this render with: the (possibly tether-amplified) Enrichment multiplier, the Data to
+     *  debit, and whose account ({@code operator}) pays it. {@code drain == 0} / {@code operator == null}
+     *  ⇒ the free base multiplier. */
+    private record EnrichPlan(double multiplier, long drain, UUID operator) {}
 
     @Override
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {

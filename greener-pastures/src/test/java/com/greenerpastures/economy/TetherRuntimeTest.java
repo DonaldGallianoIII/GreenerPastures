@@ -106,4 +106,15 @@ class TetherRuntimeTest {
         assertEquals(0L, r.drain());
         assertEquals(25.0, r.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9, "starved → base drop rate, no drain");
     }
+
+    @Test
+    void resolveForAmplifiesEnrichmentMultiplierForTheRenderer() {
+        // the Renderer's exact path: resolveFor({ENRICHMENT}) → effective().enrichmentMultiplier()
+        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.ENRICHMENT, 20);          // +20% base → 1.20×
+        SoulTether enrich = new SoulTether("enrichment", TetherClass.THROUGHPUT, 1);          // ×1.10, burn 3
+        TetherRuntime.Resolution r =
+                TetherRuntime.resolveFor(base, List.of(enrich), 100, EnumSet.of(AugmentFunction.ENRICHMENT));
+        assertEquals(3L, r.drain(), "only the enrichment tether's burn");
+        assertEquals(1.22, r.effective().enrichmentMultiplier(), 1e-9, "20 × 1.10 = 22% → 1.22×");
+    }
 }
