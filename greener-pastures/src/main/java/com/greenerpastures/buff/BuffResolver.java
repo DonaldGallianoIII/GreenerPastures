@@ -24,12 +24,13 @@ public final class BuffResolver {
     }
 
     /**
-     * As {@link #resolve(BuffConfig, int)}, but only considers buffs whose {@link BuffCategory} is in
-     * {@code applicable} ({@code null} ⇒ every category). The MC adapter passes the categories it can currently
-     * deliver, so a player is <b>never billed Data for a buff the mod hasn't wired up yet</b> — as each
-     * category's adapter lands, it's added to that set and starts being charged for.
+     * As {@link #resolve(BuffConfig, int)}, but only considers the buffs in {@code applicable} ({@code null} ⇒
+     * every buff). The MC adapter passes exactly the buffs it can currently deliver, so a player is <b>never
+     * billed Data for a buff the mod hasn't wired up yet</b> — as each buff's adapter lands, it's added to that
+     * set and starts being charged for. Per-buff (not per-category) so a category can be delivered piecemeal
+     * (e.g. the item-magnet HOOK ships before auto-smelt/vein-mine).
      */
-    public static ResolvedBuffs resolve(BuffConfig config, int daemonLevel, Set<BuffCategory> applicable) {
+    public static ResolvedBuffs resolve(BuffConfig config, int daemonLevel, Set<BuffId> applicable) {
         if (config == null || !config.enabled() || daemonLevel <= 0) return ResolvedBuffs.NONE;
 
         int level = Math.min(daemonLevel, BuffSetting.TIER_CEILING);
@@ -37,7 +38,7 @@ public final class BuffResolver {
         double cost = 0.0;
 
         for (BuffId id : BuffId.values()) {
-            if (applicable != null && !applicable.contains(id.category)) continue;
+            if (applicable != null && !applicable.contains(id)) continue;
             BuffSetting s = config.settingOf(id);
             if (s == null || !s.enabled()) continue;
             int cap = Math.max(0, Math.min(BuffSetting.TIER_CEILING, s.maxTier()));

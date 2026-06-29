@@ -2,11 +2,10 @@ package com.greenerpastures.buff;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,19 +80,19 @@ class BuffResolverTest {
     }
 
     @Test
-    void categoryFilterChargesOnlyForDeliverableBuffs() {
-        // The adapter ships EFFECT first; ENCHANT/HOOK come later. With the filter, the player is billed ONLY
-        // for the categories the mod can currently apply — never for a buff it hasn't wired up.
+    void applicableFilterChargesOnlyForDeliverableBuffs() {
+        // The adapter delivers buffs as their hooks land. With the filter, the player is billed ONLY for the
+        // buffs the mod can currently apply — never for one it hasn't wired up.
         BuffConfig def = BuffConfig.defaults();
+        Set<BuffId> delivered = Set.of(BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET);
         ResolvedBuffs all = BuffResolver.resolve(def, 3);
-        ResolvedBuffs effectOnly = BuffResolver.resolve(def, 3, EnumSet.of(BuffCategory.EFFECT));
+        ResolvedBuffs some = BuffResolver.resolve(def, 3, delivered);
 
-        assertTrue(effectOnly.tier(BuffId.HASTE) > 0, "EFFECT buffs are delivered");
-        assertEquals(0, effectOnly.tier(BuffId.FORTUNE), "ENCHANT buffs are excluded by the filter");
-        assertEquals(0, effectOnly.tier(BuffId.AUTO_SMELT), "HOOK buffs are excluded by the filter");
-        assertTrue(effectOnly.dataPerSec() < all.dataPerSec(), "and so cost strictly less to run");
-        for (BuffId id : effectOnly.tiers().keySet())
-            assertFalse(id.category != BuffCategory.EFFECT, "only EFFECT buffs survive the filter");
+        assertTrue(some.tier(BuffId.HASTE) > 0, "a delivered buff is granted");
+        assertEquals(0, some.tier(BuffId.FORTUNE), "an undelivered buff is excluded by the filter");
+        assertEquals(0, some.tier(BuffId.AUTO_SMELT), "...as is one in a partially-delivered category");
+        assertTrue(some.dataPerSec() < all.dataPerSec(), "and so it costs strictly less to run");
+        assertTrue(delivered.containsAll(some.tiers().keySet()), "only delivered buffs survive the filter");
     }
 
     @Test
