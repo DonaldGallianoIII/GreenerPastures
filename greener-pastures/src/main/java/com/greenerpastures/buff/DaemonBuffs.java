@@ -46,8 +46,10 @@ public final class DaemonBuffs {
     private static final int INTERVAL = 20;
     /** Status effects are refreshed every second; give them slack so they never flicker between applications. */
     private static final int EFFECT_DURATION = INTERVAL * 3;
-    /** The buffs this adapter can currently deliver — drain is billed only for these. Widens as we wire more. */
-    private static final Set<BuffId> SUPPORTED = EnumSet.of(BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET);
+    /** The buffs this adapter can currently deliver — drain is billed only for these. Widens as we wire more.
+     *  FORTUNE is delivered by the enchant-boost mixins via {@link #paidBuffs}; the rest are applied here. */
+    private static final Set<BuffId> SUPPORTED =
+            EnumSet.of(BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET, BuffId.FORTUNE);
 
     /** Fractional Data carried between seconds, so sub-1/sec drains accrue honestly instead of rounding to free. */
     private static final Map<UUID, Double> drainCarry = new HashMap<>();
@@ -106,6 +108,15 @@ public final class DaemonBuffs {
     private static void clear(UUID id) {
         lastPaid.remove(id);
         drainCarry.remove(id);
+    }
+
+    /**
+     * The buffs a player paid for this second, or {@code null}. Read by the enchant-boost mixins
+     * ({@link DaemonEnchantBoost}) on the server thread — same thread that mutates {@link #lastPaid}, so no
+     * locking is needed.
+     */
+    public static ResolvedBuffs paidBuffs(ServerPlayerEntity player) {
+        return player == null ? null : lastPaid.get(player.getUuid());
     }
 
     /** Highest Mk level among the Daemon(s) the player is holding (main or off hand); 0 if none. */
