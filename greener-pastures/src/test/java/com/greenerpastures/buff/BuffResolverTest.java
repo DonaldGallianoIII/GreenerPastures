@@ -2,9 +2,11 @@ package com.greenerpastures.buff;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.EnumSet;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -76,6 +78,22 @@ class BuffResolverTest {
         assertEquals(0, r.tier(BuffId.LOOTING));
         assertEquals(3, r.tier(BuffId.UNBREAKING));
         assertEquals(1, r.tiers().size(), "only the one live buff survives");
+    }
+
+    @Test
+    void categoryFilterChargesOnlyForDeliverableBuffs() {
+        // The adapter ships EFFECT first; ENCHANT/HOOK come later. With the filter, the player is billed ONLY
+        // for the categories the mod can currently apply — never for a buff it hasn't wired up.
+        BuffConfig def = BuffConfig.defaults();
+        ResolvedBuffs all = BuffResolver.resolve(def, 3);
+        ResolvedBuffs effectOnly = BuffResolver.resolve(def, 3, EnumSet.of(BuffCategory.EFFECT));
+
+        assertTrue(effectOnly.tier(BuffId.HASTE) > 0, "EFFECT buffs are delivered");
+        assertEquals(0, effectOnly.tier(BuffId.FORTUNE), "ENCHANT buffs are excluded by the filter");
+        assertEquals(0, effectOnly.tier(BuffId.AUTO_SMELT), "HOOK buffs are excluded by the filter");
+        assertTrue(effectOnly.dataPerSec() < all.dataPerSec(), "and so cost strictly less to run");
+        for (BuffId id : effectOnly.tiers().keySet())
+            assertFalse(id.category != BuffCategory.EFFECT, "only EFFECT buffs survive the filter");
     }
 
     @Test

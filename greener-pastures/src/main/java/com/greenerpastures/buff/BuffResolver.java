@@ -2,6 +2,7 @@ package com.greenerpastures.buff;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Pure resolver: given the {@link BuffConfig} and the held Daemon's level (Mk I/II/III ⇒ 1/2/3), compute which
@@ -19,6 +20,16 @@ public final class BuffResolver {
     private BuffResolver() {}
 
     public static ResolvedBuffs resolve(BuffConfig config, int daemonLevel) {
+        return resolve(config, daemonLevel, null);
+    }
+
+    /**
+     * As {@link #resolve(BuffConfig, int)}, but only considers buffs whose {@link BuffCategory} is in
+     * {@code applicable} ({@code null} ⇒ every category). The MC adapter passes the categories it can currently
+     * deliver, so a player is <b>never billed Data for a buff the mod hasn't wired up yet</b> — as each
+     * category's adapter lands, it's added to that set and starts being charged for.
+     */
+    public static ResolvedBuffs resolve(BuffConfig config, int daemonLevel, Set<BuffCategory> applicable) {
         if (config == null || !config.enabled() || daemonLevel <= 0) return ResolvedBuffs.NONE;
 
         int level = Math.min(daemonLevel, BuffSetting.TIER_CEILING);
@@ -26,6 +37,7 @@ public final class BuffResolver {
         double cost = 0.0;
 
         for (BuffId id : BuffId.values()) {
+            if (applicable != null && !applicable.contains(id.category)) continue;
             BuffSetting s = config.settingOf(id);
             if (s == null || !s.enabled()) continue;
             int cap = Math.max(0, Math.min(BuffSetting.TIER_CEILING, s.maxTier()));

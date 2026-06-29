@@ -1,6 +1,7 @@
 package com.greenerpastures.economy;
 
 import com.greenerpastures.GreenerPastures;
+import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.block.AbstractBlock;
@@ -10,6 +11,7 @@ import net.minecraft.component.ComponentType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
@@ -29,6 +31,8 @@ public final class DarkEconomy {
     public static Block RENDERER;
     public static BlockEntityType<RendererBlockEntity> BE;
     public static Item DAEMON;
+    /** The {@code greenerpastures:daemon_level} int a Daemon carries — its Mk tier (1–3), the buff strength ceiling. */
+    public static ComponentType<Integer> DAEMON_LEVEL;
     /** The {@code greenerpastures:tether} data component a Soul Tether item carries ([function, tier]). */
     public static ComponentType<Tether> TETHER;
     public static Item SOUL_TETHER;
@@ -40,6 +44,9 @@ public final class DarkEconomy {
         BE = Registry.register(Registries.BLOCK_ENTITY_TYPE, RENDERER_ID,
                 FabricBlockEntityTypeBuilder.create(RendererBlockEntity::new, RENDERER).build());
 
+        DAEMON_LEVEL = Registry.register(Registries.DATA_COMPONENT_TYPE,
+                Identifier.of(GreenerPastures.MOD_ID, "daemon_level"),
+                ComponentType.<Integer>builder().codec(Codec.INT).packetCodec(PacketCodecs.VAR_INT).build());
         DAEMON = Registry.register(Registries.ITEM, DAEMON_ID, new DaemonItem(new Item.Settings().maxCount(1)));
 
         // Soul Tether: the [function, tier] data component + the (blank-until-inscribed) item.
