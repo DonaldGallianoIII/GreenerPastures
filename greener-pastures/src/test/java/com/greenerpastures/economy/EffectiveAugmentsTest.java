@@ -139,4 +139,19 @@ class EffectiveAugmentsTest {
         assertEquals(4, amped.natureIndex(), "selector index stays exactly 4 despite a tier-III tether");
         assertEquals(4.0, amped.magnitude(AugmentFunction.NATURE), 1e-9, "magnitude unscaled for a selector");
     }
+
+    @Test
+    void ballSelectorReadsTheRawBaseIndex() {
+        assertEquals(7, EffectiveAugments.of(Map.of(AugmentFunction.BALL, 7), List.of()).ballIndex());
+        assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).ballIndex(), "no Ball augment → 0 (no lock)");
+    }
+
+    @Test
+    void hiddenAbilityIsABinaryToggle() {
+        assertFalse(EffectiveAugments.of(Map.of(), List.of()).forceHiddenAbility(), "absent → off");
+        assertTrue(EffectiveAugments.of(Map.of(AugmentFunction.ABILITY, 1), List.of()).forceHiddenAbility(), "level 1 → on");
+        // a tether can't amplify the toggle into or out of existence (selector → unscaled)
+        assertTrue(EffectiveAugments.of(Map.of(AugmentFunction.ABILITY, 1),
+                List.of(tether("ability", TetherClass.QUALITY, 3))).forceHiddenAbility());
+    }
 }

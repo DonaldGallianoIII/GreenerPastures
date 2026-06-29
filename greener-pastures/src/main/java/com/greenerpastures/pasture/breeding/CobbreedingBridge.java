@@ -1,6 +1,8 @@
 package com.greenerpastures.pasture.breeding;
 
 import com.cobblemon.mod.common.Cobblemon;
+import com.cobblemon.mod.common.api.abilities.CommonAbilityType;
+import com.cobblemon.mod.common.api.abilities.PotentialAbility;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.api.pokemon.stats.Stat;
@@ -189,8 +191,7 @@ public final class CobbreedingBridge {
      * carries them to the hatchling.
      */
     public static BredEgg buildEggForPair(List<? extends PokemonPastureBlockEntity.Tethering> pairSlots,
-                                          double shinyProcChance, int ivFloor, int evFloorPerStat,
-                                          String nature, String ball) {
+                                          EggShape shape) {
         if (!available) return null;
         try {
             List<Pokemon> pokemon = BreedingUtilities.getPokemon(pairSlots);
@@ -198,11 +199,12 @@ public final class CobbreedingBridge {
             if (possible.isEmpty()) return null;
             PokemonProperties eggData = BreedingUtilities.chooseEgg(possible);
             if (eggData == null || eggData.getSpecies() == null) return null;
-            boolean procShiny = maybeProcShiny(eggData, pokemon, shinyProcChance);
-            applyIvFloor(eggData, ivFloor);                 // guarantee N perfect (31) IVs — raise-only
-            applyEvFloor(eggData, evFloorPerStat);          // pre-set a flat EV floor on every permanent stat
-            applyNature(eggData, nature);                   // lock the egg's nature (Nature selector augment)
-            applyBall(eggData, ball);                       // lock the egg's ball (Ball selector augment)
+            boolean procShiny = maybeProcShiny(eggData, pokemon, shape.shinyProcChance());
+            applyIvFloor(eggData, shape.ivFloor());          // guarantee N perfect (31) IVs — raise-only
+            applyEvFloor(eggData, shape.evFloorPerStat());   // pre-set a flat EV floor on every permanent stat
+            applyNature(eggData, shape.nature());            // lock the egg's nature (Nature selector augment)
+            applyBall(eggData, shape.ball());                // lock the egg's ball (Ball selector augment)
+            applyHiddenAbility(eggData, shape.forceHiddenAbility());   // force the species' hidden ability
             boolean shiny = Boolean.TRUE.equals(eggData.getShiny());
             ItemStack stack = assembleEgg(eggData);
             if (stack == null) return null;
@@ -316,6 +318,33 @@ public final class CobbreedingBridge {
         try {
             eggData.setPokeball(ballId);
             GpLog.d("breeding", "ball_lock", "species", String.valueOf(eggData.getSpecies()), "ball", ballId);
+        } catch (Throwable t) {
+            // egg-shaping must never abort egg-gen
+        }
+    }
+
+    /**
+     * Hidden Ability lock (the Ability augment): force the bred egg to the species' <b>hidden</b> ability. Looks the
+     * egg's species up, scans its {@link AbilityPool} for the entry whose {@link PotentialAbility#getType()} is NOT
+     * the {@code CommonAbilityType} (i.e. the hidden one), and writes its name onto the egg via
+     * {@code setAbility} — carried at hatch via {@code apply → ability}. Fails safe: a species with no hidden
+     * ability (or any lookup hiccup) simply isn't locked, keeping vanilla ability rolling. Never throws.
+     */
+    private static void applyHiddenAbility(PokemonProperties eggData, boolean force) {
+        if (!force) return;
+        try {
+            Species species = PokemonSpecies.getByName(eggData.getSpecies());
+            if (species == null) return;
+            String hidden = null;
+            for (PotentialAbility pa : species.getAbilities()) {     // AbilityPool is Iterable<PotentialAbility>
+                if (pa.getType() != CommonAbilityType.INSTANCE) {    // non-common type == the hidden ability
+                    hidden = pa.getTemplate().getName();
+                    break;
+                }
+            }
+            if (hidden == null || hidden.isBlank()) return;          // no hidden ability for this species → no lock
+            eggData.setAbility(hidden);
+            GpLog.d("breeding", "ability_lock", "species", String.valueOf(eggData.getSpecies()), "ability", hidden);
         } catch (Throwable t) {
             // egg-shaping must never abort egg-gen
         }

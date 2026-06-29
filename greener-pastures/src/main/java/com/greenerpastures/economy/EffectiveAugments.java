@@ -101,6 +101,12 @@ public final class EffectiveAugments {
         return Math.max(0, (int) Math.round(magnitude(AugmentFunction.BALL)));
     }
 
+    /** Hidden Ability: a binary toggle (any level ⇒ on) that forces the bred egg to the species' hidden ability.
+     *  Marked a selector so it's never tether-amplified — a toggle has nothing to scale. */
+    public boolean forceHiddenAbility() {
+        return magnitude(AugmentFunction.ABILITY) >= 1.0;
+    }
+
     /** Drop-yield bonus = a flat integer ADDED to Cobblemon's {@code amount} budget ceiling per drop event
      *  (LEVER 2): level 1 = a chance at +1 more budget → more items per proc, never fewer (the floor is
      *  untouched). A Drop Yield tether amplifies the base level the same as any mod; 0 when the Kernel has
