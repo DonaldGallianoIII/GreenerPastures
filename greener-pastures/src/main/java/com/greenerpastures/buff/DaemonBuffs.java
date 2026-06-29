@@ -50,7 +50,7 @@ public final class DaemonBuffs {
      *  FORTUNE/AUTO_SMELT/XP_BOOST/VEIN_MINE are delivered by mixins/events via {@link #paidBuffs}; the rest here. */
     private static final Set<BuffId> SUPPORTED = EnumSet.of(
             BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET,
-            BuffId.FORTUNE, BuffId.AUTO_SMELT, BuffId.XP_BOOST, BuffId.VEIN_MINE);
+            BuffId.FORTUNE, BuffId.AUTO_SMELT, BuffId.XP_BOOST, BuffId.VEIN_MINE, BuffId.POTION_DURATION);
 
     /** Fractional Data carried between seconds, so sub-1/sec drains accrue honestly instead of rounding to free. */
     private static final Map<UUID, Double> drainCarry = new HashMap<>();
