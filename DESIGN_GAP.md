@@ -19,7 +19,7 @@ _Maps `~/pokemonthink` (design) against what's actually in `~/pokemon-prediction
 | Design element | Status | Notes |
 |---|---|---|
 | **Kernel** (pasture upgrade: pairs + slots + base mods) | ✅ | `breeding_upgrade_*` + `BreedingTier` (8-pair cap). Slots are dormant until Soul Tethers exist. |
-| **Augment-on-Kernel** (base mods as data) | ✅ | `augments` component; Shiny only so far. |
+| **Augment-on-Kernel** (base mods as data) | ✅ catalog | `augments` component now holds the full `{function→level}` catalog (back-compat). **Shiny + Speed** have live effects; Enrichment/IV/EV/Drops are data-modeled, effects pending. |
 | **Compiler** (writes mods) | ✅ / 🔴 | Writes the Shiny augment. Design also wants it to **inscribe Soul Tethers** — not built. |
 | **Multi-pair breeding** | ✅ | `MultiPairBreeder`. |
 | **Shiny proc** (bounded reroll) | ✅ tested | `ShinyOdds`. |
@@ -30,7 +30,7 @@ _Maps `~/pokemonthink` (design) against what's actually in `~/pokemon-prediction
 | **Renderer** (cull eggs in-step → Data, never materialized) | 🔴 block / 🟢 brain | **Block not built.** Its keep-filter LOGIC is built (`RenderSelection`/`ValueRule`/`IvFilter`/`RenderLedger`). The centerpiece. |
 | **Data** (currency: player account + counter) | 🔴 | No Data accounting yet. |
 | **Daemon** (NEW runtime item: Data account + buffs) | 🔴 | Distinct from our "Daemon" screen (= the Notebook). |
-| **Soul Tether** (amplifier; slots; burns Data) | ⏸️ | Design PROPOSED, not locked — your knob + magnitudes. |
+| **Soul Tether** (amplifier; slots; burns Data) | 🟢 wired | Logic fully tested (per-function amplify · burn-by-class · fed/starved · inscribe/wipe); item + `[function,tier]` component built; breeder applies effective shiny/speed + drains Data (owner = tether-slotter). **Remaining = Compiler inscription GUI + more base-augment items + Renderer-enrichment wiring.** Magnitudes still calibration. |
 | **Global "root" buffs** (enchant +1/+2/+3, auto-smelt, vein-mine, magnet, haste, XP, potion-dur, saturation) | 🔴 | Enchant include/exclude list is SETTLED in design; nothing built. Worker-not-fighter, config-gated. |
 | **Loot block** (%-chance of what WOULD have dropped → straight into a container) | 🔴 | NEW design (Deuce, 2026-06-28) — **replaces the cut pasture loot-sweep**. Our own drop table + roll, yields modulated by augments/tethers, species-combo easter eggs (e.g. Groudon+Darkrai+Ditto → a joke drop). Full control = the drops arm of the dark economy. Materials only, never Data. |
 | **Data grid** (fuel/trophy/material economy) | 🔴 | Emerges from Renderer keep-filters + tethers + Data. |
