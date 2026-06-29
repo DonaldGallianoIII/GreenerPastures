@@ -1,0 +1,45 @@
+package com.greenerpastures.ritual;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * A snapshot of WHAT a pasture currently holds, in the Minecraft-free terms the ritual engine reasons about:
+ * how many tethered mons carry each elemental type, and which species are present. Type / species keys are
+ * lowercased so config and runtime compare cleanly. Built by the (MC-side) composition reader from Cobblemon
+ * types; consumed by {@link Requirement} (rituals) and {@link TypeDropTable} (type-drops). Pure + tested.
+ */
+public record Composition(Map<String, Integer> typeCounts, Set<String> species) {
+    public static final Composition EMPTY = new Composition(Map.of(), Set.of());
+
+    public Composition {
+        Map<String, Integer> t = new HashMap<>();
+        if (typeCounts != null) {
+            typeCounts.forEach((k, v) -> {
+                if (k != null && v != null && v > 0) t.put(k.toLowerCase(Locale.ROOT), v);
+            });
+        }
+        Set<String> s = new HashSet<>();
+        if (species != null) {
+            for (String sp : species) if (sp != null && !sp.isBlank()) s.add(sp.toLowerCase(Locale.ROOT));
+        }
+        typeCounts = Map.copyOf(t);
+        species = Set.copyOf(s);
+    }
+
+    public int countOfType(String type) {
+        return type == null ? 0 : typeCounts.getOrDefault(type.toLowerCase(Locale.ROOT), 0);
+    }
+
+    public int distinctTypes() { return typeCounts.size(); }
+
+    public boolean hasSpecies(String s) {
+        return s != null && species.contains(s.toLowerCase(Locale.ROOT));
+    }
+
+    /** The set of types present (lowercased) — what {@link TypeDropTable#forTypes} keys on. */
+    public Set<String> types() { return typeCounts.keySet(); }
+}
