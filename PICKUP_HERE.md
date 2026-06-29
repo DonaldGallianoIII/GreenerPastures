@@ -14,24 +14,34 @@ Renderer tether-amp enrichment · **craftable augment items** (all 7 functions C
 EV** breeding effects (egg IVs/EVs shaped pre-encrypt, verified to survive Cobbreeding hatch) · **rituals + type-drops
 gacha system** (engine → runtime → config → 3× rarity → drop-augment scaling → `sim_rituals.py`).
 
-## ▶️ ACTIVE TASK — Daemon global "root" buffs  _(IN PROGRESS — 4 commits, 161 tests)_
+## ▶️ ACTIVE TASK — Daemon global "root" buffs  _(8 BUFFS LIVE — QA-pending; v2 enchants remain)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =
-**tier-scaled & summed** (`Σ tier × costPerSec`/sec).
-**Built + committed so far (all QA-pending = Q23):**
-- `buff/` pure cores (`5ba97e8`): `BuffId` catalog (11 ENCHANT / 2 EFFECT / 5 HOOK — the catalog IS the
-  worker-not-fighter allow-list, no combat/binary enchant present), `BuffSetting`, `BuffConfig` (lazy-Gson,
-  `config/greenerpastures/buffs.json`), `BuffResolver` (level→tier, per-buff cap, summed drain), `BuffSystem`.
-- EFFECT adapter (`0b4684d`): `DaemonBuffs` server-tick loop → held+fed Daemon grants **Haste + Saturation**,
-  bills Data/sec (fractional carry, broke→no buffs). `daemon_level` int component + creative sneak-RC cycles
-  Mk I→II→III (QA affordance; survival upgrade recipe = publish-phase). `DaemonItem.levelOf()`.
-- Magnet HOOK (`a796175`): item magnet (radius 4/6/8 by tier); resolver filter is now **per-`BuffId`**
-  (`SUPPORTED` set) so categories ship piecemeal without over-billing. `lastPaid` cache drives per-tick hooks.
-**NEXT (in order):** (1) **ENCHANT boost** — the marquee (Fortune VI etc.); fully researched + spec'd in
-`ENCHANT_BOOST.md` (edit the held stack's enchant component +tier, tick-bracketed; verified vs 1.21.1). One
-timing Q (does equipment-sync run inside the tick window?) is being confirmed by a bg agent before the mixin is
-written. ⚠ highest dupe/desync risk → needs a careful live QA. (2) remaining hooks: **auto-smelt, vein-mine,
-XP boost, potion-duration** (all mixin/event-hook, untestable headless → build as a QA-pending batch).
-Add each ENCHANT/HOOK `BuffId` to `DaemonBuffs.SUPPORTED` as its adapter lands.
+**tier-scaled & summed** (`Σ tier × costPerSec`/sec). All committed (`5ba97e8`→`bd7d252`), 161 tests, nothing
+deployed. **All 8 delivered buffs are non-destructive** (effects/attributes/read-interception — none rewrite
+gear or persist NBT, so no dupe surface). QA rows **Q23–Q28**.
+**DELIVERED (held + fed Daemon, billed only for what's in `DaemonBuffs.SUPPORTED`):**
+- cores (`5ba97e8`): `BuffId` catalog (11 ENCHANT / 2 EFFECT / 5 HOOK — the catalog IS the worker-not-fighter
+  allow-list), `BuffSetting`/`BuffConfig` (lazy-Gson, `config/greenerpastures/buffs.json`), `BuffResolver`
+  (level→tier, per-buff cap, summed drain, per-`BuffId` "deliverable" filter), `BuffSystem`.
+- **Haste + Saturation** (EFFECT, `0b4684d`) — `DaemonBuffs` per-sec settle loop bills Data (fractional carry,
+  broke→none), applies status effects. `daemon_level` component + **creative sneak-RC cycles Mk I→II→III** (QA
+  affordance; survival recipe = publish-phase). `DaemonItem.levelOf()`. `lastPaid` cache.
+- **Item Magnet** (HOOK, `a796175`) — per-tick pull, radius 4/6/8.
+- **Fortune** (ENCHANT, `51bb11d`) — the marquee, "beyond vanilla max" (Mk III = Fortune VI). The verified-clean
+  way: read-only `getLevel` `@Inject` gated by a loot-scoped ThreadLocal set in `Block.getDroppedStacks`
+  (`BlockDropBoostMixin` + `EnchantmentLevelMixin` + `DaemonEnchantBoost`). Never writes the stack. See
+  `ENCHANT_BOOST.md` (the rejected component-edit approach + why).
+- **Auto-Smelt** (HOOK, `58612c5`) — smelts mined drops; same block-drop mixin window, composes with Fortune.
+- **XP Boost** (HOOK, `725bce0`) — `XpBoostMixin` +25%/tier on `addExperience`.
+- **Vein-Miner** (HOOK, `28e9b83`) — `DaemonVeinMine` via `PlayerBlockBreakEvents.AFTER`; **heavily fenced**
+  (ores `c:ores` + logs only, same-block flood-fill, cap tier×32≤96, suitable-tool, re-entrancy guard). Data
+  rental = the cost (no tool durability v1).
+- **Potion Duration+** (HOOK, `bd7d252`) — `PotionDurationMixin` +50%/tier on a **utility allowlist only**
+  (NightVision/WaterBreathing/FireRes/Conduit/Dolphin/SlowFall/Luck) → PvP-neutral.
+**REMAINING = v2 enchants only (deferred, lower value, `ENCHANT_BOOST.md`):** Looting (mob-death path),
+the attribute enchants (Efficiency [≈ already covered by Haste]/Respiration/Swift Sneak via direct
+`EntityAttributeModifier`s — no mixin), and the value-effect enchants (Unbreaking/Lure/Luck of the Sea/Feather
+Falling/Frost Walker — need per-effect interception). Add each to `DaemonBuffs.SUPPORTED` as it lands.
 
 _(original spec below — still the source of truth for the buff list)_
 
