@@ -23,9 +23,26 @@ before wave-2 (hopper interop, dashboards #6, economy, guide). **F3 v1 done** (`
 `goal/` package: `BreedingGoal`+`GoalProgress` pure cores, `GoalStore` per-player, `GoalTracker` folds each laid egg
 into the pasture owner's progress + pings on reached; `BredEgg` enriched with species/ivTotal/perfectIvs). QA Q37.
 **Non-destructive** — auto-cull is the deferred follow-on (off-target non-shiny → Renderer→Data, shiny 4-guard, opt-in).
-**▶️ IMMEDIATE NEXT: the QA-deploy pass Deuce asked for** — `./gradlew build` + deploy the jar to the live instance,
-then run down `QA_PENDING.md` Q1–Q37. (Follow-ons after QA: F3 auto-cull + persistence, F2 pulls-ready ping, the
-breeding-meta Compiler-UI install UX, wave-2 features. All GUIs still deferred.)
+Deployed once (md5 `43679bc`) for QA, then kept building. (Follow-ons after QA: F3 auto-cull + persistence, F2
+pulls-ready ping, the breeding-meta Compiler-UI install UX, wave-2 features. All GUIs still deferred.)
+
+### 🌫️ ACTIVE — Ghost Pasture (admin-critical lag fix; the old "no-wander" was BROKEN)
+A server admin called per-pasture spawn-suppression critical. **The old PastureKeeper no-wander never worked** — it
+hooked Cobblemon's `togglePastureOn`, which only flips the block's ON *visual* (QA confirmed it does nothing). The
+real spawn is the single `World.spawnEntity` in Cobblemon's `tether()`. **Deuce approved this method (no per-tick
+despawn):** (1) `@Redirect` that `spawnEntity` for suppressed pastures → tether data recorded, no entity spawns;
+(2) one-time despawn-on-toggle with `RemovalReason.DISCARDED` + re-assert `tetheringId` (verified: `PokemonEntity.remove`
+only untethers when `shouldDestroy()`, so re-asserting keeps the tether; DISCARDED = gone-for-good, no reload);
+(3) flag persisted on `PastureData.suppressed`. **Increment 1 DONE + builds** (`PastureKeeper` rework + the new
+`PokemonPastureBlockEntityMixin` `@Redirect` + persistence) — QA **Q38**, **NOT yet redeployed**. **Increment 2 (next):**
+un-suppress must **re-materialise** the discarded roamers (replicate Cobblemon's tether-spawn from the data) — right now
+un-suppress only re-allows future spawns. Verify in-game: the `@Redirect` resolves (no mixin load error) + suppressed
+mons stay tethered (breeding keeps producing).
+
+### 👾 BACKLOG — MissingNo egg Easter egg
+Deuce over-promised someone a MissingNo egg. **On-theme** (the mod is corrupted-data / glitch aesthetic). Open Q for
+Deuce: does it just *exist* as a rare glitchy collectible egg, or *hatch into* something (Cobblemon has no MissingNo
+species → we'd pick: a corrupted/random mon, Ditto for the Gen-1 lore, or a glitch gag)? Not started.
 
 ## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =

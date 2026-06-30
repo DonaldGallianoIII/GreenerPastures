@@ -41,6 +41,10 @@ public class PastureData {
      *  the tether burn (rented amplification). Null = no operator → tethers stay inert (free base). */
     public UUID owner;
 
+    /** "Ghost pasture" — when true, this pasture's tethered mons never spawn as roaming entities (the lag fix):
+     *  their data still ticks (breeding + loot keep running) but no PokemonEntity exists. Persisted. */
+    public boolean suppressed;
+
     /** The installed Pasture Upgrade tier (slot 0), or null if none — drives pairs + slot count. */
     public BreedingTier tier() {
         ItemStack s = upgrades.getStack(0);
@@ -88,6 +92,7 @@ public class PastureData {
         eggQueue.forEach(egg -> { if (!egg.isEmpty()) qn.add(egg.encode(lookup)); });
         nbt.put("eggQueue", qn);
         if (owner != null) nbt.putUuid("owner", owner);
+        if (suppressed) nbt.putBoolean("suppressed", true);
         return nbt;
     }
 
@@ -110,6 +115,7 @@ public class PastureData {
         }
         d.eggQueue.restore(queued);
         if (nbt.containsUuid("owner")) d.owner = nbt.getUuid("owner");
+        d.suppressed = nbt.getBoolean("suppressed");
         return d;
     }
 }
