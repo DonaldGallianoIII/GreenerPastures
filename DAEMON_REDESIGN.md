@@ -4,6 +4,15 @@ _From QA **BUG-004** (2026-06-30). Replaces the current model — *hold a fed Da
 a global Mk tier, billed continuously* — with a player-built, opt-in loadout. Logic-first + no-UI-first per house
 rules. `glow DAEMON_REDESIGN.md`._
 
+> ## ✅ BUILT (2026-06-30) — functional core + no-UI path landed, headless-green
+> The build guide below is **implemented**. Shipped: pure `DaemonLoadout` (`buff → level` component) +
+> `BuffResolver.resolveLoadout` (bills only installed buffs) · `DAEMON_LOADOUT`/`DAEMON_ON` components ·
+> `DaemonItem` right-click ON/OFF + enchant glint + tooltip · `DaemonBuffs.firstActiveDaemon` (whole-inventory
+> scan, never force-loads) · `/gp daemon set·list·clear·on·off` · **+11 headless tests (230 total, 0 fail)**.
+> **Defaults taken:** compile cost = running-drain-only · per-buff cap = each buff's `maxTier`/+3 · compilable set =
+> the 15 `SUPPORTED`. **Still TODO:** in-game QA (glint toggle / inventory-grant / drain-only-installed) + the
+> **Compiler GUI** (→ web-dev UI pass). The 3 "open questions" below were resolved with those defaults.
+
 ## The new model (Deuce's design)
 1. **Compile your loadout.** Put the Daemon into the **Compiler** (the same block that installs augments onto
    Kernels) and compile the specific buffs you want, each at a chosen level. The Daemon carries that loadout as a

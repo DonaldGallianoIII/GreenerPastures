@@ -103,4 +103,60 @@ class BuffResolverTest {
         assertEquals(2, r.tier(BuffId.SATURATION), "a 0-cost buff still applies");
         assertEquals(0.0, r.dataPerSec(), 1e-9, "and drains no Data");
     }
+
+    // ── BUG-004: resolveLoadout — per-item compiled loadout instead of a single global Mk tier ──────────────
+
+    @Test
+    void resolveLoadoutBillsOnlyTheInstalledBuffs() {
+        BuffConfig def = BuffConfig.defaults();
+        Map<BuffId, Integer> loadout = Map.of(BuffId.FORTUNE, 3, BuffId.HASTE, 1);   // a 2-buff Daemon
+        ResolvedBuffs r = BuffResolver.resolveLoadout(def, loadout, null);
+        assertEquals(2, r.tiers().size(), "only the two compiled buffs run");
+        assertEquals(3, r.tier(BuffId.FORTUNE));
+        assertEquals(1, r.tier(BuffId.HASTE));
+        assertEquals(0, r.tier(BuffId.LOOTING), "an un-installed buff is inactive — you pay for what you compiled");
+        // gathering Fortune costs 0.5/tier, QOL Haste 0.25/tier ⇒ 3×0.5 + 1×0.25
+        assertEquals(3 * 0.5 + 1 * 0.25, r.dataPerSec(), 1e-9);
+        assertEquals(3, r.daemonLevel(), "summary level = the loadout's highest effective tier");
+    }
+
+    @Test
+    void resolveLoadoutClampsEachLevelToItsOwnCap() {                 // the shop-economy lever still applies
+        BuffConfig cfg = new BuffConfig(true, Map.of(
+                BuffId.FORTUNE.id, new BuffSetting(true, 1, 0.5),     // server caps Fortune at +1
+                BuffId.HASTE.id,   new BuffSetting(true, 3, 0.25)));
+        Map<BuffId, Integer> loadout = Map.of(BuffId.FORTUNE, 3, BuffId.HASTE, 3);
+        ResolvedBuffs r = BuffResolver.resolveLoadout(cfg, loadout, null);
+        assertEquals(1, r.tier(BuffId.FORTUNE), "compiled +3 but clamped to the +1 cap");
+        assertEquals(3, r.tier(BuffId.HASTE));
+    }
+
+    @Test
+    void resolveLoadoutRespectsTheDeliverableFilter() {
+        BuffConfig def = BuffConfig.defaults();
+        Map<BuffId, Integer> loadout = Map.of(BuffId.FORTUNE, 2, BuffId.HASTE, 2);
+        ResolvedBuffs r = BuffResolver.resolveLoadout(def, loadout, Set.of(BuffId.HASTE));
+        assertEquals(0, r.tier(BuffId.FORTUNE), "not deliverable → excluded AND unbilled");
+        assertEquals(2, r.tier(BuffId.HASTE));
+        assertEquals(2 * 0.25, r.dataPerSec(), 1e-9, "billed only for the delivered buff");
+    }
+
+    @Test
+    void resolveLoadoutSkipsConfigDisabledBuffsEvenIfCompiled() {
+        BuffConfig cfg = new BuffConfig(true, Map.of(
+                BuffId.FORTUNE.id, new BuffSetting(false, 3, 0.5),   // admin turned it off
+                BuffId.HASTE.id,   new BuffSetting(true, 3, 0.25)));
+        ResolvedBuffs r = BuffResolver.resolveLoadout(cfg, Map.of(BuffId.FORTUNE, 3, BuffId.HASTE, 2), null);
+        assertEquals(0, r.tier(BuffId.FORTUNE), "a config-disabled buff never runs even if it's in the loadout");
+        assertEquals(2, r.tier(BuffId.HASTE));
+        assertEquals(1, r.tiers().size());
+    }
+
+    @Test
+    void resolveLoadoutEmptyOrMasterOffIsNone() {
+        assertSame(ResolvedBuffs.NONE, BuffResolver.resolveLoadout(BuffConfig.defaults(), Map.of(), null));
+        assertSame(ResolvedBuffs.NONE, BuffResolver.resolveLoadout(BuffConfig.defaults(), null, null));
+        BuffConfig off = new BuffConfig(false, BuffConfig.defaults().buffs());
+        assertTrue(BuffResolver.resolveLoadout(off, Map.of(BuffId.HASTE, 2), null).isEmpty(), "master off ⇒ inert");
+    }
 }

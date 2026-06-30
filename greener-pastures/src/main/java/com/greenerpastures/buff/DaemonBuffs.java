@@ -17,6 +17,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -95,10 +96,10 @@ public final class DaemonBuffs {
         UUID id = player.getUuid();
         if (player.isSpectator() || !cfg.enabled()) { clear(player); return; }
 
-        int level = heldDaemonLevel(player);
-        if (level <= 0) { clear(player); return; }              // no Daemon in hand
+        DaemonLoadout loadout = firstActiveDaemon(player);
+        if (loadout == null || loadout.isEmpty()) { clear(player); return; }   // no ON Daemon anywhere in inventory
 
-        ResolvedBuffs buffs = BuffResolver.resolve(cfg, level, SUPPORTED);
+        ResolvedBuffs buffs = BuffResolver.resolveLoadout(cfg, loadout.toLevels(), SUPPORTED);
         if (buffs.isEmpty()) { clear(player); return; }
 
         // Rented-while-fed: a truly broke account gets nothing, even for a sub-1/sec drain.
@@ -115,7 +116,7 @@ public final class DaemonBuffs {
 
         applyEffects(player, buffs);
         DaemonAttributeBuffs.reconcile(player, buffs);       // attribute enchants: grant/scale/strip to match the bill
-        GpLog.d("buff", "tick", "player", id.toString(), "lvl", level,
+        GpLog.d("buff", "tick", "player", id.toString(), "top", buffs.daemonLevel(),
                 "buffs", buffs.tiers().size(), "paid", pay);
     }
 
@@ -136,14 +137,27 @@ public final class DaemonBuffs {
         return player == null ? null : lastPaid.get(player.getUuid());
     }
 
-    /** Highest Mk level among the Daemon(s) the player is holding (main or off hand); 0 if none. */
-    private static int heldDaemonLevel(PlayerEntity player) {
-        int best = 0;
-        ItemStack main = player.getMainHandStack();
-        if (main.isOf(DarkEconomy.DAEMON)) best = Math.max(best, DaemonItem.levelOf(main));
-        ItemStack off = player.getOffHandStack();
-        if (off.isOf(DarkEconomy.DAEMON)) best = Math.max(best, DaemonItem.levelOf(off));
-        return best;
+    /** The buffs this adapter can currently deliver — read by {@code /gp daemon} for validation + suggestions. */
+    public static Set<BuffId> supported() {
+        return Collections.unmodifiableSet(SUPPORTED);
+    }
+
+    /**
+     * The loadout of the first <b>ON</b> Daemon anywhere in the player's inventory (hotbar + main + offhand; the
+     * armor slots are scanned too but never hold a Daemon), or {@code null}. <b>BUG-004:</b> the Daemon works
+     * from the inventory, not just in-hand. A player's inventory is always loaded while they're online, so this
+     * never force-loads a chunk — a Daemon left in a chest in an unloaded chunk simply isn't seen. A Daemon
+     * stacks to 1, but a player could carry two; the first ON one wins (we don't sum loadouts).
+     */
+    private static DaemonLoadout firstActiveDaemon(PlayerEntity player) {
+        var inv = player.getInventory();
+        for (int i = 0, n = inv.size(); i < n; i++) {
+            ItemStack stack = inv.getStack(i);
+            if (stack.isOf(DarkEconomy.DAEMON) && DaemonItem.isOn(stack)) {
+                return DaemonItem.loadoutOf(stack);
+            }
+        }
+        return null;
     }
 
     // ── EFFECT buffs (refreshed each second) ──────────────────────────────────

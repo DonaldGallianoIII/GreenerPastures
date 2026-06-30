@@ -4,27 +4,32 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ STATE — 2026-06-30 (QA pass DONE + bug-fix batch: 4/5 backlog bugs fixed; BUG-004 Daemon redesign NEXT)
-**~219 headless tests green** (+15 this session). **All committed on `main`, tree clean** (HEAD `c076871`).
+## ⚡ STATE — 2026-06-30 (QA pass DONE + **ALL backlog bugs fixed**; next = web-dev UI stack + a fresh QA pass)
+**230 headless tests green** (+26 across the batch). **All committed on `main`, tree clean.**
 This session Deuce ran the **full QA pass at his computer** → the **entire 15-buff Daemon suite verified end-to-end
 from the live log** (Fortune / Auto-Smelt / Vein / XP / Potion / Attributes / Lure / Luck across all 4 mixin seams +
-tier-scaling + the drain economy); the rest **trust-confirmed** on his call. `QA_PENDING.md` is marked COMPLETE.
-Findings tracked in **`QA_RESULTS.md`** (BUG-001…006).
+tier-scaling + the drain economy); the rest **trust-confirmed** on his call. `QA_PENDING.md` COMPLETE; findings in
+**`QA_RESULTS.md`** (BUG-001…006, with a batch-status banner up top).
 
-**🐛 BUG-FIX BATCH (this session, all committed + tested):** **BUG-001** drop-rate scales per Kernel tier · **BUG-002**
+**🐛 BUG-FIX BATCH — DONE (all committed + headless-green):** **BUG-001** drop-rate scales per Kernel tier · **BUG-002**
 EV per-stat allocation (`/gp augment ev <6>`) · **BUG-006** `BreedingCompat` core + dead-pair log · **BUG-003** Ghost
-Pasture increment-2 re-materialise (compiles; **needs in-game QA**, can't headless-test entity spawn).
+Pasture increment-2 re-materialise (compiles — **in-game QA pending**) · **BUG-004** Daemon **compile-your-own**
+redesign (`DaemonLoadout` + `BuffResolver.resolveLoadout` + ON/OFF enchant-glint toggle + whole-inventory grant +
+`/gp daemon` no-UI path — **in-game QA pending**). Only **BUG-005** stays open by design (a UI ask → web-dev pass).
 
-**▶️ ON RESUME → BUILD BUG-004** (the last backlog bug = the Daemon **compile-your-own** redesign). The
-**implementation-ready guide** (verified APIs + file-by-file plan + test plan) is the **last section of
-`DAEMON_REDESIGN.md`** — start there, it's ready to code. After it: build + deploy for a fresh QA pass, then the
-**web-dev stack** for all the deferred UIs (BUG-005 + EV/graph/Compiler screens + dashboards). Web-dev direction in
-**`PORTING_WEB_UI.md`** (Deuce: develop the UI as a real web app *with Claude Code*, then move to MC; leaning away from
-MCEF-as-default but **will package Chromium if that workflow needs it**).
+**▶️ ON RESUME → the WEB-DEV UI STACK.** Backlog code is clear; the phase Deuce named next is **"pull in the web dev
+stack"** to build every deferred UI: **BUG-005** node detail + zoom · **BUG-006** graph wire-time feedback · **BUG-002**
+EV allocation screen · **BUG-004** Compiler loadout GUI · the **analytics dashboards** (#6). Direction + the
+recommended first move are in **`PORTING_WEB_UI.md`** — Deuce wants to **develop the UI as a real web app *with Claude
+Code*, then move it into MC** (Option B localhost bridge = the most natural "build-in-web-stays-web"; owo-ui for
+in-world; leaning away from MCEF-as-default but **will package Chromium if that workflow needs it**). ⚠️ **Confirm which
+surface to start** (B dashboard PoC vs. C owo-ui pilot) — open Qs are at the bottom of `PORTING_WEB_UI.md`.
 
-**🚚 DEPLOY STATE:** last deployed jar = md5 `a93af8e` (had `/gp breed`, BEFORE the bug fixes). **The 4 bug fixes (HEAD
-`c076871`) are NOT deployed** — bundle them + BUG-004 when Deuce's ready for the new QA pass. The ghost-pasture mixin
-**loaded clean in-game ✅** so the old "deploy the mixin separately" caveat is RESOLVED.
+**🚚 DEPLOY STATE:** last deployed jar = md5 `a93af8e` (had `/gp breed`, BEFORE any fixes). **NONE of the 5 fixes
+(BUG-001/002/003/004/006) are deployed** — bundle the lot for the **next QA session** (batch-QA; deploy only when Deuce
+asks). In-game-only checks waiting on that deploy: **BUG-003** un-hide respawn · **BUG-004** glint toggle +
+inventory-grant + drain-only-installed. The ghost-pasture mixin **loaded clean in-game ✅** (old "deploy the mixin
+separately" caveat RESOLVED).
 
 _(historical 2026-06-29 handoff below)_
 

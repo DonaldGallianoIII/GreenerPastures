@@ -50,4 +50,42 @@ public final class BuffResolver {
 
         return tiers.isEmpty() ? ResolvedBuffs.NONE : new ResolvedBuffs(Map.copyOf(tiers), cost, level);
     }
+
+    /**
+     * Resolve a Daemon's <b>compiled loadout</b> (BUG-004) instead of a single global Mk tier: each installed
+     * buff runs at <i>its own</i> chosen level, re-clamped to {@code min(level, cfg cap, +3 ceiling)}, and the
+     * bill is {@code Σ tier × costPerSec} over <b>only the installed buffs</b> — so a one-buff Daemon is cheap
+     * and you pay for exactly what you compiled. {@code deliverable} ({@code null} ⇒ all) gates to the buffs the
+     * adapter can currently apply, so — exactly as {@link #resolve(BuffConfig, int, Set)} — a player is never
+     * billed for a buff the mod hasn't wired up yet. The returned {@code daemonLevel} is the loadout's highest
+     * effective tier (an informational summary; there's no longer one global level).
+     *
+     * <p>Every bound is re-clamped here at use-site, so a hand-edited component or an over-level the Compiler
+     * never should have written still can't grant an over-ceiling tier, a negative cost, or a free-riding buff.
+     */
+    public static ResolvedBuffs resolveLoadout(BuffConfig config, Map<BuffId, Integer> loadout, Set<BuffId> deliverable) {
+        if (config == null || !config.enabled() || loadout == null || loadout.isEmpty()) return ResolvedBuffs.NONE;
+
+        Map<BuffId, Integer> tiers = new EnumMap<>(BuffId.class);
+        double cost = 0.0;
+        int top = 0;
+
+        for (Map.Entry<BuffId, Integer> e : loadout.entrySet()) {
+            BuffId id = e.getKey();
+            if (id == null) continue;
+            if (deliverable != null && !deliverable.contains(id)) continue;
+            Integer want = e.getValue();
+            if (want == null || want <= 0) continue;
+            BuffSetting s = config.settingOf(id);
+            if (s == null || !s.enabled()) continue;
+            int cap = Math.max(0, Math.min(BuffSetting.TIER_CEILING, s.maxTier()));
+            int tier = Math.min(want, cap);
+            if (tier <= 0) continue;
+            tiers.put(id, tier);
+            cost += tier * Math.max(0.0, s.costPerSec());
+            top = Math.max(top, tier);
+        }
+
+        return tiers.isEmpty() ? ResolvedBuffs.NONE : new ResolvedBuffs(Map.copyOf(tiers), cost, top);
+    }
 }
