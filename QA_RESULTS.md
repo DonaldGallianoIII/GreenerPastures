@@ -40,7 +40,8 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 | BUG-003 | 🟠 | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (increment-2 gap). ✅ breeding survives hide (log-confirmed) — NOT a blocker | ✅ verified in-game |
 | BUG-004 | 🟠 | Q23 | Daemon drain model | Holding a fed Daemon bills the WHOLE 15-buff suite every second (~5.25/sec/tier) even idle; event buffs should bill on-use, not passively | ✅ verified in-game |
 | BUG-005 | 🟡 | Q3 | Daemon node-graph UI | Pokémon nodes too sparse (want type/nickname/gender/IVs/nature); canvas won't zoom out far enough + nodes too small | 🐛 open |
-| BUG-006 | 🟠 | Q3 | Daemon graph validation | Graph accepts incompatible pairs (Drilbur×Pidgey) with no feedback → silent dead pair. ✅ breeding layer safe — Cobbreeding gates egg-gen, no illegal eggs | ✅ core fixed (graph UI→web pass) |
+| BUG-006 | 🟠 | Q3 | Daemon graph validation | Graph accepts incompatible pairs (Drilbur×Pidgey) with no feedback → silent dead pair. ✅ breeding layer safe — Cobbreeding gates egg-gen, no illegal eggs | ✅ core verified in-game (graph UI→web) |
+| BUG-007 | 🟡 | Q4 | BioBank browse UI | Opens as a right-click text summary, not a chest. Want a scrollable species grid (one egg per species) → click a species → its egg collection (AE2/ME two-level browse) | 🗓️ deferred → web-dev pass |
 
 ### ✅ Verified working
 | Q# | Feature | Note |
@@ -137,6 +138,15 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Build plan:** a pure, headless-tested **`BreedingCompat.canBreed(a, b)`** core (the 4 rules over abstracted egg-groups / gender / ditto / undiscovered) + a thin adapter reading `species.getEggGroups()` / `getGender()` from Cobblemon. The graph calls it at **wire-time** → red wire + "incompatible: no shared egg group" tooltip. **Graph feedback bundles into the Daemon UI web-dev pass** (with BUG-005). **Interim cheap win (batchable now):** a `GpLog` line where `possible.isEmpty()` so a dead pair shows in `gp-logs` instead of failing silently.
 - **✅ Fixed (2026-06-30, core):** pure `BreedingCompat.canBreed(a, b)` — the 4 rules (undiscovered / both-ditto / either-ditto / shared-group + opposite-gender); **8 headless tests** incl. Drilbur×Pidgey. `CobbreedingBridge` logs a `pair_incompatible` line when `getPossibleEggs` returns empty, so a dead pair shows in `gp-logs` instead of failing silently. **Graph wire-time feedback (red wire + tooltip) deferred → Daemon UI web pass.**
 - **Status:** ✅ core fixed; graph feedback → web pass
+
+### BUG-007 · 🟡 MINOR (enhancement) · Q4 · BioBank should open as a two-level scrollable egg browser
+- **Now:** the BioBank has **no browse GUI** — right-click empty-hand = a text summary, right-click holding eggs = deposit (Q4). You can't open it like a chest to see/pull what's stored.
+- **Want (Deuce) — AE2/ME-style two-level browse:**
+  1. **Species grid (level 1):** open the BioBank → a **scrollable, chest-style GUI** with room for **every egg species** it holds — one slot per species, each showing that species' egg (icon) + its count.
+  2. **Species collection (level 2):** click a species' egg (e.g. **Charmander**) → a second screen opens listing **all the individual Charmander eggs** stored (the real eggs — sortable by shiny / IVs, per the original BioBank design).
+- **Fits the original design:** this *is* the BioBank's always-intended "eggs as data, bucketed by species, sortable by shiny/IVs" browse front-end — just specified concretely now. The deposit/summary/persist/scatter back-end (Q4 ✅) already exists; this is the missing **view** layer.
+- **Decision:** **defer to the web-dev UI pass** (Deuce: "prolly defer that til we know what the ui looks like for now"). Captured here so it's ready when we build the deferred UIs — it joins the web-dev backlog alongside BUG-002 (EV) / BUG-004 (Compiler) / BUG-005 (node detail) / BUG-006 (graph feedback) + the dashboard.
+- **Status:** 🗓️ deferred — web-dev UI pass
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>

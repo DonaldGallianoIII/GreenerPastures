@@ -1,4 +1,4 @@
-# 🧰 QA Setup Kit — paste-ready MC commands (jar md5 `edf05bf`, MC 1.21.1)
+# 🧰 QA Setup Kit — paste-ready MC commands (jar md5 `035ff6b`, MC 1.21.1)
 
 _Companion to `QA_PENDING.md` (the checklist). All mod IDs verified against the deployed jar. Best run in a
 **creative + cheats** world, standing in an **open flat area** (a superflat creative world is ideal — the `/fill`
