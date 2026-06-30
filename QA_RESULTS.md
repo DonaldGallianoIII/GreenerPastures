@@ -32,6 +32,7 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 | BUG-003 | 🟠 | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (increment-2 gap). ✅ breeding survives hide (log-confirmed) — NOT a blocker | 🐛 open |
 | BUG-004 | 🟠 | Q23 | Daemon drain model | Holding a fed Daemon bills the WHOLE 15-buff suite every second (~5.25/sec/tier) even idle; event buffs should bill on-use, not passively | 🔧 redesign |
 | BUG-005 | 🟡 | Q3 | Daemon node-graph UI | Pokémon nodes too sparse (want type/nickname/gender/IVs/nature); canvas won't zoom out far enough + nodes too small | 🐛 open |
+| BUG-006 | 🟠 | Q3 | Daemon graph validation | Graph accepts incompatible pairs (Drilbur×Pidgey) with no feedback → silent dead pair. ✅ breeding layer safe — Cobbreeding gates egg-gen, no illegal eggs | 🐛 open |
 
 ### ✅ Verified working
 | Q# | Feature | Note |
@@ -91,6 +92,18 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Rollout (Deuce):** bundle into the **next web-dev pass of the Daemon UI** — do NOT hotfix piecemeal.
 - 🔗 **Reinforces the UI strategy:** the Daemon canvas is exactly the screen `PORTING_WEB_UI.md` flagged as the hard one. Bigger legible nodes + per-node Pokémon detail panels + a wider zoom range are painful in raw `Screen`/matrix math but natural in **owo-ui** (or a web canvas). Strong vote to **rebuild the canvas the new way**, not patch the old Screen — and to fold these node fields into that rebuild.
 - **Status:** 🐛 open — deferred to the Daemon UI rework (intentionally not piecemeal)
+
+### BUG-006 · 🟠 MAJOR (graph UX) · Q3 · Daemon graph accepts incompatible breeding pairs
+- **Repro:** wired **Drilbur → Pidgey** in the graph; the link was accepted, no error. (Drilbur = **Field** egg group, Pidgey = **Flying** → no shared group → can't breed in any legal ruleset.)
+- **✅ SCARY UNKNOWN RESOLVED — NOT a blocker, no illegal eggs:** the breeder defers egg-gen to Cobbreeding's own `getPossibleEggs` (`CobbreedingBridge.buildEggForPair:225`). An incompatible pair → **empty** list → `if (possible.isEmpty()) return null;` → **no egg**. The javadoc states it outright ("Returns null if the pair is incompatible"). Live log corroborates: only the valid pasture `-15,86,24` is laying; the illegal pair produced nothing. The breeding layer **cannot** spawn a Drilbur×Pidgey egg — Cobbreeding's ruleset gates it.
+- **The actual bug (graph UX):** the graph accepts the illegal wiring with **no feedback**, creating a **silently dead pair** that never lays — wastes a pair slot, and the user has no idea why it's not producing.
+- **Fix — validation the node needs (mirror Cobbreeding's ruleset):**
+  1. **Shared egg group** — parents intersect on ≥1 egg group.
+  2. **Gender** — one ♂ + one ♀ (Ditto bypasses).
+  3. **Ditto special case** — Ditto breeds with anything *except* another Ditto and the Undiscovered group.
+  4. **Undiscovered / No-Eggs exclusion** — legendaries / babies / etc. can't breed at all.
+- **Build plan:** a pure, headless-tested **`BreedingCompat.canBreed(a, b)`** core (the 4 rules over abstracted egg-groups / gender / ditto / undiscovered) + a thin adapter reading `species.getEggGroups()` / `getGender()` from Cobblemon. The graph calls it at **wire-time** → red wire + "incompatible: no shared egg group" tooltip. **Graph feedback bundles into the Daemon UI web-dev pass** (with BUG-005). **Interim cheap win (batchable now):** a `GpLog` line where `possible.isEmpty()` so a dead pair shows in `gp-logs` instead of failing silently.
+- **Status:** 🐛 open — compat core buildable now (pure); graph feedback → Daemon UI pass
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
