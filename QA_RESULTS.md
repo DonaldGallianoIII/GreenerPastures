@@ -30,6 +30,7 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 | BUG-001 | 🟠 | Q16 | Kernel base drop-rate | Flat +0.25% on every tier; never scales (copper = iron = gold = diamond) | 🐛 open |
 | BUG-002 | 🟠 | Q21 | EV augment / Soul Tether | Flat +N EV on ALL 6 stats (blanket); wants per-stat allocation + a Compiler UI | 🐛 open |
 | BUG-003 | 🟠 | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (increment-2 gap). ✅ breeding survives hide (log-confirmed) — NOT a blocker | 🐛 open |
+| BUG-004 | 🟠 | Q23 | Daemon drain model | Holding a fed Daemon bills the WHOLE 15-buff suite every second (~5.25/sec/tier) even idle; event buffs should bill on-use, not passively | 🐛 open |
 
 ### ✅ Verified working
 | Q# | Feature | Note |
@@ -73,6 +74,13 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fix:** build **Ghost Pasture increment 2** — on un-suppress, re-materialise the tethered mons from their stored data (replicate Cobblemon's tether-spawn). Already on the roadmap; this finding promotes it to "next ghost-pasture work." (+ fix the toggle-state read if the chat check reveals the 2nd bug.)
 - **✅ UPDATE (live log, 12:15):** breeding **survives suppression** — pasture `-15,86,24` laid an egg at `12:15:43` *while ghosted* (toggled `ghost_on` at `12:13:06`). So increment-1's core holds (the tether survives the DISCARD → breeding keeps producing) and this is **NOT a blocker**. Severity stays 🟠 MAJOR (the one-way-toggle UX only). _Side-finding: the "missing eggs" weren't missing — the adjacent Renderer culled each into Data on lay (`brood 12:12:51` → `render 12:12:53`), so the tray stayed empty while Data climbed._
 - **Status:** 🐛 open — increment-2 (proper un-hide) recommended; severity 🟠 (no longer a blocker risk)
+
+### BUG-004 · 🟠 MAJOR (design/balance) · Q23 · Daemon bills the full buff suite continuously, even when idle
+- **Observed (Deuce):** Data balance drains just from *holding* a fed Daemon with nothing actively in use.
+- **Root cause — CONFIRMED (by design, but the design is the gripe):** `DaemonBuffs.settle()` resolves ALL `SUPPORTED` buffs (15) at the Daemon's tier every second and debits the summed `Σ tier × costPerSec` — no "is this buff doing work" gate. Idle-holding bills the entire roster. Rate = **5.25 Data/sec/tier** (6 gathering ×0.5 + 9 QOL ×0.25): **Mk I ≈ 5.25/s (~315/min), Mk III ≈ 15.75/s (~945/min)**.
+- **The tension:** *passive* buffs (Haste, Saturation, Magnet, Respiration, Swift Sneak, Feather Falling, Frost Walker, Potion Duration) genuinely work every tick → fair to bill per-second. *Event* buffs (Fortune, Auto-Smelt, Vein-Mine, Looting, Lure, Luck, XP Boost) do nothing until you mine/fish/kill → billing them each idle second is the wrong feel.
+- **Options:** (1) **NOW (no rebuild):** `config/greenerpastures/buffs.json` — per-buff `enabled:false` or lower `costPerSec`. (2) **RECOMMENDED:** split billing — passive = per-second, event = **pay-on-trigger**; idle drain drops to ~2.0/sec/tier and gathering buffs cost only when they actually proc. (3) in-game on/off (or per-buff) toggle on the Daemon.
+- **Status:** 🐛 open — pending Deuce's pick on the billing model
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
