@@ -9,6 +9,7 @@ import com.greenerpastures.notify.NotifySystem;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.drops.Harvester;
 import com.greenerpastures.economy.DarkEconomy;
+import com.greenerpastures.economy.DataCommand;
 import com.greenerpastures.pasture.breeding.AugmentCommand;
 import com.greenerpastures.pasture.breeding.BetterPasture;
 import com.greenerpastures.pasture.keeper.PastureKeeper;
@@ -44,6 +45,7 @@ public final class GreenerPastures implements ModInitializer {
         NotifySystem.init();    // player notifications observe the analytics event stream
         GoalCommand.init();     // /gp goal — set + track a breeding hunt (track-only, non-destructive)
         AugmentCommand.init();  // /gp augment — no-UI install path: set augment levels on a held Kernel
+        DataCommand.init();     // /gp data — QA/admin: grant/set Data balance so the Daemon can be "fed" for buff tests
 
 
         // pasture/

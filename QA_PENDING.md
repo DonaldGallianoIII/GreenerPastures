@@ -14,6 +14,9 @@ _A running tally of changes that need a real in-game pass. **Pure-logic cores ar
 - **`/gp goal set <species|any> <shiny> <minPerfectIvs> <count>`** — the breeding-goal tracker (Q37); `/gp goal` shows progress, `/gp goal clear` clears.
 
 ## ☐ Pending
+
+> 🚚 **DEPLOYED 2026-06-30** — jar md5 `558f8d5` (replaced `43679bc`) is live in *Greener Pastures Test*. **Every row below now ships in the running jar** (the old per-row "Deployed?" ❌ / "needs deploy" are superseded — the whole Q1–Q38 set is in this build). A **full MC restart** is required to load it; first check is a clean load (no mixin error).
+
 | # | Change | Deployed? | How to verify | Status |
 |---|--------|-----------|---------------|--------|
 | Q1 | **Egg-queue**: breeding routes through a FIFO (buffers 5 tray + 24 queue, no silent discard past 5) | ❌ not yet | slot an upgrade, breed past 5 eggs → they keep coming; harvest the tray → it refills; relog → queue persists. `~/gp-logs/latest.log` shows `breeder brood`/`drain` | ☐ |
