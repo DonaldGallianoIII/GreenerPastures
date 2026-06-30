@@ -38,6 +38,12 @@ public final class MultiPairBreeder {
 
     private static final int SCAN_INTERVAL = 20;
 
+    /** QA/testing override (set via {@code /gp breed interval <seconds>}): when &gt; 0, every pasture breeds on this
+     *  fixed tick interval, bypassing both Cobbreeding's configured time AND the 2.5-min speed floor (and the Speed
+     *  augment). 0 = normal cadence. In-memory + volatile so a fast test rate resets on restart and can never ship
+     *  baked into a world save. */
+    public static volatile long testIntervalTicks = 0L;
+
     /** The augment functions the breeder actually applies to the egg — and therefore the only tethers it pays
      *  burn for: Shiny (proc), Speed (cadence), IV Floor (perfect IVs) and EV (EV head-start). Drop Rate/Yield
      *  belong to the Harvester, Enrichment to the Renderer: each consumer drains its own set on its own clock
@@ -95,8 +101,10 @@ public final class MultiPairBreeder {
                             pd.baseAugmentLevels(), pd.slottedTethers(), balance, BREEDING_FUNCTIONS);
 
                     laid = breedPairs(world, pos, pasture, tier, pd, now, res.effective());
-                    long interval = speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
-                            res.effective().speedLevel());
+                    long interval = testIntervalTicks > 0
+                            ? testIntervalTicks   // QA override (/gp breed interval N) — fixed rate, floor bypassed
+                            : speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
+                                    res.effective().speedLevel());
                     pd.nextBreedTick = now + interval;
 
                     if (laid > 0 && res.drain() > 0 && pd.owner != null) {   // tethers earned their burn this cycle
