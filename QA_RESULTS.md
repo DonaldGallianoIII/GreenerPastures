@@ -42,6 +42,7 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 | Q27 | Vein-miner | ✅ 17-block diamond vein, capped tier×32; **Fortune applied to EVERY block** (the "whole-vein compliant" claim holds — 18 boost events = the full vein). _Pending: safety negatives (dirt/stone must NOT vein), auto-smelt on iron._ Note: conflicts w/ SuperMartijn's ore-vein-miner (redesign makes ours opt-in) |
 | Q25 | Auto-Smelt | ✅ iron ore → `iron_ingot` (`auto_smelt to:minecraft:iron_ingot`); **composes with Fortune + vein-mine** — a 32-block iron vein, each block Fortune-boosted (n up to 5) then smelted to ingots. Full gather-stack chains |
 | Q1 | Egg-queue cap | ✅ `breeder queue_full cap:24` fired (no silent discard past the cap) — the FIFO buffer guard works under a fast (15s) breed rate |
+| Q26 | XP Boost | ✅ `/xp add 100` → `xp_boost from:100 to:175 tier:3` (**+75%** at Mk III); scales by tier (Mk I `7→9` = +25%). Deterministic |
 | Q38 | Ghost pasture — breeding | ✅ breeding survives suppression (see BUG-003 update) |
 
 ---
