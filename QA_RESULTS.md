@@ -24,7 +24,7 @@ I'll fill in the rest, assign an ID + severity, and commit it.
 **Env:** *Greener Pastures Test* instance, MC 1.21.1, full restart. **Load: ✅ clean** — both entrypoints init,
 ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no errors.
 
-> **🔧 Batch status (2026-06-30):** all 6 findings triaged. **BUG-001/002/003/004/006 = built + headless-green (230 tests, 0 fail).**
+> **🔧 Batch status (2026-06-30):** all 6 findings triaged. **BUG-001/002/003/004/006 = ✅ ALL QA-VERIFIED in-game (`035ff6b`) + 230 headless tests, 0 fail.**
 > BUG-005 + the deferred UIs (BUG-002 EV screen, BUG-006 graph feedback, BUG-004 Compiler) → the **web-dev UI pass**.
 > ✅ **DEPLOYED 2026-06-30** — jar md5 `035ff6b` (5 fixes + BUG-003 NPE fix + placement refine) live in *Greener Pastures Test*.
 > **In-game so far:** BUG-004 Feather Falling **✅ verified from the log** (`/gp daemon` compile + ON glint + inventory-grant
@@ -37,8 +37,8 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 |----|-----|-----|---------|---------|--------|
 | BUG-001 | 🟠 | Q16 | Kernel base drop-rate | Flat +0.25% on every tier; never scales (copper = iron = gold = diamond) | ✅ fixed |
 | BUG-002 | 🟠 | Q21 | EV augment / Soul Tether | Flat +N EV on ALL 6 stats (blanket); wants per-stat allocation + a Compiler UI | ✅ data+cmd fixed (UI→web pass) |
-| BUG-003 | 🟠 | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (increment-2 gap). ✅ breeding survives hide (log-confirmed) — NOT a blocker | ✅ inc-2 built (needs in-game QA) |
-| BUG-004 | 🟠 | Q23 | Daemon drain model | Holding a fed Daemon bills the WHOLE 15-buff suite every second (~5.25/sec/tier) even idle; event buffs should bill on-use, not passively | ✅ compile-your-own built (needs in-game QA) |
+| BUG-003 | 🟠 | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (increment-2 gap). ✅ breeding survives hide (log-confirmed) — NOT a blocker | ✅ verified in-game |
+| BUG-004 | 🟠 | Q23 | Daemon drain model | Holding a fed Daemon bills the WHOLE 15-buff suite every second (~5.25/sec/tier) even idle; event buffs should bill on-use, not passively | ✅ verified in-game |
 | BUG-005 | 🟡 | Q3 | Daemon node-graph UI | Pokémon nodes too sparse (want type/nickname/gender/IVs/nature); canvas won't zoom out far enough + nodes too small | 🐛 open |
 | BUG-006 | 🟠 | Q3 | Daemon graph validation | Graph accepts incompatible pairs (Drilbur×Pidgey) with no feedback → silent dead pair. ✅ breeding layer safe — Cobbreeding gates egg-gen, no illegal eggs | ✅ core fixed (graph UI→web pass) |
 
@@ -97,7 +97,8 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **✅ Fixed (2026-06-30, increment-2 built):** `PastureKeeper.respawnTethered` re-materialises each tethering with no live entity (fresh `PokemonEntity` from the stored `Pokemon` → re-link the **existing** `Tethering`); `setSuppressed` calls it on un-hide, and `liveTetheredEntities` makes the scan entityId-independent.
 - **🐛→✅ In-game NPE found + fixed (2026-06-30, live log, jar `edf05bf`→`4da7999`):** the first deploy respawned **nothing** — log showed `keeper ghost_off spawned:0` + `keeper respawn_skip NullPointerException: Vec3i.getX()`. **Root cause** (from decompiled Cobblemon `tether()`): `makeSuitableY` **returns `null`** when it finds no floor within ±16, and I called it on the **solid pasture block itself**, then did `Vec3d.ofCenter(null)` → NPE. **Fix:** new `suitableSpawn()` mirrors Cobblemon's own search — offset one entity-width off the pasture, step outward, **`continue` past `null`**, fall back to the offset spot if all probes miss (so it never NPEs and always places the mon). **Persistence confirmed from the decompile:** Cobblemon's `checkPokemon` keeps a tethering purely on `pokemon.getTetheringId() == tethering.id` (which we re-assert) — it **ignores `entityId`** — so the respawned mons survive the next pasture tick. Redeployed `4da7999`.
 - **✅ Placement refined (2026-06-30, `4da7999`→`035ff6b`):** the NPE-fix re-test confirmed mons **do** re-materialise + persist — but they **clumped a few blocks off one side** (I'd hardcoded `Direction.NORTH` + stepped outward). `suitableSpawn` now rings them N/E/S/W around the pasture (stepping one block further every 4 mons) at the pasture's own Y, so they stand **right next to it**, grounded.
-- **Status:** ✅ inc-2 fixed (NPE + placement) — re-confirm pending on `035ff6b`
+- **✅ VERIFIED in-game (2026-06-30, `035ff6b`):** un-hide re-materialises the mons, **grounded and ringed around the pasture** on all sides; repeat on/off toggles produce no duplicate roamers; breeding/data intact throughout. Increment-2 closed.
+- **Status:** ✅ VERIFIED in-game (un-hide respawns + rings the pasture, no dupes)
 
 ### BUG-004 · 🟠 MAJOR (design/balance) · Q23 · Daemon bills the full buff suite continuously, even when idle
 - **Observed (Deuce):** Data balance drains just from *holding* a fed Daemon with nothing actively in use.
@@ -113,7 +114,8 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
   - **Carried over unchanged:** all buff *delivery* (mixins, attribute reconcile, magnet, vein-mine) + the drain economy + fractional carry — only *what's resolved + billed* flipped from "global suite" to "this item's loadout."
   - **Defaults taken (flag if wrong):** compile cost = running-drain-only (no upfront sink); per-buff cap = each buff's own `maxTier`/+3; compilable set = the 15 `SUPPORTED`.
 - **⚠️ In-game QA pending (can't headless):** right-click glint toggle; buffs granting from inventory (not hand); drain = only-installed; **migration** — existing in-world Daemons carry no loadout/ON → grant nothing until re-compiled + toggled (changelog note for public).
-- **Status:** ✅ built — headless-green; **in-game QA pending** (next pass) · Compiler GUI → web-dev pass
+- **✅ VERIFIED in-game (2026-06-30, `035ff6b`):** the loadout path delivers (Feather Falling from the log + multi-buff loadouts); right-click glint toggle, inventory-grant, drain-scales-with-loadout, OFF=inert, broke-account=no-buffs, and `/gp daemon` cap/undeliverable validation all pass.
+- **Status:** ✅ VERIFIED in-game · Compiler GUI → web-dev pass
 
 ### BUG-005 · 🟡 MINOR (enhancement) · Q3 · Daemon node-graph — sparse nodes + can't zoom out enough
 - **Component:** the Daemon visual-scripting node graph (in-world GUI).

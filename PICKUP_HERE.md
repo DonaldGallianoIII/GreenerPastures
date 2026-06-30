@@ -4,18 +4,19 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ STATE — 2026-06-30 (QA pass DONE + **ALL backlog bugs fixed**; next = web-dev UI stack + a fresh QA pass)
+## ⚡ STATE — 2026-06-30 (QA pass DONE + **ALL backlog bugs fixed AND in-game-verified**; next = web-dev UI stack)
 **230 headless tests green** (+26 across the batch). **All committed on `main`, tree clean.**
 This session Deuce ran the **full QA pass at his computer** → the **entire 15-buff Daemon suite verified end-to-end
 from the live log** (Fortune / Auto-Smelt / Vein / XP / Potion / Attributes / Lure / Luck across all 4 mixin seams +
 tier-scaling + the drain economy); the rest **trust-confirmed** on his call. `QA_PENDING.md` COMPLETE; findings in
 **`QA_RESULTS.md`** (BUG-001…006, with a batch-status banner up top).
 
-**🐛 BUG-FIX BATCH — DONE (all committed + headless-green):** **BUG-001** drop-rate scales per Kernel tier · **BUG-002**
-EV per-stat allocation (`/gp augment ev <6>`) · **BUG-006** `BreedingCompat` core + dead-pair log · **BUG-003** Ghost
-Pasture increment-2 re-materialise (compiles — **in-game QA pending**) · **BUG-004** Daemon **compile-your-own**
-redesign (`DaemonLoadout` + `BuffResolver.resolveLoadout` + ON/OFF enchant-glint toggle + whole-inventory grant +
-`/gp daemon` no-UI path — **in-game QA pending**). Only **BUG-005** stays open by design (a UI ask → web-dev pass).
+**🐛 BUG-FIX BATCH — DONE + ✅ ALL QA-VERIFIED in-game (`035ff6b`):** **BUG-001** drop-rate scales per Kernel tier ·
+**BUG-002** EV per-stat allocation (`/gp augment ev <6>`) · **BUG-006** `BreedingCompat` core + dead-pair log ·
+**BUG-003** Ghost Pasture increment-2 re-materialise (un-hide rings mons around the pasture, no dupes) · **BUG-004**
+Daemon **compile-your-own** redesign (`DaemonLoadout` + `BuffResolver.resolveLoadout` + ON/OFF enchant-glint toggle +
+whole-inventory grant + `/gp daemon` no-UI path; glint/inventory/drain-only/OFF/broke/validation all pass). Only
+**BUG-005** stays open by design (a UI ask → web-dev pass). **The entire backlog is closed.**
 
 **▶️ ON RESUME → the WEB-DEV UI STACK.** Backlog code is clear; the phase Deuce named next is **"pull in the web dev
 stack"** to build every deferred UI: **BUG-005** node detail + zoom · **BUG-006** graph wire-time feedback · **BUG-002**
@@ -31,7 +32,7 @@ Feather Falling ✅ verified from the live log** (`/gp daemon` compile + ON glin
 `buff tick buffs:1 paid:1,1,1,0` is the 0.75/s fractional carry). **BUG-003 un-hide:** ✅ **respawn works** (NPE
 root-caused + fixed — `makeSuitableY` returns null on the solid pasture block; `suitableSpawn` mirrors Cobblemon's
 search; decompile confirmed `checkPokemon` ignores `entityId` so respawns persist). Re-test showed mons **clumped one
-side** → **placement refined** to ring them N/E/S/W around the pasture, grounded — **re-confirm pending on `035ff6b`**
+side** → **placement refined** to ring them N/E/S/W around the pasture, grounded — ✅ **re-confirmed in-game on `035ff6b`** — mons ring the pasture, grounded, no dupes on repeat toggles; **the entire backlog is now in-game-verified**
 (toggle a ghosted pasture OFF → mons should stand right next to it on all sides). Mixin **loads clean ✅**.
 
 _(historical 2026-06-29 handoff below)_
