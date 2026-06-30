@@ -12,6 +12,7 @@ import com.greenerpastures.pasture.breeding.PastureRegistry;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityPose;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -19,6 +20,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
@@ -150,12 +152,12 @@ public final class PastureKeeper {
             if (alreadyLive.contains(t.getTetheringId())) continue;   // still has a live entity — leave it
             try {
                 Pokemon p = t.getPokemon();
+                if (p == null) continue;                          // no stored Pokemon (Cobblemon's checkPokemon releases it)
                 PokemonEntity e = new PokemonEntity(sw, p, CobblemonEntities.POKEMON);
                 e.calculateDimensions();
-                BlockPos at = pasture.makeSuitableY(sw, pos, e, e.getBoundingBox());
-                e.setPosition(Vec3d.ofCenter(at));
-                p.setTetheringId(t.getTetheringId());
-                e.setTethering(t);                 // re-link to the EXISTING tethering — not a new tether
+                e.setPosition(suitableSpawn(sw, pasture, e));     // mirror Cobblemon's tether placement (null-safe)
+                p.setTetheringId(t.getTetheringId());             // pokemon.tetheringId == tethering.id → checkPokemon keeps it
+                e.setTethering(t);                                // re-link to the EXISTING tethering — not a new tether
                 sw.spawnEntity(e);
                 spawned++;
             } catch (Throwable err) {
@@ -163,6 +165,31 @@ public final class PastureKeeper {
             }
         }
         GpLog.i("keeper", "ghost_off", "pos", pos.toShortString(), "spawned", spawned);
+    }
+
+    /**
+     * A safe spawn position near the pasture, replaying Cobblemon's own tether-spawn search: start one entity-width
+     * off the pasture, step outward, and take the first {@code makeSuitableY} hit (it finds a real floor within ±16
+     * of each probe). Cobblemon's {@code makeSuitableY} <b>returns {@code null}</b> when no floor is found — the
+     * original bug passed the <i>solid pasture block</i> and dereffed that null ({@code Vec3d.ofCenter(null)} →
+     * {@code Vec3i.getX()} NPE, so {@code spawned:0}). Here we {@code continue} past null like {@code tether()} does,
+     * and fall back to the offset spot if every probe misses — so a re-materialise never NPEs and always places the
+     * mon somewhere sane. {@code -0.5} on Y puts the feet on the floor (matching Cobblemon).
+     */
+    private static Vec3d suitableSpawn(ServerWorld world, PokemonPastureBlockEntity pasture, PokemonEntity entity) {
+        BlockPos pos = pasture.getPos();
+        Direction dir = Direction.NORTH;   // no player facing at re-materialise — a stable default search axis
+        double width = entity.getBoundingBox().getLengthX();
+        BlockPos ideal = pos.add(dir.getVector().multiply((int) Math.ceil(width) + 1));
+        Box box = entity.getDimensions(EntityPose.STANDING).getBoxAt(ideal.toCenterPos().subtract(0.0, 0.5, 0.0));
+        for (int i = 0; i < 6; i++) {
+            box = box.offset(dir.getVector().getX(), 0.0, dir.getVector().getZ());
+            BlockPos at = ideal.add(dir.getVector().multiply(i + 1));
+            BlockPos fixed = pasture.makeSuitableY(world, at, entity, box);
+            if (fixed == null) continue;
+            return fixed.toCenterPos().subtract(0.0, 0.5, 0.0);
+        }
+        return ideal.toCenterPos().subtract(0.0, 0.5, 0.0);   // every probe missed → place at the offset spot anyway
     }
 
     /** This pasture's currently-spawned tethered mons, found by scanning nearby {@link PokemonEntity}s whose

@@ -26,9 +26,11 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 
 > **🔧 Batch status (2026-06-30):** all 6 findings triaged. **BUG-001/002/003/004/006 = built + headless-green (230 tests, 0 fail).**
 > BUG-005 + the deferred UIs (BUG-002 EV screen, BUG-006 graph feedback, BUG-004 Compiler) → the **web-dev UI pass**.
-> ✅ **DEPLOYED 2026-06-30** — jar md5 `edf05bf` (all 5 fixes) live in *Greener Pastures Test*. **Full restart + a
-> clean-load check first**, then run the in-game checks: BUG-003 un-hide respawn · BUG-004 `/gp daemon` compile + glint
-> + inventory-grant + drain-only-installed. Round-2 command kit: `QA_SETUP.md` (Cluster A step 5 + the new Cluster B).
+> ✅ **DEPLOYED 2026-06-30** — jar md5 `4da7999` (5 fixes + the BUG-003 un-hide NPE fix) live in *Greener Pastures Test*.
+> **In-game so far:** BUG-004 Feather Falling **✅ verified from the log** (`/gp daemon` compile + ON glint + inventory-grant
+> + drain-only-installed all confirmed — `buff tick buffs:1 paid:1,1,1,0` = the 0.75/s carry). BUG-003 un-hide threw an
+> NPE on the first jar (`spawned:0`) → **root-caused + fixed** (see BUG-003 detail) → **re-test pending** on `4da7999`.
+> Round-2 command kit: `QA_SETUP.md` (Cluster A step 5 + the new Cluster B).
 
 ### 🐛 Findings — index
 | ID | Sev | Q# | Feature | Symptom | Status |
@@ -92,8 +94,9 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **⚠️ BLOCKER gate — does a hidden pasture still breed?** Code says **yes by design**: the breeder reads the pasture's tether *data* (`MultiPairBreeder.breedPairs:150` → `pasture.getTetheredPokemon()` → `buildEggForPair`), never the roaming entity. So breeding survives **iff** the Tethering survived the discard. Two checks confirm it: **(a)** after hiding, open the pasture GUI — are the mons **still listed**? **(b)** on a hidden pasture with a Kernel + a configured pair, wait ~2.5 min → do eggs hit the tray / `breeder` lines appear in `gp-logs`? If mons also vanish from the GUI ⇒ tether lost ⇒ BLOCKER (increment-1's core failed). _No breeder activity in the log yet this session — no pair+Kernel set up on the test pasture._
 - **Fix:** build **Ghost Pasture increment 2** — on un-suppress, re-materialise the tethered mons from their stored data (replicate Cobblemon's tether-spawn). Already on the roadmap; this finding promotes it to "next ghost-pasture work." (+ fix the toggle-state read if the chat check reveals the 2nd bug.)
 - **✅ UPDATE (live log, 12:15):** breeding **survives suppression** — pasture `-15,86,24` laid an egg at `12:15:43` *while ghosted* (toggled `ghost_on` at `12:13:06`). So increment-1's core holds (the tether survives the DISCARD → breeding keeps producing) and this is **NOT a blocker**. Severity stays 🟠 MAJOR (the one-way-toggle UX only). _Side-finding: the "missing eggs" weren't missing — the adjacent Renderer culled each into Data on lay (`brood 12:12:51` → `render 12:12:53`), so the tray stayed empty while Data climbed._
-- **✅ Fixed (2026-06-30, increment-2 built):** `PastureKeeper.respawnTethered` re-materialises each tethering with no live entity (fresh `PokemonEntity` from the stored `Pokemon` → `makeSuitableY` → re-link the **existing** `Tethering`); `setSuppressed` calls it on un-hide, and `liveTetheredEntities` makes the scan entityId-independent. **Compiles; entity respawn can't be headless-tested → in-game QA pending** (next pass).
-- **Status:** ✅ inc-2 built — in-game QA pending
+- **✅ Fixed (2026-06-30, increment-2 built):** `PastureKeeper.respawnTethered` re-materialises each tethering with no live entity (fresh `PokemonEntity` from the stored `Pokemon` → re-link the **existing** `Tethering`); `setSuppressed` calls it on un-hide, and `liveTetheredEntities` makes the scan entityId-independent.
+- **🐛→✅ In-game NPE found + fixed (2026-06-30, live log, jar `edf05bf`→`4da7999`):** the first deploy respawned **nothing** — log showed `keeper ghost_off spawned:0` + `keeper respawn_skip NullPointerException: Vec3i.getX()`. **Root cause** (from decompiled Cobblemon `tether()`): `makeSuitableY` **returns `null`** when it finds no floor within ±16, and I called it on the **solid pasture block itself**, then did `Vec3d.ofCenter(null)` → NPE. **Fix:** new `suitableSpawn()` mirrors Cobblemon's own search — offset one entity-width off the pasture, step outward, **`continue` past `null`**, fall back to the offset spot if all probes miss (so it never NPEs and always places the mon). **Persistence confirmed from the decompile:** Cobblemon's `checkPokemon` keeps a tethering purely on `pokemon.getTetheringId() == tethering.id` (which we re-assert) — it **ignores `entityId`** — so the respawned mons survive the next pasture tick. Redeployed `4da7999`.
+- **Status:** ✅ inc-2 fixed (NPE) — re-test pending on `4da7999`
 
 ### BUG-004 · 🟠 MAJOR (design/balance) · Q23 · Daemon bills the full buff suite continuously, even when idle
 - **Observed (Deuce):** Data balance drains just from *holding* a fed Daemon with nothing actively in use.

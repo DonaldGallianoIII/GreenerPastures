@@ -25,12 +25,14 @@ Code*, then move it into MC** (Option B localhost bridge = the most natural "bui
 in-world; leaning away from MCEF-as-default but **will package Chromium if that workflow needs it**). ⚠️ **Confirm which
 surface to start** (B dashboard PoC vs. C owo-ui pilot) — open Qs are at the bottom of `PORTING_WEB_UI.md`.
 
-**🚚 DEPLOY STATE:** ✅ **DEPLOYED 2026-06-30 — jar md5 `edf05bf`** (all 5 fixes; replaced `a93af8e`) in *Greener
-Pastures Test*/mods (single jar, clean overwrite). **Full MC restart required**, then the clean-load check (Deuce says
-"in" → I scan the instance log). In-game checks now LIVE to run: **BUG-003** un-hide respawn · **BUG-004** `/gp daemon`
-compile + glint toggle + inventory-grant + drain-only-installed — round-2 kit is in **`QA_SETUP.md`** (Cluster A step 5
-+ the rewritten Cluster B). The ghost-pasture mixin **loaded clean in-game ✅** (old "deploy the mixin separately"
-caveat RESOLVED).
+**🚚 DEPLOY STATE:** ✅ **DEPLOYED 2026-06-30 — jar md5 `4da7999`** (5 fixes + the BUG-003 un-hide NPE fix; the chain was
+`a93af8e`→`edf05bf`→`4da7999`) in *Greener Pastures Test*/mods. **In-game results so far:** **BUG-004 Feather Falling ✅
+verified from the live log** (`/gp daemon` compile + ON glint + inventory-grant + drain-only-installed all confirmed —
+`buff tick buffs:1 paid:1,1,1,0` is the 0.75/s fractional carry working). **BUG-003 un-hide:** first jar NPE'd
+(`makeSuitableY` returns null on the solid pasture block → `Vec3d.ofCenter(null)`); **fixed** with `suitableSpawn()`
+(mirrors Cobblemon's offset+step+null-skip search) + confirmed via decompile that `checkPokemon` ignores `entityId` so
+respawns persist — **re-test pending on `4da7999`** (restart MC → toggle a ghosted pasture OFF → mons re-materialise,
+watch `keeper ghost_off spawned:N`). The ghost-pasture mixin **loaded clean ✅**.
 
 _(historical 2026-06-29 handoff below)_
 
