@@ -223,7 +223,13 @@ public final class CobbreedingBridge {
         try {
             List<Pokemon> pokemon = BreedingUtilities.getPokemon(pairSlots);
             var possible = BreedingUtilities.getPossibleEggs(pokemon);
-            if (possible.isEmpty()) return null;
+            if (possible.isEmpty()) {
+                // Cobbreeding rejected the pair (no shared egg group / gender / Undiscovered) — a "dead pair" that
+                // can't lay. Surface it (BUG-006) so a mis-wired graph pairing is visible instead of silently idle.
+                if (pokemon.size() >= 2) GpLog.d("breeder", "pair_incompatible",
+                        "a", pokemon.get(0).getSpecies().getName(), "b", pokemon.get(1).getSpecies().getName());
+                return null;
+            }
             PokemonProperties eggData = BreedingUtilities.chooseEgg(possible);
             if (eggData == null || eggData.getSpecies() == null) return null;
             boolean procShiny = maybeProcShiny(eggData, pokemon, shape.shinyProcChance());
