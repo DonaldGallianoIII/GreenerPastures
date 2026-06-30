@@ -40,6 +40,8 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 | — | Mod load | Clean load: common+client init, ghost-pasture mixin resolved, 15 buffs registered, no red lines |
 | Q24 | Daemon Fortune boost | ✅ fires — `enchant_boost fortune from:3→to:4` at Mk I (+1). _Pending: Mk III (→VI), + negatives (no-Fortune pick / Data-0 → no boost)._ ⚠️ needs Daemon **in-hand** (off-hand) until the inventory redesign |
 | Q27 | Vein-miner | ✅ 17-block diamond vein, capped tier×32; **Fortune applied to EVERY block** (the "whole-vein compliant" claim holds — 18 boost events = the full vein). _Pending: safety negatives (dirt/stone must NOT vein), auto-smelt on iron._ Note: conflicts w/ SuperMartijn's ore-vein-miner (redesign makes ours opt-in) |
+| Q25 | Auto-Smelt | ✅ iron ore → `iron_ingot` (`auto_smelt to:minecraft:iron_ingot`); **composes with Fortune + vein-mine** — a 32-block iron vein, each block Fortune-boosted (n up to 5) then smelted to ingots. Full gather-stack chains |
+| Q1 | Egg-queue cap | ✅ `breeder queue_full cap:24` fired (no silent discard past the cap) — the FIFO buffer guard works under a fast (15s) breed rate |
 | Q38 | Ghost pasture — breeding | ✅ breeding survives suppression (see BUG-003 update) |
 
 ---
