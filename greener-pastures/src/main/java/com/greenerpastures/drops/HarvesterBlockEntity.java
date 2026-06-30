@@ -91,12 +91,25 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
     public static void serverTick(World world, BlockPos pos, BlockState state, HarvesterBlockEntity be) {
         if (world.getTime() % INTERVAL != 0L) return;
         if (!(world instanceof ServerWorld sw)) return;
-        if (!CobbreedingBridge.isAvailable()) return;
-        if (firstEmpty(be.inv) < 0) return;                  // full → pause (no roll, no loss, no ground items)
+        if (!CobbreedingBridge.isAvailable()) {
+            GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "cobbreeding_unavailable");
+            return;
+        }
+        if (firstEmpty(be.inv) < 0) {                        // full → pause (no roll, no loss, no ground items)
+            GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "container_full");
+            return;
+        }
         try {
             BlockPos pasturePos = adjacentPasture(world, pos);
-            if (pasturePos == null) return;
-            if (!(world.getBlockEntity(pasturePos) instanceof PokemonPastureBlockEntity pasture)) return;
+            if (pasturePos == null) {                        // not face-adjacent to a pasture's block entity (its LOWER block)
+                GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "no_adjacent_pasture");
+                return;
+            }
+            if (!(world.getBlockEntity(pasturePos) instanceof PokemonPastureBlockEntity pasture)) {
+                GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "not_a_pasture");
+                return;
+            }
+            int mons = pasture.getTetheredPokemon().size();
             // 1) staple harvest — each mon's Cobblemon drop table (LEVER 1 proc + LEVER 2 yield)
             DropPlan plan = dropPlan(sw, pasturePos);                     // Kernel base × any FED drop tether
             double proc = BASE_PROC + plan.eff().dropRateFraction();      // LEVER 1: +0.25% base + amplified rate
@@ -119,6 +132,9 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
                 GpLog.d("tether", "drain", "pos", pos.toShortString(),
                         "data", plan.drain(), "owner", plan.owner().toString(), "src", "harvester");
             }
+            // heartbeat: one line every harvest tick (IRL minute) so "is it alive + finding mons?" is always answerable
+            GpLog.d("harvester", "tick", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
+                    "mons", mons, "proc", String.format("%.3f", proc), "added", added);
         } catch (Throwable t) {
             // a Cobblemon API edge must never crash the world tick (mirrors the breeder/Renderer guards)
             GpLog.w("harvester", "skip", "pos", pos.toShortString(), "err", String.valueOf(t));
