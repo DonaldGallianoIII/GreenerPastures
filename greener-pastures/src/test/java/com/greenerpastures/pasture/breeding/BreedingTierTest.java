@@ -34,4 +34,23 @@ class BreedingTierTest {
         assertEquals("copper", BreedingTier.COPPER.id());
         assertEquals("greener", BreedingTier.GREENER.id());
     }
+
+    @Test
+    void baseDropRateScalesPerTier() {   // BUG-001: every tier used to share a flat +0.25% (25)
+        assertEquals(25,  BreedingTier.COPPER.baseDropRateCentipercent(),    "copper +0.25%");
+        assertEquals(50,  BreedingTier.IRON.baseDropRateCentipercent(),      "iron +0.50%");
+        assertEquals(75,  BreedingTier.GOLD.baseDropRateCentipercent(),      "gold +0.75%");
+        assertEquals(100, BreedingTier.DIAMOND.baseDropRateCentipercent(),   "diamond +1.00%");
+        assertEquals(125, BreedingTier.NETHERITE.baseDropRateCentipercent(), "netherite +1.25%");
+        assertEquals(150, BreedingTier.GREENER.baseDropRateCentipercent(),   "greener +1.50%");
+    }
+
+    @Test
+    void baseDropRateStrictlyIncreasesPerTier() {   // BUG-001 regression guard
+        BreedingTier[] v = BreedingTier.values();
+        for (int i = 1; i < v.length; i++) {
+            assertTrue(v[i].baseDropRateCentipercent() > v[i - 1].baseDropRateCentipercent(),
+                    v[i] + " base drop rate must exceed " + v[i - 1]);
+        }
+    }
 }

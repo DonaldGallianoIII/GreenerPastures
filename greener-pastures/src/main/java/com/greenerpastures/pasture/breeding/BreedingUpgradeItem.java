@@ -17,9 +17,11 @@ import java.util.List;
  * handled entirely through the Pasture Wand GUI.
  */
 public class BreedingUpgradeItem extends Item {
-    /** Every Kernel ships with this base drop-rate perk, in centipercent ({@code 25} = +0.25%). Added to
-     *  the Harvester's per-mon proc; a base augment, so a Drop Rate tether amplifies it. Set as the item's
-     *  default {@code augments} component in {@code BetterPasture.registerItems}. */
+    /** The per-tier base drop-rate INCREMENT, in centipercent ({@code 25} = +0.25%/tier): a Kernel's base drop
+     *  rate is {@code BASE_DROP_RATE × tier-level} (copper +0.25% … greener +1.50% — see
+     *  {@link BreedingTier#baseDropRateCentipercent()}). Added to the Harvester's per-mon proc; a base augment,
+     *  so a Drop Rate tether amplifies it. Set as the item's default {@code augments} component in
+     *  {@code BetterPasture.registerItems}. */
     public static final int BASE_DROP_RATE = 25;
 
     private final BreedingTier tier;

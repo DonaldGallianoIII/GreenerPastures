@@ -61,10 +61,11 @@ public final class BetterPasture {
     }
 
     private static void registerItems() {
-        // every Kernel ships with a base +0.25% drop rate (a default augments component) — visible on the
+        // every Kernel ships with a base drop-rate perk that SCALES with the tier (copper +0.25% … greener
+        // +1.50% — BUG-001 fix; was a flat +0.25% on every tier): a default augments component, visible on the
         // tooltip, read by the Harvester, and amplifiable by a Drop Rate tether (Deuce, 2026-06-29).
-        Augments kernelBase = Augments.NONE.withLevel(AugmentFunction.DROP_RATE, BreedingUpgradeItem.BASE_DROP_RATE);
         for (BreedingTier tier : BreedingTier.values()) {
+            Augments kernelBase = Augments.NONE.withLevel(AugmentFunction.DROP_RATE, tier.baseDropRateCentipercent());
             BreedingUpgradeItem item = new BreedingUpgradeItem(tier,
                     new Item.Settings().maxCount(16).component(GpComponents.AUGMENTS, kernelBase));
             Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "breeding_upgrade_" + tier.id()), item);
