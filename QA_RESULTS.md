@@ -30,7 +30,8 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 | BUG-001 | 🟠 | Q16 | Kernel base drop-rate | Flat +0.25% on every tier; never scales (copper = iron = gold = diamond) | 🐛 open |
 | BUG-002 | 🟠 | Q21 | EV augment / Soul Tether | Flat +N EV on ALL 6 stats (blanket); wants per-stat allocation + a Compiler UI | 🐛 open |
 | BUG-003 | 🟠 | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (increment-2 gap). ✅ breeding survives hide (log-confirmed) — NOT a blocker | 🐛 open |
-| BUG-004 | 🟠 | Q23 | Daemon drain model | Holding a fed Daemon bills the WHOLE 15-buff suite every second (~5.25/sec/tier) even idle; event buffs should bill on-use, not passively | 🐛 open |
+| BUG-004 | 🟠 | Q23 | Daemon drain model | Holding a fed Daemon bills the WHOLE 15-buff suite every second (~5.25/sec/tier) even idle; event buffs should bill on-use, not passively | 🔧 redesign |
+| BUG-005 | 🟡 | Q3 | Daemon node-graph UI | Pokémon nodes too sparse (want type/nickname/gender/IVs/nature); canvas won't zoom out far enough + nodes too small | 🐛 open |
 
 ### ✅ Verified working
 | Q# | Feature | Note |
@@ -82,6 +83,14 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Options:** (1) **NOW (no rebuild):** `config/greenerpastures/buffs.json` — per-buff `enabled:false` or lower `costPerSec`. (2) **RECOMMENDED:** split billing — passive = per-second, event = **pay-on-trigger**; idle drain drops to ~2.0/sec/tier and gathering buffs cost only when they actually proc. (3) in-game on/off (or per-buff) toggle on the Daemon.
 - **✅ DECIDED → redesign:** Deuce chose the bigger fix — the Daemon becomes a **compile-your-own-buffs** item: compile a chosen buff loadout in the Compiler, right-click to toggle ON (enchant glint), works from your inventory/backpack, drains **only the installed buffs**, and **never force-loads a chunk**. Supersedes the "hold → whole suite at global Mk" model. Full spec: **`DAEMON_REDESIGN.md`**.
 - **Status:** 🔧 spec'd — build pending (logic-first; `/gp daemon` no-UI path first, Compiler GUI later)
+
+### BUG-005 · 🟡 MINOR (enhancement) · Q3 · Daemon node-graph — sparse nodes + can't zoom out enough
+- **Component:** the Daemon visual-scripting node graph (in-world GUI).
+- **Need — surface on each Pokémon node:** **Type(s)** · **Nickname** (if set) · **Gender** · breeding-relevant stats: **IVs + Nature**. (All readable off the tethered `Pokemon`: `getTypes` / `getNickname` / `getGender` / `ivs` / `getNature`.)
+- **Canvas:** (a) widen the **max zoom-out** — currently can't pull back far enough to see the graph at scale (anchor: `MIN_ZOOM = 0.25` in `client/ui/DaemonController.java:31` → lower it); (b) **bigger nodes/icons** so the new detail is legible.
+- **Rollout (Deuce):** bundle into the **next web-dev pass of the Daemon UI** — do NOT hotfix piecemeal.
+- 🔗 **Reinforces the UI strategy:** the Daemon canvas is exactly the screen `PORTING_WEB_UI.md` flagged as the hard one. Bigger legible nodes + per-node Pokémon detail panels + a wider zoom range are painful in raw `Screen`/matrix math but natural in **owo-ui** (or a web canvas). Strong vote to **rebuild the canvas the new way**, not patch the old Screen — and to fold these node fields into that rebuild.
+- **Status:** 🐛 open — deferred to the Daemon UI rework (intentionally not piecemeal)
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
