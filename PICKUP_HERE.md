@@ -4,36 +4,62 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ STATE — 2026-06-30 (QA pass DONE + **ALL backlog bugs fixed AND in-game-verified**; next = web-dev UI stack)
-**230 headless tests green** (+26 across the batch). **All committed on `main`, tree clean.**
-This session Deuce ran the **full QA pass at his computer** → the **entire 15-buff Daemon suite verified end-to-end
-from the live log** (Fortune / Auto-Smelt / Vein / XP / Potion / Attributes / Lure / Luck across all 4 mixin seams +
-tier-scaling + the drain economy); the rest **trust-confirmed** on his call. `QA_PENDING.md` COMPLETE; findings in
-**`QA_RESULTS.md`** (BUG-001…006, with a batch-status banner up top).
+## ⚡ STATE — 2026-06-30 (QA DONE + signed off · backlog **code** complete · **NEXT = web-dev UI stack**)
+**The backend/logic is feature-complete and QA-signed-off; the entire remaining roadmap is UI.** 230 headless tests
+green, all committed on `main`, tree clean. **Deployed jar = `c901b4e`** in *Greener Pastures Test*/mods (deploy chain
+this session: `a93af8e`→`edf05bf`→`4da7999`→`035ff6b`→`c901b4e`; commits after `c901b4e` are **docs-only**, jar
+unchanged — current source == deployed code).
 
-**🐛 BUG-FIX BATCH — DONE + ✅ ALL QA-VERIFIED in-game (`035ff6b`):** **BUG-001** drop-rate scales per Kernel tier ·
-**BUG-002** EV per-stat allocation (`/gp augment ev <6>`) · **BUG-006** `BreedingCompat` core + dead-pair log ·
-**BUG-003** Ghost Pasture increment-2 re-materialise (un-hide rings mons around the pasture, no dupes) · **BUG-004**
-Daemon **compile-your-own** redesign (`DaemonLoadout` + `BuffResolver.resolveLoadout` + ON/OFF enchant-glint toggle +
-whole-inventory grant + `/gp daemon` no-UI path; glint/inventory/drain-only/OFF/broke/validation all pass). Only
-**BUG-005** stays open by design (a UI ask → web-dev pass). **The entire backlog is closed.**
+### ✅ QA sign-off (Deuce, 2026-06-30 — formal record in `QA_PENDING.md` "Verified" section)
+**Signed off / verified in-game:**
+- BUG-001 drop-rate ramps per Kernel tier · BUG-002 EV per-stat (`/gp augment ev`) · BUG-003 ghost-pasture un-hide (mons
+  **ring** the pasture, no dupes) · BUG-004 Daemon compile-your-own (`/gp daemon`) · BUG-006 breeding-compat (illegal pairs → no eggs)
+- **Q23–Q30** Daemon buff suite (all 15 root buffs, end-to-end from the live log)
+- **Q1–Q22** foundation + economy (egg queue, BioBank, Renderer→Data, Soul Tethers, craftable augments, IV/EV, rituals, Harvester)
 
-**▶️ ON RESUME → the WEB-DEV UI STACK.** Backlog code is clear; the phase Deuce named next is **"pull in the web dev
-stack"** to build every deferred UI: **BUG-005** node detail + zoom · **BUG-006** graph wire-time feedback · **BUG-002**
-EV allocation screen · **BUG-004** Compiler loadout GUI · the **analytics dashboards** (#6). Direction + the
-recommended first move are in **`PORTING_WEB_UI.md`** — Deuce wants to **develop the UI as a real web app *with Claude
-Code*, then move it into MC** (Option B localhost bridge = the most natural "build-in-web-stays-web"; owo-ui for
-in-world; leaning away from MCEF-as-default but **will package Chromium if that workflow needs it**). ⚠️ **Confirm which
-surface to start** (B dashboard PoC vs. C owo-ui pilot) — open Qs are at the bottom of `PORTING_WEB_UI.md`.
+**⏳ HELD — gated on the visual rework (do NOT mark done):**
+- **Q31–Q34** breeding-meta locks (Nature/Ball/Hidden Ability/Egg Moves) — logs fire, but **visually confirming a
+  hatchling carries the locked trait needs the inspection UI** (node-graph per-mon trait view = BUG-005). That UI is
+  both the feature AND the verification harness for these four.
+- **Q35–Q37** Notifications + Goal (shiny ping · Data-milestone ping · `/gp goal`) — untested; Deuce wants the visual rework first.
+- → Tidy framing: **the held list == "everything that needs the visual rework to build or verify."**
 
-**🚚 DEPLOY STATE:** ✅ **DEPLOYED 2026-06-30 — jar md5 `035ff6b`** (5 fixes + BUG-003 un-hide NPE fix + placement refine;
-chain `a93af8e`→`edf05bf`→`4da7999`→`035ff6b`) in *Greener Pastures Test*/mods. **In-game results so far:** **BUG-004
-Feather Falling ✅ verified from the live log** (`/gp daemon` compile + ON glint + inventory-grant + drain-only-installed —
-`buff tick buffs:1 paid:1,1,1,0` is the 0.75/s fractional carry). **BUG-003 un-hide:** ✅ **respawn works** (NPE
-root-caused + fixed — `makeSuitableY` returns null on the solid pasture block; `suitableSpawn` mirrors Cobblemon's
-search; decompile confirmed `checkPokemon` ignores `entityId` so respawns persist). Re-test showed mons **clumped one
-side** → **placement refined** to ring them N/E/S/W around the pasture, grounded — ✅ **re-confirmed in-game on `035ff6b`** — mons ring the pasture, grounded, no dupes on repeat toggles; **the entire backlog is now in-game-verified**
-(toggle a ghosted pasture OFF → mons should stand right next to it on all sides). Mixin **loads clean ✅**.
+### ▶️ THE NEXT PHASE — web-dev UI stack (this *is* the rest of the backlog)
+**Deuce's direction:** develop the UI as a **real web app *with Claude Code*, then port it into MC.** Toolchain READY on
+this box: **Node 22 · npm 10.9 · pnpm 10.33 · yarn** (verified). **No web project scaffolded yet.**
+- **Recommended stack:** Vite + React + TypeScript (most Claude-Code-friendly; good for charts AND interactive builders).
+- **Port path:** build in-browser with mock data → wire into MC via the **localhost web bridge (Option B)** or **owo-ui
+  (Option C)** per surface. Strategy + decision matrix: **`PORTING_WEB_UI.md`** (MCEF/Option A parked unless we want
+  true in-world web + accept ~100 MB Chromium).
+- **Proposed build order:** scaffold → **Dashboard** (self-contained, proves the bridge) → **Daemon Compiler** → **EV
+  allocator** → **node-graph + the two browsers**.
+
+**Deferred-UI backlog — specs in `QA_RESULTS.md` (BUG-005/007/008) + `QA_PENDING` Q-rows. NOTE: most BACKENDS already exist (logic-first paid off):**
+| UI | What | Backend status | Spec |
+|----|------|----------------|------|
+| 📊 Analytics dashboard | live egg/shiny feed · Data economy · goal progress · CSV/HTML export | `DashboardStats` + `DashboardExport.toHtml()` exist | task #6 · PORTING_WEB_UI Opt B |
+| ⌬ Daemon Compiler | visual loadout builder (buffs + levels, live drain) | ✅ `/gp daemon set/list/on/off` | BUG-004 |
+| ✦ EV allocator | anvil-style per-stat, pool vs 252/510 caps | ✅ `/gp augment ev <6>` | BUG-002 |
+| 🕸️ Daemon node-graph | per-mon detail (type/nick/gender/IVs/nature/ability/moves) + zoom-out + red-wire incompatible-pair feedback | graph exists (`client/ui/DaemonController`); compat core ✅ | BUG-005 + BUG-006 |
+| 🧬 Breeding-meta picker | choose nature/ball/ability/egg-moves in the Compiler | ✅ `/gp augment set nature/ball/ability/egg_move` | Q31–Q34 |
+| 🥚 BioBank browser | scrollable species grid → click species → its eggs (sortable shiny/IVs); two-level AE2/ME-style | ✅ deposit/persist (Q4) | BUG-007 |
+| 🔗 Harvester linking | link N pastures to a harvester; GUI shows linked coords + unlink (no scan, no dup) | ❌ **NOT built** | BUG-008 |
+
+**Feature tail (after the UIs):** egg-culler → item + GUI (#17) · "Data Science" awareness book (#18) · final perf + publish prep (#7).
+
+### 🔧 ONE open backend thread (decide first)
+**Harvester linking backend (BUG-008)** — Deuce's ME-drive design: a harvester stores a persisted list of linked
+pasture coords, iterates them each tick (zero scan, no dup — a pasture links to one harvester), drops per the pasture's
+own Kernel. I **offered to build the link store + `/gp harvester link/unlink/list` command NOW** (logic-first; makes his
+multi-pasture cluster work today; GUI comes in the web pass). **Deuce hasn't said go yet** — this is the only piece of
+backend left before *everything* is UI. (Today's Harvester reads only the FIRST adjacent pasture — found live in QA.)
+
+**Harvester observability note:** added a per-minute heartbeat — `harvester tick mons:N max:M proc:X added:Z` + `skip_tick why:…`
+(in `c901b4e`). QA proved the Harvester works; "no drops" was just Eevee's stingy 5%/5% table + the 3%/min base proc + the
+maxTethered:16 cap, not a bug.
+
+⚠️ **Phase shift:** we've been **no-UI-first**; we are now **entering the UI phase** — the deferred GUIs are the work.
+Still: **logic-first cores stay headless-tested**, **batch-QA** (commit increments, deploy on ask), **observability** (every feature logs JSONL).
 
 _(historical 2026-06-29 handoff below)_
 
