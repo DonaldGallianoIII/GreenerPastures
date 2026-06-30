@@ -29,6 +29,7 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 |----|-----|-----|---------|---------|--------|
 | BUG-001 | 🟠 | Q16 | Kernel base drop-rate | Flat +0.25% on every tier; never scales (copper = iron = gold = diamond) | 🐛 open |
 | BUG-002 | 🟠 | Q21 | EV augment / Soul Tether | Flat +N EV on ALL 6 stats (blanket); wants per-stat allocation + a Compiler UI | 🐛 open |
+| BUG-003 | 🟠→🔴? | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (discarded entities = the increment-2 gap). Breeding-survival check pending | 🐛 open |
 
 ### ✅ Verified working
 | Q# | Feature | Note |
@@ -62,6 +63,15 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
   2. **Interim no-UI authoring:** extend `/gp augment` to set the spread (e.g. `set ev <hp> <atk> <def> <spa> <spd> <spe>`), like nature/ball — testable before the screen exists.
   3. **The screen:** a prime **owo-ui** candidate (`PORTING_WEB_UI.md` Option C — flow + slots + live preview; the anvil-result pattern maps cleanly). Good "first real in-world GUI the new way."
 - **Status:** 🐛 open (spec captured; scheduled, not started)
+
+### BUG-003 · 🟠 MAJOR (→ 🔴 BLOCKER if breeding dies) · Q38 · Ghost-pasture toggle is one-way (can't un-hide)
+- **Confirmed working ✅ (increment 1):** shift-RC hides roamers; toggling ON while they roam hides them in place; persists across save/reload.
+- **Broken:** shift-RC again to un-hide does nothing — mons stay gone. Workaround: remove from pasture → toggle OFF → reinsert.
+- **Root cause — primary (BY DESIGN, the known increment-2 gap):** hide removes each roamer with `RemovalReason.DISCARDED` (destroyed for good, never reloads) + re-asserts its `tetheringId` to keep the data. Un-suppress only clears the flag so *future* tethers spawn — it does **not** re-create the already-discarded entities, so there's no entity left to "show." This is the documented Q38 increment-2 follow-up (re-materialise on un-suppress), **not a regression**.
+- **⚠️ Possible SECOND bug (needs 1 check):** `gp-logs` shows `keeper ghost_on cleared:2` firing repeatedly (11:16:27 / :36 / :46) rather than alternating on/off. Consistent with the remove/reinsert workaround (each reinsert respawns 2 → next hide clears 2) — but could also mean the toggle isn't flipping to OFF in state (every click re-enables). **Disambiguator:** on the 2nd (un-hide) click, does chat say "ghost pasture **OFF**" or "**ON**"? OFF ⇒ pure increment-2 gap; ON ⇒ a real toggle-state read bug to fix too.
+- **⚠️ BLOCKER gate — does a hidden pasture still breed?** Code says **yes by design**: the breeder reads the pasture's tether *data* (`MultiPairBreeder.breedPairs:150` → `pasture.getTetheredPokemon()` → `buildEggForPair`), never the roaming entity. So breeding survives **iff** the Tethering survived the discard. Two checks confirm it: **(a)** after hiding, open the pasture GUI — are the mons **still listed**? **(b)** on a hidden pasture with a Kernel + a configured pair, wait ~2.5 min → do eggs hit the tray / `breeder` lines appear in `gp-logs`? If mons also vanish from the GUI ⇒ tether lost ⇒ BLOCKER (increment-1's core failed). _No breeder activity in the log yet this session — no pair+Kernel set up on the test pasture._
+- **Fix:** build **Ghost Pasture increment 2** — on un-suppress, re-materialise the tethered mons from their stored data (replicate Cobblemon's tether-spawn). Already on the roadmap; this finding promotes it to "next ghost-pasture work." (+ fix the toggle-state read if the chat check reveals the 2nd bug.)
+- **Status:** 🐛 open — increment-2 build recommended; final severity pending the breeding check
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
