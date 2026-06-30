@@ -21,6 +21,7 @@ import net.minecraft.text.Text;
  * <pre>
  *   /gp augment list                    show the held Kernel's augments
  *   /gp augment set <function> <level>  set one (level 0 removes it)
+ *   /gp augment ev <hp> <atk> <def> <spa> <spd> <spe>   the per-stat EV allocation (BUG-002)
  *   /gp augment clear                   strip them all
  * </pre>
  */
@@ -41,7 +42,15 @@ public final class AugmentCommand {
                 .then(CommandManager.literal("set")
                     .then(CommandManager.argument("function", StringArgumentType.word()).suggests(FUNCTIONS)
                         .then(CommandManager.argument("level", IntegerArgumentType.integer(0))
-                            .executes(AugmentCommand::set)))))));
+                            .executes(AugmentCommand::set))))
+                .then(CommandManager.literal("ev")        // BUG-002: per-stat EV allocation (6 values)
+                    .then(CommandManager.argument("hp", IntegerArgumentType.integer(0))
+                        .then(CommandManager.argument("atk", IntegerArgumentType.integer(0))
+                            .then(CommandManager.argument("def", IntegerArgumentType.integer(0))
+                                .then(CommandManager.argument("spa", IntegerArgumentType.integer(0))
+                                    .then(CommandManager.argument("spd", IntegerArgumentType.integer(0))
+                                        .then(CommandManager.argument("spe", IntegerArgumentType.integer(0))
+                                            .executes(AugmentCommand::setEv)))))))))));
     }
 
     /** The held Kernel stack, or null (with feedback) if the player isn't holding one. */
@@ -82,6 +91,21 @@ public final class AugmentCommand {
         return 1;
     }
 
+    private static int setEv(CommandContext<ServerCommandSource> ctx) {
+        ItemStack held = kernel(ctx);
+        if (held == null) return 0;
+        EvSpread spread = new EvSpread(
+                IntegerArgumentType.getInteger(ctx, "hp"), IntegerArgumentType.getInteger(ctx, "atk"),
+                IntegerArgumentType.getInteger(ctx, "def"), IntegerArgumentType.getInteger(ctx, "spa"),
+                IntegerArgumentType.getInteger(ctx, "spd"), IntegerArgumentType.getInteger(ctx, "spe"));
+        if (spread.isEmpty()) held.remove(GpComponents.EV_SPREAD);
+        else held.set(GpComponents.EV_SPREAD, spread);
+        ctx.getSource().sendFeedback(() -> Text.literal("Set EV spread (HP/Atk/Def/SpA/SpD/Spe) = "
+                + spread.hp() + "/" + spread.atk() + "/" + spread.def() + "/" + spread.spa() + "/"
+                + spread.spd() + "/" + spread.spe() + " — total " + spread.total() + " — on the Kernel."), false);
+        return 1;
+    }
+
     private static int list(CommandContext<ServerCommandSource> ctx) {
         ItemStack held = kernel(ctx);
         if (held == null) return 0;
@@ -95,6 +119,12 @@ public final class AugmentCommand {
                 sb.append("\n  ").append(f.label).append(" = ").append(lvl).append(selectorNote(f, lvl));
             }
         }
+        EvSpread ev = held.get(GpComponents.EV_SPREAD);
+        if (ev != null && !ev.isEmpty()) {
+            any = true;
+            sb.append("\n  EV spread = ").append(ev.hp()).append("/").append(ev.atk()).append("/").append(ev.def())
+              .append("/").append(ev.spa()).append("/").append(ev.spd()).append("/").append(ev.spe());
+        }
         if (!any) sb.append(" (none)");
         String out = sb.toString();
         ctx.getSource().sendFeedback(() -> Text.literal(out), false);
@@ -105,7 +135,8 @@ public final class AugmentCommand {
         ItemStack held = kernel(ctx);
         if (held == null) return 0;
         held.set(GpComponents.AUGMENTS, Augments.NONE);
-        ctx.getSource().sendFeedback(() -> Text.literal("Cleared all augments on the Kernel."), false);
+        held.remove(GpComponents.EV_SPREAD);
+        ctx.getSource().sendFeedback(() -> Text.literal("Cleared all augments + EV spread on the Kernel."), false);
         return 1;
     }
 

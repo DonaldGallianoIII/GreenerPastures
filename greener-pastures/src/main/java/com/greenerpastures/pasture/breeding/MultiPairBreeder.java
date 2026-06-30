@@ -167,7 +167,7 @@ public final class MultiPairBreeder {
         int laid = 0;
         for (int i = 0; i < pairs.size(); i++) {
             EggShape shape = new EggShape(
-                    eff.shinyProcChance(), eff.ivFloorCount(), eff.evFloorPerStat(),
+                    eff.shinyProcChance(), eff.ivFloorCount(), pd.evSpread(),
                     NatureCatalog.byIndex(eff.natureIndex()),     // Nature selector → nature id (null = no lock)
                     BallCatalog.byIndex(eff.ballIndex()),         // Ball selector → ball id (null = no lock)
                     eff.forceHiddenAbility(),                     // Ability toggle → force the hidden ability

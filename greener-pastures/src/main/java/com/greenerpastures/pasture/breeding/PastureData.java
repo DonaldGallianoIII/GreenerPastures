@@ -67,6 +67,13 @@ public class PastureData {
         return a == null ? Map.of() : a.toLevels();
     }
 
+    /** The Kernel's EV allocation spread (slot 0), or {@link EvSpread#NONE} if it carries none. The breeder
+     *  pre-sets these EVs per stat on each bred egg (BUG-002 — replaces the old flat "+N on every stat"). */
+    public EvSpread evSpread() {
+        EvSpread s = upgrades.getStack(0).get(GpComponents.EV_SPREAD);
+        return s == null ? EvSpread.NONE : s;
+    }
+
     /** The Soul Tethers slotted into the Kernel's UNLOCKED functional slots, as runtime tethers (blanks
      *  dropped). Gated by the current tier's slot count, so a tether left in a slot a Kernel downgrade has
      *  since hidden is NOT read or drained (it's inaccessible in the GUI — never bill an unreachable slot). */

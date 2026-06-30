@@ -22,6 +22,16 @@ public final class GpComponents {
                     .packetCodec(Augments.PACKET_CODEC)
                     .build());
 
+    /** The {@code greenerpastures:ev_spread} per-stat EV allocation a Kernel carries (BUG-002 — replaces the flat
+     *  "+N on every stat" EV augment). Save + packet codecs so it persists AND can sync to a future GUI. */
+    public static final ComponentType<EvSpread> EV_SPREAD = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(GreenerPastures.MOD_ID, "ev_spread"),
+            ComponentType.<EvSpread>builder()
+                    .codec(EvSpread.CODEC)
+                    .packetCodec(EvSpread.PACKET_CODEC)
+                    .build());
+
     /** Force class-load so the static registration above runs. Call once from module init. */
     public static void init() {}
 }

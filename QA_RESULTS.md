@@ -27,12 +27,12 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 ### 🐛 Findings — index
 | ID | Sev | Q# | Feature | Symptom | Status |
 |----|-----|-----|---------|---------|--------|
-| BUG-001 | 🟠 | Q16 | Kernel base drop-rate | Flat +0.25% on every tier; never scales (copper = iron = gold = diamond) | 🐛 open |
-| BUG-002 | 🟠 | Q21 | EV augment / Soul Tether | Flat +N EV on ALL 6 stats (blanket); wants per-stat allocation + a Compiler UI | 🐛 open |
+| BUG-001 | 🟠 | Q16 | Kernel base drop-rate | Flat +0.25% on every tier; never scales (copper = iron = gold = diamond) | ✅ fixed |
+| BUG-002 | 🟠 | Q21 | EV augment / Soul Tether | Flat +N EV on ALL 6 stats (blanket); wants per-stat allocation + a Compiler UI | ✅ data+cmd fixed (UI→web pass) |
 | BUG-003 | 🟠 | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (increment-2 gap). ✅ breeding survives hide (log-confirmed) — NOT a blocker | 🐛 open |
 | BUG-004 | 🟠 | Q23 | Daemon drain model | Holding a fed Daemon bills the WHOLE 15-buff suite every second (~5.25/sec/tier) even idle; event buffs should bill on-use, not passively | 🔧 redesign |
 | BUG-005 | 🟡 | Q3 | Daemon node-graph UI | Pokémon nodes too sparse (want type/nickname/gender/IVs/nature); canvas won't zoom out far enough + nodes too small | 🐛 open |
-| BUG-006 | 🟠 | Q3 | Daemon graph validation | Graph accepts incompatible pairs (Drilbur×Pidgey) with no feedback → silent dead pair. ✅ breeding layer safe — Cobbreeding gates egg-gen, no illegal eggs | 🐛 open |
+| BUG-006 | 🟠 | Q3 | Daemon graph validation | Graph accepts incompatible pairs (Drilbur×Pidgey) with no feedback → silent dead pair. ✅ breeding layer safe — Cobbreeding gates egg-gen, no illegal eggs | ✅ core fixed (graph UI→web pass) |
 
 ### ✅ Verified working
 | Q# | Feature | Note |

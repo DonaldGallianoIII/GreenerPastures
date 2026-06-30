@@ -213,8 +213,8 @@ public final class CobbreedingBridge {
      *
      * <p>The effective augments then shape the egg: {@code shinyProcChance} (0..1) fires our bounded bonus
      * shiny reroll ({@link #maybeProcShiny}); {@code ivFloor} guarantees that many perfect (31) IVs
-     * ({@link #applyIvFloor}); {@code evFloorPerStat} pre-sets that many EVs on every permanent stat
-     * ({@link #applyEvFloor}). All three mutate the egg's properties BEFORE it's encrypted, so Cobbreeding
+     * ({@link #applyIvFloor}); {@code evSpread} pre-sets the per-stat EV allocation
+     * ({@link #applyEvSpread}). All three mutate the egg's properties BEFORE it's encrypted, so Cobbreeding
      * carries them to the hatchling.
      */
     public static BredEgg buildEggForPair(List<? extends PokemonPastureBlockEntity.Tethering> pairSlots,
@@ -234,7 +234,7 @@ public final class CobbreedingBridge {
             if (eggData == null || eggData.getSpecies() == null) return null;
             boolean procShiny = maybeProcShiny(eggData, pokemon, shape.shinyProcChance());
             applyIvFloor(eggData, shape.ivFloor());          // guarantee N perfect (31) IVs — raise-only
-            applyEvFloor(eggData, shape.evFloorPerStat());   // pre-set a flat EV floor on every permanent stat
+            applyEvSpread(eggData, shape.evSpread());         // pre-set the per-stat EV allocation (BUG-002)
             applyNature(eggData, shape.nature());            // lock the egg's nature (Nature selector augment)
             applyBall(eggData, shape.ball());                // lock the egg's ball (Ball selector augment)
             applyHiddenAbility(eggData, shape.forceHiddenAbility());   // force the species' hidden ability
@@ -305,23 +305,30 @@ public final class CobbreedingBridge {
     }
 
     /**
-     * EV Floor augment: pre-set {@code perStat} EVs on every one of the 6 permanent stats (a flat head-start).
-     * {@code EVs.set} is absolute and silently caps the running total at Cobblemon's 510, so even an
-     * over-large value can't corrupt the spread; {@link com.greenerpastures.economy.EffectiveAugments} already
-     * clamps {@code perStat} to ≤85 (6×85 = 510). Raise-only. Carried at hatch via {@code apply → setEV}.
+     * EV allocation augment (BUG-002): pre-set the {@link EvSpread}'s per-stat EVs onto the egg
+     * (HP/Atk/Def/SpA/SpD/Spe), replacing the old flat "+N on every stat" blanket. {@code EVs.set} is absolute and
+     * silently caps the running total at Cobblemon's 510; the spread is already clamped (≤252/stat, ≤510 total).
+     * Raise-only (never lowers an inherited EV). Carried at hatch via {@code apply → setEV}.
      */
-    private static void applyEvFloor(PokemonProperties eggData, int perStat) {
-        if (perStat <= 0) return;
+    private static void applyEvSpread(PokemonProperties eggData, EvSpread spread) {
+        if (spread == null || spread.isEmpty()) return;
         try {
             EVs evs = eggData.getEvs();
             if (evs == null) { evs = new EVs(); eggData.setEvs(evs); }
-            int target = Math.min(perStat, 252);
-            for (Stat s : Stats.Companion.getPERMANENT()) {
-                if (evs.getOrDefault(s) < target) evs.set(s, target);   // set() no-ops if it would exceed 510 total
-            }
+            setEv(evs, Stats.HP, spread.hp());
+            setEv(evs, Stats.ATTACK, spread.atk());
+            setEv(evs, Stats.DEFENCE, spread.def());
+            setEv(evs, Stats.SPECIAL_ATTACK, spread.spa());
+            setEv(evs, Stats.SPECIAL_DEFENCE, spread.spd());
+            setEv(evs, Stats.SPEED, spread.spe());
         } catch (Throwable t) {
             // egg-shaping must never abort egg-gen
         }
+    }
+
+    /** Raise-only EV set for one stat (Cobblemon's {@code set} no-ops if it would push the 510 total over). */
+    private static void setEv(EVs evs, Stat stat, int value) {
+        if (value > 0 && evs.getOrDefault(stat) < value) evs.set(stat, value);
     }
 
     /**
