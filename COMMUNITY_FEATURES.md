@@ -9,8 +9,8 @@ config-driven, commit-not-deploy, every MC change → a `QA_PENDING.md` row)._
 | # | Feature | Status | Build size | Reuses |
 |---|---|---|---|---|
 | C1 | **Egg → Pokéball cosmetics** (spend eggs/Data → breed in a chosen ball) | locked | M (core) + UI later | the `BALL` augment (Q32) + the Data economy |
-| C2 | **Chicken-egg-style throws** (throw a Pokémon egg → spawns the wild mon) | locked | M | `EggReader`; a new thrown projectile |
-| C3 | **MissingNo Easter egg** (the centerpiece) | locked | mix — see below | the augment/tether system; rides C2 |
+| C2 | **Chicken-egg-style throws** (throw a Pokémon egg → spawns the wild mon) | locked · **✅ research done** | M | `EggReader`; a `ThrownItemEntity` subclass |
+| C3 | **MissingNo Easter egg** (the centerpiece) | locked · **✅ research done** | M (cycling = Tier A, **no client code**) | the augment/tether system; Cobblemon's illusion system; rides C2 |
 | C4 | **Cake crafting** (eggs as a cake ingredient) | locked | **S** (a recipe) | — |
 
 ---
@@ -24,13 +24,23 @@ exists** — the `BALL` augment sets an egg's hatch ball (Q32, deployed). This a
   currency)? **Unlock-once** (5k → that ball forever) or **per-batch**? Per-player unlock set, persisted.
 - _Functional core is buildable no-UI now (a `/gp ball` command or auto-apply); the picker is publish-phase._
 
-## C2 — Chicken-egg-style throws  (the carrier for C3)
-Right-click a Cobblemon egg → it lobs **our own thrown-egg projectile** (arcs like a chicken egg, carries the egg's
-species/IVs/shiny in NBT) → on impact, spawn the **wild** version of that mon + consume the egg. **NOT** hijacking
-the vanilla chicken egg (would tangle every real chicken-egg throw).
-- Needs: a registered projectile entity + a thin renderer (render the egg item); the impact→`spawnWild` logic
-  (read species via `EggReader`, spawn a wild `PokemonEntity`).
-- ⚠ **Verify first:** the Cobbreeding egg item's current right-click behavior, so "throw" doesn't stomp hatching.
+## C2 — Chicken-egg-style throws  (the carrier for C3) — ✅ RESEARCH DONE, ready to build
+Right-click a Cobblemon egg → lob our own projectile carrying the egg → on impact spawn the **wild** mon + consume
+the egg. **Verified approach (research pass, 2026-06-29):**
+- **Egg item = `ludichat.cobbreeding.PokemonEgg`** (one item class; no projectile/dispenser exists in Cobbreeding).
+- **Trigger = Fabric `UseItemCallback`, gated on SNEAK-right-click** (do NOT override `PokemonEgg.use` — foreign
+  class). `PokemonEgg.use` is a no-op on a normal (encryption-on) server and only a decrypt-debug when encryption is
+  off; sneak-right-click is fully unclaimed, so it sidesteps even that edge. Filter with `EggReader.isEgg`, consume
+  the event. **Hatching is fully decoupled** (it only ticks in a *player* inventory via `inventoryTick`), so a
+  thrown egg can't hatch mid-air.
+- **Carry the whole `ItemStack`**, not hand-copied NBT: subclass `net.minecraft.entity.projectile.thrown.ThrownItemEntity`
+  (vanilla `EggEntity`'s base) — its `setItem(stack)` stores + serializes the full stack, so all six Cobbreeding
+  components (`cobbreeding:egg_info` etc.) ride along automatically; `getStack()` on impact is byte-identical.
+- **Impact → spawn wild:** server-side `onCollision` → `EggUtilities.extractProperties(getStack())` → `PokemonProperties`
+  → spawn a wild ownerless `PokemonEntity` (`PokemonProperties.createEntity(world)` — Pass-1 confirms the exact
+  spawn signature) at the hit point → `discard()` the projectile + particle/sound. Fail-safe (drop the egg back),
+  same never-throws discipline as `CobbreedingBridge`.
+- Needs: register the EntityType + a flying-item renderer (reuse a stock one). **No blockers.**
 
 ## C3 — MissingNo Easter egg  ⭐ the centerpiece
 On each egg-throw (C2), a roll for the glitch:
@@ -44,10 +54,29 @@ On each egg-throw (C2), a roll for the glitch:
 - **Boost augment / soul tether:** add `MISSINGNO_CHANCE` + `MISSINGNO_SHINY` to `AugmentFunction` — a fed tether
   amplifies + drains Data, **exactly like Shiny/IV Floor. One constant each, zero new architecture.** For the void-farmers.
 
-### ⚠ The one real unknown — RESEARCH before estimating
-Cobblemon **custom-species** support (datapack + resourcepack) is real; the question is the **model-cycling** —
-can we swap an entity's *rendered model* on a timer (via species/aspects/a custom renderer)? If clean → the full
-glitch. If deep → fallback to a **static corrupted/scrambled MissingNo texture** (still very on-theme).
+### ✅ RESEARCH DONE — the cycling glitch is TIER A (clean), zero client code
+The make-or-break (cycle the rendered model through the Pokédex every ~5s) is **fully feasible, pure server-side —
+no mixin, no custom renderer, no resourcepack work for the cycling itself** (base-game species already ship every
+needed asset). Cobblemon syncs `SPECIES` + `ASPECTS` via the entity DataTracker *every tick*
+(`PokemonServerDelegate.tick → updateTrackedValues`), and the client live-swaps the model on that sync
+(`PokemonClientDelegate.onSyncedDataUpdated → setCurrentModel`).
+- **Glitch effect (recommended): Cobblemon's OWN illusion system** (Zoroark's disguise mechanic — thematically
+  perfect: a glitch that's literally an illusion that can't hold a form). On a ~100-tick server timer, cycle a
+  random fully-evolved species: `entity.getEffects().setMockEffect(new IllusionEffect(PokemonProperties.parse(
+  "species=<x> shiny=<flag>"), scale))`. The real entity keeps its identity/stats; only the *rendered* model
+  flickers. Pool = `PokemonSpecies.getImplemented()` filtered to no-evolutions.
+- **Guaranteed fallback (A1):** `pokemon.setSpecies(x); pokemon.setShiny(flag); pokemon.updateAspects()` — swaps the
+  real species too (stats/hitbox), but the sync chain is verified rock-solid. Use if the illusion packet ever
+  doesn't push during QA.
+- **Custom species (optional):** purely **data-driven, zero Java** — one `data/<ns>/species/missingno.json` +
+  resolver/poser/geo/texture in a resourcepack. Only needed if we want a distinct dex entry / a static base glitch
+  texture; the cycling itself doesn't require it.
+
+### Spawn API (shared with C2 — verified)
+`PokemonProperties.Companion.parse("<species> level=N shiny=<flag>", " ", "=").create()` → `Pokemon` →
+`pokemon.sendOut(serverWorld, vec3dPos, illusionEffect_or_null, null)` spawns a **wild** entity (and can take the
+`IllusionEffect` *at spawn*, so MissingNo can spawn already-glitching). Same call powers the C2 throw's
+impact→wild-mon. (Build-only variant: `PokemonProperties.createEntity(world)` then `world.spawnEntity`.)
 
 ### 🧩 RB form sprites (brainstorm — authenticity)
 Instead of / alongside random Pokédex cycling, optionally weight the **canonical RB glitch forms** as sprites:
@@ -71,12 +100,14 @@ recipe that accepts any Cobblemon egg item. **Smallest of the set** — a near-p
 ---
 
 ## Proposed build order
-1. **Research pass** — Cobblemon custom-species + model-cycling feasibility (de-risks the C3 centerpiece). Read-only.
-2. **C2 throw** (the projectile) — the carrier; buildable now.
+1. ✅ **Research pass — DONE** (both passes clean): C2 throw is ready; C3 cycling is **Tier A** via the illusion
+   system, no client code; the spawn API (`sendOut`) is verified + shared by both.
+2. **C2 throw** — `ThrownItemEntity` subclass carrying the egg stack + `UseItemCallback` (sneak-throw) + impact→`sendOut`.
 3. **C3 core** — the 1/8192 crack/shiny logic (pure, testable) + the `MISSINGNO_CHANCE/SHINY` augment/tether
-   (slots into our system).
-4. **C3 species** — per the research (cycling model, or static glitch texture) + the RB-form sprites (assets).
-5. **C3 item-dup** — once Deuce picks faithful-vs-themed + the config shape.
+   (slots into our system) + the illusion-cycle server timer.
+4. **C3 species (optional)** — a tiny data-only `missingno.json` if we want a distinct base + the RB-form sprite
+   weighting (assets; Deuce's lean = easy 2D swaps). The cycling works without it.
+5. **C3 item-dup** — once Deuce picks faithful-slot-6 vs themed-eggs/Data + the config shape.
 6. **C1 ball economy** (core now, UI publish-phase) · **C4 cake** (trivial, anytime).
 
 ## Decisions Deuce owes (no rush)
