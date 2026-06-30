@@ -141,6 +141,16 @@ Both B and C are **near-free and non-exclusive** — we can pursue them in paral
 
 That single PoC proves the whole "web dev porting" thesis, advances the real F5/#6 backlog, and adds ~600 KB.
 
+## 🧭 Deuce's direction (2026-06-30, locked-in preference)
+Deuce wants to **develop the UI as a real web app with Claude Code first, then move it into Minecraft** — i.e., the
+web-dev DX (real HTML/CSS/JS, real browser, fast iteration) is the priority, not a from-scratch native build. He's
+leaning **away from "the one that packages EVERYTHING"** (MCEF as the *default*) — but is **explicitly willing to
+package Chromium if the develop-in-web-then-port workflow needs it.** So the shortlist re-weights:
+- **Favored:** a genuine web app — **Option B** (served + WS bridge) is the most natural "build it in web, it stays
+  web." A **design-in-web → port-to-owo-ui** pipeline (Option C) also fits the "develop in web, move to MC" flow.
+- **On the table (not the default):** **Option A / MCEF** for true in-world web panels — acceptable *if* that's
+  what's needed to keep the UI as literal web tech in-game; the ~100 MB Chromium is a cost Deuce will pay for it.
+
 ## Open questions for Deuce (no rush — pick when you surface from QA)
 - **Start with B (dashboard) or C (re-skin an existing GUI in owo-ui with hot-reload)?** I lean **B** — it's the
   flagship and advances #6.
