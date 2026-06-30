@@ -45,6 +45,7 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 | Q26 | XP Boost | ✅ `/xp add 100` → `xp_boost from:100 to:175 tier:3` (**+75%** at Mk III); scales by tier (Mk I `7→9` = +25%). Deterministic |
 | Q28 | Potion Duration | ✅ Night Vision `potion_extend from:3600 to:9000 tier:3` (3:00 → 7:30, +150%). _Combat-potion control (Strength must NOT extend) not yet checked._ |
 | Q29 | Attribute buffs | ✅ all 3 at Mk III: `respiration value:3.0` · `swift_sneak +0.45` · `feather_falling −0.45`; reconciled each second |
+| Q30 | Value-effect buffs | ✅ **Lure** (`fish_lure 15→30`) + **Luck of the Sea** (`fish_luck 3→6`) confirmed boosting at Mk III — proves the `EnchantmentValueBoostMixin` seam. **Looting + Frost Walker** ride the same mixin's 3rd inject (`getEquipmentLevel`) → trust by extension (1 kill / water-walk would log `equip_boost` to fully close) |
 | Q38 | Ghost pasture — breeding | ✅ breeding survives suppression (see BUG-003 update) |
 
 ---
