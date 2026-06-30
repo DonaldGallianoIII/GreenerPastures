@@ -4,6 +4,30 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
+## ⚡ STATE — 2026-06-30 (QA pass DONE + bug-fix batch: 4/5 backlog bugs fixed; BUG-004 Daemon redesign NEXT)
+**~219 headless tests green** (+15 this session). **All committed on `main`, tree clean** (HEAD `c076871`).
+This session Deuce ran the **full QA pass at his computer** → the **entire 15-buff Daemon suite verified end-to-end
+from the live log** (Fortune / Auto-Smelt / Vein / XP / Potion / Attributes / Lure / Luck across all 4 mixin seams +
+tier-scaling + the drain economy); the rest **trust-confirmed** on his call. `QA_PENDING.md` is marked COMPLETE.
+Findings tracked in **`QA_RESULTS.md`** (BUG-001…006).
+
+**🐛 BUG-FIX BATCH (this session, all committed + tested):** **BUG-001** drop-rate scales per Kernel tier · **BUG-002**
+EV per-stat allocation (`/gp augment ev <6>`) · **BUG-006** `BreedingCompat` core + dead-pair log · **BUG-003** Ghost
+Pasture increment-2 re-materialise (compiles; **needs in-game QA**, can't headless-test entity spawn).
+
+**▶️ ON RESUME → BUILD BUG-004** (the last backlog bug = the Daemon **compile-your-own** redesign). The
+**implementation-ready guide** (verified APIs + file-by-file plan + test plan) is the **last section of
+`DAEMON_REDESIGN.md`** — start there, it's ready to code. After it: build + deploy for a fresh QA pass, then the
+**web-dev stack** for all the deferred UIs (BUG-005 + EV/graph/Compiler screens + dashboards). Web-dev direction in
+**`PORTING_WEB_UI.md`** (Deuce: develop the UI as a real web app *with Claude Code*, then move to MC; leaning away from
+MCEF-as-default but **will package Chromium if that workflow needs it**).
+
+**🚚 DEPLOY STATE:** last deployed jar = md5 `a93af8e` (had `/gp breed`, BEFORE the bug fixes). **The 4 bug fixes (HEAD
+`c076871`) are NOT deployed** — bundle them + BUG-004 when Deuce's ready for the new QA pass. The ghost-pasture mixin
+**loaded clean in-game ✅** so the old "deploy the mixin separately" caveat is RESOLVED.
+
+_(historical 2026-06-29 handoff below)_
+
 ## ⚡ STATE — 2026-06-29 (HUGE session: buffs v2 · breeding-meta · F2 notify · F3 goal tracker · ghost pasture · community-wave research)
 **204 headless tests green** (`./gradlew test`). **All committed on `main`, tree clean.** Deuce on
 **remote-control (phone)** through a chaotic IRL day (pup got a Cushing's dx — managed/ok; contractors at the house)
