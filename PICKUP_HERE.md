@@ -39,10 +39,23 @@ un-suppress must **re-materialise** the discarded roamers (replicate Cobblemon's
 un-suppress only re-allows future spawns. Verify in-game: the `@Redirect` resolves (no mixin load error) + suppressed
 mons stay tethered (breeding keeps producing).
 
-### 👾 BACKLOG — MissingNo egg Easter egg
-Deuce over-promised someone a MissingNo egg. **On-theme** (the mod is corrupted-data / glitch aesthetic). Open Q for
-Deuce: does it just *exist* as a rare glitchy collectible egg, or *hatch into* something (Cobblemon has no MissingNo
-species → we'd pick: a corrupted/random mon, Ditto for the Gen-1 lore, or a glitch gag)? Not started.
+### 👾 BACKLOG — community feature requests (Deuce's #minecraft-chat thread; design refined 2026-06-29)
+1. **Throw an egg → release a wild mon** (Wevic's chicken-egg idea). **Approach (Deuce + me):** NOT hijacking the
+   vanilla chicken egg (would tangle real chicken eggs) → **our own thrown-egg projectile** that arcs like a chicken
+   egg + carries the egg's species/IVs/shiny in NBT; right-click a Cobblemon egg → lob it → on impact spawn the wild
+   mon (consume the egg). ⚠ verify the Cobbreeding egg item's current right-click behavior first (don't stomp hatching).
+2. **MissingNo — custom cycling-glitch species.** Deuce's vision: a real custom Cobblemon species whose **rendered
+   model cycles through fully-evolved mons every few sec** (5s Charizard → 5s Zoroark → 5s Entei…) — the "can't decide
+   what it is" glitch. Spawns **WILD on an egg-throw at 1/8192**, with **1/8192 shiny** (shiny MissingNo ≈ 1-in-67M — an
+   absurd chase the mass-breeding makes reachable; "fills the BioBank endlessly"). **Boost via our augment/tether system**
+   — add `MISSINGNO_CHANCE` + `MISSINGNO_SHINY` functions (fed tether amplifies + drains Data, exactly like Shiny/IV
+   Floor — one constant each, zero new architecture). ⚠ **RESEARCH NEEDED before estimating:** Cobblemon custom-species
+   API + whether the **model-cycling** is feasible (swap an entity's rendered model on a timer via species/aspects) —
+   fallback = a static corrupted/scrambled MissingNo texture.
+3. **Ball cosmetics for eggs** (Deuce's "5,000 eggs → cherish ball"). Effect already exists (the `BALL` augment, Q32).
+   Needs: the **economy layer** (spend eggs/Data → unlock a ball) + a **UI selector** (Deuce wants it like the
+   visual-scripting GUI — publish-phase). Open Qs: pay in eggs or Data? unlock-once or per-batch?
+_(Tin's "mass farms are unethical" + Deuce's "that's the whole point" = the ghost-pasture mission statement.)_
 
 ## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =
