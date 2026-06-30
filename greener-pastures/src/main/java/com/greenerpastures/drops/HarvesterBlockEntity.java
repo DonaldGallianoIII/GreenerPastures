@@ -132,9 +132,11 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
                 GpLog.d("tether", "drain", "pos", pos.toShortString(),
                         "data", plan.drain(), "owner", plan.owner().toString(), "src", "harvester");
             }
-            // heartbeat: one line every harvest tick (IRL minute) so "is it alive + finding mons?" is always answerable
+            // heartbeat: one line every harvest tick (IRL minute) so "is it alive + finding mons?" is always answerable.
+            // mons = how many are TETHERED to this pasture (what we roll); max = the pasture's tether cap. Free-roaming
+            // mons NOT assigned to this pasture are invisible here — the Harvester only rolls tethered mons, never ground items.
             GpLog.d("harvester", "tick", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
-                    "mons", mons, "proc", String.format("%.3f", proc), "added", added);
+                    "mons", mons, "max", pasture.getMaxTethered(), "proc", String.format("%.3f", proc), "added", added);
         } catch (Throwable t) {
             // a Cobblemon API edge must never crash the world tick (mirrors the breeder/Renderer guards)
             GpLog.w("harvester", "skip", "pos", pos.toShortString(), "err", String.valueOf(t));
