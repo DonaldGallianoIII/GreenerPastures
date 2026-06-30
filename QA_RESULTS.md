@@ -42,6 +42,7 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 | BUG-005 | 🟡 | Q3 | Daemon node-graph UI | Pokémon nodes too sparse (want type/nickname/gender/IVs/nature); canvas won't zoom out far enough + nodes too small | 🐛 open |
 | BUG-006 | 🟠 | Q3 | Daemon graph validation | Graph accepts incompatible pairs (Drilbur×Pidgey) with no feedback → silent dead pair. ✅ breeding layer safe — Cobbreeding gates egg-gen, no illegal eggs | ✅ core verified in-game (graph UI→web) |
 | BUG-007 | 🟡 | Q4 | BioBank browse UI | Opens as a right-click text summary, not a chest. Want a scrollable species grid (one egg per species) → click a species → its egg collection (AE2/ME two-level browse) | 🗓️ deferred → web-dev pass |
+| BUG-008 | 🟡 | Q15 | Harvester ↔ pasture linking | Harvester reads only the FIRST adjacent pasture (a center-of-4 pulls just one). Redesign: explicit linked-network — link N pastures, harvester stores their coords, no scan, no dup | 🗓️ backend buildable now; link GUI → web pass |
 
 ### ✅ Verified working
 | Q# | Feature | Note |
@@ -147,6 +148,18 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fits the original design:** this *is* the BioBank's always-intended "eggs as data, bucketed by species, sortable by shiny/IVs" browse front-end — just specified concretely now. The deposit/summary/persist/scatter back-end (Q4 ✅) already exists; this is the missing **view** layer.
 - **Decision:** **defer to the web-dev UI pass** (Deuce: "prolly defer that til we know what the ui looks like for now"). Captured here so it's ready when we build the deferred UIs — it joins the web-dev backlog alongside BUG-002 (EV) / BUG-004 (Compiler) / BUG-005 (node detail) / BUG-006 (graph feedback) + the dashboard.
 - **Status:** 🗓️ deferred — web-dev UI pass
+
+### BUG-008 · 🟡 ENHANCEMENT (redesign) · Q15 · Harvester → explicit linked-network (not adjacency/radius)
+- **Now:** `adjacentPasture()` returns only the FIRST face-neighbour pasture (DOWN→UP→N→S→W→E), so a Harvester touching 4 pastures harvests just ONE. Found live during QA (Deuce's center-of-4 layout; the heartbeat showed each harvester locked to a single `pasture:` with `mons:16`).
+- **Considered + set aside — radius scan:** collect from all pastures within ~16 blocks. Cheap if done right (iterate *loaded chunks' block-entity maps* once/min, never a raw block scan), but invites overlap/double-harvest + neighbour-leeching.
+- **Chosen design (Deuce) — explicit links, ME-drive style:**
+  - The Harvester stores a **persisted list of linked pasture positions**; each harvest tick it just iterates them (zero search — "not checking over and over") and rolls each linked pasture's mons.
+  - **A pasture links to exactly one Harvester** → no duplication / double-harvest by construction.
+  - Each linked pasture's drops compute from **that pasture's own Kernel** (the existing per-pasture dropPlan — drop_rate/yield + tethers), unchanged.
+  - The Harvester GUI **lists the linked pastures by coords** (+ status: loaded / mons / unlink); a link action toggles "harvest from this pasture?".
+- **UX nuance:** the pasture's in-world GUI is **Cobblemon's** (can't bolt our button onto it), so "pick which pasture" wants either a small **link tool** (RC harvester = select, RC pasture = toggle) or a harvester-side "link the pasture I'm looking at" — settle in the UI pass.
+- **Build path (logic-first):** the **link store + harvest-from-links backend + a `/gp harvester link|unlink|list` no-UI command** are buildable NOW (functional + testable), exactly like `/gp daemon`. The **linking GUI + linked-coords view → web-dev UI pass** (joins the deferred-UI backlog).
+- **Status:** 🗓️ design agreed — backend buildable now; GUI → web pass
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
