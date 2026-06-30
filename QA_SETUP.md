@@ -1,4 +1,4 @@
-# 🧰 QA Setup Kit — paste-ready MC commands (jar md5 `f2b6662`, MC 1.21.1)
+# 🧰 QA Setup Kit — paste-ready MC commands (jar md5 `edf05bf`, MC 1.21.1)
 
 _Companion to `QA_PENDING.md` (the checklist). All mod IDs verified against the deployed jar. Best run in a
 **creative + cheats** world, standing in an **open flat area** (a superflat creative world is ideal — the `/fill`
@@ -51,13 +51,49 @@ debug command mints it directly:
 1. Place a `cobblemon:pasture`, right-click it, assign those mons → they spawn + **roam**.
 2. **Sneak + empty-hand right-click** the pasture → chat says **"ghost pasture ON…"** → roamers **vanish instantly**.
 3. Confirm: pasture still **lays eggs** (data intact), mons still listed in its GUI, F3 entity count dropped.
-4. Save+quit, reload → still ghost, mons stay gone. _(Un-suppress just re-allows future spawns — increment 2 re-materialises.)_
+4. Save+quit, reload → still ghost, mons stay gone.
+5. **🆕 BUG-003 un-hide (first in-game test of the fix):** **sneak + empty-hand right-click AGAIN** → chat **"ghost pasture OFF…"** → the tethered mons **re-materialise** (respawned from stored data, re-linked to the *existing* tethers — no new tethers, no dupes). Watch `~/gp-logs/latest.log` for `keeper ghost_off spawned:N`. Toggle a few times → no duplicate roamers pile up.
 
 ---
 
-## Cluster B · Daemon buffs (Q23–Q30) — **hold the fed Daemon** (off-hand is fine)
-- **Cycle tier:** sneak + right-click the Daemon → Mk I→II→III (actionbar confirms). Higher Mk = stronger + ~3× drain.
-- **Show balance:** plain right-click the Daemon.
+## Cluster B · Daemon buffs (Q23–Q30) — **🆕 compile-your-own model (BUG-004)**
+The Daemon no longer grants the whole suite just by holding it. You **compile** the buffs you want onto it,
+**right-click to toggle it ON** (it gains the enchant glint), and it works from **anywhere in your inventory** while
+ON + fed (Data > 0). You're billed for **only the buffs you installed**.
+
+### B0 · The BUG-004 core checks (do these FIRST)
+```
+/gp daemon set feather_falling 3   ← a cheap, single-buff Daemon
+/gp daemon list                    ← shows: [OFF] · Feather Falling +3 · its Data/s
+/gp daemon on                      ← (or just right-click the Daemon) → glint appears, "Daemon ON"
+```
+- **Glint toggle:** right-click the Daemon → it turns shiny (ON) / dull (OFF); actionbar confirms. `/gp daemon on`/`off` do the same.
+- **Drain = only-installed:** with just Feather Falling, `/gp data` ticks down **slowly** (~0.75/s at +3) — NOT the old ~15.75/s whole-suite rate. That smaller bill *is* the fix.
+- **Works from inventory:** move the ON Daemon out of your hand into your pack/hotbar (NOT in hand) → Feather Falling still works (fall ~10 blocks → reduced damage). Toggle OFF → reverts.
+
+### B1 · Load the full test bench (for Q24–Q30)
+Compile everything, then toggle ON — now every buff below is live while the Daemon just sits in your inventory:
+```
+/gp daemon set fortune 3
+/gp daemon set auto_smelt 3
+/gp daemon set vein_mine 3
+/gp daemon set xp_boost 3
+/gp daemon set potion_duration 3
+/gp daemon set looting 3
+/gp daemon set lure 3
+/gp daemon set luck_of_the_sea 3
+/gp daemon set frost_walker 2
+/gp daemon set respiration 3
+/gp daemon set swift_sneak 3
+/gp daemon set feather_falling 3
+/gp daemon set haste 3
+/gp daemon set saturation 3
+/gp daemon set magnet 3
+/gp daemon list      ← review the whole loadout + total Data/s
+/gp daemon on
+```
+Keep Data topped up (`/gp data add 50000`) — the full loadout drains faster than one buff. Then run Q24–Q30 below;
+each test is unchanged **except** the buff just needs to be **in the loadout + the Daemon ON in your inventory** (not held).
 
 ### Q24 Fortune · Q25 Auto-Smelt — mining walls
 ```
@@ -87,7 +123,7 @@ Safety: with a fed Daemon, mine the **stone/dirt** → only one block breaks (NO
 ```
 /xp add @s 100 points
 ```
-Hold the fed Daemon first → actual XP gained should exceed 100 (Mk III ≈ +75% → ~175).
+With the Daemon ON in your inventory (XP Boost compiled) → actual XP gained should exceed 100 (+3 ≈ +75% → ~175).
 
 ### Q28 Potion Duration — utility extended, combat NOT
 ```
@@ -102,7 +138,7 @@ Hold the fed Daemon first → actual XP gained should exceed 100 (Mk III ≈ +75
 /give @s minecraft:diamond_helmet[minecraft:enchantments={"minecraft:respiration":3}]   ← optional, to stack on top
 ```
 Respiration: dive bare-headed → air drains slow. Feather Falling: fall ~10 blocks → reduced damage (never heals).
-Swift Sneak: crouch → faster than vanilla. Drop the Daemon / Data→0 → reverts instantly.
+Swift Sneak: crouch → faster than vanilla. Toggle the Daemon OFF / Data→0 → reverts instantly.
 
 ### Q30 Value-effect buffs (Lure / Luck of the Sea / Frost Walker / Looting)
 ```

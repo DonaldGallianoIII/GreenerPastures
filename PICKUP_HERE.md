@@ -25,11 +25,12 @@ Code*, then move it into MC** (Option B localhost bridge = the most natural "bui
 in-world; leaning away from MCEF-as-default but **will package Chromium if that workflow needs it**). ⚠️ **Confirm which
 surface to start** (B dashboard PoC vs. C owo-ui pilot) — open Qs are at the bottom of `PORTING_WEB_UI.md`.
 
-**🚚 DEPLOY STATE:** last deployed jar = md5 `a93af8e` (had `/gp breed`, BEFORE any fixes). **NONE of the 5 fixes
-(BUG-001/002/003/004/006) are deployed** — bundle the lot for the **next QA session** (batch-QA; deploy only when Deuce
-asks). In-game-only checks waiting on that deploy: **BUG-003** un-hide respawn · **BUG-004** glint toggle +
-inventory-grant + drain-only-installed. The ghost-pasture mixin **loaded clean in-game ✅** (old "deploy the mixin
-separately" caveat RESOLVED).
+**🚚 DEPLOY STATE:** ✅ **DEPLOYED 2026-06-30 — jar md5 `edf05bf`** (all 5 fixes; replaced `a93af8e`) in *Greener
+Pastures Test*/mods (single jar, clean overwrite). **Full MC restart required**, then the clean-load check (Deuce says
+"in" → I scan the instance log). In-game checks now LIVE to run: **BUG-003** un-hide respawn · **BUG-004** `/gp daemon`
+compile + glint toggle + inventory-grant + drain-only-installed — round-2 kit is in **`QA_SETUP.md`** (Cluster A step 5
++ the rewritten Cluster B). The ghost-pasture mixin **loaded clean in-game ✅** (old "deploy the mixin separately"
+caveat RESOLVED).
 
 _(historical 2026-06-29 handoff below)_
 

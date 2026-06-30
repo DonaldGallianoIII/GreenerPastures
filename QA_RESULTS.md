@@ -26,8 +26,9 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 
 > **🔧 Batch status (2026-06-30):** all 6 findings triaged. **BUG-001/002/003/004/006 = built + headless-green (230 tests, 0 fail).**
 > BUG-005 + the deferred UIs (BUG-002 EV screen, BUG-006 graph feedback, BUG-004 Compiler) → the **web-dev UI pass**.
-> ⏳ **Not yet redeployed** — the live jar predates these fixes; bundle deploys for the **next QA session**. In-game-only
-> checks still pending: BUG-003 un-hide respawn, BUG-004 glint toggle + inventory-grant + drain-only-installed.
+> ✅ **DEPLOYED 2026-06-30** — jar md5 `edf05bf` (all 5 fixes) live in *Greener Pastures Test*. **Full restart + a
+> clean-load check first**, then run the in-game checks: BUG-003 un-hide respawn · BUG-004 `/gp daemon` compile + glint
+> + inventory-grant + drain-only-installed. Round-2 command kit: `QA_SETUP.md` (Cluster A step 5 + the new Cluster B).
 
 ### 🐛 Findings — index
 | ID | Sev | Q# | Feature | Symptom | Status |
