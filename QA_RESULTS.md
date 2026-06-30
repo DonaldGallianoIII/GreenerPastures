@@ -80,7 +80,8 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Root cause — CONFIRMED (by design, but the design is the gripe):** `DaemonBuffs.settle()` resolves ALL `SUPPORTED` buffs (15) at the Daemon's tier every second and debits the summed `Σ tier × costPerSec` — no "is this buff doing work" gate. Idle-holding bills the entire roster. Rate = **5.25 Data/sec/tier** (6 gathering ×0.5 + 9 QOL ×0.25): **Mk I ≈ 5.25/s (~315/min), Mk III ≈ 15.75/s (~945/min)**.
 - **The tension:** *passive* buffs (Haste, Saturation, Magnet, Respiration, Swift Sneak, Feather Falling, Frost Walker, Potion Duration) genuinely work every tick → fair to bill per-second. *Event* buffs (Fortune, Auto-Smelt, Vein-Mine, Looting, Lure, Luck, XP Boost) do nothing until you mine/fish/kill → billing them each idle second is the wrong feel.
 - **Options:** (1) **NOW (no rebuild):** `config/greenerpastures/buffs.json` — per-buff `enabled:false` or lower `costPerSec`. (2) **RECOMMENDED:** split billing — passive = per-second, event = **pay-on-trigger**; idle drain drops to ~2.0/sec/tier and gathering buffs cost only when they actually proc. (3) in-game on/off (or per-buff) toggle on the Daemon.
-- **Status:** 🐛 open — pending Deuce's pick on the billing model
+- **✅ DECIDED → redesign:** Deuce chose the bigger fix — the Daemon becomes a **compile-your-own-buffs** item: compile a chosen buff loadout in the Compiler, right-click to toggle ON (enchant glint), works from your inventory/backpack, drains **only the installed buffs**, and **never force-loads a chunk**. Supersedes the "hold → whole suite at global Mk" model. Full spec: **`DAEMON_REDESIGN.md`**.
+- **Status:** 🔧 spec'd — build pending (logic-first; `/gp daemon` no-UI path first, Compiler GUI later)
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
