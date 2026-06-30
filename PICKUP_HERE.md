@@ -25,14 +25,14 @@ Code*, then move it into MC** (Option B localhost bridge = the most natural "bui
 in-world; leaning away from MCEF-as-default but **will package Chromium if that workflow needs it**). ⚠️ **Confirm which
 surface to start** (B dashboard PoC vs. C owo-ui pilot) — open Qs are at the bottom of `PORTING_WEB_UI.md`.
 
-**🚚 DEPLOY STATE:** ✅ **DEPLOYED 2026-06-30 — jar md5 `4da7999`** (5 fixes + the BUG-003 un-hide NPE fix; the chain was
-`a93af8e`→`edf05bf`→`4da7999`) in *Greener Pastures Test*/mods. **In-game results so far:** **BUG-004 Feather Falling ✅
-verified from the live log** (`/gp daemon` compile + ON glint + inventory-grant + drain-only-installed all confirmed —
-`buff tick buffs:1 paid:1,1,1,0` is the 0.75/s fractional carry working). **BUG-003 un-hide:** first jar NPE'd
-(`makeSuitableY` returns null on the solid pasture block → `Vec3d.ofCenter(null)`); **fixed** with `suitableSpawn()`
-(mirrors Cobblemon's offset+step+null-skip search) + confirmed via decompile that `checkPokemon` ignores `entityId` so
-respawns persist — **re-test pending on `4da7999`** (restart MC → toggle a ghosted pasture OFF → mons re-materialise,
-watch `keeper ghost_off spawned:N`). The ghost-pasture mixin **loaded clean ✅**.
+**🚚 DEPLOY STATE:** ✅ **DEPLOYED 2026-06-30 — jar md5 `035ff6b`** (5 fixes + BUG-003 un-hide NPE fix + placement refine;
+chain `a93af8e`→`edf05bf`→`4da7999`→`035ff6b`) in *Greener Pastures Test*/mods. **In-game results so far:** **BUG-004
+Feather Falling ✅ verified from the live log** (`/gp daemon` compile + ON glint + inventory-grant + drain-only-installed —
+`buff tick buffs:1 paid:1,1,1,0` is the 0.75/s fractional carry). **BUG-003 un-hide:** ✅ **respawn works** (NPE
+root-caused + fixed — `makeSuitableY` returns null on the solid pasture block; `suitableSpawn` mirrors Cobblemon's
+search; decompile confirmed `checkPokemon` ignores `entityId` so respawns persist). Re-test showed mons **clumped one
+side** → **placement refined** to ring them N/E/S/W around the pasture, grounded — **re-confirm pending on `035ff6b`**
+(toggle a ghosted pasture OFF → mons should stand right next to it on all sides). Mixin **loads clean ✅**.
 
 _(historical 2026-06-29 handoff below)_
 

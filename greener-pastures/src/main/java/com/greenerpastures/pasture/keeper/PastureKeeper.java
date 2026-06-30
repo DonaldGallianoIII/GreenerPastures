@@ -155,7 +155,7 @@ public final class PastureKeeper {
                 if (p == null) continue;                          // no stored Pokemon (Cobblemon's checkPokemon releases it)
                 PokemonEntity e = new PokemonEntity(sw, p, CobblemonEntities.POKEMON);
                 e.calculateDimensions();
-                e.setPosition(suitableSpawn(sw, pasture, e));     // mirror Cobblemon's tether placement (null-safe)
+                e.setPosition(suitableSpawn(sw, pasture, e, spawned));   // ground them around the pasture (null-safe)
                 p.setTetheringId(t.getTetheringId());             // pokemon.tetheringId == tethering.id → checkPokemon keeps it
                 e.setTethering(t);                                // re-link to the EXISTING tethering — not a new tether
                 sw.spawnEntity(e);
@@ -167,29 +167,28 @@ public final class PastureKeeper {
         GpLog.i("keeper", "ghost_off", "pos", pos.toShortString(), "spawned", spawned);
     }
 
+    /** Ring of directions we spread re-materialised mons across, so they don't all stack on one side of the pasture. */
+    private static final Direction[] SPAWN_RING = { Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST };
+
     /**
-     * A safe spawn position near the pasture, replaying Cobblemon's own tether-spawn search: start one entity-width
-     * off the pasture, step outward, and take the first {@code makeSuitableY} hit (it finds a real floor within ±16
-     * of each probe). Cobblemon's {@code makeSuitableY} <b>returns {@code null}</b> when no floor is found — the
-     * original bug passed the <i>solid pasture block</i> and dereffed that null ({@code Vec3d.ofCenter(null)} →
-     * {@code Vec3i.getX()} NPE, so {@code spawned:0}). Here we {@code continue} past null like {@code tether()} does,
-     * and fall back to the offset spot if every probe misses — so a re-materialise never NPEs and always places the
-     * mon somewhere sane. {@code -0.5} on Y puts the feet on the floor (matching Cobblemon).
+     * A natural re-materialise position: stand each mon on the ground <b>right next to the pasture</b>, spread around
+     * it in a 4-way ring that steps one block further out every 4 mons — instead of dumping them all a few blocks off
+     * one side (the first-pass bug Deuce caught). Horizontal offset matches the pasture's Y; the vertical placement
+     * reuses Cobblemon's own search ({@code getBoxAt} + {@code makeSuitableY}) to land on the real floor within ±16.
+     * {@code makeSuitableY} <b>returns {@code null}</b> when it finds no floor (the original NPE was passing the solid
+     * pasture block and dereffing that null) — we fall back to the adjacent column itself, so it never NPEs.
+     * {@code -0.5} on Y puts the feet on the floor (matching Cobblemon's tether spawn exactly).
      */
-    private static Vec3d suitableSpawn(ServerWorld world, PokemonPastureBlockEntity pasture, PokemonEntity entity) {
+    private static Vec3d suitableSpawn(ServerWorld world, PokemonPastureBlockEntity pasture, PokemonEntity entity, int index) {
         BlockPos pos = pasture.getPos();
-        Direction dir = Direction.NORTH;   // no player facing at re-materialise — a stable default search axis
-        double width = entity.getBoundingBox().getLengthX();
-        BlockPos ideal = pos.add(dir.getVector().multiply((int) Math.ceil(width) + 1));
-        Box box = entity.getDimensions(EntityPose.STANDING).getBoxAt(ideal.toCenterPos().subtract(0.0, 0.5, 0.0));
-        for (int i = 0; i < 6; i++) {
-            box = box.offset(dir.getVector().getX(), 0.0, dir.getVector().getZ());
-            BlockPos at = ideal.add(dir.getVector().multiply(i + 1));
-            BlockPos fixed = pasture.makeSuitableY(world, at, entity, box);
-            if (fixed == null) continue;
-            return fixed.toCenterPos().subtract(0.0, 0.5, 0.0);
-        }
-        return ideal.toCenterPos().subtract(0.0, 0.5, 0.0);   // every probe missed → place at the offset spot anyway
+        Direction dir = SPAWN_RING[Math.floorMod(index, SPAWN_RING.length)];
+        int ring = 1 + index / SPAWN_RING.length;            // first 4 mons hug the pasture; the next 4 step one out…
+        int reach = Math.max(1, (int) Math.ceil(entity.getBoundingBox().getLengthX())) * ring;
+        BlockPos base = pos.add(dir.getVector().multiply(reach));   // adjacent column at the pasture's own Y
+        Box box = entity.getDimensions(EntityPose.STANDING).getBoxAt(base.toCenterPos().subtract(0.0, 0.5, 0.0));
+        BlockPos fixed = pasture.makeSuitableY(world, base, entity, box);
+        BlockPos at = (fixed != null) ? fixed : base;       // null = no floor within ±16 → fall back (never NPE)
+        return at.toCenterPos().subtract(0.0, 0.5, 0.0);
     }
 
     /** This pasture's currently-spawned tethered mons, found by scanning nearby {@link PokemonEntity}s whose
