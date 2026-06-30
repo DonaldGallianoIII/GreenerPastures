@@ -29,7 +29,7 @@ ghost-pasture `@Redirect` resolved, all 15 buffs registered, GpLog live, no erro
 |----|-----|-----|---------|---------|--------|
 | BUG-001 | 🟠 | Q16 | Kernel base drop-rate | Flat +0.25% on every tier; never scales (copper = iron = gold = diamond) | 🐛 open |
 | BUG-002 | 🟠 | Q21 | EV augment / Soul Tether | Flat +N EV on ALL 6 stats (blanket); wants per-stat allocation + a Compiler UI | 🐛 open |
-| BUG-003 | 🟠→🔴? | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (discarded entities = the increment-2 gap). Breeding-survival check pending | 🐛 open |
+| BUG-003 | 🟠 | Q38 | Ghost-pasture toggle | One-way: hide works + persists, un-hide does nothing (increment-2 gap). ✅ breeding survives hide (log-confirmed) — NOT a blocker | 🐛 open |
 
 ### ✅ Verified working
 | Q# | Feature | Note |
@@ -71,7 +71,8 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **⚠️ Possible SECOND bug (needs 1 check):** `gp-logs` shows `keeper ghost_on cleared:2` firing repeatedly (11:16:27 / :36 / :46) rather than alternating on/off. Consistent with the remove/reinsert workaround (each reinsert respawns 2 → next hide clears 2) — but could also mean the toggle isn't flipping to OFF in state (every click re-enables). **Disambiguator:** on the 2nd (un-hide) click, does chat say "ghost pasture **OFF**" or "**ON**"? OFF ⇒ pure increment-2 gap; ON ⇒ a real toggle-state read bug to fix too.
 - **⚠️ BLOCKER gate — does a hidden pasture still breed?** Code says **yes by design**: the breeder reads the pasture's tether *data* (`MultiPairBreeder.breedPairs:150` → `pasture.getTetheredPokemon()` → `buildEggForPair`), never the roaming entity. So breeding survives **iff** the Tethering survived the discard. Two checks confirm it: **(a)** after hiding, open the pasture GUI — are the mons **still listed**? **(b)** on a hidden pasture with a Kernel + a configured pair, wait ~2.5 min → do eggs hit the tray / `breeder` lines appear in `gp-logs`? If mons also vanish from the GUI ⇒ tether lost ⇒ BLOCKER (increment-1's core failed). _No breeder activity in the log yet this session — no pair+Kernel set up on the test pasture._
 - **Fix:** build **Ghost Pasture increment 2** — on un-suppress, re-materialise the tethered mons from their stored data (replicate Cobblemon's tether-spawn). Already on the roadmap; this finding promotes it to "next ghost-pasture work." (+ fix the toggle-state read if the chat check reveals the 2nd bug.)
-- **Status:** 🐛 open — increment-2 build recommended; final severity pending the breeding check
+- **✅ UPDATE (live log, 12:15):** breeding **survives suppression** — pasture `-15,86,24` laid an egg at `12:15:43` *while ghosted* (toggled `ghost_on` at `12:13:06`). So increment-1's core holds (the tether survives the DISCARD → breeding keeps producing) and this is **NOT a blocker**. Severity stays 🟠 MAJOR (the one-way-toggle UX only). _Side-finding: the "missing eggs" weren't missing — the adjacent Renderer culled each into Data on lay (`brood 12:12:51` → `render 12:12:53`), so the tray stayed empty while Data climbed._
+- **Status:** 🐛 open — increment-2 (proper un-hide) recommended; severity 🟠 (no longer a blocker risk)
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
