@@ -4,11 +4,24 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ STATE — 2026-06-29 (Daemon buffs v2 · breeding-meta batch · F2 notifications · F3 goal tracker — all done)
-**204 headless tests green** (`./gradlew test`). **Committed on `main`; a QA-deploy pass is NEXT** (Deuce: "1 and
-then we qa after this" → F3 wiring done, now build+deploy Q1–Q37). QA is batched
-(Deuce's call, [[batch-qa-workflow]]). Tree clean. Deuce is on **remote-control (phone)** → standing rule:
-**functionality-first, NO custom UI** (defer all GUIs).
+## ⚡ STATE — 2026-06-29 (HUGE session: buffs v2 · breeding-meta · F2 notify · F3 goal tracker · ghost pasture · community-wave research)
+**204 headless tests green** (`./gradlew test`). **All committed on `main`, tree clean.** Deuce on
+**remote-control (phone)** through a chaotic IRL day (pup got a Cushing's dx — managed/ok; contractors at the house)
+→ standing rules: **functionality-first, NO custom UI**; **batch-QA** ([[batch-qa-workflow]]).
+
+**🚚 DEPLOY STATE:** v2 features were deployed ONCE for QA (jar md5 `43679bc`, in the *Greener Pastures Test*
+instance). **Everything since — ghost-pasture inc1 + all the docs — is NOT redeployed.** ⚠ The **ghost-pasture mixin
+must deploy SEPARATELY**, not bundled into Deuce's v2 QA jar: it's a new Cobblemon `@Redirect` I can't verify
+headless, and a required mixin that fails to resolve would break the WHOLE mod load. Have Deuce confirm the log
+loads clean before trusting it.
+
+**▶️ ON RESUME — open threads (nothing forced; Deuce compacted here, mid-chaos):**
+1. **QA backlog Q1–Q38** — Deuce runs it down when at his computer (needs a full MC restart). No-UI test affordances:
+   the `/gp augment` + `/gp goal` commands (cheatsheet atop `QA_PENDING.md`).
+2. **Ghost Pasture increment 2** — re-materialise discarded roamers on un-suppress (details in the Ghost Pasture
+   section below). Deploy + QA inc1 (Q38) first.
+3. **Community feature wave** — research DONE + clean; **ready to build pending Deuce's GO + 2 decisions** (community
+   section below + `COMMUNITY_FEATURES.md`).
 
 **Most recent work (this session):** finished the **Daemon buff system** (15 buffs — see the DONE-task section) →
 then the **v2 feature wave** Deuce surfaced. Wrote the full spec **`FEATURES_V2.md`** (`glow` it). **Completed F1 —
@@ -39,23 +52,29 @@ un-suppress must **re-materialise** the discarded roamers (replicate Cobblemon's
 un-suppress only re-allows future spawns. Verify in-game: the `@Redirect` resolves (no mixin load error) + suppressed
 mons stay tethered (breeding keeps producing).
 
-### 👾 BACKLOG — community feature requests (Deuce's #minecraft-chat thread; design refined 2026-06-29)
-1. **Throw an egg → release a wild mon** (Wevic's chicken-egg idea). **Approach (Deuce + me):** NOT hijacking the
-   vanilla chicken egg (would tangle real chicken eggs) → **our own thrown-egg projectile** that arcs like a chicken
-   egg + carries the egg's species/IVs/shiny in NBT; right-click a Cobblemon egg → lob it → on impact spawn the wild
-   mon (consume the egg). ⚠ verify the Cobbreeding egg item's current right-click behavior first (don't stomp hatching).
-2. **MissingNo — custom cycling-glitch species.** Deuce's vision: a real custom Cobblemon species whose **rendered
-   model cycles through fully-evolved mons every few sec** (5s Charizard → 5s Zoroark → 5s Entei…) — the "can't decide
-   what it is" glitch. Spawns **WILD on an egg-throw at 1/8192**, with **1/8192 shiny** (shiny MissingNo ≈ 1-in-67M — an
-   absurd chase the mass-breeding makes reachable; "fills the BioBank endlessly"). **Boost via our augment/tether system**
-   — add `MISSINGNO_CHANCE` + `MISSINGNO_SHINY` functions (fed tether amplifies + drains Data, exactly like Shiny/IV
-   Floor — one constant each, zero new architecture). ⚠ **RESEARCH NEEDED before estimating:** Cobblemon custom-species
-   API + whether the **model-cycling** is feasible (swap an entity's rendered model on a timer via species/aspects) —
-   fallback = a static corrupted/scrambled MissingNo texture.
-3. **Ball cosmetics for eggs** (Deuce's "5,000 eggs → cherish ball"). Effect already exists (the `BALL` augment, Q32).
-   Needs: the **economy layer** (spend eggs/Data → unlock a ball) + a **UI selector** (Deuce wants it like the
-   visual-scripting GUI — publish-phase). Open Qs: pay in eggs or Data? unlock-once or per-batch?
-_(Tin's "mass farms are unethical" + Deuce's "that's the whole point" = the ghost-pasture mission statement.)_
+### 👾 ACTIVE — community feature wave (Deuce's #minecraft-chat thread · **full spec = `COMMUNITY_FEATURES.md`**)
+4 LOCKED features: **C1 ball cosmetics** (spend eggs/Data → unlock a breeding ball; the `BALL` augment already does
+the effect, Q32) · **C2 egg-throw** (sneak-RC an egg → a `ThrownItemEntity` carries the stack → impact spawns the
+wild mon) · **C3 MissingNo** ⭐ the centerpiece (1/8192 crack + 1/8192 shiny on egg-throw → a wild **glitch mon that
+cycles random fully-evolved models every ~5s**; a `MISSINGNO_CHANCE`/`MISSINGNO_SHINY` augment+tether; + the
+**item-dup Easter egg** — MissingNo conjures matter, the on-theme keystone) · **C4 cake** (eggs→cake recipe, trivial).
+
+**✅ BOTH research passes DONE + clean** (commit `7147159`):
+- **C2 ready:** egg = `ludichat.cobbreeding.PokemonEgg`; trigger = Fabric `UseItemCallback` on sneak-RC (don't override
+  Cobblemon; hatching is player-inv-gated so no mid-air hatch); carry the whole stack on a `ThrownItemEntity` subclass;
+  impact → `EggUtilities.extractProperties` → spawn wild.
+- **C3 cycling = TIER A / CLEAN — pure server-side, NO client mixin/renderer.** Use Cobblemon's **illusion system**
+  (Zoroark's mechanic): `entity.getEffects().setMockEffect(new IllusionEffect(PokemonProperties.parse("species=<x>
+  shiny=<f>"), scale))` on a ~100-tick timer cycling `PokemonSpecies.getImplemented()` (no-evolutions). Real mon keeps
+  identity. Custom species optional + **data-only** (zero Java).
+- **Spawn API (shared C2+C3, verified):** `PokemonProperties.Companion.parse("<sp> level=N shiny=<f>"," ","=").create()`
+  → `pokemon.sendOut(serverWorld, vec3dPos, illusionOrNull, null)`.
+
+**Ready to build pending Deuce's GO + 2 decisions:** (a) **item-dup** payoff = faithful slot-6(+128) vs themed
+eggs/Data + the admin config shape; (b) **ball cost** = eggs vs Data, unlock-once vs per-batch. **Build arc if
+green-lit:** C2 throw → C3 glitch mon → 1/8192 odds + the `MISSINGNO_CHANCE`/`SHINY` augment → then item-dup + ball
+economy per the decisions; C4 cake anytime. _(Tin's "unethical farms" + Deuce's "that's the whole point" = the
+ghost-pasture mission statement.)_
 
 ## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
 **Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =
