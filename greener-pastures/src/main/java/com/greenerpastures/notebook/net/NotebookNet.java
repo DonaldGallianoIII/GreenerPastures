@@ -76,9 +76,11 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookBioBankS2C.ID, NotebookBioBankS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookPastureConfigS2C.ID, NotebookPastureConfigS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookPastureActionC2S.ID, NotebookPastureActionC2S.CODEC);
+        PayloadTypeRegistry.playC2S().register(NotebookInvSwapC2S.ID, NotebookInvSwapC2S.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
+        ServerPlayNetworking.registerGlobalReceiver(NotebookInvSwapC2S.ID, NotebookNet::onInvSwap);
     }
 
     private static void onRequest(NotebookRequestC2S payload, ServerPlayNetworking.Context ctx) {
@@ -386,7 +388,10 @@ public final class NotebookNet {
                         player.sendMessage(Text.literal("§c[Greener Pastures]§r This pasture is owned by someone else."), false);
                     }
                 }
-                case NotebookPastureActionC2S.KERNEL -> { toggleKernel(player, reg.getOrCreate(world, pos)); reg.markDirty(); }
+                case NotebookPastureActionC2S.KERNEL -> {
+                    int src = -1; try { src = Integer.parseInt(p.arg()); } catch (Exception ignored) { }
+                    toggleKernel(player, reg.getOrCreate(world, pos), src); reg.markDirty();
+                }
                 default -> { }
             }
             pushPastureConfig(player, pos);
@@ -395,22 +400,39 @@ public final class NotebookNet {
     }
 
     /** Slot the first Kernel from the player's inventory into the pasture's upgrade slot, or return the slotted one. */
-    private static void toggleKernel(ServerPlayerEntity player, PastureData pd) {
+    private static void toggleKernel(ServerPlayerEntity player, PastureData pd, int srcSlot) {
         ItemStack cur = pd.upgrades.getStack(0);
         if (cur.getItem() instanceof BreedingUpgradeItem) {
             ItemStack out = cur.copy();
             pd.upgrades.setStack(0, ItemStack.EMPTY);
             player.getInventory().insertStack(out);
             if (!out.isEmpty()) pd.upgrades.setStack(0, out);   // inventory full → keep it slotted (never destroy)
-        } else {
-            PlayerInventory inv = player.getInventory();
-            for (int i = 0; i < inv.size(); i++) {
-                if (inv.getStack(i).getItem() instanceof BreedingUpgradeItem) {
-                    pd.upgrades.setStack(0, inv.getStack(i).split(1));
-                    break;
-                }
-            }
+            return;
         }
+        PlayerInventory inv = player.getInventory();
+        if (srcSlot >= 0 && srcSlot < inv.main.size() && inv.main.get(srcSlot).getItem() instanceof BreedingUpgradeItem) {
+            pd.upgrades.setStack(0, inv.main.get(srcSlot).split(1));   // the specific Kernel the player was holding
+            return;
+        }
+        for (int i = 0; i < inv.size(); i++) {                         // else the first Kernel found
+            if (inv.getStack(i).getItem() instanceof BreedingUpgradeItem) { pd.upgrades.setStack(0, inv.getStack(i).split(1)); break; }
+        }
+    }
+
+    /** Swap two of the player's own main-inventory slots (grab-and-move in the Notebook's native inventory). */
+    private static void onInvSwap(NotebookInvSwapC2S p, ServerPlayNetworking.Context ctx) {
+        ServerPlayerEntity player = ctx.player();
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        server.execute(() -> {
+            var main = player.getInventory().main;
+            int a = p.a(), b = p.b();
+            if (a < 0 || b < 0 || a >= main.size() || b >= main.size() || a == b) return;
+            ItemStack tmp = main.get(a);
+            main.set(a, main.get(b));
+            main.set(b, tmp);
+            player.getInventory().markDirty();
+        });
     }
 
     private static Map<UUID, Integer> sanitizePairings(Map<UUID, Integer> raw) {

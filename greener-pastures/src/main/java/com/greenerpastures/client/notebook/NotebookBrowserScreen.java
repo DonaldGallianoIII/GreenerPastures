@@ -3,6 +3,7 @@ package com.greenerpastures.client.notebook;
 import com.cinemamod.mcef.MCEF;
 import com.cinemamod.mcef.MCEFBrowser;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.notebook.net.NotebookInvSwapC2S;
 import com.greenerpastures.notebook.net.NotebookPastureActionC2S;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.pasture.breeding.BetterPasture;
@@ -153,6 +154,7 @@ public class NotebookBrowserScreen extends Screen {
     public static boolean browserInputFocused = false;   // set by DsBridge when a React text field has focus (don't steal 'e')
     private boolean draggingInv;
     private double grabX, grabY;
+    private int heldSlot = -1;   // inventory slot currently "picked up" (its item follows the cursor), or -1
 
     private boolean pastureFocused() { return NotebookState.pastureConfig != null; }
     private int panelW() { return 9 * SLOT + INV_PAD * 2; }
@@ -202,10 +204,14 @@ public class NotebookBrowserScreen extends Screen {
             int[] xy = slotXY(i);
             ctx.fill(xy[0], xy[1], xy[0] + SLOT - 1, xy[1] + SLOT - 1, 0xFF080B10);
             ItemStack s = main.get(i);
-            if (!s.isEmpty()) { ctx.drawItem(s, xy[0] + 1, xy[1] + 1); ctx.drawItemInSlot(textRenderer, s, xy[0] + 1, xy[1] + 1); }
-            if (!s.isEmpty() && inSlot(mouseX, mouseY, xy[0], xy[1])) hover = s;
+            if (!s.isEmpty() && i != heldSlot) { ctx.drawItem(s, xy[0] + 1, xy[1] + 1); ctx.drawItemInSlot(textRenderer, s, xy[0] + 1, xy[1] + 1); }
+            if (!s.isEmpty() && i != heldSlot && inSlot(mouseX, mouseY, xy[0], xy[1])) hover = s;
         }
-        if (hover != null) ctx.drawItemTooltip(textRenderer, hover, mouseX, mouseY);
+        if (heldSlot >= 0 && heldSlot < main.size() && !main.get(heldSlot).isEmpty()) {
+            ctx.drawItem(main.get(heldSlot), mouseX - 8, mouseY - 8);   // picked-up item follows the cursor
+        } else if (hover != null) {
+            ctx.drawItemTooltip(textRenderer, hover, mouseX, mouseY);
+        }
     }
 
     private ItemStack kernelStack(String tier) {
@@ -226,22 +232,36 @@ public class NotebookBrowserScreen extends Screen {
             return true;
         }
         if (invCollapsed) return true;
+        var main = client.player.getInventory().main;
         NotebookPastureConfigS2C cfg = NotebookState.pastureConfig;
-        if (cfg != null) {
+        if (cfg != null) {                                 // Kernel slot
             int[] k = kernelXY();
-            if (inSlot(mx, my, k[0], k[1])) { sendKernel(cfg); return true; }         // pop the slotted Kernel
-            var main = client.player.getInventory().main;
-            for (int i = 0; i < 36 && i < main.size(); i++) {
-                int[] xy = slotXY(i);
-                if (inSlot(mx, my, xy[0], xy[1])) { if (main.get(i).getItem() instanceof BreedingUpgradeItem) sendKernel(cfg); break; }
+            if (inSlot(mx, my, k[0], k[1])) {
+                boolean holdingKernel = heldSlot >= 0 && heldSlot < main.size() && main.get(heldSlot).getItem() instanceof BreedingUpgradeItem;
+                if (holdingKernel) { sendKernel(cfg, heldSlot); heldSlot = -1; }        // slot the held Kernel
+                else if (heldSlot < 0) sendKernel(cfg, -1);                             // empty-handed → first Kernel / pop
+                return true;
+            }
+        }
+        for (int i = 0; i < 36 && i < main.size(); i++) {  // inventory slot → pick up / place-swap
+            int[] xy = slotXY(i);
+            if (inSlot(mx, my, xy[0], xy[1])) {
+                if (heldSlot < 0) { if (!main.get(i).isEmpty()) heldSlot = i; }          // pick up
+                else { if (i != heldSlot) swapSlots(heldSlot, i); heldSlot = -1; }       // place / swap
+                return true;
             }
         }
         return true;   // consume any click inside the panel
     }
 
-    private void sendKernel(NotebookPastureConfigS2C cfg) {
+    private void swapSlots(int a, int b) {
         if (client != null && client.getNetworkHandler() != null)
-            ClientPlayNetworking.send(new NotebookPastureActionC2S(cfg.pos(), NotebookPastureActionC2S.KERNEL, "", java.util.Map.of()));
+            ClientPlayNetworking.send(new NotebookInvSwapC2S(a, b));
+    }
+
+    private void sendKernel(NotebookPastureConfigS2C cfg, int srcSlot) {
+        if (client != null && client.getNetworkHandler() != null)
+            ClientPlayNetworking.send(new NotebookPastureActionC2S(cfg.pos(), NotebookPastureActionC2S.KERNEL, String.valueOf(srcSlot), java.util.Map.of()));
     }
 
     // --- input forwarding (coords scaled by GUI scale; focus the browser on interaction) ---
