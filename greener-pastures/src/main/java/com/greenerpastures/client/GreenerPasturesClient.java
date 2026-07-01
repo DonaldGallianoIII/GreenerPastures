@@ -3,6 +3,7 @@ package com.greenerpastures.client;
 import com.greenerpastures.GreenerPastures;
 import com.greenerpastures.egg.highlighter.ShinyEggHighlighterClient;
 import com.greenerpastures.egg.oracle.EggOracleClient;
+import com.greenerpastures.client.notebook.NotebookBrowserScreen;
 import com.greenerpastures.client.notebook.NotebookScreen;
 import com.greenerpastures.client.notebook.NotebookState;
 import com.greenerpastures.notebook.bridge.DsBridge;
@@ -40,8 +41,16 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // pasture/ wand GUI + Compiler bench
         HandledScreens.register(PastureMenu.TYPE, PastureScreen::new);
 
-        // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click)
-        NotebookItem.CONSOLE_OPENER = () -> MinecraftClient.getInstance().setScreen(new NotebookScreen());
+        // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click).
+        // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
+        NotebookItem.CONSOLE_OPENER = () -> {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef")) {
+                mc.setScreen(new NotebookBrowserScreen());   // MCEF classes load only on this branch (soft dep)
+            } else {
+                mc.setScreen(new NotebookScreen());
+            }
+        };
 
         // notebook/ console sync — receive status pushes → cache + refresh the open console
         ClientPlayNetworking.registerGlobalReceiver(NotebookStatusS2C.ID, (payload, context) ->
