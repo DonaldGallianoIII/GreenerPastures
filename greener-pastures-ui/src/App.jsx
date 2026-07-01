@@ -254,23 +254,25 @@ function InventoryWindow() {
   const drag = useRef(null)
   const onDown = (e) => {
     const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
-    drag.current = { sx: e.clientX, sy: e.clientY, bx: pos.x, by: pos.y, scale, dx: 0, dy: 0 }
+    drag.current = { sx: e.clientX, sy: e.clientY, bx: pos.x, by: pos.y, scale, nx: pos.x, ny: pos.y }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
     e.preventDefault()
   }
   const onMove = (e) => {
     const d = drag.current; if (!d) return
-    d.dx = (e.clientX - d.sx) / d.scale
-    d.dy = (e.clientY - d.sy) / d.scale
-    if (winRef.current) winRef.current.style.transform = `translate(${d.dx}px,${d.dy}px)`
+    const maxY = min ? 724 - 46 : 724 - 190   // keep at least the header on-screen (min = just the bar)
+    d.nx = Math.max(4, Math.min(906, d.bx + (e.clientX - d.sx) / d.scale))
+    d.ny = Math.max(4, Math.min(maxY, d.by + (e.clientY - d.sy) / d.scale))
+    // transform reflects the CLAMPED position (not the raw cursor) so there's no snap on release
+    if (winRef.current) winRef.current.style.transform = `translate(${d.nx - d.bx}px,${d.ny - d.by}px)`
   }
   const onUp = () => {
     const d = drag.current; drag.current = null
     window.removeEventListener('mousemove', onMove)
     window.removeEventListener('mouseup', onUp)
     if (winRef.current) winRef.current.style.transform = ''
-    if (d) setPos({ x: Math.max(4, Math.min(906, d.bx + d.dx)), y: Math.max(4, Math.min(534, d.by + d.dy)) })
+    if (d) setPos({ x: d.nx, y: d.ny })
   }
   return (
     <div className="gp-invwin" ref={winRef} style={{ left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' }}>
@@ -600,13 +602,6 @@ function PastureConfig({ cfg }) {
   const maxPairs = cfg.maxPairs || 0
   const roster = cfg.roster || []
   const saveName = () => { if (name !== cfg.name) send('pasture', 'NAME', { pos: cfg.pos, name }) }
-  const cycleBucket = (mon) => {
-    if (maxPairs <= 0) return
-    const next = (mon.bucket + 1) % (maxPairs + 1)
-    const pairings = {}
-    roster.forEach((m) => { const b = m.id === mon.id ? next : m.bucket; if (b > 0) pairings[m.id] = b })
-    send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings })
-  }
   return (
     <div className="pane">
       <div className="row" style={{ marginBottom: 10 }}>
@@ -631,14 +626,12 @@ function PastureConfig({ cfg }) {
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
       </div>
       <div className="dim" style={{ fontSize: 11, marginBottom: 6 }}>
-        {roster.length} mons{maxPairs > 0 ? ` · click a mon to cycle its pair (1–${maxPairs}); two in a bucket = a breeding pair` : ' · slot a Kernel to arrange pairs'}
+        {roster.length} mons in this pasture · breeding pairs are arranged in the visual-scripting layer
       </div>
       {!roster.length ? <div className="muted" style={{ fontSize: 12 }}>empty — tether some Pokémon into this pasture in-world</div> : (
         <div className="grid">
           {roster.map((m) => (
-            <div key={m.id} className="cell" title={`${m.label || m.species} · bucket ${m.bucket || '—'}`}
-              onClick={() => cycleBucket(m)} style={{ borderColor: m.bucket ? pairHue(m.bucket) : undefined }}>
-              <span className="ct" style={{ color: m.bucket ? pairHue(m.bucket) : 'var(--dim)' }}>{m.bucket || '·'}</span>
+            <div key={m.id} className="cell" title={m.label || m.species}>
               <span className="nm">{cap(m.species)}</span>
             </div>
           ))}
