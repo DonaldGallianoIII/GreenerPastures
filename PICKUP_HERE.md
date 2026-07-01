@@ -4,6 +4,17 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
+## ⚡ LATEST — 2026-06-30 eve (block-free Notebook foundation committed · **UI pivot: NOT PNG**)
+**For the current work read `NOTEBOOK_BUILD_PLAN.md` first.** The "STATE" block below is earlier framing — still valid history, but the direction has since converged:
+
+- **STRUCTURE DECIDED — full console, block-free:** all machine blocks collapse into ONE item, the **Notebook** (right-click → tabbed data-science shell; right-click a pasture → its config). Specs: `NOTEBOOK_CONSOLE_SPEC.md` + `greener-pastures/design/design_reference/notebook-console.NOTES.md` (the JSX-mock digest), `KERNEL_AUGMENTER_SPEC.md`, `COMPILER_UI_SPEC.md`. Memories: `notebook-console`, `kernel-augmenter-redesign`, `augment-bench-ui-pattern`, `pasture-operator-claim`.
+- **COMMITTED this session:** the whole **item-art layer** (all 32×32 sprites in-game: Daemon on/off, 6 Kernels, GPU, Soul Tether, 7 Data disks, Notebook) + the **block-free backend** — `NotebookStorage` (int-limit item warehouse, 13 tests), the **"Link" button** in the pasture screen (ownership = the Notebook link → owner collects drops/eggs + pays tether; reuses the June `PastureClaim`), and `PastureHarvest` (owned pastures roll drops → owner's Notebook; block stands down, no double-dip). Build green. In-game QA to run = **N1–N5** in the build plan.
+- **🚨 UI APPROACH PIVOT (Deuce):** **NOT the PNG-skin route.** Deuce loved the **Claude-chat JSX mock** look ("very science + tech based" — the goal). Reproduce THAT **natively** → strong candidate **owo-ui** (flexbox/components/surfaces map ~1:1 from the JSX; crisp, native-free, monospace + icons + hover). **MCEF (real React) = last-resort.** ⇒ **first UI step on resume: confirm owo-ui vs MCEF**, then build the Notebook shell + tabs. Specs' "PNG-skin" wording is superseded; their **layouts/schemas still hold.**
+- **ECONOMY locked:** Data + GPU only (no EMC — flavor). GPU crafted from MC items; every GPU action also costs Data; Data has a floppy-disk item form (Notebook = the read/write drive). `NOTEBOOK_CONSOLE_SPEC.md` §5.
+- **Next build:** Phase 3b rituals→network tick · 3c render→Data · 3d block removal · **Phase 4–5 = the console UI (owo-ui).**
+
+---
+
 ## ⚡ STATE — 2026-06-30 (QA DONE + signed off · backlog **code** complete · **NEXT = web-dev UI stack**)
 **The backend/logic is feature-complete and QA-signed-off; the entire remaining roadmap is UI.** 230 headless tests
 green, all committed on `main`, tree clean. **Deployed jar = `c901b4e`** in *Greener Pastures Test*/mods (deploy chain

@@ -37,8 +37,9 @@ public class PastureData {
     /** Next world-time this pasture may breed — in-memory schedule only (NOT persisted; a missed
      *  interval after a restart is harmless). Lives here instead of a static map to avoid a leak. */
     public transient long nextBreedTick = 0L;
-    /** The pasture's operator — the player who last slotted a Soul Tether here; their Data account pays
-     *  the tether burn (rented amplification). Null = no operator → tethers stay inert (free base). */
+    /** The pasture's owner — set by the explicit Notebook-link claim ({@link PastureClaim}). The owner
+     *  collects this pasture's drops/eggs/outputs into their Notebook AND their Data account pays its
+     *  Soul-Tether burn. Null = unowned → tethers inert (free base), outputs uncollected. */
     public UUID owner;
 
     /** "Ghost pasture" — when true, this pasture's tethered mons never spawn as roaming entities (the lag fix):

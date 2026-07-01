@@ -11,6 +11,8 @@ import com.greenerpastures.drops.Harvester;
 import com.greenerpastures.economy.DaemonCommand;
 import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.economy.DataCommand;
+import com.greenerpastures.economy.GpItems;
+import com.greenerpastures.notebook.PastureHarvest;
 import com.greenerpastures.pasture.breeding.AugmentCommand;
 import com.greenerpastures.pasture.breeding.BreedCommand;
 import com.greenerpastures.pasture.breeding.BetterPasture;
@@ -61,6 +63,7 @@ public final class GreenerPastures implements ModInitializer {
 
         // economy/ — dark economy min-slice: Renderer block (eggs → Data) + Daemon item + per-player Data
         DarkEconomy.init();
+        GpItems.init();         // console-economy items: GPU reagent, Data-disk denominations, Notebook (art + registration; behaviour later)
 
         // buff/ — load the Daemon "root" buff rules + start the per-second grant/drain loop
         BuffSystem.init();
@@ -71,5 +74,9 @@ public final class GreenerPastures implements ModInitializer {
 
         // drops/ — passive-drops Harvester block (rolls tethered mons' drop tables → its own chest)
         Harvester.init();
+
+        // notebook/ — block-free harvest: owned (Notebook-linked) pastures roll drops → owner's Notebook storage
+        // (replaces the Harvester block for owned pastures; the block stands down for them to avoid double-dip).
+        PastureHarvest.init();
     }
 }

@@ -93,7 +93,7 @@ public final class DaemonView {
         dot(c, 11, 11, PASS);
         c.text(m.title, 22, 7, TEXT);
         if (!m.sub.isEmpty()) c.text(m.sub, w - c.textWidth(m.sub) - 10, 7, MUTED);
-        if (m.noUpgrade) c.text("Slot a Pasture Upgrade in the wand to unlock breeding threads.", 12, HEADER_H + 12, HINTY);
+        if (m.noUpgrade) c.text("Slot a Kernel in the wand to unlock breeding threads.", 12, HEADER_H + 12, HINTY);
         if (m.flash != null) c.text(m.flash, 12, h - FOOTER_H - 12, FLASH);
         c.gradient(0, h - FOOTER_H, w, h, BAR_BOT, BAR_TOP);
         c.fill(0, h - FOOTER_H, w, h - FOOTER_H + 1, BORDER);

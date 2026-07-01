@@ -189,7 +189,7 @@ public class PastureArrangementScreen extends Screen {
 
         if (nBuckets == 0) {
             ctx.drawText(this.textRenderer,
-                    Text.literal("Slot a Pasture Upgrade in the wand to unlock breeding pairs."),
+                    Text.literal("Slot a Kernel in the wand to unlock breeding pairs."),
                     frameX + 16, BUCKET_Y0 + 2, 0xFFCFC08A, false);
         }
         for (int b = 1; b <= nBuckets; b++) {

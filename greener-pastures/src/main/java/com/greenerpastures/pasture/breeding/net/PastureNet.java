@@ -101,11 +101,11 @@ public final class PastureNet {
                 pd.owner = r.owner();
                 reg.markDirty();
                 player.sendMessage(Text.literal(r.outcome() == PastureClaim.Outcome.CLAIMED
-                        ? "§a[Greener Pastures]§r You now pay this pasture's tether cost — locked to you."
-                        : "§a[Greener Pastures]§r Released — this pasture's tether cost is free to claim."), false);
+                        ? "§a[Greener Pastures]§r Linked — this pasture is yours: its drops, eggs & outputs collect into your Notebook (you also pay its tether cost)."
+                        : "§a[Greener Pastures]§r Unlinked — this pasture is free to claim; its outputs no longer collect to you."), false);
             } else {
                 player.sendMessage(Text.literal(
-                        "§c[Greener Pastures]§r This pasture's tether cost is claimed by someone else."), false);
+                        "§c[Greener Pastures]§r This pasture is owned by someone else."), false);
             }
         });
     }

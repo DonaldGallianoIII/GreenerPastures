@@ -1,6 +1,14 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/echo_shard"
-  }
+    "layer0": "greenerpastures:item/daemon/mad_daemon_off_hungry"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 1
+      },
+      "model": "greenerpastures:item/daemon_on"
+    }
+  ]
 }

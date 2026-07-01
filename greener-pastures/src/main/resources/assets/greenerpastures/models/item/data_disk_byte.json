@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "greenerpastures:item/data_disk/byte_data_disk"
+  }
+}

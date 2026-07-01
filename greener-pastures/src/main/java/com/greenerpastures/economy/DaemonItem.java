@@ -4,6 +4,7 @@ import com.greenerpastures.buff.BuffId;
 import com.greenerpastures.buff.DaemonLoadout;
 import com.greenerpastures.core.GpLog;
 import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.CustomModelDataComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -51,6 +52,9 @@ public class DaemonItem extends Item {
     public static void setOn(ItemStack stack, boolean on) {
         stack.set(DarkEconomy.DAEMON_ON, on);
         stack.set(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, on);
+        // Swap the item texture too: ON → happy/green (daemon_on override), OFF → hungry/red (base model).
+        if (on) stack.set(DataComponentTypes.CUSTOM_MODEL_DATA, new CustomModelDataComponent(1));
+        else stack.remove(DataComponentTypes.CUSTOM_MODEL_DATA);
     }
 
     @Override

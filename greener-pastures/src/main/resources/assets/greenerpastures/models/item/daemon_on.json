@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "greenerpastures:item/daemon/true_daemon_happy_on"
+  }
+}

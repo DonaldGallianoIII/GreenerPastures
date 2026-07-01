@@ -1,6 +1,7 @@
 package com.greenerpastures.pasture.breeding.gui;
 
 import com.greenerpastures.client.ui.GpButton;
+import com.greenerpastures.pasture.breeding.net.ClaimOperatorPayload;
 import com.greenerpastures.pasture.breeding.net.SaveNamePayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
@@ -59,6 +60,7 @@ public class PastureScreen extends HandledScreen<PastureMenu> {
         buttons.clear();
         buttons.add(new GpButton(this.x + 128, this.y + 8, 64, 14, "Arrange", this::openArrangement));
         buttons.add(new GpButton(this.x + 128, this.y + 23, 64, 14, "Daemon", this::openDaemon));
+        buttons.add(new GpButton(this.x + 128, this.y + 38, 64, 14, "Link", this::toggleClaim));
     }
 
     private void openArrangement() {
@@ -79,6 +81,16 @@ public class PastureScreen extends HandledScreen<PastureMenu> {
         // close the container first (same as openArrangement), then swap to the node graph
         if (client.player != null) client.player.closeHandledScreen();
         client.setScreen(d);
+    }
+
+    /** Claim/release this pasture as yours — links it to your Notebook (you collect its drops, eggs &
+     *  outputs) via the operator-claim packet. The server applies {@code PastureClaim} and replies in chat. */
+    private void toggleClaim() {
+        try {
+            ClientPlayNetworking.send(new ClaimOperatorPayload(this.handler.pasturePos));
+        } catch (Throwable ignored) {
+            // connection gone (world closing) — nothing to send to
+        }
     }
 
     @Override
@@ -104,7 +116,7 @@ public class PastureScreen extends HandledScreen<PastureMenu> {
                 Text.literal("Mons: " + mons + "   ·   Pairs: " + configuredPairs() + "/" + this.handler.maxPairs()),
                 8, 64, SILVER, false);
         if (this.handler.unlockedSlots() == 0) {
-            ctx.drawText(this.textRenderer, Text.literal("Slot a Pasture Upgrade ↑"), 8, 76, HINT, false);
+            ctx.drawText(this.textRenderer, Text.literal("Slot a Kernel ↑"), 8, 76, HINT, false);
         }
 
         ctx.drawText(this.textRenderer, this.playerInventoryTitle, 8, 94, SILVER, false);

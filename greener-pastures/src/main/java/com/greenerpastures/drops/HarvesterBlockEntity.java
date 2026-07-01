@@ -109,6 +109,11 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
                 GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "not_a_pasture");
                 return;
             }
+            PastureData opd = PastureRegistry.get(sw.getServer()).get(sw, pasturePos);
+            if (opd != null && opd.owner != null) {   // owned → collected by the Notebook network tick (PastureHarvest); block stands down, no double-dip
+                GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "owned_uses_notebook");
+                return;
+            }
             int mons = pasture.getTetheredPokemon().size();
             // 1) staple harvest — each mon's Cobblemon drop table (LEVER 1 proc + LEVER 2 yield)
             DropPlan plan = dropPlan(sw, pasturePos);                     // Kernel base × any FED drop tether
