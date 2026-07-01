@@ -211,11 +211,12 @@ export default function App() {
         </>)}
         <StatusBar />
       </div>
-      <InventoryWindow />
       </div>
     </div>
   )
 }
+// InventoryWindow removed — the real MC inventory (with icons) is now drawn natively over the browser
+// (NotebookBrowserScreen), since the browser can't render Minecraft item textures.
 
 function Conn() {
   useChannel('status') // subscribe so the indicator re-renders when data (mock or live) lands
