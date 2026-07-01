@@ -4,7 +4,36 @@ _**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 
 + headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
 `rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
 
-## ⚡ LATEST — 2026-06-30 eve (block-free Notebook foundation committed · **UI pivot: NOT PNG**)
+## ⚡ LATEST — 2026-06-30 night (🖥 **SIX-TAB owo-ui CONSOLE BUILT — awaiting first in-game QA**)
+**The whole Notebook console is built in owo-ui + committed (`f6fb921`), all green — but NONE of it has been run in-game yet. Morning = deploy + QA.** Full blueprint + engine-decision history: **`NOTEBOOK_INTERACTIVE_SPEC.md`**. Slice log + build order: `NOTEBOOK_BUILD_PLAN.md`. (Engine: Deuce chose **owo-ui** natively over MCEF; the full MCEF recipe is parked in `MCEF_RECIPE.md` as the "if I don't like owo" escape hatch.)
+
+**Built tonight (all green):**
+- **Shell** — right-click Notebook in air → `NotebookScreen` (title bar · tab strip · `gp://` bar · status bar). Right-click a **pasture** → wand menu (unchanged).
+- **Sync layer** — `NotebookNet` (C2S request + action; S2C status/storage/compiler/pastures/augmenter/biobank) + client `NotebookState` cache; request-on-open, rebuild-in-place (`refreshIfOpen`→`clearAndInit`).
+- **6 tabs:** ① status bar (live Data · GPU count · Daemon-on) · ② Storage (loot grid, L-click pull-stack / R-click pull-all) · ③ Compiler (Daemon triptych: buff −/+ steppers · Power ON/OFF · live drain+runtime) · ④ Pastures (read-only snapshot monitor) · ⑤ Augmenter (Kernel slots + augment APPLY/REMOVE, costs deferred) · ⑥ BioBank (per-player, block-free; species accordion → full egg card).
+
+### 🧪 MORNING QA — first visual + functional test of ALL the UI
+**Deploy:** `JAVA_HOME=/home/donaldgalliano/jdks/jdk-21.0.11+10 <repo>/greener-pastures/gradlew -p <repo>/greener-pastures build` → drop `greener-pastures/build/libs/greenerpastures-*.jar` into the live instance's mods (owo-lib `0.12.15.4+1.21` already installed there). Deuce deploys / authorizes.
+
+| # | Check |
+|---|---|
+| **C0 open** | R-click Notebook in **air** → console opens; click each of the 6 tabs → switches (active highlight + `gp://` path swaps); ✕ closes. R-click a **pasture** → wand menu still opens. |
+| **C1 LOOK** | Eyeball vs the `design/design_reference/notebook-console.NOTES.md` mock — palette / spacing / legibility. *This is the whole reason we went owo* — flag any layout glitches (compiles ≠ renders). |
+| **C2 status bar** | Data = real balance · GPU = your GPU item count · `● Daemon ON/OFF` tracks a held ON Daemon. |
+| **C3 Storage** | Linked pasture w/ tethered mons → after a harvest tick, loot appears; **L-click** → one stack to inventory, **R-click** → all; grid + status refresh live. |
+| **C4 Compiler** | Hold a **Daemon** → buff catalog; **−/+** change a buff's tier (persists on the item); **Power** toggles ON/OFF; drain Data/s + runtime update. (Targets the FIRST Daemon in your inventory.) |
+| **C5 Pastures** | Open a pasture in-world → it appears in the list; select → its pairs + per-pair status (Breeding/Ready/Idle/Incomplete); read-only (no edits from console). |
+| **C6 Augmenter** | Hold a **Kernel** → tier · slots used/cap · pips; **APPLY** an augment (grays when slots full) → written to the Kernel; **REMOVE** strips it; slots update. (No GPU/Data cost — deferred.) |
+| **C7 BioBank ⚠️** | Deposit eggs at a BioBank block (R-click egg; sneak = all) → they go to **your** bank; console accordion → species → expand → per-egg card. **VERIFY WHICH FIELDS POPULATE:** IVs should; **nature / gender / ability / EVs are best-guess reflection getter names** — any blank = the real Cobblemon `PokemonProperties` method differs (fix in `EggReader.init()`: `getNature`/`getGender`/`getAbility`/`getEvs`). Also verify per-stat **IV order** (HP·At·Df·SA·SD·Sp) is right (the `statSlot` name-match). |
+| **C8 regression** | Existing breeding / wand / harvest tick unaffected; no crashes or log spam (`~/gp-logs/latest.log`). |
+
+**Known caveats (expected — not bugs):** BioBank reflection (C7) is the biggest unknown, but degrades gracefully (blanks, never crashes) · augment costs are a deferred no-op seam · legacy block-keyed BioBanks drop on this update (per-player migration — re-deposit) · the **Dashboard** tab is still the stub blurb.
+
+**Left after QA:** fix any BioBank getters (C7) · Dashboard (slice 7) · economy dual-cost (GPU+Data) + Data disks · BioBank search/sort · retire the machine blocks (Phase 3d) · the older N1–N5 pasture/harvest QA in `NOTEBOOK_BUILD_PLAN.md`.
+
+**Tonight's commits (on `main`, tree clean):** `24e882e` (slices 1–3: sync+status · Storage · Compiler) → `7d777fe` (4 Pastures · 5 Augmenter) → `ad8584d` (6a BioBank migration+browse) → `f6fb921` (6b full card).
+
+## ⚡ EARLIER — 2026-06-30 eve (block-free Notebook foundation committed · **UI pivot: NOT PNG**)
 **For the current work read `NOTEBOOK_BUILD_PLAN.md` first.** The "STATE" block below is earlier framing — still valid history, but the direction has since converged:
 
 - **STRUCTURE DECIDED — full console, block-free:** all machine blocks collapse into ONE item, the **Notebook** (right-click → tabbed data-science shell; right-click a pasture → its config). Specs: `NOTEBOOK_CONSOLE_SPEC.md` + `greener-pastures/design/design_reference/notebook-console.NOTES.md` (the JSX-mock digest), `KERNEL_AUGMENTER_SPEC.md`, `COMPILER_UI_SPEC.md`. Memories: `notebook-console`, `kernel-augmenter-redesign`, `augment-bench-ui-pattern`, `pasture-operator-claim`.
