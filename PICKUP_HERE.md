@@ -1,308 +1,57 @@
-# ▶️ Pickup Here — Session Handoff
+# 🎯 PICKUP — Decked-out Daemon node-graph (stages 2–3), phased build
 
-_**Greener Pastures** — public-release Cobblemon "A Data Science Mod", Fabric 1.21.1, Java 21, MIT. Logic-first
-+ headless-tested. Read this first. `glow PICKUP_HERE.md`. Memory: `greener-pastures-project`,
-`rituals-gacha-project`, `batch-qa-workflow`, `testing-and-logic-first`, `observability-first-logging`._
+> **DIRECTIVE (Deuce, 2026-07-01):** Execute **every phase below, in order, autonomously** — build + `git commit` each phase, do **NOT deploy between phases**. Deuce **batch-tests everything at the very end** (his [[batch-qa-workflow]]): deploy the final jar **only when he asks**. If a phase reveals a blocker, note it, pick the sanest default, keep going. When all phases are done + building green, tell him "all N phases built + committed, ready to deploy + batch-test."
 
-## ⚡ LATEST — 2026-06-30 night (🖥 **SIX-TAB owo-ui CONSOLE BUILT — awaiting first in-game QA**)
-**The whole Notebook console is built in owo-ui + committed (`f6fb921`), all green — but NONE of it has been run in-game yet. Morning = deploy + QA.** Full blueprint + engine-decision history: **`NOTEBOOK_INTERACTIVE_SPEC.md`**. Slice log + build order: `NOTEBOOK_BUILD_PLAN.md`. (Engine: Deuce chose **owo-ui** natively over MCEF; the full MCEF recipe is parked in `MCEF_RECIPE.md` as the "if I don't like owo" escape hatch.)
+## Where we are (already shipped this session)
+- MCEF console renders React in-game (`NotebookBrowserScreen`, browser kept alive). Data over the loopback WS bridge (`DsBridge` :25599). Right-click a pasture → `NotebookItem.PASTURE_OPENER` (client: open console + set a placeholder `NotebookState.pastureConfig`, `DsBridge.pushNow()`) + `NotebookNet.pushPastureConfig` (server sends `NotebookPastureConfigS2C`). React `PastureConfig` shows name/link/Kernel + the **DaemonGraph**.
+- **DaemonGraph v1 + pan/zoom** (in `greener-pastures-ui/src/App.jsx`): each roster mon = a node; drag a mon's port onto another → a **pair** (wires ↔ `PastureData.pairings`, two mons in one bucket = a pair, via the `pasture`/`PAIRINGS` bridge action). Scroll = zoom (cursor-fixed), drag canvas = pan. Node positions are **client-side only** (auto-laid-out) — Phase 4 persists them.
+- Native inventory overlay (real icons, grab-and-move via `NotebookInvSwapC2S`, Kernel slot) is done + separate.
+- Design bible: **`VISUAL_SCRIPTING_UI_IDEA.md`** (unit/filter/sink node model, shape-coded ports ◆pair ▶flow ✕void, the **void-log trust requirement**). Read it before Phase 3.
 
-**Built tonight (all green):**
-- **Shell** — right-click Notebook in air → `NotebookScreen` (title bar · tab strip · `gp://` bar · status bar). Right-click a **pasture** → wand menu (unchanged).
-- **Sync layer** — `NotebookNet` (C2S request + action; S2C status/storage/compiler/pastures/augmenter/biobank) + client `NotebookState` cache; request-on-open, rebuild-in-place (`refreshIfOpen`→`clearAndInit`).
-- **6 tabs:** ① status bar (live Data · GPU count · Daemon-on) · ② Storage (loot grid, L-click pull-stack / R-click pull-all) · ③ Compiler (Daemon triptych: buff −/+ steppers · Power ON/OFF · live drain+runtime) · ④ Pastures (read-only snapshot monitor) · ⑤ Augmenter (Kernel slots + augment APPLY/REMOVE, costs deferred) · ⑥ BioBank (per-player, block-free; species accordion → full egg card).
-
-### 🧪 MORNING QA — first visual + functional test of ALL the UI
-**Deploy:** `JAVA_HOME=/home/donaldgalliano/jdks/jdk-21.0.11+10 <repo>/greener-pastures/gradlew -p <repo>/greener-pastures build` → drop `greener-pastures/build/libs/greenerpastures-*.jar` into the live instance's mods (owo-lib `0.12.15.4+1.21` already installed there). Deuce deploys / authorizes.
-
-| # | Check |
-|---|---|
-| **C0 open** | R-click Notebook in **air** → console opens; click each of the 6 tabs → switches (active highlight + `gp://` path swaps); ✕ closes. R-click a **pasture** → wand menu still opens. |
-| **C1 LOOK** | Eyeball vs the `design/design_reference/notebook-console.NOTES.md` mock — palette / spacing / legibility. *This is the whole reason we went owo* — flag any layout glitches (compiles ≠ renders). |
-| **C2 status bar** | Data = real balance · GPU = your GPU item count · `● Daemon ON/OFF` tracks a held ON Daemon. |
-| **C3 Storage** | Linked pasture w/ tethered mons → after a harvest tick, loot appears; **L-click** → one stack to inventory, **R-click** → all; grid + status refresh live. |
-| **C4 Compiler** | Hold a **Daemon** → buff catalog; **−/+** change a buff's tier (persists on the item); **Power** toggles ON/OFF; drain Data/s + runtime update. (Targets the FIRST Daemon in your inventory.) |
-| **C5 Pastures** | Open a pasture in-world → it appears in the list; select → its pairs + per-pair status (Breeding/Ready/Idle/Incomplete); read-only (no edits from console). |
-| **C6 Augmenter** | Hold a **Kernel** → tier · slots used/cap · pips; **APPLY** an augment (grays when slots full) → written to the Kernel; **REMOVE** strips it; slots update. (No GPU/Data cost — deferred.) |
-| **C7 BioBank ⚠️** | Deposit eggs at a BioBank block (R-click egg; sneak = all) → they go to **your** bank; console accordion → species → expand → per-egg card. **VERIFY WHICH FIELDS POPULATE:** IVs should; **nature / gender / ability / EVs are best-guess reflection getter names** — any blank = the real Cobblemon `PokemonProperties` method differs (fix in `EggReader.init()`: `getNature`/`getGender`/`getAbility`/`getEvs`). Also verify per-stat **IV order** (HP·At·Df·SA·SD·Sp) is right (the `statSlot` name-match). |
-| **C8 regression** | Existing breeding / wand / harvest tick unaffected; no crashes or log spam (`~/gp-logs/latest.log`). |
-
-**Known caveats (expected — not bugs):** BioBank reflection (C7) is the biggest unknown, but degrades gracefully (blanks, never crashes) · augment costs are a deferred no-op seam · legacy block-keyed BioBanks drop on this update (per-player migration — re-deposit) · the **Dashboard** tab is still the stub blurb.
-
-**Left after QA:** fix any BioBank getters (C7) · Dashboard (slice 7) · economy dual-cost (GPU+Data) + Data disks · BioBank search/sort · retire the machine blocks (Phase 3d) · the older N1–N5 pasture/harvest QA in `NOTEBOOK_BUILD_PLAN.md`.
-
-**Tonight's commits (on `main`, tree clean):** `24e882e` (slices 1–3: sync+status · Storage · Compiler) → `7d777fe` (4 Pastures · 5 Augmenter) → `ad8584d` (6a BioBank migration+browse) → `f6fb921` (6b full card).
-
-## ⚡ EARLIER — 2026-06-30 eve (block-free Notebook foundation committed · **UI pivot: NOT PNG**)
-**For the current work read `NOTEBOOK_BUILD_PLAN.md` first.** The "STATE" block below is earlier framing — still valid history, but the direction has since converged:
-
-- **STRUCTURE DECIDED — full console, block-free:** all machine blocks collapse into ONE item, the **Notebook** (right-click → tabbed data-science shell; right-click a pasture → its config). Specs: `NOTEBOOK_CONSOLE_SPEC.md` + `greener-pastures/design/design_reference/notebook-console.NOTES.md` (the JSX-mock digest), `KERNEL_AUGMENTER_SPEC.md`, `COMPILER_UI_SPEC.md`. Memories: `notebook-console`, `kernel-augmenter-redesign`, `augment-bench-ui-pattern`, `pasture-operator-claim`.
-- **COMMITTED this session:** the whole **item-art layer** (all 32×32 sprites in-game: Daemon on/off, 6 Kernels, GPU, Soul Tether, 7 Data disks, Notebook) + the **block-free backend** — `NotebookStorage` (int-limit item warehouse, 13 tests), the **"Link" button** in the pasture screen (ownership = the Notebook link → owner collects drops/eggs + pays tether; reuses the June `PastureClaim`), and `PastureHarvest` (owned pastures roll drops → owner's Notebook; block stands down, no double-dip). Build green. In-game QA to run = **N1–N5** in the build plan.
-- **🚨 UI APPROACH PIVOT (Deuce):** **NOT the PNG-skin route.** Deuce loved the **Claude-chat JSX mock** look ("very science + tech based" — the goal). Reproduce THAT **natively** → strong candidate **owo-ui** (flexbox/components/surfaces map ~1:1 from the JSX; crisp, native-free, monospace + icons + hover). **MCEF (real React) = last-resort.** ⇒ **first UI step on resume: confirm owo-ui vs MCEF**, then build the Notebook shell + tabs. Specs' "PNG-skin" wording is superseded; their **layouts/schemas still hold.**
-- **ECONOMY locked:** Data + GPU only (no EMC — flavor). GPU crafted from MC items; every GPU action also costs Data; Data has a floppy-disk item form (Notebook = the read/write drive). `NOTEBOOK_CONSOLE_SPEC.md` §5.
-- **Next build:** Phase 3b rituals→network tick · 3c render→Data · 3d block removal · **Phase 4–5 = the console UI (owo-ui).**
+## Key facts (don't re-derive)
+- **Build (Java):** `JAVA_HOME=/home/donaldgalliano/jdks/jdk-21.0.11+10 /home/donaldgalliano/pokemon-prediction/greener-pastures/gradlew -p /home/donaldgalliano/pokemon-prediction/greener-pastures build` (Bash `dangerouslyDisableSandbox:true`). **Always read the real output for `BUILD SUCCESSFUL`** — a grep pipe's exit 0 is NOT gradle's.
+- **Build (UI):** `cd greener-pastures-ui && npm run build` → single-file `index.html` into `greener-pastures/src/main/resources/assets/greenerpastures/html/` (viteSingleFile). Rebuild the jar after.
+- **Deploy (END ONLY):** `cp` jar → `/mnt/c/Users/deuce/curseforge/minecraft/Instances/Greener Pastures Test/mods/greenerpastures-0.1.0.jar`, verify md5 + `zipfile.testzip()`. MC must be closed.
+- **Codec:** `PacketCodec.tuple` ≤6 fields; `PacketCodecs.map(HashMap::new, key, val)`; `VAR_LONG/VAR_INT/BOOL/STRING`; list = `X.CODEC.collect(PacketCodecs.toList())`. For >6 fields or nested, pack into a sub-record or a JSON string field.
+- **DrawContext (native):** `drawItem`, `drawItemInSlot` (count — NOT drawStackOverlay), `drawItemTooltip`, `drawBorder`, `fill`.
+- **Commit trailer:** `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>` + `Claude-Session: https://claude.ai/code/session_017Dq3vi9HWWc9bYUDAaUSYs`.
+- Files: server net `greener-pastures/src/main/java/com/greenerpastures/notebook/net/*` · bridge `notebook/bridge/DsBridge.java` · client `client/notebook/{NotebookState,NotebookBrowserScreen}.java` · `client/GreenerPasturesClient.java` · pasture data `pasture/breeding/{PastureData,PastureRegistry,MultiPairBreeder}.java` · ingest `notebook/EggIngest.java` · React `greener-pastures-ui/src/App.jsx`. Filter/keep logic to reuse: `economy/RenderRun`, `biobank/ValueRule`, `RenderValuation`, `DataStore`, `biobank/BioBankStore`; egg reads `egg/oracle/cull/EggReader` + `EggInfo` (species/shiny/ivsKnown/ivTotal/perfectCount — verify fields).
 
 ---
 
-## ⚡ STATE — 2026-06-30 (QA DONE + signed off · backlog **code** complete · **NEXT = web-dev UI stack**)
-**The backend/logic is feature-complete and QA-signed-off; the entire remaining roadmap is UI.** 230 headless tests
-green, all committed on `main`, tree clean. **Deployed jar = `c901b4e`** in *Greener Pastures Test*/mods (deploy chain
-this session: `a93af8e`→`edf05bf`→`4da7999`→`035ff6b`→`c901b4e`; commits after `c901b4e` are **docs-only**, jar
-unchanged — current source == deployed code).
+## PHASE 1 — Graph data model + sync (server ⇄ client)
+Add a persisted per-pasture graph beyond pairings: filter/sink nodes + flow edges, plus mon-node positions.
+- **`PastureGraphData`** (new, in `pasture/breeding/`): `record Node(String id, String type, double x, double y, String monId, Map<String,String> config)` + `record Edge(String from, String fromPort, String to, String toPort)`; a class holding `List<Node> nodes` + `List<Edge> edges`. Types: `MON`, `FILTER_IV`, `FILTER_EV`, `FILTER_NATURE`, `FILTER_SHINY`, `SINK_BIOBANK`, `SINK_DATA`, `SOURCE` (egg entry). NBT read/write (mirror `BioBankData` NBT style). Config values are strings (IV min per stat `"hp":"31"`, natures `"list":"adamant,jolly"`, shiny `"gate":"only"`).
+- Add `PastureGraphData graph` to `PastureData` (+ NBT in its serialize/deserialize; default empty).
+- **Sync down:** simplest = add a **graph JSON string** field to `NotebookPastureConfigS2C` (Gson-serialize the graph server-side). React parses it. (If tuple arity blocks — it's currently 6 fields — make a separate `NotebookGraphS2C(long pos, String json)` pushed alongside from `pushPastureConfig`.)
+- **Sync up:** **`NotebookGraphSaveC2S(long pos, String json)`** — React sends the whole graph JSON on edit; `NotebookNet.onGraphSave` validates reach + parses (Gson) → `pd.graph = ...` → `reg.markDirty()` → `pushPastureConfig`. Bridge: route a `pasture`/`GRAPH` action → send this packet (extend `handlePastureAction` in DsBridge).
+- Commit: `feat(daemon): persisted pasture graph model + sync (nodes/edges/positions)`.
 
-### ✅ QA sign-off (Deuce, 2026-06-30 — formal record in `QA_PENDING.md` "Verified" section)
-**Signed off / verified in-game:**
-- BUG-001 drop-rate ramps per Kernel tier · BUG-002 EV per-stat (`/gp augment ev`) · BUG-003 ghost-pasture un-hide (mons
-  **ring** the pasture, no dupes) · BUG-004 Daemon compile-your-own (`/gp daemon`) · BUG-006 breeding-compat (illegal pairs → no eggs)
-- **Q23–Q30** Daemon buff suite (all 15 root buffs, end-to-end from the live log)
-- **Q1–Q22** foundation + economy (egg queue, BioBank, Renderer→Data, Soul Tethers, craftable augments, IV/EV, rituals, Harvester)
+## PHASE 2 — React node editor: filter/sink nodes, typed ports, flow wiring
+In `DaemonGraph` (App.jsx), grow beyond mon-pairing:
+- **Graph state** from `cfg.graph` (the JSON): nodes (incl. auto MON nodes merged with roster + saved positions) + edges. Local edits → `send('pasture','GRAPH',{pos, json})` (debounce ~300ms). MON node positions now persist via the graph (drop the client-only `positions` for mons).
+- **Palette** (a small toolbar): `+ IV`, `+ EV`, `+ Nature`, `+ Shiny`, `+ → BioBank`, `+ → Data`, `+ Source`. Adds a node at canvas center.
+- **Node render per type** with **typed ports** (colored dots + label): MON = `pair ◆` + `eggs ▶`; FILTER_* = `in ▶`, `pass ▶`, `void ✕`; SINK_* = `in ▶`; SOURCE = `out ▶`. Keep pan/zoom + graph-space coords (`toGraph`).
+- **Wire types + compat:** pair↔pair (mon-mon, still → pairings), flow ▶ (eggs/out → in, pass → in/sink, void → void-in/Data). Reject incompatible drops. Click a wire to delete.
+- **Node config UI** (click a node → inline panel): IV = 6 min-IV number inputs; EV = 6 stat toggles/threshold; Nature = multi-select chips; Shiny = radio (any / only-shiny / no-shiny). Writes into the node's `config` → save graph.
+- Delete node (a ✕ on the node) → remove node + its edges → save.
+- Commit: `feat(daemon): filter/sink node palette + typed ports + config (visual editor)`.
 
-**⏳ HELD — gated on the visual rework (do NOT mark done):**
-- **Q31–Q34** breeding-meta locks (Nature/Ball/Hidden Ability/Egg Moves) — logs fire, but **visually confirming a
-  hatchling carries the locked trait needs the inspection UI** (node-graph per-mon trait view = BUG-005). That UI is
-  both the feature AND the verification harness for these four.
-- **Q35–Q37** Notifications + Goal (shiny ping · Data-milestone ping · `/gp goal`) — untested; Deuce wants the visual rework first.
-- → Tidy framing: **the held list == "everything that needs the visual rework to build or verify."**
+## PHASE 3 — Backend eval: route eggs through the graph + the void log
+Make the graph functional. In `EggIngest.ingest` (currently keep-all for linked pastures), when the pasture has a non-trivial graph, **evaluate**:
+- Walk the flow from `SOURCE` (or, if none, a single linear chain of the wired filters → sink). At each `FILTER_*`, evaluate the egg's props (`EggReader`/`EggInfo`): pass → follow `pass` edge; fail → follow `void` edge (default → Data). Terminate at a sink.
+  - `FILTER_IV`: pass iff every stat's IV ≥ its config min. `FILTER_SHINY`: gate only/no/any. `FILTER_NATURE`: pass iff nature ∈ config list. `FILTER_EV`: breeder EVs may be trivial → gate on config or pass-through v1.
+- Reach `SINK_BIOBANK` → `BioBankStore.deposit` (keep). Reach `SINK_DATA` or voided → `DataStore.credit(owner, RenderValuation.dataFor(...))` (render to Data).
+- **SACRED guard stays:** shiny or unreadable egg → always keep, regardless of graph.
+- **Void log (NON-NEGOTIABLE, [[observability-first-logging]] + design doc):** every void emits `Analytics.record(... Event "egg_voided" ...)` (species + actual IVs/nature/shiny + which filter rejected + pasture pos) AND `GpLog.i("egg_ingest","void",...)`. Keeps too (`egg_ingest keep`). The trust feature — must be observable.
+- If the graph has **no filters/sinks**, fall back to current keep-all (don't break existing pastures).
+- Commit: `feat(daemon): server eval — route bred eggs through the filter graph (keep/void + void log)`.
 
-### ▶️ THE NEXT PHASE — web-dev UI stack (this *is* the rest of the backlog)
-**Deuce's direction:** develop the UI as a **real web app *with Claude Code*, then port it into MC.** Toolchain READY on
-this box: **Node 22 · npm 10.9 · pnpm 10.33 · yarn** (verified). **No web project scaffolded yet.**
-- **Recommended stack:** Vite + React + TypeScript (most Claude-Code-friendly; good for charts AND interactive builders).
-- **Port path:** build in-browser with mock data → wire into MC via the **localhost web bridge (Option B)** or **owo-ui
-  (Option C)** per surface. Strategy + decision matrix: **`PORTING_WEB_UI.md`** (MCEF/Option A parked unless we want
-  true in-world web + accept ~100 MB Chromium).
-- **Proposed build order:** scaffold → **Dashboard** (self-contained, proves the bridge) → **Daemon Compiler** → **EV
-  allocator** → **node-graph + the two browsers**.
+## PHASE 4 — Polish
+- Persisted mon-node positions (via Phase 1 graph — verify round-trip; drop client-only positions).
+- A **Log** mini-view in the pasture config (or a node): last N `egg_ingest keep/void` lines from a small ring buffer synced over the bridge (`log` channel) — the player-facing void feed. If time-boxed, at least surface kept/voided counts.
+- `npm run build` + jar build; confirm green.
+- Commit: `feat(daemon): persisted node positions + void-log view`.
 
-**Deferred-UI backlog — specs in `QA_RESULTS.md` (BUG-005/007/008) + `QA_PENDING` Q-rows. NOTE: most BACKENDS already exist (logic-first paid off):**
-| UI | What | Backend status | Spec |
-|----|------|----------------|------|
-| 📊 Analytics dashboard | live egg/shiny feed · Data economy · goal progress · CSV/HTML export | `DashboardStats` + `DashboardExport.toHtml()` exist | task #6 · PORTING_WEB_UI Opt B |
-| ⌬ Daemon Compiler | visual loadout builder (buffs + levels, live drain) | ✅ `/gp daemon set/list/on/off` | BUG-004 |
-| ✦ EV allocator | anvil-style per-stat, pool vs 252/510 caps | ✅ `/gp augment ev <6>` | BUG-002 |
-| 🕸️ Daemon node-graph | per-mon detail (type/nick/gender/IVs/nature/ability/moves) + zoom-out + red-wire incompatible-pair feedback | graph exists (`client/ui/DaemonController`); compat core ✅ | BUG-005 + BUG-006 |
-| 🧬 Breeding-meta picker | choose nature/ball/ability/egg-moves in the Compiler | ✅ `/gp augment set nature/ball/ability/egg_move` | Q31–Q34 |
-| 🥚 BioBank browser | scrollable species grid → click species → its eggs (sortable shiny/IVs); two-level AE2/ME-style | ✅ deposit/persist (Q4) | BUG-007 |
-| 🔗 Harvester linking | link N pastures to a harvester; GUI shows linked coords + unlink (no scan, no dup) | ❌ **NOT built** | BUG-008 |
-
-**Feature tail (after the UIs):** egg-culler → item + GUI (#17) · "Data Science" awareness book (#18) · final perf + publish prep (#7).
-
-### 🔧 ONE open backend thread (decide first)
-**Harvester linking backend (BUG-008)** — Deuce's ME-drive design: a harvester stores a persisted list of linked
-pasture coords, iterates them each tick (zero scan, no dup — a pasture links to one harvester), drops per the pasture's
-own Kernel. I **offered to build the link store + `/gp harvester link/unlink/list` command NOW** (logic-first; makes his
-multi-pasture cluster work today; GUI comes in the web pass). **Deuce hasn't said go yet** — this is the only piece of
-backend left before *everything* is UI. (Today's Harvester reads only the FIRST adjacent pasture — found live in QA.)
-
-**Harvester observability note:** added a per-minute heartbeat — `harvester tick mons:N max:M proc:X added:Z` + `skip_tick why:…`
-(in `c901b4e`). QA proved the Harvester works; "no drops" was just Eevee's stingy 5%/5% table + the 3%/min base proc + the
-maxTethered:16 cap, not a bug.
-
-⚠️ **Phase shift:** we've been **no-UI-first**; we are now **entering the UI phase** — the deferred GUIs are the work.
-Still: **logic-first cores stay headless-tested**, **batch-QA** (commit increments, deploy on ask), **observability** (every feature logs JSONL).
-
-_(historical 2026-06-29 handoff below)_
-
-## ⚡ STATE — 2026-06-29 (HUGE session: buffs v2 · breeding-meta · F2 notify · F3 goal tracker · ghost pasture · community-wave research)
-**204 headless tests green** (`./gradlew test`). **All committed on `main`, tree clean.** Deuce on
-**remote-control (phone)** through a chaotic IRL day (pup got a Cushing's dx — managed/ok; contractors at the house)
-→ standing rules: **functionality-first, NO custom UI**; **batch-QA** ([[batch-qa-workflow]]).
-
-**🚚 DEPLOY STATE:** v2 features were deployed ONCE for QA (jar md5 `43679bc`, in the *Greener Pastures Test*
-instance). **Everything since — ghost-pasture inc1 + all the docs — is NOT redeployed.** ⚠ The **ghost-pasture mixin
-must deploy SEPARATELY**, not bundled into Deuce's v2 QA jar: it's a new Cobblemon `@Redirect` I can't verify
-headless, and a required mixin that fails to resolve would break the WHOLE mod load. Have Deuce confirm the log
-loads clean before trusting it.
-
-**▶️ ON RESUME — open threads (nothing forced; Deuce compacted here, mid-chaos):**
-1. **QA backlog Q1–Q38** — Deuce runs it down when at his computer (needs a full MC restart). No-UI test affordances:
-   the `/gp augment` + `/gp goal` commands (cheatsheet atop `QA_PENDING.md`).
-2. **Ghost Pasture increment 2** — re-materialise discarded roamers on un-suppress (details in the Ghost Pasture
-   section below). Deploy + QA inc1 (Q38) first.
-3. **Community feature wave** — research DONE + clean; **ready to build pending Deuce's GO + 2 decisions** (community
-   section below + `COMMUNITY_FEATURES.md`).
-
-**Most recent work (this session):** finished the **Daemon buff system** (15 buffs — see the DONE-task section) →
-then the **v2 feature wave** Deuce surfaced. Wrote the full spec **`FEATURES_V2.md`** (`glow` it). **Completed F1 —
-the whole breeding-meta augment batch:** **Nature** (`6a7df50`) · **Ball** (`5425318`) · **Hidden Ability**
-(`950c8ad`) · **Egg Moves** (`4a06bac`). Each writes the trait onto the egg `PokemonProperties` pre-encrypt (same
-seam as IV/EV), fail-safe + non-destructive; all 4 Cobblemon APIs verified against the jar. Also did the `EggShape`
-params refactor. QA rows Q31–Q34.
-
-### ▶️ ACTIVE — v2 feature wave (Deuce: "do all of it + keep adding to QA"; spec = `FEATURES_V2.md`)
-Build order **F1 breeding-meta ✅ → F2 Notifications ✅ → F3 Goal tracker ✅ (track-only)** — all shipped. Re-sync
-before wave-2 (hopper interop, dashboards #6, economy, guide). **F3 v1 done** (`/gp goal` — the mod's first command;
-`goal/` package: `BreedingGoal`+`GoalProgress` pure cores, `GoalStore` per-player, `GoalTracker` folds each laid egg
-into the pasture owner's progress + pings on reached; `BredEgg` enriched with species/ivTotal/perfectIvs). QA Q37.
-**Non-destructive** — auto-cull is the deferred follow-on (off-target non-shiny → Renderer→Data, shiny 4-guard, opt-in).
-Deployed once (md5 `43679bc`) for QA, then kept building. (Follow-ons after QA: F3 auto-cull + persistence, F2
-pulls-ready ping, the breeding-meta Compiler-UI install UX, wave-2 features. All GUIs still deferred.)
-
-### 🌫️ ACTIVE — Ghost Pasture (admin-critical lag fix; the old "no-wander" was BROKEN)
-A server admin called per-pasture spawn-suppression critical. **The old PastureKeeper no-wander never worked** — it
-hooked Cobblemon's `togglePastureOn`, which only flips the block's ON *visual* (QA confirmed it does nothing). The
-real spawn is the single `World.spawnEntity` in Cobblemon's `tether()`. **Deuce approved this method (no per-tick
-despawn):** (1) `@Redirect` that `spawnEntity` for suppressed pastures → tether data recorded, no entity spawns;
-(2) one-time despawn-on-toggle with `RemovalReason.DISCARDED` + re-assert `tetheringId` (verified: `PokemonEntity.remove`
-only untethers when `shouldDestroy()`, so re-asserting keeps the tether; DISCARDED = gone-for-good, no reload);
-(3) flag persisted on `PastureData.suppressed`. **Increment 1 DONE + builds** (`PastureKeeper` rework + the new
-`PokemonPastureBlockEntityMixin` `@Redirect` + persistence) — QA **Q38**, **NOT yet redeployed**. **Increment 2 (next):**
-un-suppress must **re-materialise** the discarded roamers (replicate Cobblemon's tether-spawn from the data) — right now
-un-suppress only re-allows future spawns. Verify in-game: the `@Redirect` resolves (no mixin load error) + suppressed
-mons stay tethered (breeding keeps producing).
-
-### 👾 ACTIVE — community feature wave (Deuce's #minecraft-chat thread · **full spec = `COMMUNITY_FEATURES.md`**)
-4 LOCKED features: **C1 ball cosmetics** (spend eggs/Data → unlock a breeding ball; the `BALL` augment already does
-the effect, Q32) · **C2 egg-throw** (sneak-RC an egg → a `ThrownItemEntity` carries the stack → impact spawns the
-wild mon) · **C3 MissingNo** ⭐ the centerpiece (1/8192 crack + 1/8192 shiny on egg-throw → a wild **glitch mon that
-cycles random fully-evolved models every ~5s**; a `MISSINGNO_CHANCE`/`MISSINGNO_SHINY` augment+tether; + the
-**item-dup Easter egg** — MissingNo conjures matter, the on-theme keystone) · **C4 cake** (eggs→cake recipe, trivial).
-
-**✅ BOTH research passes DONE + clean** (commit `7147159`):
-- **C2 ready:** egg = `ludichat.cobbreeding.PokemonEgg`; trigger = Fabric `UseItemCallback` on sneak-RC (don't override
-  Cobblemon; hatching is player-inv-gated so no mid-air hatch); carry the whole stack on a `ThrownItemEntity` subclass;
-  impact → `EggUtilities.extractProperties` → spawn wild.
-- **C3 cycling = TIER A / CLEAN — pure server-side, NO client mixin/renderer.** Use Cobblemon's **illusion system**
-  (Zoroark's mechanic): `entity.getEffects().setMockEffect(new IllusionEffect(PokemonProperties.parse("species=<x>
-  shiny=<f>"), scale))` on a ~100-tick timer cycling `PokemonSpecies.getImplemented()` (no-evolutions). Real mon keeps
-  identity. Custom species optional + **data-only** (zero Java).
-- **Spawn API (shared C2+C3, verified):** `PokemonProperties.Companion.parse("<sp> level=N shiny=<f>"," ","=").create()`
-  → `pokemon.sendOut(serverWorld, vec3dPos, illusionOrNull, null)`.
-
-**Ready to build pending Deuce's GO + 2 decisions:** (a) **item-dup** payoff = faithful slot-6(+128) vs themed
-eggs/Data + the admin config shape; (b) **ball cost** = eggs vs Data, unlock-once vs per-batch. **Build arc if
-green-lit:** C2 throw → C3 glitch mon → 1/8192 odds + the `MISSINGNO_CHANCE`/`SHINY` augment → then item-dup + ball
-economy per the decisions; C4 cake anytime. _(Tin's "unethical farms" + Deuce's "that's the whole point" = the
-ghost-pasture mission statement.)_
-
-## ✅ DONE TASK — Daemon global "root" buffs  _(15 BUFFS LIVE — QA-pending; enchant set COMPLETE)_
-**Deuce's two design calls (locked):** buff **tier = the held Daemon's Mk level** (I/II/III); Data drain =
-**tier-scaled & summed** (`Σ tier × costPerSec`/sec). All committed (`5ba97e8`→HEAD), 167 tests, nothing
-deployed. **All 15 delivered buffs are non-destructive** (effects/attributes/read-interception — none rewrite
-gear or persist NBT, so no dupe surface). QA rows **Q23–Q30**. **Only undelivered catalog enchant = Unbreaking**
-(Deuce deferred it — no entity-scoped seam). **Looting = live, default-on** (Deuce opted in; the one combat buff).
-**DELIVERED (held + fed Daemon, billed only for what's in `DaemonBuffs.SUPPORTED`):**
-- cores (`5ba97e8`): `BuffId` catalog (11 ENCHANT / 2 EFFECT / 5 HOOK — the catalog IS the worker-not-fighter
-  allow-list), `BuffSetting`/`BuffConfig` (lazy-Gson, `config/greenerpastures/buffs.json`), `BuffResolver`
-  (level→tier, per-buff cap, summed drain, per-`BuffId` "deliverable" filter), `BuffSystem`.
-- **Haste + Saturation** (EFFECT, `0b4684d`) — `DaemonBuffs` per-sec settle loop bills Data (fractional carry,
-  broke→none), applies status effects. `daemon_level` component + **creative sneak-RC cycles Mk I→II→III** (QA
-  affordance; survival recipe = publish-phase). `DaemonItem.levelOf()`. `lastPaid` cache.
-- **Item Magnet** (HOOK, `a796175`) — per-tick pull, radius 4/6/8.
-- **Fortune** (ENCHANT, `51bb11d`) — the marquee, "beyond vanilla max" (Mk III = Fortune VI). The verified-clean
-  way: read-only `getLevel` `@Inject` gated by a loot-scoped ThreadLocal set in `Block.getDroppedStacks`
-  (`BlockDropBoostMixin` + `EnchantmentLevelMixin` + `DaemonEnchantBoost`). Never writes the stack. See
-  `ENCHANT_BOOST.md` (the rejected component-edit approach + why).
-- **Auto-Smelt** (HOOK, `58612c5`) — smelts mined drops; same block-drop mixin window, composes with Fortune.
-- **XP Boost** (HOOK, `725bce0`) — `XpBoostMixin` +25%/tier on `addExperience`.
-- **Vein-Miner** (HOOK, `28e9b83`, hardened) — `DaemonVeinMine` via `PlayerBlockBreakEvents.AFTER`; **heavily
-  fenced** (ores `c:ores` + logs only, same-block flood-fill, cap tier×32≤96, suitable-tool, re-entrancy guard).
-  **Whole-vein compliant:** every block routes through `Block.getDroppedStacks(…, player, tool)` (the same path
-  a normal break uses), so Fortune + auto-smelt AND the tool's own enchants (Silk Touch etc.) apply to *every*
-  block, not just the first; per-block try/catch + boost-window cleanup so one odd block can't abort it. Data
-  rental = the cost (no tool durability v1).
-- **Potion Duration+** (HOOK, `bd7d252`) — `PotionDurationMixin` +50%/tier on a **utility allowlist only**
-  (NightVision/WaterBreathing/FireRes/Conduit/Dolphin/SlowFall/Luck) → PvP-neutral.
-- **Attribute enchants** (ENCHANT, `f8743a2`) — **Respiration / Swift Sneak / Feather Falling** delivered as
-  transient `EntityAttributeModifier`s (NO mixin) reconciled in the `DaemonBuffs` settle loop. Pure
-  `AttributeBuff` table (tested) → `DaemonAttributeBuffs` (binds `GENERIC_OXYGEN_BONUS`/`PLAYER_SNEAKING_SPEED`/
-  `GENERIC_FALL_DAMAGE_MULTIPLIER`, all verified consumed in the 1.21.1 jar). Granted **flat** + stack on top of
-  real gear (beyond vanilla max, like Fortune); temporary (never saved); `DELIVERED` folded into `SUPPORTED` so
-  the bill can't drift from what's applied. Feather Falling floored so it can never heal on a fall.
-- **Value-effect enchants** (ENCHANT, `02e1501`) — **Lure / Luck of the Sea / Frost Walker** via entity-scoped
-  read interception of `EnchantmentHelper` (`getFishingTimeReduction` +5s/tier · `getFishingLuckBonus` +tier ·
-  `getEquipmentLevel` +tier for frost_walker, granted from nothing). `DaemonValueBoost` + `EnchantmentValueBoostMixin`
-  (3 `@Inject RETURN`). Same read-only safety as Fortune (no stack write). These seams **carry the entity**, so
-  no ThreadLocal needed — gated directly on `paidBuffs`. Server-side only.
-- **Looting** (ENCHANT, this commit — Deuce opted in, **default-on**) — the one combat-adjacent buff; +tier mob-loot
-  via the SAME `getEquipmentLevel` seam (`EnchantedCountIncreaseLootFunction` → `getEquipmentLevel(LOOTING, killer)`,
-  verified). 2-line enable: `Enchantments.LOOTING → BuffId.LOOTING` in `DaemonValueBoost.EQUIP` + `BuffId.LOOTING`
-  in `DaemonBuffs.SUPPORTED`. (No effect on Deuce's no-mob server; it's for public servers.)
-
-### ✅ TASK #30 COMPLETE — enchant set finished
-Spec'd in `ENCHANT_BOOST.md`. **All decided:** attribute tier (Respiration/Swift Sneak/Feather Falling) + value-effect
-tier (Lure/LotS/Frost Walker) + **Looting (in, default-on)**. **Skipped/deferred (closed decisions):** Efficiency
-(Haste covers mining), Soul Speed (soul-block-gated), **Unbreaking (Deuce deferred — `getItemDamage` carries no entity
-to scope it; only a hacky ThreadLocal would work)**. The buff system is feature-complete pending QA (Q23–Q30).
-Next real work is elsewhere (analytics dashboards #6, or whatever Deuce points at) — NOT more buffs.
-
-_(original spec below — still the source of truth for the buff list)_
-
-Deuce: *"handle all the daemon global buffs now."* **Spec is SETTLED in `~/pokemonthink/AUGMENTS_AND_BUFFS.md`**
-(read it). The `DaemonItem` (`economy/DaemonItem.java`) currently only shows the Data balance on right-click — add the
-buffs it grants **while held + fed** (rented via Data: lose fuel → lose buff; **config-gated; "worker-not-fighter" —
-QOL/farming only, zero combat**, so the mod stays PvP-neutral).
-
-**Enchant buff — SETTLED, +1/+2/+3 beyond vanilla max (tier-scaled):**
-- *Included (ride to +3):* Efficiency · Fortune · Luck of the Sea · Lure · Unbreaking · Looting (gathering) +
-  Respiration · Soul Speed · Swift Sneak · Frost Walker · Feather Falling (QOL/movement).
-- *Excluded (all combat):* Sharpness/Smite/Bane · Power/Punch/Flame · crossbow · Knockback/Fire Aspect/Sweeping ·
-  Protection family · Thorns · trident.
-- *Auto-skip (single-level/capped, tooltip should say why):* Silk Touch · Mending · Aqua Affinity · Infinity · Flame ·
-  Channeling · Depth Strider.
-- Fortune/Luck/Looting **individually config-cappable** (shop-economy servers).
-
-**Other buffs (worker-not-fighter):** auto-smelt-on-mine · vein-mine/batch-break (see `vein-miner-fix/`) · item magnet ·
-haste/efficiency · XP boost · potion-duration+ (⚠ exclude combat potions) · saturation/no-hunger. **CUT:** any
-chunk-loading buff (pastures are never loaded).
-
-**Suggested build order (logic-first):** (1) `BuffConfig` (per-buff enable + tier + Data cost) + a pure resolver, in a
-new `buff/` package, unit-tested — mirror the `ritual/RitualConfig` pattern (lazy-Gson holder so the cores stay
-test-runnable; fail-safe load; master + per-buff toggles). (2) MC adapters: status-effect buffs (haste/saturation/
-potion-dur) applied while the Daemon is held on a server tick + Data drain; event-hook buffs (auto-smelt, vein-mine,
-magnet, XP); the enchant +N boost (the hard one — research how to add beyond-vanilla enchant levels in 1.21). (3) GpLog
-lines + QA rows. **Open design Qs:** does buff tier come from the held Daemon, a buff-tether, or config? what's the
-Data drain/tick per buff? (Deuce to confirm — ask before wiring the cost model.)
-
-## 🗺️ Systems map (all built + tested; MC adapters QA-pending Q1–Q22)
-- **Breeding:** `MultiPairBreeder` (Fabric tick, no mixin) + `CobbreedingBridge` (egg-gen via `getPossibleEggs`/
-  `chooseEgg`; bounded shiny proc; **IV Floor + EV** shape `eggData` before encrypt). `PastureData`/`PastureRegistry`
-  (persistent, per dim+pos). Suppresses Cobbreeding's native ticker so only configured pairs lay.
-- **Augments:** `Augments` component = `{function→level}` map. `AugmentFunction` (7: shiny/speed/iv_floor/ev/enrichment/
-  drop_rate/drop_yield — **all have live effects**). `AugmentType` = the 7 **craftable** Compiler augments
-  (`augment_<fn>` items, generic over function). `Compiler` block/menu installs them onto a Kernel.
-- **Soul Tethers (rented amplification):** `EffectiveAugments` (base × tether). `TetherRuntime.resolveFor(base,
-  tethers, balance, FUNCTIONS)` = the **per-consumer drain split** (disjoint sets, billed once): **breeder** drains
-  shiny/speed/iv_floor/ev · **Harvester** drop_rate/drop_yield · **Renderer** enrichment. Fed→amplify+drain Data /
-  starved→free base. Operator = explicit locked-boolean `PastureClaim` (who pays).
-- **Dark economy:** `Renderer` block culls non-keeper eggs → **Data** (SACRED shiny 4-guarded). `DataStore` (per-player,
-  persistent). `DaemonItem` (shows balance; **buffs = this task**). `BASE_DATA_PER_EGG=2` (balance pin).
-- **Drops (Harvester block):** staples = each tethered mon's Cobblemon `getDrops` (faithful), gated by **3%/mon/min
-  proc (LEVER 1, +Drop Rate)** → **amount budget (LEVER 2, +Drop Yield)**. Ground-free → own 9×3 chest. `DropsBridge`,
-  `CompositionReader`.
-- **Rituals + type-drops (`ritual/` pkg, config `config/greenerpastures/rituals.json`):** Tier-1 **type-drops**
-  (mon type → staple item) + Tier-2 **gacha rituals** (pasture composition of types + signature species → banks
-  **pulls** → `Gacha` rolls base% + **pity** → rare item). Live in the Harvester (`customDrops`), auto-pull interim,
-  pity persisted in block NBT. **Rituals accrue 1/`rarityFactor`× (default 3) the staple proc and scale with the SAME
-  Drop Rate/Yield augments.** Recipes are tunable config **placeholders — DEFERRED** (Deuce finalizes later; e.g. his
-  enchanted-golden-apple idea = legendary Grass + legendary Fairy + a gold-dropper, parked in `RITUALS.md`).
-
-## 🛠️ Conventions & gotchas
-- **Build/test:** `cd greener-pastures && JAVA_HOME=/home/donaldgalliano/jdks/jdk-21.0.11+10 ./gradlew test` (~6–10s,
-  plain JUnit 5, NO MC boot). `./gradlew build` for the jar (JRE-only box → must use the downloaded JDK).
-- **Logic-first** ([[testing-and-logic-first]]): MC-free core (own pkg) → unit test → thin MC adapter → UI last. Tests
-  must run without Gson/MC on the test runtime → **lazily load Gson via a holder class** (see `RitualConfig`).
-- **Config-driven + admin-toggleable** is the house style now (rituals): JSON in `config/greenerpastures/`, master +
-  per-item toggles, fail-safe load (missing→write defaults, corrupt→fall back, never crash).
-- **Observability** ([[observability-first-logging]]): every feature logs JSONL via `GpLog.{d,i,w}(tag, event, k,v…)` →
-  `~/gp-logs/latest.log` (off-thread, never-crash).
-- **Commit-not-deploy** ([[batch-qa-workflow]]): stack tested increments, commit each to `main`, QA in dedicated bulk
-  sessions, deploy only when asked. Commit trailers: `Co-Authored-By: Claude…` + `Claude-Session:…`. Every MC/adapter
-  change → a row in `QA_PENDING.md` (pure-logic cores are trusted via tests, no row).
-- **Decompile** ([[jar-decompile-workflow]]): `javap`/CFR (`~/cfr.jar`) on the **remapped** jars under
-  `greener-pastures/.gradle/loom-cache/remapped_mods/…` (yarn names match code). Cobblemon type API verified:
-  `Pokemon.getTypes()→ElementalType.getShowdownId()`; IVs/EVs via `Stats.Companion.getPERMANENT()`, `ivs.set(stat,31)`.
-- **yarn 1.21.1:** `net.minecraft.component.ComponentType` (not Mojmap). Cobblemon/Cobbreeding = `modCompileOnly`.
-- **When UI eventually comes** ([[viewport-ui-principle]]): plain Screens never call `super.render()` (blur bug) /
-  use `GpButton` not `ButtonWidget`; viewport-relative + fit-to-content; never overload left-click for pan+action.
-- **Deploy (only when asked):** copy `build/libs/greenerpastures-0.1.0.jar` → `/mnt/c/Users/deuce/curseforge/minecraft/
-  Instances/Greener Pastures Test/mods/` + **full MC restart**.
-
-## 📁 Key paths
-- Mod: `greener-pastures/` → `build/libs/greenerpastures-0.1.0.jar`
-- This repo's design/state: `RITUALS.md` (drops/rituals/gacha) · `DESIGN_GAP.md` (design↔build map) · `QA_PENDING.md`
-  (Q1–Q22) · `BUG_HUNT.md` · `cobblemon-drops-ref/` (`FARMABILITY_GAP.md`, `sim_drops.py`, `sim_rituals.py`,
-  `all-species-drops.json`).
-- **Design source of truth:** `~/pokemonthink/` — `AUGMENTS_AND_BUFFS.md` (**buff spec — the active task**),
-  `DAEMON_AND_TETHERS.md` (tether/Daemon mechanics), `ITEM_TAXONOMY.md`, `STATE_AND_PLAN.md`.
-- Test instance / deploy target: `/mnt/c/Users/deuce/curseforge/minecraft/Instances/Greener Pastures Test/`.
+## FINISH
+After Phase 4: full `gradlew build` green + `npm run build` green + jar built. **Do not deploy.** Tell Deuce all phases are built + committed and it's ready for him to close MC → deploy → batch-test the whole pipeline (add filters, wire a pipeline, breed, watch keep/void + the void log). Update the [[daemon-nodegraph-deckedout]] memory with what shipped.
