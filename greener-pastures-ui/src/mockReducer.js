@@ -8,26 +8,28 @@
  */
 const clone = (x) => (x == null ? x : JSON.parse(JSON.stringify(x)))
 const GPU = 'greenerpastures:gpu'
+const MAXSTACK = 64
 
-const gpuOf = (inv) => inv.items.find((i) => i.id === GPU)?.count ?? 0
-function addItem(inv, id, n) {
-  const it = inv.items.find((x) => x.id === id)
-  if (it) it.count += n
-  else inv.items.push({ id, count: n })
-  inv.items = inv.items.filter((x) => x.count > 0)
-}
+// Inventory is 36 slots: [0..8] hotbar, [9..35] main. GPU is CONSUMED on activate and never refunded.
+const gpuTotal = (inv) => inv.slots.reduce((a, s) => a + (s && s.id === GPU ? s.count : 0), 0)
 function takeGpu(inv, n) {
-  const it = inv.items.find((x) => x.id === GPU)
-  if (!it || it.count < n) return false
-  it.count -= n
-  inv.items = inv.items.filter((x) => x.count > 0)
+  if (gpuTotal(inv) < n) return false
+  let need = n
+  for (const s of inv.slots) { if (need <= 0) break; if (s && s.id === GPU) { const t = Math.min(s.count, need); s.count -= t; need -= t } }
+  for (let i = 0; i < inv.slots.length; i++) if (inv.slots[i] && inv.slots[i].count <= 0) inv.slots[i] = null
   return true
+}
+function addItem(inv, id, n) {
+  let left = n
+  for (const s of inv.slots) { if (left <= 0) break; if (s && s.id === id && s.count < MAXSTACK) { const add = Math.min(MAXSTACK - s.count, left); s.count += add; left -= add } }
+  const order = [...Array(27).keys()].map((i) => i + 9).concat([...Array(9).keys()])   // fill main (9-35) then hotbar (0-8)
+  for (const i of order) { if (left <= 0) break; if (!inv.slots[i]) { const add = Math.min(MAXSTACK, left); inv.slots[i] = { id, count: add }; left -= add } }
 }
 
 export function applyMock(state, channel, action, payload) {
   const out = {}
-  const inv = clone(state.inventory) || { items: [] }
-  const syncGpu = () => { out.inventory = inv; out.status = { ...state.status, gpu: gpuOf(inv) } }
+  const inv = clone(state.inventory) || { slots: Array(36).fill(null) }
+  const syncGpu = () => { out.inventory = inv; out.status = { ...state.status, gpu: gpuTotal(inv) } }
 
   if (channel === 'compiler') {
     const c = clone(state.compiler)
@@ -43,8 +45,7 @@ export function applyMock(state, channel, action, payload) {
       const next = Math.max(0, Math.min(b.cap, payload.tier | 0))
       if (next === cur) return {}
       const perStep = b.gpuCost || 0
-      if (next > cur) { if (!takeGpu(inv, perStep * (next - cur))) return {} }   // upgrade: consume GPU
-      else { addItem(inv, GPU, perStep * (cur - next)) }                          // downgrade: refund GPU
+      if (next > cur && !takeGpu(inv, perStep * (next - cur))) return {}   // upgrade CONSUMES GPU; downgrade refunds nothing
       c.installed = { ...c.installed }
       if (next === 0) delete c.installed[payload.buff]
       else c.installed[payload.buff] = next
@@ -68,9 +69,7 @@ export function applyMock(state, channel, action, payload) {
       if (!aug.applied) return {}
       aug.applied = false
       a.slotsUsed -= aug.slotCost
-      addItem(inv, GPU, aug.gpuCost || 0)                                        // refund GPU → visible in inv bar
-      out.augmenter = a
-      syncGpu()
+      out.augmenter = a   // GPU was consumed on apply — removing frees the slot but does NOT refund GPU
     }
   } else if (channel === 'storage') {
     const s = clone(state.storage)

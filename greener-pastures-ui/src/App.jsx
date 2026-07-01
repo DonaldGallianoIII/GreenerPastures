@@ -107,14 +107,20 @@ const CSS = `
 .dgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
 .dcard{ background:linear-gradient(180deg,#11161e,#0e131a); border:1px solid var(--line); border-radius:12px; padding:10px; }
 
-.gp-inv{ height:46px; flex:none; display:flex; align-items:center; gap:6px; padding:0 12px; overflow-x:auto;
-  background:var(--bg2); border-top:1px solid var(--line2); }
-.gp-inv .lbl{ font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); margin-right:4px; flex:none; }
-.islot{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:54px; height:34px; flex:none;
-  border-radius:8px; background:var(--slot); border:1px solid var(--line); padding:3px 6px; }
-.islot.gpu{ border-color:#2e5a47; }
-.islot .ic{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text); }
-.islot .il{ font-size:8px; color:var(--muted); line-height:1.1; }
+.gp-invwin{ position:fixed; bottom:14px; right:14px; z-index:60; width:270px;
+  background:linear-gradient(180deg,#12171f,#0d1219); border:1px solid var(--line); border-radius:10px;
+  box-shadow:0 24px 70px -24px rgba(0,0,0,.85); padding:8px; }
+.gp-invwin .hd{ display:flex; align-items:center; gap:6px; margin-bottom:7px; }
+.gp-invwin .hd .t{ font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+.invgrid{ display:grid; grid-template-columns:repeat(9,1fr); gap:3px; }
+.invgrid.hot{ margin-top:6px; padding-top:6px; border-top:1px solid var(--line2); }
+.islot2{ aspect-ratio:1; border-radius:5px; background:var(--slot); border:1px solid var(--line2); position:relative;
+  display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.islot2.hot{ background:#0d1420; }
+.islot2.has{ border-color:var(--line); background:var(--panel); }
+.islot2.gpu{ border-color:#2e5a47; }
+.islot2 .g{ font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--muted); line-height:1; text-align:center; }
+.islot2 .c{ position:absolute; bottom:0; right:2px; font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--text); }
 `
 
 const TABS = [
@@ -162,9 +168,9 @@ export default function App() {
           {tab === 'augmenter' && <Augmenter />}
           {tab === 'dashboard' && <Dashboard />}
         </div>
-        <InvBar />
         <StatusBar />
       </div>
+      <InventoryWindow />
     </div>
   )
 }
@@ -193,24 +199,27 @@ function StatusBar() {
   )
 }
 
-// Live inventory strip — GPU reagent + augment items + the Daemon/Kernel. Apply consumes GPU, remove refunds it,
-// visibly, right here (mock reducer emulates the server; the real bridge will feed an `inventory` channel).
-function InvBar() {
+// A tiny floating window (bottom-right) mocking the player's MC inventory + hotbar, so slot/item flow is
+// visible: GPU is consumed on apply, storage grabs land in a slot. (Real bridge: an `inventory` channel of slots.)
+function InventoryWindow() {
   const inv = useChannel('inventory')
-  const items = inv?.items || []
+  const slots = inv?.slots || Array(36).fill(null)
   return (
-    <div className="gp-inv">
-      <span className="lbl">inventory</span>
-      {items.length === 0 && <span className="dim" style={{ fontSize: 11 }}>empty</span>}
-      {items.map((it) => {
-        const isGpu = it.id.endsWith(':gpu')
-        return (
-          <div key={it.id} className={`islot${isGpu ? ' gpu' : ''}`} title={it.id}>
-            <span className="ic" style={isGpu ? { color: 'var(--cyan)' } : null}>{isGpu ? '◈ ' : '×'}{it.count}</span>
-            <span className="il">{shortId(it.id)}</span>
-          </div>
-        )
-      })}
+    <div className="gp-invwin">
+      <div className="hd"><span className="dot" style={{ background: 'var(--green)', width: 7, height: 7 }} /><span className="t">inventory</span></div>
+      <div className="invgrid">{slots.slice(9, 36).map((s, i) => <Slot key={i} s={s} />)}</div>
+      <div className="invgrid hot">{slots.slice(0, 9).map((s, i) => <Slot key={i} s={s} hot />)}</div>
+    </div>
+  )
+}
+function Slot({ s, hot }) {
+  if (!s) return <div className={`islot2${hot ? ' hot' : ''}`} />
+  const isGpu = s.id.endsWith(':gpu')
+  const label = isGpu ? '◈' : shortId(s.id).replace(/\s/g, '').slice(0, 3)
+  return (
+    <div className={`islot2 has${hot ? ' hot' : ''}${isGpu ? ' gpu' : ''}`} title={`${shortId(s.id)} ×${s.count}`}>
+      <span className="g" style={isGpu ? { color: 'var(--cyan)' } : null}>{label}</span>
+      <span className="c">{s.count}</span>
     </div>
   )
 }
@@ -412,7 +421,7 @@ function Augmenter() {
               <span className="dim mono" style={{ fontSize: 10 }}>{a.slotCost} slot{a.slotCost !== 1 ? 's' : ''}</span>
               <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= a.gpuCost ? 'var(--cyan)' : 'var(--red)' }} title="GPU cost">◈{a.gpuCost}</span>
               {a.applied
-                ? <button className="btn warn" title={`refunds ◈${a.gpuCost}`} onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
+                ? <button className="btn warn" title="frees the slot — GPU already spent, not refunded" onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
                 : <button className="btn go" disabled={!canApply} title={gpu < a.gpuCost ? 'not enough GPU' : (d.slotsUsed + a.slotCost > d.slotCap ? 'no free slots' : '')} onClick={() => send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>APPLY</button>}
             </div>
           )

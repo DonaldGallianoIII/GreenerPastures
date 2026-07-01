@@ -68,15 +68,20 @@ export const MOCK = {
     ],
   },
 
-  // the player's relevant items — GPU reagent, augment items, the Daemon + Kernel being edited. Shown in the
-  // inventory bar so apply/remove item-flow is visible. (Real bridge: a new `inventory` channel — see contract.)
+  // The player's inventory as 36 MC slots: [0..8] hotbar, [9..35] main. null = empty. Shown as a little
+  // inventory window so slot/item flow is visible (storage grabs land here; GPU is consumed on apply).
+  // (Real bridge: an `inventory` channel of slots — contract update to follow.)
   inventory: {
-    items: [
+    slots: [
       { id: 'greenerpastures:gpu', count: 64 },
-      { id: 'greenerpastures:augment_iv_floor', count: 2 },
-      { id: 'greenerpastures:augment_ev', count: 1 },
       { id: 'greenerpastures:daemon', count: 1 },
       { id: 'greenerpastures:breeding_upgrade_greener', count: 1 },
+      { id: 'greenerpastures:augment_iv_floor', count: 2 },
+      { id: 'greenerpastures:augment_ev', count: 1 },
+      null, null, null, null,
+      null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null,
+      null, null, null, null, null, null, null, null, null,
     ],
   },
 }
