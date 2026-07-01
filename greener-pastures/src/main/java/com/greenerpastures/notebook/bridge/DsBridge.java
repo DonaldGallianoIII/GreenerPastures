@@ -4,7 +4,10 @@ import com.google.gson.Gson;
 import com.greenerpastures.client.notebook.NotebookState;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.notebook.net.NotebookActionC2S;
+import com.greenerpastures.notebook.net.NotebookPastureActionC2S;
+import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookRequestC2S;
+import com.greenerpastures.pasture.breeding.gui.MonEntry;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
@@ -12,9 +15,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * The Notebook console's live data bridge (client-side). Runs a loopback WebSocket server
@@ -75,6 +80,7 @@ public final class DsBridge {
                 }
                 @SuppressWarnings("unchecked")
                 Map<String, Object> p = (Map<String, Object>) msg.getOrDefault("payload", Map.of());
+                if ("pasture".equals(channel)) { handlePastureAction(action, p); return; }
                 NotebookActionC2S packet = mapAction(action, p);
                 if (packet == null) {
                     GpLog.d("bridge", "action_unmapped", "channel", String.valueOf(channel), "action", String.valueOf(action));
@@ -102,6 +108,38 @@ public final class DsBridge {
         };
     }
 
+    /** Route a React {@code pasture} action → the NotebookPastureActionC2S packet (or clear the focus locally). */
+    private static void handlePastureAction(String action, Map<String, Object> p) {
+        if ("CLOSE".equals(action)) {                          // ← back to the tabbed console
+            NotebookState.pastureConfig = null;
+            lastSent.remove("pastureConfig");
+            pushChangedChannels();
+            return;
+        }
+        long pos = (long) num(p, "pos", 0);
+        Map<UUID, Integer> pairings = new HashMap<>();
+        String arg = "";
+        int act;
+        switch (action == null ? "" : action) {
+            case "NAME" -> { act = NotebookPastureActionC2S.NAME; arg = str(p, "name", ""); }
+            case "PAIRINGS" -> {
+                act = NotebookPastureActionC2S.PAIRINGS;
+                Object pr = p.get("pairings");
+                if (pr instanceof Map<?, ?> pm) {
+                    for (Map.Entry<?, ?> e : pm.entrySet()) {
+                        try { pairings.put(UUID.fromString(String.valueOf(e.getKey())), ((Number) e.getValue()).intValue()); }
+                        catch (Exception ignored) { }
+                    }
+                }
+            }
+            case "CLAIM"  -> act = NotebookPastureActionC2S.CLAIM;
+            case "KERNEL" -> act = NotebookPastureActionC2S.KERNEL;
+            default -> { return; }
+        }
+        if (MinecraftClient.getInstance().getNetworkHandler() != null)
+            ClientPlayNetworking.send(new NotebookPastureActionC2S(pos, act, arg, pairings));
+    }
+
     // ── serialize NotebookState → per-channel JSON, push only what changed ─────────────────────────────────
     private static void pushChangedChannels() {
         push("status", statusData());
@@ -111,6 +149,31 @@ public final class DsBridge {
         push("augmenter", augmenterData());
         push("biobank", biobankData());
         push("inventory", inventoryData());
+        push("pastureConfig", pastureConfigData());
+    }
+
+    /** The focused pasture's editable config (right-clicked with the Notebook), or {@code present:false} when none. */
+    private static Object pastureConfigData() {
+        NotebookPastureConfigS2C c = NotebookState.pastureConfig;
+        Map<String, Object> m = new LinkedHashMap<>();
+        if (c == null) { m.put("present", false); return m; }
+        m.put("present", true);
+        m.put("pos", c.pos());
+        m.put("name", c.name());
+        m.put("tier", c.tier());
+        m.put("linked", c.linked());
+        m.put("maxPairs", c.maxPairs());
+        List<Object> roster = new ArrayList<>();
+        for (MonEntry mon : c.roster()) {
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("id", mon.id().toString());
+            r.put("species", mon.species());
+            r.put("label", mon.label());
+            r.put("bucket", mon.bucket());
+            roster.add(r);
+        }
+        m.put("roster", roster);
+        return m;
     }
 
     /** The player's REAL inventory (read client-side): 36 main slots — [0..8] hotbar, [9..35] main — so the console's

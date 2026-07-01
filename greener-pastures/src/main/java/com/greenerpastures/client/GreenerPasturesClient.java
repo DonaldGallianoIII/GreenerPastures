@@ -10,6 +10,7 @@ import com.greenerpastures.notebook.bridge.DsBridge;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
 import com.greenerpastures.notebook.net.NotebookRequestC2S;
 import com.greenerpastures.notebook.net.NotebookStatusS2C;
@@ -43,14 +44,8 @@ public final class GreenerPasturesClient implements ClientModInitializer {
 
         // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click).
         // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
-        NotebookItem.CONSOLE_OPENER = () -> {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef")) {
-                mc.setScreen(new NotebookBrowserScreen());   // MCEF classes load only on this branch (soft dep)
-            } else {
-                mc.setScreen(new NotebookScreen());
-            }
-        };
+        NotebookItem.CONSOLE_OPENER = () -> { NotebookState.pastureConfig = null; openConsole(); };   // air → tabbed console
+        NotebookItem.PASTURE_OPENER = (pos) -> openConsole();   // pasture → same console; the server pushes its config
 
         // notebook/ console sync — receive status pushes → cache + refresh the open console
         ClientPlayNetworking.registerGlobalReceiver(NotebookStatusS2C.ID, (payload, context) ->
@@ -77,6 +72,10 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 context.client().execute(() -> {
                     if (NotebookState.applyBiobank(payload)) NotebookScreen.refreshIfOpen();
                 }));
+        ClientPlayNetworking.registerGlobalReceiver(NotebookPastureConfigS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyPastureConfig(payload)) NotebookScreen.refreshIfOpen();
+                }));
 
         // notebook/ console — poll the server ~1×/s while the console is open so the status bar + tabs tick live.
         // Change-detection in NotebookState means an unchanged push does NOT repaint (no flicker / scroll-reset).
@@ -90,5 +89,15 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         DsBridge.init();
 
         // analytics/ chart screens land here later.
+    }
+
+    /** Open the Notebook console — the MCEF React UI when the {@code mcef} mod is present, else the owo shell. */
+    private static void openConsole() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef")) {
+            mc.setScreen(new NotebookBrowserScreen());
+        } else {
+            mc.setScreen(new NotebookScreen());
+        }
     }
 }

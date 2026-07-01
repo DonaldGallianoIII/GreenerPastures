@@ -26,6 +26,12 @@ import com.greenerpastures.pasture.breeding.BreedingTier;
 import com.greenerpastures.pasture.breeding.BreedingUpgradeItem;
 import com.greenerpastures.pasture.breeding.GpComponents;
 import com.greenerpastures.pasture.breeding.compiler.AugmentType;
+import com.greenerpastures.pasture.breeding.CobbreedingBridge;
+import com.greenerpastures.pasture.breeding.PastureClaim;
+import com.greenerpastures.pasture.breeding.PastureData;
+import com.greenerpastures.pasture.breeding.PastureRegistry;
+import com.greenerpastures.pasture.breeding.gui.MonEntry;
+import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.player.PlayerInventory;
@@ -35,7 +41,10 @@ import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -64,8 +74,11 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookPasturesS2C.ID, NotebookPasturesS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookAugmenterS2C.ID, NotebookAugmenterS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookBioBankS2C.ID, NotebookBioBankS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookPastureConfigS2C.ID, NotebookPastureConfigS2C.CODEC);
+        PayloadTypeRegistry.playC2S().register(NotebookPastureActionC2S.ID, NotebookPastureActionC2S.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
+        ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
     }
 
     private static void onRequest(NotebookRequestC2S payload, ServerPlayNetworking.Context ctx) {
@@ -324,6 +337,90 @@ public final class NotebookNet {
             player.getInventory().insertStack(egg);
             GpLog.i("notebook", "biobank_withdraw", "player", player.getUuid().toString(), "index", Integer.toString(flatIndex));
         }
+    }
+
+    // ── pasture config (the React right-click-a-pasture screen; replaces the owo PastureScreen) ───────────────
+
+    /** Build + push the focused pasture's full editable config (name · tier · link · maxPairs · roster). */
+    public static void pushPastureConfig(ServerPlayerEntity player, BlockPos pos) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        ServerWorld world = player.getServerWorld();
+        if (world == null || !(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity pasture)) return;
+        PastureData pd = PastureRegistry.get(server).getOrCreate(world, pos);
+        BreedingTier tier = pd.tier();
+        boolean linked = pd.owner != null && pd.owner.equals(player.getUuid());
+        List<MonEntry> roster = CobbreedingBridge.rosterOf(pasture, pd);
+        ServerPlayNetworking.send(player, new NotebookPastureConfigS2C(
+                pos.asLong(), pd.name, tier == null ? "" : tier.name(), linked, tier == null ? 0 : tier.maxPairs, roster));
+    }
+
+    private static void onPastureAction(NotebookPastureActionC2S p, ServerPlayNetworking.Context ctx) {
+        ServerPlayerEntity player = ctx.player();
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        server.execute(() -> {
+            ServerWorld world = player.getServerWorld();
+            if (world == null) return;
+            BlockPos pos = BlockPos.fromLong(p.pos());
+            if (player.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0 * 64.0) return;
+            if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;
+            PastureRegistry reg = PastureRegistry.get(server);
+            switch (p.action()) {
+                case NotebookPastureActionC2S.NAME -> {
+                    String name = p.arg() == null ? "" : p.arg();
+                    if (name.length() > 64) name = name.substring(0, 64);
+                    reg.setName(world, pos, name);
+                }
+                case NotebookPastureActionC2S.PAIRINGS -> reg.setPairings(world, pos, sanitizePairings(p.pairings()));
+                case NotebookPastureActionC2S.CLAIM -> {
+                    PastureData pd = reg.getOrCreate(world, pos);
+                    PastureClaim.Result r = PastureClaim.toggle(pd.owner, player.getUuid());
+                    if (r.changed()) {
+                        pd.owner = r.owner();
+                        reg.markDirty();
+                        player.sendMessage(Text.literal(r.outcome() == PastureClaim.Outcome.CLAIMED
+                                ? "§a[Greener Pastures]§r Linked — this pasture's drops, eggs & outputs collect into your Notebook (you pay its tether cost)."
+                                : "§a[Greener Pastures]§r Unlinked — its outputs no longer collect to you."), false);
+                    } else {
+                        player.sendMessage(Text.literal("§c[Greener Pastures]§r This pasture is owned by someone else."), false);
+                    }
+                }
+                case NotebookPastureActionC2S.KERNEL -> { toggleKernel(player, reg.getOrCreate(world, pos)); reg.markDirty(); }
+                default -> { }
+            }
+            pushPastureConfig(player, pos);
+            pushStatus(player);
+        });
+    }
+
+    /** Slot the first Kernel from the player's inventory into the pasture's upgrade slot, or return the slotted one. */
+    private static void toggleKernel(ServerPlayerEntity player, PastureData pd) {
+        ItemStack cur = pd.upgrades.getStack(0);
+        if (cur.getItem() instanceof BreedingUpgradeItem) {
+            ItemStack out = cur.copy();
+            pd.upgrades.setStack(0, ItemStack.EMPTY);
+            player.getInventory().insertStack(out);
+            if (!out.isEmpty()) pd.upgrades.setStack(0, out);   // inventory full → keep it slotted (never destroy)
+        } else {
+            PlayerInventory inv = player.getInventory();
+            for (int i = 0; i < inv.size(); i++) {
+                if (inv.getStack(i).getItem() instanceof BreedingUpgradeItem) {
+                    pd.upgrades.setStack(0, inv.getStack(i).split(1));
+                    break;
+                }
+            }
+        }
+    }
+
+    private static Map<UUID, Integer> sanitizePairings(Map<UUID, Integer> raw) {
+        Map<UUID, Integer> clean = new HashMap<>();
+        if (raw == null) return clean;
+        for (Map.Entry<UUID, Integer> e : raw.entrySet()) {
+            if (clean.size() >= 64) break;
+            if (e.getKey() != null && e.getValue() != null && e.getValue() >= 1 && e.getValue() <= 8) clean.put(e.getKey(), e.getValue());
+        }
+        return clean;
     }
 
     /** Send the player's BioBank contents: one entry per stored egg (species · shiny · IV total · # perfect). */

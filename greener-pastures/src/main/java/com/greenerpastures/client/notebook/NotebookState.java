@@ -4,6 +4,7 @@ import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
 import com.greenerpastures.notebook.net.NotebookStatusS2C;
 import com.greenerpastures.notebook.net.NotebookStorageS2C;
@@ -76,6 +77,14 @@ public final class NotebookState {
         boolean changed = !pastures.equals(p.pastures());
         pastures = p.pastures();
         return changed;
+    }
+
+    /** The pasture the player right-clicked with the Notebook (its editable config), or null when none is focused. */
+    public static volatile NotebookPastureConfigS2C pastureConfig = null;
+
+    public static boolean applyPastureConfig(NotebookPastureConfigS2C p) {
+        pastureConfig = p;
+        return true;
     }
 
     // ── Augmenter tab ────────────────────────────────────────────────────────

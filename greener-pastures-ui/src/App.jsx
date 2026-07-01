@@ -35,6 +35,10 @@ const CSS = `
 .gp-backdrop ::-webkit-scrollbar-thumb:hover{ background:linear-gradient(180deg,#8fddff,#43a6e6); }
 .gp-backdrop ::-webkit-scrollbar-corner{ background:transparent; }
 .mono{ font-family:'JetBrains Mono',monospace; }
+.gp-input{ flex:1; background:var(--inset); border:1px solid var(--line); border-radius:6px; color:var(--text);
+  padding:6px 9px; font-family:'Space Grotesk',sans-serif; font-size:12px; outline:none; }
+.gp-input:focus{ border-color:#2e5a47; }
+.gp-input::placeholder{ color:var(--dim); }
 
 .gp-stage{ position:relative; width:1180px; height:724px;
   transform:scale(var(--gp-scale,1)); transform-origin:center center; }
@@ -159,6 +163,8 @@ const fmtTime = (s) => (s < 60 ? `${s}s` : s < 3600 ? `${(s / 60) | 0}m` : s < 8
 export default function App() {
   const [tab, setTab] = useState('biobank')
   const active = TABS.find((t) => t.id === tab)
+  const pcfg = useChannel('pastureConfig')      // set when a pasture is right-clicked with the Notebook
+  const focused = pcfg?.present
   // Viewport scaling: uniformly zoom the fixed-design stage to fill the MC window (viewport-ui-principle),
   // so the console holds the same proportion at any window size instead of being a fixed-px panel in black.
   useEffect(() => {
@@ -185,6 +191,9 @@ export default function App() {
           <Conn />
           <span className="gp-x" title="close" onClick={() => send('console', 'CLOSE_CONSOLE', {})}>✕</span>
         </div>
+        {focused ? (
+          <div className="gp-body"><PastureConfig cfg={pcfg} /></div>
+        ) : (<>
         <div className="gp-tabs">
           {TABS.map((t) => (
             <button key={t.id} className={`gp-tab${tab === t.id ? ' on' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>
@@ -199,6 +208,7 @@ export default function App() {
           {tab === 'augmenter' && <Augmenter />}
           {tab === 'dashboard' && <Dashboard />}
         </div>
+        </>)}
         <StatusBar />
       </div>
       <InventoryWindow />
@@ -581,4 +591,61 @@ function sortEggs(list, key) {
   else { const s = +key; arr.sort((a, b) => ((b.e.ivs[s] ?? 0) - (a.e.ivs[s] ?? 0)) || (eggIvTotal(b.e) - eggIvTotal(a.e))) }
   return arr
 }
+// The editable pasture config — shown when you right-click a pasture with the Notebook (replaces the owo screen).
+// Wired to the server over the `pasture` bridge channel: NAME · PAIRINGS · CLAIM (link) · KERNEL · CLOSE (← back).
+function PastureConfig({ cfg }) {
+  const [name, setName] = useState(cfg.name || '')
+  useEffect(() => { setName(cfg.name || '') }, [cfg.pos])   // reset the field when switching pastures
+  const hasKernel = !!cfg.tier
+  const maxPairs = cfg.maxPairs || 0
+  const roster = cfg.roster || []
+  const saveName = () => { if (name !== cfg.name) send('pasture', 'NAME', { pos: cfg.pos, name }) }
+  const cycleBucket = (mon) => {
+    if (maxPairs <= 0) return
+    const next = (mon.bucket + 1) % (maxPairs + 1)
+    const pairings = {}
+    roster.forEach((m) => { const b = m.id === mon.id ? next : m.bucket; if (b > 0) pairings[m.id] = b })
+    send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings })
+  }
+  return (
+    <div className="pane">
+      <div className="row" style={{ marginBottom: 10 }}>
+        <span className="grn" style={{ cursor: 'pointer', fontWeight: 600 }} onClick={() => send('pasture', 'CLOSE', {})}>← console</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim mono" style={{ fontSize: 11 }}>pasture config</span>
+      </div>
+      <div className="row" style={{ marginBottom: 8, gap: 8 }}>
+        <input className="gp-input" value={name} maxLength={64} placeholder="Name this pasture"
+          onChange={(e) => setName(e.target.value)} onBlur={saveName}
+          onKeyDown={(e) => { if (e.key === 'Enter') { saveName(); e.target.blur() } }} />
+        <button className="btn" style={{ color: cfg.linked ? 'var(--green)' : 'var(--muted)', borderColor: cfg.linked ? '#2e5a47' : 'var(--line)' }}
+          onClick={() => send('pasture', 'CLAIM', { pos: cfg.pos })}>{cfg.linked ? '🔗 linked' : 'link'}</button>
+      </div>
+      <div className="row inset" style={{ padding: 8, marginBottom: 10, borderRadius: 8 }}>
+        <span className="dim" style={{ fontSize: 10, letterSpacing: 1 }}>KERNEL</span>
+        <span style={{ flex: 1 }} />
+        {hasKernel
+          ? <span className="cyn mono" style={{ fontSize: 12 }}>{cap(cfg.tier.toLowerCase())} · {maxPairs} pairs</span>
+          : <span className="amb" style={{ fontSize: 11 }}>none — slot a Kernel for multi-pair breeding</span>}
+        <button className="btn" style={{ marginLeft: 8 }} onClick={() => send('pasture', 'KERNEL', { pos: cfg.pos })}>
+          {hasKernel ? 'remove' : 'slot from inventory'}</button>
+      </div>
+      <div className="dim" style={{ fontSize: 11, marginBottom: 6 }}>
+        {roster.length} mons{maxPairs > 0 ? ` · click a mon to cycle its pair (1–${maxPairs}); two in a bucket = a breeding pair` : ' · slot a Kernel to arrange pairs'}
+      </div>
+      {!roster.length ? <div className="muted" style={{ fontSize: 12 }}>empty — tether some Pokémon into this pasture in-world</div> : (
+        <div className="grid">
+          {roster.map((m) => (
+            <div key={m.id} className="cell" title={`${m.label || m.species} · bucket ${m.bucket || '—'}`}
+              onClick={() => cycleBucket(m)} style={{ borderColor: m.bucket ? pairHue(m.bucket) : undefined }}>
+              <span className="ct" style={{ color: m.bucket ? pairHue(m.bucket) : 'var(--dim)' }}>{m.bucket || '·'}</span>
+              <span className="nm">{cap(m.species)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+const pairHue = (b) => `hsl(${(b * 67) % 360} 70% 62%)`
 function Empty({ title, msg }) { return <div className="empty"><div><b>{title}</b><span className="muted">{msg}</span></div></div> }

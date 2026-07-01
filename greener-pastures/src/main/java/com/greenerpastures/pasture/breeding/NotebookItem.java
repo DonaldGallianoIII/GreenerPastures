@@ -44,6 +44,10 @@ public class NotebookItem extends Item {
      */
     public static Runnable CONSOLE_OPENER = () -> {};
 
+    /** Client-only hook: open the React console focused on the given pasture (its editable config). Set in
+     *  GreenerPasturesClient; the server-side branch pushes that pasture's {@code NotebookPastureConfigS2C}. */
+    public static java.util.function.Consumer<BlockPos> PASTURE_OPENER = pos -> {};
+
     public NotebookItem(Settings settings) {
         super(settings);
     }
@@ -60,10 +64,11 @@ public class NotebookItem extends Item {
             return ActionResult.PASS;   // not a pasture → fall through to use() → console
         }
         if (world.isClient) {
+            PASTURE_OPENER.accept(be.getPos());   // open the React console focused on this pasture's config
             return ActionResult.SUCCESS;
         }
         if (ctx.getPlayer() instanceof ServerPlayerEntity sp) {
-            openMenu(sp, be.getPos());
+            com.greenerpastures.notebook.net.NotebookNet.pushPastureConfig(sp, be.getPos());
         }
         return ActionResult.SUCCESS;
     }
