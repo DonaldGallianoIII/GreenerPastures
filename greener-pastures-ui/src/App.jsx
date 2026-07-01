@@ -39,8 +39,11 @@ const CSS = `
   padding:6px 9px; font-family:'Space Grotesk',sans-serif; font-size:12px; outline:none; }
 .gp-input:focus{ border-color:#2e5a47; }
 .gp-input::placeholder{ color:var(--dim); }
-.daemon-canvas{ position:relative; width:100%; height:340px; background:var(--inset); border:1px solid var(--line2); border-radius:8px; overflow:hidden; }
-.daemon-wires{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+.daemon-canvas{ position:relative; width:100%; height:340px; background:var(--inset); border:1px solid var(--line2); border-radius:8px; overflow:hidden; cursor:grab; }
+.daemon-canvas:active{ cursor:grabbing; }
+.daemon-view{ position:absolute; top:0; left:0; }
+.daemon-wires{ position:absolute; top:0; left:0; width:5000px; height:5000px; overflow:visible; pointer-events:none; }
+.daemon-hud{ position:absolute; bottom:6px; left:8px; font-size:9px; color:var(--dim); font-family:'JetBrains Mono',monospace; pointer-events:none; }
 .dwire{ stroke-width:2.5; fill:none; pointer-events:stroke; cursor:pointer; }
 .dwire:hover{ stroke:var(--red) !important; }
 .dwire.live{ stroke:var(--cyan); stroke-dasharray:5 4; }
@@ -610,6 +613,7 @@ function DaemonGraph({ cfg }) {
   const roster = cfg.roster || []
   const maxPairs = cfg.maxPairs || 0
   const [positions, setPositions] = useState({})
+  const [view, setView] = useState({ x: 0, y: 0, zoom: 1 })
   const [wiring, setWiring] = useState(null)
   const drag = useRef(null)
   const boxRef = useRef(null)
@@ -633,46 +637,64 @@ function DaemonGraph({ cfg }) {
   }
   const unpair = (w) => { const p = pairings(); delete p[w.a.id]; delete p[w.c.id]; save(p) }
 
+  // screen(client px) → graph coords, undoing both the console's --gp-scale AND the canvas pan/zoom
+  const toGraph = (cx, cy) => { const r = boxRef.current.getBoundingClientRect(), s = scale(); return { x: ((cx - r.left) / s - view.x) / view.zoom, y: ((cy - r.top) / s - view.y) / view.zoom } }
+
+  const onCanvasDown = (e) => {   // empty canvas → pan
+    drag.current = { type: 'pan', sx: e.clientX, sy: e.clientY, bx: view.x, by: view.y, s: scale() }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }
   const onNodeDown = (e, id) => {
     e.stopPropagation()
-    const np = nodePos(id)
-    drag.current = { type: 'node', id, sx: e.clientX, sy: e.clientY, bx: np.x, by: np.y, s: scale() }
+    const g = toGraph(e.clientX, e.clientY), np = nodePos(id)
+    drag.current = { type: 'node', id, gx: g.x - np.x, gy: g.y - np.y }
     window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
   }
   const onPortDown = (e, id) => {
     e.stopPropagation()
-    const c = center({ id })
-    drag.current = { type: 'wire', from: id, s: scale() }
-    setWiring({ from: id, x: c.x, y: c.y })
+    drag.current = { type: 'wire', from: id }
+    const g = toGraph(e.clientX, e.clientY); setWiring({ from: id, x: g.x, y: g.y })
     window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
   }
   const onMove = (e) => {
     const d = drag.current; if (!d) return
-    if (d.type === 'node') setPositions((p) => ({ ...p, [d.id]: { x: d.bx + (e.clientX - d.sx) / d.s, y: d.by + (e.clientY - d.sy) / d.s } }))
-    else if (boxRef.current) { const r = boxRef.current.getBoundingClientRect(); setWiring({ from: d.from, x: (e.clientX - r.left) / d.s, y: (e.clientY - r.top) / d.s }) }
+    if (d.type === 'pan') setView((v) => ({ ...v, x: d.bx + (e.clientX - d.sx) / d.s, y: d.by + (e.clientY - d.sy) / d.s }))
+    else if (d.type === 'node') { const g = toGraph(e.clientX, e.clientY); setPositions((p) => ({ ...p, [d.id]: { x: g.x - d.gx, y: g.y - d.gy } })) }
+    else if (d.type === 'wire') { const g = toGraph(e.clientX, e.clientY); setWiring({ from: d.from, x: g.x, y: g.y }) }
   }
   const onUp = (e) => {
     const d = drag.current; drag.current = null
     window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp)
-    if (d && d.type === 'wire' && boxRef.current) {
-      const r = boxRef.current.getBoundingClientRect(), mx = (e.clientX - r.left) / d.s, my = (e.clientY - r.top) / d.s
-      const t = roster.find((m) => { const p = nodePos(m.id); return mx >= p.x && mx <= p.x + 92 && my >= p.y && my <= p.y + 34 })
+    if (d && d.type === 'wire') {
+      const g = toGraph(e.clientX, e.clientY)
+      const t = roster.find((m) => { const p = nodePos(m.id); return g.x >= p.x && g.x <= p.x + 92 && g.y >= p.y && g.y <= p.y + 34 })
       if (t && t.id !== d.from) pair(d.from, t.id)
       setWiring(null)
     }
   }
+  const onWheel = (e) => {   // scroll to zoom, keeping the graph point under the cursor fixed
+    e.preventDefault()
+    const nz = Math.max(0.35, Math.min(2.5, view.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12)))
+    const r = boxRef.current.getBoundingClientRect(), s = scale()
+    const sx = (e.clientX - r.left) / s, sy = (e.clientY - r.top) / s
+    const gx = (sx - view.x) / view.zoom, gy = (sy - view.y) / view.zoom
+    setView({ x: sx - gx * nz, y: sy - gy * nz, zoom: nz })
+  }
   return (
-    <div className="daemon-canvas" ref={boxRef}>
-      <svg className="daemon-wires">
-        {wires.map((w, i) => { const a = center(w.a), c = center(w.c); return <line key={i} x1={a.x} y1={a.y} x2={c.x} y2={c.y} stroke={pairHue(w.b)} className="dwire" onClick={() => unpair(w)} /> })}
-        {wiring && (() => { const src = roster.find((m) => m.id === wiring.from); if (!src) return null; const c = center(src); return <line x1={c.x} y1={c.y} x2={wiring.x} y2={wiring.y} className="dwire live" /> })()}
-      </svg>
-      {roster.map((m) => { const p = nodePos(m.id); const on = m.bucket > 0; return (
-        <div key={m.id} className="dnode" style={{ left: p.x, top: p.y, borderColor: on ? pairHue(m.bucket) : undefined }} onMouseDown={(e) => onNodeDown(e, m.id)}>
-          <span className="dnode-name">{cap(m.species)}</span>
-          <span className="dport" title="drag onto another mon to pair" onMouseDown={(e) => onPortDown(e, m.id)} style={{ background: on ? pairHue(m.bucket) : 'var(--muted)' }} />
-        </div>
-      )})}
+    <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown} onWheel={onWheel}>
+      <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
+        <svg className="daemon-wires">
+          {wires.map((w, i) => { const a = center(w.a), c = center(w.c); return <line key={i} x1={a.x} y1={a.y} x2={c.x} y2={c.y} stroke={pairHue(w.b)} className="dwire" onClick={(e) => { e.stopPropagation(); unpair(w) }} /> })}
+          {wiring && (() => { const src = roster.find((m) => m.id === wiring.from); if (!src) return null; const c = center(src); return <line x1={c.x} y1={c.y} x2={wiring.x} y2={wiring.y} className="dwire live" /> })()}
+        </svg>
+        {roster.map((m) => { const p = nodePos(m.id); const on = m.bucket > 0; return (
+          <div key={m.id} className="dnode" style={{ left: p.x, top: p.y, borderColor: on ? pairHue(m.bucket) : undefined }} onMouseDown={(e) => onNodeDown(e, m.id)}>
+            <span className="dnode-name">{cap(m.species)}</span>
+            <span className="dport" title="drag onto another mon to pair" onMouseDown={(e) => onPortDown(e, m.id)} style={{ background: on ? pairHue(m.bucket) : 'var(--muted)' }} />
+          </div>
+        )})}
+      </div>
+      <div className="daemon-hud">{Math.round(view.zoom * 100)}% · scroll = zoom · drag canvas = pan</div>
     </div>
   )
 }
