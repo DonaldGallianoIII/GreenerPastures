@@ -238,7 +238,7 @@ function BioBank() {
   const groups = {}
   for (const e of entries) (groups[e.species] ||= []).push(e)
   const species = Object.keys(groups)
-  if (!species.length) return <Empty title="BioBank empty" msg="deposit eggs at a BioBank block (right-click; sneak = all)" />
+  if (!species.length) return <Empty title="BioBank empty" msg="link a pasture — its eggs are pulled in here automatically while it's loaded" />
   return (
     <div className="pane">
       <div className="h" style={{ marginBottom: 10 }}>BioBank · {d.total} kept · {species.length} species</div>
