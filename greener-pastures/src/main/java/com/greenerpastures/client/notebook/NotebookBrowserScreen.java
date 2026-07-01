@@ -32,7 +32,7 @@ public class NotebookBrowserScreen extends Screen {
     /** file:// URL of the extracted single-file console (cached for the session). */
     private static String consoleUrl;
 
-    private MCEFBrowser browser;
+    private static MCEFBrowser browser;   // static → survives screen close: reopening is instant, no reload/blip
 
     public NotebookBrowserScreen() {
         super(Text.literal("Notebook"));
@@ -67,8 +67,8 @@ public class NotebookBrowserScreen extends Screen {
             if (url == null) return;   // extraction failed — render() shows the hint text
             browser = MCEF.createBrowser(url, true);   // transparent = overlay-friendly
             browser.useBrowserControls(false);          // let Ctrl/Alt/F-keys reach React, don't let CEF hijack them
-            resizeBrowser();
         }
+        resizeBrowser();   // always fit the current window (it may have resized while the console was closed)
     }
 
     @Override
@@ -95,10 +95,8 @@ public class NotebookBrowserScreen extends Screen {
 
     @Override
     public void close() {
-        if (browser != null) {
-            browser.close();
-            browser = null;
-        }
+        // Keep the browser ALIVE (static) so reopening the console is instant and preserves its React state — no
+        // black blip and no page reload each time. MCEF frees it on game shutdown. (Deuce, 2026-07-01)
         super.close();
     }
 
@@ -110,17 +108,17 @@ public class NotebookBrowserScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
-        if (browser == null) {
-            tryCreate();
-            if (browser == null) {
+        if (browser == null) tryCreate();
+        int texId = browser == null ? 0 : browser.getRenderer().getTextureID();
+        if (texId <= 0) {
+            // Not painted yet (first-ever open / MCEF still initializing): fill the app's dark bg so there's no
+            // black/blur flash. The kept-alive browser means REOPENS skip this entirely (it's already painted).
+            context.fill(0, 0, width, height, 0xFF06080C);
+            if (browser == null)
                 context.drawCenteredTextWithShadow(textRenderer,
                         Text.literal("Console initializing… (MCEF / Chromium)"), width / 2, height / 2, 0xFFAAAAAA);
-                return;
-            }
+            return;
         }
-        int texId = browser.getRenderer().getTextureID();
-        if (texId <= 0) return;   // texture id is 0 until the first paint — guard the draw
 
         RenderSystem.disableDepthTest();
         RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
