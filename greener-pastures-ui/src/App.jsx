@@ -44,6 +44,32 @@ const CSS = `
 .daemon-view{ position:absolute; top:0; left:0; }
 .daemon-wires{ position:absolute; top:0; left:0; width:5000px; height:5000px; overflow:visible; pointer-events:none; }
 .daemon-hud{ position:absolute; bottom:6px; left:8px; font-size:9px; color:var(--dim); font-family:'JetBrains Mono',monospace; pointer-events:none; }
+.daemon-wrap{ display:flex; flex-direction:column; gap:6px; }
+.daemon-palette{ display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+.dchip{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:3px 9px; font-size:11px; font-weight:600; cursor:pointer; }
+.dchip:hover{ filter:brightness(1.25); }
+.gnode{ position:absolute; background:var(--panel); border:1.5px solid var(--line); border-radius:8px; cursor:grab; box-shadow:0 4px 12px -4px rgba(0,0,0,.6); display:flex; }
+.gnode.sel{ box-shadow:0 0 0 2px var(--cyan), 0 5px 14px -4px rgba(0,0,0,.7); }
+.gnode-bar{ width:5px; border-radius:6px 0 0 6px; flex:none; }
+.gnode-body{ flex:1; padding:4px 9px; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:1px; }
+.gnode-title{ font-size:12px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gnode-sub{ font-size:9px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gnode-x{ position:absolute; top:-7px; right:-7px; width:15px; height:15px; border-radius:50%; background:var(--panel); border:1px solid var(--line); color:var(--muted); font-size:8px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:4; }
+.gnode:hover .gnode-x{ display:flex; }
+.gnode-x:hover{ color:var(--red); border-color:var(--red); }
+.gport{ position:absolute; width:12px; height:12px; border:2px solid var(--bg); cursor:crosshair; z-index:3; box-shadow:0 0 4px rgba(0,0,0,.5); }
+.gport:hover{ filter:brightness(1.5); }
+.dcfg{ position:absolute; right:8px; top:8px; width:190px; max-height:calc(100% - 16px); overflow:auto; background:rgba(18,22,28,.98); border:1px solid var(--line2); border-radius:8px; padding:9px; z-index:6; box-shadow:0 10px 28px -10px #000; }
+.dcfg-h{ font-size:11px; font-weight:700; margin-bottom:7px; color:var(--cyan); display:flex; align-items:center; }
+.dcfg-x{ margin-left:auto; cursor:pointer; color:var(--muted); }
+.dcfg-x:hover{ color:var(--red); }
+.dcfg-grid{ display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.dcfg-stat{ display:flex; align-items:center; justify-content:space-between; font-size:10px; gap:4px; color:var(--muted); }
+.dcfg-stat input{ width:46px; background:var(--inset); border:1px solid var(--line); border-radius:4px; color:var(--text); font-size:10px; padding:2px 4px; }
+.dcfg-row{ display:flex; gap:5px; flex-wrap:wrap; }
+.dcfg-natures{ display:flex; gap:4px; flex-wrap:wrap; }
+.dchip2{ background:var(--inset); border:1px solid var(--line); border-radius:5px; padding:2px 7px; font-size:9px; cursor:pointer; color:var(--muted); }
+.dchip2.on{ background:var(--cyan); color:#04222b; border-color:var(--cyan); font-weight:700; }
 .dwire{ stroke-width:2.5; fill:none; pointer-events:stroke; cursor:pointer; }
 .dwire:hover{ stroke:var(--red) !important; }
 .dwire.live{ stroke:var(--cyan); stroke-dasharray:5 4; }
@@ -609,92 +635,190 @@ function sortEggs(list, key) {
 // The Daemon node graph (visual scripting, Arrangement v2). Each tethered mon is a draggable node; drag a mon's
 // port onto another mon to WIRE them = a breeding pair. Wires are derived from PastureData.pairings (two mons in
 // one bucket = a pair) and mutate it via the PAIRINGS action. Positions are client-side (auto-laid-out) for now.
+const NODE_W = 112, NODE_H = 46
+const STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
+const NATURES = ['Adamant', 'Jolly', 'Modest', 'Timid', 'Bold', 'Calm', 'Impish', 'Careful', 'Brave', 'Relaxed', 'Naughty', 'Lonely', 'Serious', 'Hardy']
+const PALETTE = [
+  { type: 'FILTER_IV', label: '+ IV', hue: '#4ea1ff' },
+  { type: 'FILTER_EV', label: '+ EV', hue: '#7c5cff' },
+  { type: 'FILTER_NATURE', label: '+ Nature', hue: '#ff9f43' },
+  { type: 'FILTER_SHINY', label: '+ Shiny', hue: '#ffd93b' },
+  { type: 'SINK_BIOBANK', label: '+ → BioBank', hue: '#34d399' },
+  { type: 'SINK_DATA', label: '+ → Data', hue: '#f87171' },
+  { type: 'SOURCE', label: '+ Source', hue: '#9aa4b2' },
+]
+const NODE_META = {
+  MON: { hue: '#8b93a1', title: (n) => cap(n.species) },
+  FILTER_IV: { hue: '#4ea1ff', title: () => 'IV filter' },
+  FILTER_EV: { hue: '#7c5cff', title: () => 'EV filter' },
+  FILTER_NATURE: { hue: '#ff9f43', title: () => 'Nature filter' },
+  FILTER_SHINY: { hue: '#ffd93b', title: () => 'Shiny filter' },
+  SINK_BIOBANK: { hue: '#34d399', title: () => '→ BioBank' },
+  SINK_DATA: { hue: '#f87171', title: () => '→ Data' },
+  SOURCE: { hue: '#9aa4b2', title: () => 'Source' },
+}
+const isFilter = (t) => typeof t === 'string' && t.startsWith('FILTER_')
+const parseGraph = (s) => { try { const o = JSON.parse(s || '{}'); return { nodes: Array.isArray(o.nodes) ? o.nodes : [], edges: Array.isArray(o.edges) ? o.edges : [] } } catch { return { nodes: [], edges: [] } } }
+const defaultConfig = (t) => t === 'FILTER_IV' || t === 'FILTER_EV' ? { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 } : t === 'FILTER_SHINY' ? { gate: 'only' } : t === 'FILTER_NATURE' ? { list: [] } : {}
+const portsFor = (t) => t === 'MON' ? [{ k: 'pair', side: 'l', ry: 0.5, kind: 'pair' }, { k: 'eggs', side: 'r', ry: 0.5, kind: 'flow', dir: 'out' }]
+  : isFilter(t) ? [{ k: 'in', side: 'l', ry: 0.5, kind: 'flow', dir: 'in' }, { k: 'pass', side: 'r', ry: 0.32, kind: 'flow', dir: 'out' }, { k: 'void', side: 'r', ry: 0.72, kind: 'void', dir: 'out' }]
+  : t === 'SOURCE' ? [{ k: 'out', side: 'r', ry: 0.5, kind: 'flow', dir: 'out' }]
+  : [{ k: 'in', side: 'l', ry: 0.5, kind: 'flow', dir: 'in' }]
+const portByK = (t, k) => portsFor(t).find((p) => p.k === k)
+const portXY = (n, p) => ({ x: n.x + (p.side === 'l' ? 0 : NODE_W), y: n.y + p.ry * NODE_H })
+const wirePath = (x1, y1, x2, y2) => { const dx = Math.max(28, Math.abs(x2 - x1) * 0.5); return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}` }
+const nodeSub = (n) => {
+  if (n.type === 'MON') return n.bucket > 0 ? 'pair ' + n.bucket : 'unpaired'
+  if (n.type === 'FILTER_IV' || n.type === 'FILTER_EV') { const c = n.config || {}; const on = STATS.filter((s) => (c[s] || 0) > 0); return on.length ? on.map((s) => `${s}≥${c[s]}`).join(' ') : (n.type === 'FILTER_IV' ? 'any IV' : 'any EV') }
+  if (n.type === 'FILTER_NATURE') { const l = (n.config && n.config.list) || []; return l.length ? l.length + ' natures' : 'any nature' }
+  if (n.type === 'FILTER_SHINY') { const g = (n.config && n.config.gate) || 'only'; return g === 'no' ? 'non-shiny' : g === 'any' ? 'any' : 'shiny only' }
+  if (n.type === 'SOURCE') return 'bred eggs'
+  if (n.type === 'SINK_BIOBANK') return 'keep'
+  if (n.type === 'SINK_DATA') return 'render'
+  return ''
+}
+
+// The per-filter config popover (IV/EV mins · shiny gate · nature multi-select). Writes into the node's config.
+function ConfigPanel({ node, onSet, onClose }) {
+  const c = node.config || {}, t = node.type
+  return (
+    <div className="dcfg" onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+      <div className="dcfg-h">{(NODE_META[t] || {}).title?.(node) || 'filter'}<span className="dcfg-x" onClick={onClose}>✕</span></div>
+      {(t === 'FILTER_IV' || t === 'FILTER_EV') && (
+        <div className="dcfg-grid">
+          {STATS.map((s) => (
+            <label key={s} className="dcfg-stat"><span>{s}</span>
+              <input type="number" min={0} max={t === 'FILTER_IV' ? 31 : 252} value={c[s] || 0}
+                onFocus={() => send('console', 'INPUT_FOCUS', { v: true })} onBlur={() => send('console', 'INPUT_FOCUS', { v: false })}
+                onChange={(e) => onSet(s, Math.max(0, Math.min(t === 'FILTER_IV' ? 31 : 252, parseInt(e.target.value) || 0)))} />
+            </label>
+          ))}
+          <div className="dim" style={{ gridColumn: '1 / -1', fontSize: 9 }}>pass if every stat ≥ its min</div>
+        </div>
+      )}
+      {t === 'FILTER_SHINY' && (
+        <div className="dcfg-row">{[['only', 'shiny only'], ['no', 'non-shiny'], ['any', 'any']].map(([v, l]) => (
+          <button key={v} className={`dchip2${(c.gate || 'only') === v ? ' on' : ''}`} onClick={() => onSet('gate', v)}>{l}</button>))}
+        </div>
+      )}
+      {t === 'FILTER_NATURE' && (
+        <div className="dcfg-natures">{NATURES.map((nat) => { const on = (c.list || []).includes(nat); return (
+          <button key={nat} className={`dchip2${on ? ' on' : ''}`} onClick={() => { const set = new Set(c.list || []); on ? set.delete(nat) : set.add(nat); onSet('list', [...set]) }}>{nat}</button>) })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function DaemonGraph({ cfg }) {
   const roster = cfg.roster || []
   const maxPairs = cfg.maxPairs || 0
-  const [positions, setPositions] = useState({})
+  const [g, setG] = useState(() => parseGraph(cfg.graph))
   const [view, setView] = useState({ x: 0, y: 0, zoom: 1 })
   const [wiring, setWiring] = useState(null)
+  const [dragPos, setDragPos] = useState(null)
+  const [sel, setSel] = useState(null)
   const drag = useRef(null)
   const boxRef = useRef(null)
-  const idx = {}; roster.forEach((m, i) => { idx[m.id] = i })
+  const touched = useRef(false)
+  const lastPos = useRef(cfg.pos)
+
+  // Adopt the server graph on pasture-switch, or while still untouched (so the shell→real-graph arrival loads
+  // in), but never overwrite the player's own local edits (the editor is the authority once touched).
+  useEffect(() => {
+    if (cfg.pos !== lastPos.current) { lastPos.current = cfg.pos; touched.current = false; setSel(null); setG(parseGraph(cfg.graph)) }
+    else if (!touched.current) setG(parseGraph(cfg.graph))
+  }, [cfg.pos, cfg.graph])
+
   const scale = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
-  const nodePos = (id) => positions[id] || { x: 16 + (idx[id] % 5) * 150, y: 16 + Math.floor(idx[id] / 5) * 88 }
-  const center = (m) => { const p = nodePos(m.id); return { x: p.x + 46, y: p.y + 17 } }
-
-  const byBucket = {}
-  roster.forEach((m) => { if (m.bucket > 0) (byBucket[m.bucket] ||= []).push(m) })
-  const wires = Object.entries(byBucket).filter(([, g]) => g.length >= 2).map(([b, g]) => ({ b: +b, a: g[0], c: g[1] }))
-
-  const pairings = () => { const p = {}; roster.forEach((m) => { if (m.bucket > 0) p[m.id] = m.bucket }); return p }
-  const save = (p) => send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p })
-  const pair = (aId, bId) => {
-    if (aId === bId || !maxPairs) return
-    const p = pairings(); delete p[aId]; delete p[bId]
-    const used = new Set(Object.values(p)); let b = 1; while (used.has(b)) b++
-    if (b > maxPairs) return
-    p[aId] = b; p[bId] = b; save(p)
-  }
-  const unpair = (w) => { const p = pairings(); delete p[w.a.id]; delete p[w.c.id]; save(p) }
-
-  // screen(client px) → graph coords, undoing both the console's --gp-scale AND the canvas pan/zoom
   const toGraph = (cx, cy) => { const r = boxRef.current.getBoundingClientRect(), s = scale(); return { x: ((cx - r.left) / s - view.x) / view.zoom, y: ((cy - r.top) / s - view.y) / view.zoom } }
 
-  const onCanvasDown = (e) => {   // empty canvas → pan
-    drag.current = { type: 'pan', sx: e.clientX, sy: e.clientY, bx: view.x, by: view.y, s: scale() }
-    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  // MON nodes come from the live roster (positions saved in the graph by monId); other nodes come from the graph.
+  const autoPos = (i) => ({ x: 24 + (i % 4) * 152, y: 20 + Math.floor(i / 4) * 92 })
+  const monNodes = roster.map((m, i) => { const s = g.nodes.find((n) => n.type === 'MON' && n.monId === m.id); const p = s || autoPos(i); return { id: 'mon:' + m.id, type: 'MON', monId: m.id, species: m.species, bucket: m.bucket, x: p.x, y: p.y } })
+  const allNodes = [...monNodes, ...g.nodes.filter((n) => n.type !== 'MON')]
+  const byId = (id) => allNodes.find((n) => n.id === id)
+  const monNode = (monId) => monNodes.find((n) => n.monId === monId)
+  const liveNode = (n) => (n && dragPos && dragPos.id === n.id) ? { ...n, x: dragPos.x, y: dragPos.y } : n
+
+  // pairs (mon↔mon) stay in PastureData.pairings via roster buckets
+  const byBucket = {}; roster.forEach((m) => { if (m.bucket > 0) (byBucket[m.bucket] ||= []).push(m) })
+  const pairWires = Object.entries(byBucket).filter(([, gr]) => gr.length >= 2).map(([b, gr]) => ({ b: +b, a: gr[0], c: gr[1] }))
+  const pairings = () => { const p = {}; roster.forEach((m) => { if (m.bucket > 0) p[m.id] = m.bucket }); return p }
+  const pair = (aMon, bMon) => { if (aMon === bMon || !maxPairs) return; const p = pairings(); delete p[aMon]; delete p[bMon]; const used = new Set(Object.values(p)); let b = 1; while (used.has(b)) b++; if (b > maxPairs) return; p[aMon] = b; p[bMon] = b; send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p }) }
+  const unpair = (w) => { const p = pairings(); delete p[w.a.id]; delete p[w.c.id]; send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p }) }
+
+  // the flow graph (filter/sink/source nodes + flow edges + mon positions) persists as graphJson
+  const apply = (next) => { touched.current = true; setG(next); send('pasture', 'GRAPH', { pos: cfg.pos, json: JSON.stringify(next) }) }
+  const addNode = (type) => { const r = boxRef.current.getBoundingClientRect(); const c = toGraph(r.left + r.width / 2, r.top + r.height / 2); const id = 'n' + Date.now().toString(36) + Math.floor(Math.random() * 1000); apply({ nodes: [...g.nodes, { id, type, x: Math.round(c.x - NODE_W / 2), y: Math.round(c.y - NODE_H / 2), config: defaultConfig(type) }], edges: g.edges }); setSel(id) }
+  const delNode = (id) => { apply({ nodes: g.nodes.filter((n) => n.id !== id), edges: g.edges.filter((e) => e.from !== id && e.to !== id) }); if (sel === id) setSel(null) }
+  const setConfig = (id, key, val) => apply({ nodes: g.nodes.map((n) => n.id === id ? { ...n, config: { ...(n.config || {}), [key]: val } } : n), edges: g.edges })
+  const setNodePos = (n, x, y) => {
+    if (n.type === 'MON') { const has = g.nodes.some((z) => z.type === 'MON' && z.monId === n.monId); apply({ nodes: has ? g.nodes.map((z) => (z.type === 'MON' && z.monId === n.monId) ? { ...z, x, y } : z) : [...g.nodes, { id: n.id, type: 'MON', monId: n.monId, x, y }], edges: g.edges }) }
+    else apply({ nodes: g.nodes.map((z) => z.id === n.id ? { ...z, x, y } : z), edges: g.edges })
   }
-  const onNodeDown = (e, id) => {
-    e.stopPropagation()
-    const g = toGraph(e.clientX, e.clientY), np = nodePos(id)
-    drag.current = { type: 'node', id, gx: g.x - np.x, gy: g.y - np.y }
-    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  const addEdge = (from, fromPort, to, toPort) => { if (from === to) return; apply({ nodes: g.nodes, edges: [...g.edges.filter((e) => !(e.to === to && e.toPort === toPort)), { from, fromPort, to, toPort }] }) }
+  const delEdge = (e) => apply({ nodes: g.nodes, edges: g.edges.filter((x) => !(x.from === e.from && x.fromPort === e.fromPort && x.to === e.to && x.toPort === e.toPort)) })
+  const tryConnect = (aN, aP, bN, bP) => {
+    if (aN.id === bN.id) return
+    if (aP.kind === 'pair' && bP.kind === 'pair' && aN.type === 'MON' && bN.type === 'MON') { pair(aN.monId, bN.monId); return }
+    let out, inp
+    if (aP.dir === 'out' && bP.dir === 'in') { out = [aN, aP]; inp = [bN, bP] } else if (bP.dir === 'out' && aP.dir === 'in') { out = [bN, bP]; inp = [aN, aP] } else return
+    addEdge(out[0].id, out[1].k, inp[0].id, inp[1].k)
   }
-  const onPortDown = (e, id) => {
-    e.stopPropagation()
-    drag.current = { type: 'wire', from: id }
-    const g = toGraph(e.clientX, e.clientY); setWiring({ from: id, x: g.x, y: g.y })
-    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
-  }
+  const portHit = (cx, cy) => { const gpt = toGraph(cx, cy); for (const raw of allNodes) { const n = liveNode(raw); for (const port of portsFor(n.type)) { const pp = portXY(n, port); if (Math.hypot(pp.x - gpt.x, pp.y - gpt.y) <= 13) return { node: raw, port } } } return null }
+
+  const bind = () => { window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp) }
+  const onCanvasDown = (e) => { setSel(null); drag.current = { type: 'pan', sx: e.clientX, sy: e.clientY, bx: view.x, by: view.y, s: scale() }; bind() }
+  const onNodeDown = (e, n) => { e.stopPropagation(); setSel(n.id); const gpt = toGraph(e.clientX, e.clientY); drag.current = { type: 'node', node: n, gx: gpt.x - n.x, gy: gpt.y - n.y, cx: n.x, cy: n.y }; setDragPos({ id: n.id, x: n.x, y: n.y }); bind() }
+  const onPortDown = (e, n, port) => { e.stopPropagation(); drag.current = { type: 'wire', node: n, port }; const pp = portXY(n, port); setWiring({ node: n, port, x: pp.x, y: pp.y }); bind() }
   const onMove = (e) => {
     const d = drag.current; if (!d) return
     if (d.type === 'pan') setView((v) => ({ ...v, x: d.bx + (e.clientX - d.sx) / d.s, y: d.by + (e.clientY - d.sy) / d.s }))
-    else if (d.type === 'node') { const g = toGraph(e.clientX, e.clientY); setPositions((p) => ({ ...p, [d.id]: { x: g.x - d.gx, y: g.y - d.gy } })) }
-    else if (d.type === 'wire') { const g = toGraph(e.clientX, e.clientY); setWiring({ from: d.from, x: g.x, y: g.y }) }
+    else if (d.type === 'node') { const gpt = toGraph(e.clientX, e.clientY); d.moved = true; d.cx = Math.round(gpt.x - d.gx); d.cy = Math.round(gpt.y - d.gy); setDragPos({ id: d.node.id, x: d.cx, y: d.cy }) }
+    else if (d.type === 'wire') { const gpt = toGraph(e.clientX, e.clientY); setWiring({ node: d.node, port: d.port, x: gpt.x, y: gpt.y }) }
   }
   const onUp = (e) => {
     const d = drag.current; drag.current = null
     window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp)
-    if (d && d.type === 'wire') {
-      const g = toGraph(e.clientX, e.clientY)
-      const t = roster.find((m) => { const p = nodePos(m.id); return g.x >= p.x && g.x <= p.x + 92 && g.y >= p.y && g.y <= p.y + 34 })
-      if (t && t.id !== d.from) pair(d.from, t.id)
-      setWiring(null)
-    }
+    if (!d) return
+    if (d.type === 'node') { if (d.moved) setNodePos(d.node, d.cx, d.cy); setDragPos(null) }
+    else if (d.type === 'wire') { const hit = portHit(e.clientX, e.clientY); if (hit) tryConnect(d.node, d.port, hit.node, hit.port); setWiring(null) }
   }
-  const onWheel = (e) => {   // scroll to zoom, keeping the graph point under the cursor fixed
+  const onWheel = (e) => {
     e.preventDefault()
     const nz = Math.max(0.35, Math.min(2.5, view.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12)))
     const r = boxRef.current.getBoundingClientRect(), s = scale()
     const sx = (e.clientX - r.left) / s, sy = (e.clientY - r.top) / s
-    const gx = (sx - view.x) / view.zoom, gy = (sy - view.y) / view.zoom
-    setView({ x: sx - gx * nz, y: sy - gy * nz, zoom: nz })
+    setView({ x: sx - ((sx - view.x) / view.zoom) * nz, y: sy - ((sy - view.y) / view.zoom) * nz, zoom: nz })
   }
+
   return (
-    <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown} onWheel={onWheel}>
-      <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
-        <svg className="daemon-wires">
-          {wires.map((w, i) => { const a = center(w.a), c = center(w.c); return <line key={i} x1={a.x} y1={a.y} x2={c.x} y2={c.y} stroke={pairHue(w.b)} className="dwire" onClick={(e) => { e.stopPropagation(); unpair(w) }} /> })}
-          {wiring && (() => { const src = roster.find((m) => m.id === wiring.from); if (!src) return null; const c = center(src); return <line x1={c.x} y1={c.y} x2={wiring.x} y2={wiring.y} className="dwire live" /> })()}
-        </svg>
-        {roster.map((m) => { const p = nodePos(m.id); const on = m.bucket > 0; return (
-          <div key={m.id} className="dnode" style={{ left: p.x, top: p.y, borderColor: on ? pairHue(m.bucket) : undefined }} onMouseDown={(e) => onNodeDown(e, m.id)}>
-            <span className="dnode-name">{cap(m.species)}</span>
-            <span className="dport" title="drag onto another mon to pair" onMouseDown={(e) => onPortDown(e, m.id)} style={{ background: on ? pairHue(m.bucket) : 'var(--muted)' }} />
-          </div>
-        )})}
+    <div className="daemon-wrap">
+      <div className="daemon-palette" onMouseDown={(e) => e.stopPropagation()}>
+        {PALETTE.map((p) => <button key={p.type} className="dchip" style={{ borderColor: p.hue, color: p.hue }} onClick={() => addNode(p.type)}>{p.label}</button>)}
+        <span className="dim mono" style={{ marginLeft: 'auto', fontSize: 10 }}>{Math.round(view.zoom * 100)}%</span>
       </div>
-      <div className="daemon-hud">{Math.round(view.zoom * 100)}% · scroll = zoom · drag canvas = pan</div>
+      <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown} onWheel={onWheel}>
+        <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
+          <svg className="daemon-wires">
+            {pairWires.map((w, i) => { const a = liveNode(monNode(w.a.id)), c = liveNode(monNode(w.c.id)); if (!a || !c) return null; const pa = portXY(a, portByK('MON', 'pair')), pc = portXY(c, portByK('MON', 'pair')); return <path key={'p' + i} d={wirePath(pa.x, pa.y, pc.x, pc.y)} stroke={pairHue(w.b)} className="dwire" onClick={(ev) => { ev.stopPropagation(); unpair(w) }} /> })}
+            {g.edges.map((e, i) => { const fn = byId(e.from), tn = byId(e.to); if (!fn || !tn) return null; const fp = portByK(fn.type, e.fromPort), tp = portByK(tn.type, e.toPort); if (!fp || !tp) return null; const a = portXY(liveNode(fn), fp), b = portXY(liveNode(tn), tp); return <path key={'e' + i} d={wirePath(a.x, a.y, b.x, b.y)} stroke={fp.kind === 'void' ? 'var(--red)' : 'var(--cyan)'} className="dwire" onClick={(ev) => { ev.stopPropagation(); delEdge(e) }} /> })}
+            {wiring && (() => { const pp = portXY(liveNode(wiring.node), wiring.port); return <path d={wirePath(pp.x, pp.y, wiring.x, wiring.y)} className="dwire live" /> })()}
+          </svg>
+          {allNodes.map((raw) => { const n = liveNode(raw); const meta = NODE_META[n.type] || NODE_META.SOURCE; const paired = n.type === 'MON' && n.bucket > 0; const accent = paired ? pairHue(n.bucket) : meta.hue; return (
+            <div key={n.id} className={`gnode${sel === n.id ? ' sel' : ''}`} style={{ left: n.x, top: n.y, width: NODE_W, height: NODE_H, borderColor: accent }} onMouseDown={(e) => onNodeDown(e, n)}>
+              <span className="gnode-bar" style={{ background: accent }} />
+              <div className="gnode-body"><span className="gnode-title">{meta.title(n)}</span><span className="gnode-sub">{nodeSub(n)}</span></div>
+              {n.type !== 'MON' && <span className="gnode-x" title="delete node" onMouseDown={(e) => { e.stopPropagation(); delNode(n.id) }}>✕</span>}
+              {portsFor(n.type).map((port) => { const pp = portXY(n, port); return <span key={port.k} className="gport" title={port.k} onMouseDown={(e) => onPortDown(e, n, port)}
+                style={{ left: pp.x - n.x - 6, top: pp.y - n.y - 6, background: port.kind === 'pair' ? '#c9a227' : port.kind === 'void' ? 'var(--red)' : (port.dir === 'out' ? 'var(--cyan)' : '#2b6cb0'), borderRadius: port.kind === 'pair' ? '3px' : '50%' }} /> })}
+            </div>
+          )})}
+        </div>
+        {sel && byId(sel) && isFilter(byId(sel).type) && <ConfigPanel node={byId(sel)} onSet={(k, v) => setConfig(sel, k, v)} onClose={() => setSel(null)} />}
+        <div className="daemon-hud">scroll = zoom · drag canvas = pan · drag a port to wire · click a wire to remove</div>
+      </div>
     </div>
   )
 }
@@ -734,9 +858,9 @@ function PastureConfig({ cfg }) {
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
       </div>
       <div className="dim" style={{ fontSize: 11, marginBottom: 6 }}>
-        Daemon · {roster.length} mons · drag a mon's port onto another to wire a breeding pair · click a wire to unpair{maxPairs ? '' : ' — slot a Kernel first'}
+        Daemon · {roster.length} mon{roster.length === 1 ? '' : 's'} · wire mons into pairs, then pipe their eggs through filters to BioBank / Data{maxPairs ? '' : ' — slot a Kernel to pair'}
       </div>
-      {!roster.length ? <div className="muted" style={{ fontSize: 12 }}>empty — tether some Pokémon into this pasture in-world</div> : <DaemonGraph cfg={cfg} />}
+      <DaemonGraph cfg={cfg} />
     </div>
   )
 }
