@@ -31,6 +31,11 @@ public class PastureData {
     /** mon (tetheringId) -> pair bucket number. Set via the wand GUI's pairing board (P2). */
     public final Map<UUID, Integer> pairings = new HashMap<>();
 
+    /** The Daemon visual-scripting graph — filter/sink/source nodes + flow edges + mon-node positions, as JSON
+     *  authored in the Notebook console's node editor. The egg-routing eval
+     *  ({@link com.greenerpastures.notebook.EggIngest}) reads it; {@code ""} = no graph (keep-all fallback). Persisted. */
+    public String graphJson = "";
+
     /** Bred eggs waiting to drain into the pasture's small visible tray — the FIFO from
      *  {@code EGG_STORAGE_DESIGN.md} (bounded, pause-when-full, never evict). Persisted. */
     public final EggQueue<ItemStack> eggQueue = new EggQueue<>(EggQueue.MIN_CAP);
@@ -101,6 +106,7 @@ public class PastureData {
         nbt.put("eggQueue", qn);
         if (owner != null) nbt.putUuid("owner", owner);
         if (suppressed) nbt.putBoolean("suppressed", true);
+        if (graphJson != null && !graphJson.isEmpty()) nbt.putString("graphJson", graphJson);
         return nbt;
     }
 
@@ -124,6 +130,7 @@ public class PastureData {
         d.eggQueue.restore(queued);
         if (nbt.containsUuid("owner")) d.owner = nbt.getUuid("owner");
         d.suppressed = nbt.getBoolean("suppressed");
+        d.graphJson = nbt.getString("graphJson");
         return d;
     }
 }

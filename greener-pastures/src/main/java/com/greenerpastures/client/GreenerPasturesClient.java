@@ -10,6 +10,7 @@ import com.greenerpastures.notebook.bridge.DsBridge;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookGraphS2C;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
 import com.greenerpastures.notebook.net.NotebookRequestC2S;
@@ -44,11 +45,12 @@ public final class GreenerPasturesClient implements ClientModInitializer {
 
         // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click).
         // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
-        NotebookItem.CONSOLE_OPENER = () -> { NotebookState.pastureConfig = null; openConsole(); };   // air → tabbed console
+        NotebookItem.CONSOLE_OPENER = () -> { NotebookState.pastureConfig = null; NotebookState.pastureGraphJson = ""; openConsole(); };   // air → tabbed console
         NotebookItem.PASTURE_OPENER = (pos) -> {
             // Show the config view immediately (a shell) so the previously-open tab doesn't linger while the real
-            // config round-trips from the server; the S2C then fills in the name / roster / Kernel.
+            // config round-trips from the server; the S2C then fills in the name / roster / Kernel / graph.
             NotebookState.pastureConfig = new NotebookPastureConfigS2C(pos.asLong(), "", "", false, 0, java.util.List.of());
+            NotebookState.pastureGraphJson = "";
             DsBridge.pushNow();
             openConsole();
         };
@@ -81,6 +83,10 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(NotebookPastureConfigS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
                     if (NotebookState.applyPastureConfig(payload)) NotebookScreen.refreshIfOpen();
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(NotebookGraphS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyGraph(payload)) NotebookScreen.refreshIfOpen();
                 }));
 
         // notebook/ console — poll the server ~1×/s while the console is open so the status bar + tabs tick live.

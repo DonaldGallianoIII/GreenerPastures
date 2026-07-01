@@ -77,10 +77,13 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookPastureConfigS2C.ID, NotebookPastureConfigS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookPastureActionC2S.ID, NotebookPastureActionC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookInvSwapC2S.ID, NotebookInvSwapC2S.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookGraphS2C.ID, NotebookGraphS2C.CODEC);
+        PayloadTypeRegistry.playC2S().register(NotebookGraphSaveC2S.ID, NotebookGraphSaveC2S.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookInvSwapC2S.ID, NotebookNet::onInvSwap);
+        ServerPlayNetworking.registerGlobalReceiver(NotebookGraphSaveC2S.ID, NotebookNet::onGraphSave);
     }
 
     private static void onRequest(NotebookRequestC2S payload, ServerPlayNetworking.Context ctx) {
@@ -357,6 +360,7 @@ public final class NotebookNet {
         List<MonEntry> roster = CobbreedingBridge.rosterOf(pasture, pd);
         ServerPlayNetworking.send(player, new NotebookPastureConfigS2C(
                 pos.asLong(), pd.name, tier == null ? "" : tier.name(), linked, tier == null ? 0 : tier.maxPairs, roster));
+        ServerPlayNetworking.send(player, new NotebookGraphS2C(pos.asLong(), pd.graphJson == null ? "" : pd.graphJson));
     }
 
     private static void onPastureAction(NotebookPastureActionC2S p, ServerPlayNetworking.Context ctx) {
@@ -434,6 +438,29 @@ public final class NotebookNet {
             main.set(a, main.get(b));
             main.set(b, tmp);
             player.getInventory().markDirty();
+        });
+    }
+
+    /** Save the focused pasture's Daemon graph (the whole JSON authored in the React node editor). Validates reach
+     *  + a size cap, stores it on {@link PastureData}. Not echoed back — the editor is the authority while open. */
+    private static void onGraphSave(NotebookGraphSaveC2S p, ServerPlayNetworking.Context ctx) {
+        ServerPlayerEntity player = ctx.player();
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        server.execute(() -> {
+            ServerWorld world = player.getServerWorld();
+            if (world == null) return;
+            BlockPos pos = BlockPos.fromLong(p.pos());
+            if (player.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0 * 64.0) return;
+            if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;
+            String json = p.json() == null ? "" : p.json();
+            if (json.length() > 65536) return;   // sanity cap — a pasture graph is never this big
+            PastureRegistry reg = PastureRegistry.get(server);
+            PastureData pd = reg.getOrCreate(world, pos);
+            pd.graphJson = json;
+            reg.markDirty();
+            GpLog.i("notebook", "graph_save", "player", player.getUuid().toString(),
+                    "pos", pos.toShortString(), "len", Integer.toString(json.length()));
         });
     }
 

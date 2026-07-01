@@ -5,6 +5,7 @@ import com.greenerpastures.client.notebook.NotebookBrowserScreen;
 import com.greenerpastures.client.notebook.NotebookState;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.notebook.net.NotebookActionC2S;
+import com.greenerpastures.notebook.net.NotebookGraphSaveC2S;
 import com.greenerpastures.notebook.net.NotebookPastureActionC2S;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookRequestC2S;
@@ -118,6 +119,13 @@ public final class DsBridge {
             pushChangedChannels();
             return;
         }
+        if ("GRAPH".equals(action)) {                          // React node editor saved the Daemon graph
+            long gpos = (long) num(p, "pos", 0);
+            String json = str(p, "json", "");
+            if (MinecraftClient.getInstance().getNetworkHandler() != null)
+                ClientPlayNetworking.send(new NotebookGraphSaveC2S(gpos, json));
+            return;
+        }
         long pos = (long) num(p, "pos", 0);
         Map<UUID, Integer> pairings = new HashMap<>();
         String arg = "";
@@ -181,6 +189,7 @@ public final class DsBridge {
             roster.add(r);
         }
         m.put("roster", roster);
+        m.put("graph", NotebookState.pastureGraphJson);   // the Daemon graph JSON (React parses it) — Phase 1
         return m;
     }
 

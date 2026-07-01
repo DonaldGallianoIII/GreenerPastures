@@ -4,6 +4,7 @@ import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookGraphS2C;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
 import com.greenerpastures.notebook.net.NotebookStatusS2C;
@@ -84,6 +85,16 @@ public final class NotebookState {
 
     public static boolean applyPastureConfig(NotebookPastureConfigS2C p) {
         pastureConfig = p;
+        return true;
+    }
+
+    /** The focused pasture's Daemon graph JSON (filter/sink nodes + flow edges + mon-node positions), or "" when
+     *  none. Rides its own S2C ({@link NotebookGraphS2C}) alongside the config; the bridge folds it into the
+     *  {@code pastureConfig} channel as {@code graph}. */
+    public static volatile String pastureGraphJson = "";
+
+    public static boolean applyGraph(NotebookGraphS2C p) {
+        pastureGraphJson = p.json() == null ? "" : p.json();
         return true;
     }
 
