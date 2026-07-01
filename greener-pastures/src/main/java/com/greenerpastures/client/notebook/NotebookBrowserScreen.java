@@ -2,6 +2,7 @@ package com.greenerpastures.client.notebook;
 
 import com.cinemamod.mcef.MCEF;
 import com.cinemamod.mcef.MCEFBrowser;
+import com.greenerpastures.core.GpLog;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -14,6 +15,11 @@ import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.text.Text;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
 /**
  * The Notebook console rendered <b>in-game via MCEF</b> (embedded Chromium) — the very same React app that runs
  * in the dev browser, now painted inside Minecraft. Data flows over the WebSocket bridge
@@ -23,8 +29,8 @@ import net.minecraft.text.Text;
  * without it, the owo {@link NotebookScreen} is used instead.
  */
 public class NotebookBrowserScreen extends Screen {
-    /** {@code mod://<id>/<path>} → classpath {@code /assets/<id>/html/<path>} (MCEF's built-in scheme; lowercased). */
-    private static final String URL = "mod://greenerpastures/index.html";
+    /** file:// URL of the extracted single-file console (cached for the session). */
+    private static String consoleUrl;
 
     private MCEFBrowser browser;
 
@@ -32,10 +38,34 @@ public class NotebookBrowserScreen extends Screen {
         super(Text.literal("Notebook"));
     }
 
+    /**
+     * MCEF's {@code mod://} scheme is broken on Fabric — its handler calls {@code getClassLoader().getResourceAsStream}
+     * with a LEADING slash, which is always null — so we extract the bundled single-file console to a temp
+     * {@code .html} and load it over {@code file://}. Single-file (viteSingleFile) also dodges file://'s ES-module block.
+     */
+    private static String consoleUrl() {
+        if (consoleUrl != null) return consoleUrl;
+        try (InputStream in = NotebookBrowserScreen.class.getClassLoader()
+                .getResourceAsStream("assets/greenerpastures/html/index.html")) {
+            if (in == null) { GpLog.w("console", "extract_missing"); return null; }
+            Path tmp = Files.createTempFile("greenerpastures-console", ".html");
+            Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            tmp.toFile().deleteOnExit();
+            consoleUrl = tmp.toUri().toString();   // file:///...
+            GpLog.i("console", "extracted", "url", consoleUrl);
+            return consoleUrl;
+        } catch (Exception e) {
+            GpLog.w("console", "extract_err", "err", String.valueOf(e));
+            return null;
+        }
+    }
+
     /** Create the browser once MCEF has finished initializing (Chromium download completes at the title screen). */
     private void tryCreate() {
         if (browser == null && MCEF.isInitialized()) {
-            browser = MCEF.createBrowser(URL, true);   // transparent = overlay-friendly
+            String url = consoleUrl();
+            if (url == null) return;   // extraction failed — render() shows the hint text
+            browser = MCEF.createBrowser(url, true);   // transparent = overlay-friendly
             browser.useBrowserControls(false);          // let Ctrl/Alt/F-keys reach React, don't let CEF hijack them
             resizeBrowser();
         }
