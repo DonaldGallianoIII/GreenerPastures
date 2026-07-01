@@ -94,6 +94,16 @@ export function applyMock(state, channel, action, payload) {
       out.storage = s
       out.inventory = inv
     }
+  } else if (channel === 'biobank') {
+    if (action === 'WITHDRAW') {                                                 // pull an egg out → materializes in inventory (to hatch)
+      const b = clone(state.biobank)
+      if (!b || payload.index < 0 || payload.index >= b.entries.length) return {}
+      b.entries.splice(payload.index, 1)
+      b.total = Math.max(0, b.total - 1)
+      addItem(inv, 'cobbreeding:pokemon_egg', 1)
+      out.biobank = b
+      out.inventory = inv
+    }
   }
   return out
 }

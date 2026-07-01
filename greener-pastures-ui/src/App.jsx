@@ -236,7 +236,7 @@ function BioBank() {
   const [open, setOpen] = useState(null)
   const entries = d?.entries || []
   const groups = {}
-  for (const e of entries) (groups[e.species] ||= []).push(e)
+  entries.forEach((e, i) => (groups[e.species] ||= []).push({ e, i }))
   const species = Object.keys(groups)
   if (!species.length) return <Empty title="BioBank empty" msg="link a pasture — its eggs are pulled in here automatically while it's loaded" />
   return (
@@ -253,7 +253,7 @@ function BioBank() {
                 <span style={{ flex: 1 }} />
                 <span className="chip">×{groups[sp].length}</span>
               </div>
-              {on && groups[sp].map((e, i) => <EggCard key={i} e={e} />)}
+              {on && groups[sp].map(({ e, i }) => <EggCard key={i} e={e} idx={i} />)}
             </div>
           )
         })}
@@ -261,7 +261,7 @@ function BioBank() {
     </div>
   )
 }
-function EggCard({ e }) {
+function EggCard({ e, idx }) {
   const ivT = e.ivs.reduce((a, b) => a + b, 0)
   const hasEv = e.evs.some((v) => v > 0)
   return (
@@ -273,6 +273,7 @@ function EggCard({ e }) {
         {e.ability && <span className="cyn mono" style={{ fontSize: 11 }}>{cap(e.ability)}</span>}
         <span style={{ flex: 1 }} />
         <span className="mono" style={{ fontSize: 11, color: ivT >= 160 ? 'var(--green)' : 'var(--muted)' }}>Σ{ivT}/186</span>
+        <button className="btn" style={{ padding: '2px 7px', fontSize: 10 }} title="withdraw → a real egg in your inventory (to hatch)" onClick={() => send('biobank', 'WITHDRAW', { index: idx })}>↧ pull</button>
       </div>
       <StatRow tag="IV" vals={e.ivs} perfect={31} color="var(--green)" />
       {hasEv && <StatRow tag="EV" vals={e.evs} perfect={252} color="var(--amber)" />}
