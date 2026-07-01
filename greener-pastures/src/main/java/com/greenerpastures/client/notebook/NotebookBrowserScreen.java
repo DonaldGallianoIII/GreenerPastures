@@ -146,57 +146,62 @@ public class NotebookBrowserScreen extends Screen {
 
     // ── native MC inventory overlay (real item icons — the browser can't draw MC textures) ───────────────────
 
-    private static final int SLOT = 18, INV_PAD = 8;
+    private static final int SLOT = 18, INV_PAD = 8, HEADER = 16;
+    private static int invX = -1, invY = -1;       // panel top-left (px); -1 = default to bottom-right on first layout
+    private static boolean invCollapsed = false;    // header-only when true
+    private boolean draggingInv;
+    private double grabX, grabY;
 
-    /** {panelX, panelY, gridX, gridY, panelW, panelH} in screen px — bottom-right. */
-    private int[] invLayout() {
-        int panelW = 9 * SLOT + INV_PAD * 2;
-        int panelH = 4 * SLOT + 4 + INV_PAD * 2 + 14;
-        int panelX = width - panelW - 10, panelY = height - panelH - 10;
-        return new int[]{ panelX, panelY, panelX + INV_PAD, panelY + INV_PAD + 14, panelW, panelH };
+    private boolean pastureFocused() { return NotebookState.pastureConfig != null; }
+    private int panelW() { return 9 * SLOT + INV_PAD * 2; }
+    private int panelH() {
+        if (invCollapsed) return HEADER;
+        int kernelRow = pastureFocused() ? SLOT + 6 : 0;
+        return HEADER + kernelRow + 4 * SLOT + 4 + INV_PAD;
     }
-
-    /** Screen x,y of inventory slot i (0-8 hotbar, 9-35 main). */
+    private void placeInv() {
+        if (invX < 0) { invX = width - panelW() - 10; invY = height - panelH() - 10; }
+        invX = Math.max(0, Math.min(width - panelW(), invX));
+        invY = Math.max(0, Math.min(height - panelH(), invY));
+    }
+    private int gridTop() { return invY + HEADER + (pastureFocused() ? SLOT + 6 : 0); }
     private int[] slotXY(int i) {
-        int[] L = invLayout();
-        if (i < 9) return new int[]{ L[2] + i * SLOT, L[3] + 3 * SLOT + 4 };   // hotbar row
+        int gx = invX + INV_PAD, gt = gridTop();
+        if (i < 9) return new int[]{ gx + i * SLOT, gt + 3 * SLOT + 4 };   // hotbar row
         int idx = i - 9;
-        return new int[]{ L[2] + (idx % 9) * SLOT, L[3] + (idx / 9) * SLOT };  // 3 main rows
+        return new int[]{ gx + (idx % 9) * SLOT, gt + (idx / 9) * SLOT };  // 3 main rows
     }
-
-    private int[] kernelSlotXY() {   // just above the panel; only meaningful when a pasture is focused
-        int[] L = invLayout();
-        return new int[]{ L[0] + INV_PAD, L[1] - SLOT - 6 };
-    }
+    private int[] kernelXY() { return new int[]{ invX + INV_PAD, invY + HEADER + 2 }; }   // top of the panel body
+    private boolean inSlot(double mx, double my, int x, int y) { return mx >= x && mx < x + SLOT && my >= y && my < y + SLOT; }
 
     private void drawInventory(DrawContext ctx, int mouseX, int mouseY) {
         if (client == null || client.player == null) return;
-        var main = client.player.getInventory().main;
-        int[] L = invLayout();
-        ctx.fill(L[0], L[1], L[0] + L[4], L[1] + L[5], 0xE60E131A);
-        ctx.drawBorder(L[0], L[1], L[4], L[5], 0xFF2A3543);
-        ctx.drawText(textRenderer, Text.literal("Inventory"), L[0] + INV_PAD, L[1] + 5, 0xFF8593A4, false);
+        placeInv();
+        int pw = panelW(), ph = panelH();
+        ctx.fill(invX, invY, invX + pw, invY + ph, 0xE60E131A);
+        ctx.drawBorder(invX, invY, pw, ph, 0xFF2A3543);
+        ctx.drawText(textRenderer, Text.literal("Inventory"), invX + INV_PAD, invY + 4, 0xFF8593A4, false);
+        ctx.drawText(textRenderer, Text.literal("drag · " + (invCollapsed ? "▢" : "—")), invX + pw - 40, invY + 4, 0xFF566273, false);
+        if (invCollapsed) return;
 
         ItemStack hover = null;
-        for (int i = 0; i < 36 && i < main.size(); i++) {
-            int[] xy = slotXY(i);
-            int x = xy[0], y = xy[1];
-            ctx.fill(x, y, x + SLOT - 1, y + SLOT - 1, 0xFF080B10);
-            ItemStack s = main.get(i);
-            if (!s.isEmpty()) { ctx.drawItem(s, x + 1, y + 1); ctx.drawItemInSlot(textRenderer, s, x + 1, y + 1); }
-            if (!s.isEmpty() && mouseX >= x && mouseX < x + SLOT && mouseY >= y && mouseY < y + SLOT) hover = s;
-        }
-
         NotebookPastureConfigS2C cfg = NotebookState.pastureConfig;
-        if (cfg != null) {
-            int[] k = kernelSlotXY();
+        if (cfg != null) {   // Kernel slot INSIDE the panel, top row, label to its right (stays on-screen)
+            int[] k = kernelXY();
             ctx.fill(k[0], k[1], k[0] + SLOT - 1, k[1] + SLOT - 1, 0xFF0E131A);
-            ctx.drawBorder(k[0] - 1, k[1] - 1, SLOT + 1, SLOT + 1, 0xFF5A8A6A);
+            ctx.drawBorder(k[0], k[1], SLOT, SLOT, 0xFF5A8A6A);
             ItemStack kernel = kernelStack(cfg.tier());
             if (!kernel.isEmpty()) ctx.drawItem(kernel, k[0] + 1, k[1] + 1);
-            ctx.drawText(textRenderer, Text.literal(kernel.isEmpty() ? "◄ Kernel — click one below to slot it" : "◄ Kernel — click to remove"),
-                    k[0] + SLOT + 6, k[1] + 5, 0xFF8593A4, false);
-            if (!kernel.isEmpty() && mouseX >= k[0] && mouseX < k[0] + SLOT && mouseY >= k[1] && mouseY < k[1] + SLOT) hover = kernel;
+            ctx.drawText(textRenderer, Text.literal(kernel.isEmpty() ? "Kernel — click one" : "Kernel — click to pop"), k[0] + SLOT + 5, k[1] + 5, 0xFF8593A4, false);
+            if (!kernel.isEmpty() && inSlot(mouseX, mouseY, k[0], k[1])) hover = kernel;
+        }
+        var main = client.player.getInventory().main;
+        for (int i = 0; i < 36 && i < main.size(); i++) {
+            int[] xy = slotXY(i);
+            ctx.fill(xy[0], xy[1], xy[0] + SLOT - 1, xy[1] + SLOT - 1, 0xFF080B10);
+            ItemStack s = main.get(i);
+            if (!s.isEmpty()) { ctx.drawItem(s, xy[0] + 1, xy[1] + 1); ctx.drawItemInSlot(textRenderer, s, xy[0] + 1, xy[1] + 1); }
+            if (!s.isEmpty() && inSlot(mouseX, mouseY, xy[0], xy[1])) hover = s;
         }
         if (hover != null) ctx.drawItemTooltip(textRenderer, hover, mouseX, mouseY);
     }
@@ -207,24 +212,25 @@ public class NotebookBrowserScreen extends Screen {
         catch (Exception e) { return ItemStack.EMPTY; }
     }
 
-    /** Handle a click on the native inventory (kernel slot / a Kernel item while a pasture is focused). Returns
-     *  true if the click landed inside the panel, so it must NOT pass through to the browser behind it. */
+    /** Returns true if the click landed inside the panel (consume it — don't pass to the browser). Also starts a
+     *  drag on the header and toggles collapse. */
     private boolean handleInventoryClick(double mx, double my) {
+        int pw = panelW(), ph = panelH();
+        if (!(mx >= invX && mx < invX + pw && my >= invY && my < invY + ph)) return false;
+        if (my < invY + HEADER) {                         // header row
+            if (mx >= invX + pw - 18) { invCollapsed = !invCollapsed; placeInv(); }   // collapse toggle
+            else { draggingInv = true; grabX = mx - invX; grabY = my - invY; }         // drag
+            return true;
+        }
+        if (invCollapsed) return true;
         NotebookPastureConfigS2C cfg = NotebookState.pastureConfig;
         if (cfg != null) {
-            int[] k = kernelSlotXY();
-            if (mx >= k[0] && mx < k[0] + SLOT && my >= k[1] && my < k[1] + SLOT) { sendKernel(cfg); return true; }
-        }
-        int[] L = invLayout();
-        if (!(mx >= L[0] && mx < L[0] + L[4] && my >= L[1] && my < L[1] + L[5])) return false;
-        if (cfg != null && client != null && client.player != null) {
+            int[] k = kernelXY();
+            if (inSlot(mx, my, k[0], k[1])) { sendKernel(cfg); return true; }         // pop the slotted Kernel
             var main = client.player.getInventory().main;
             for (int i = 0; i < 36 && i < main.size(); i++) {
                 int[] xy = slotXY(i);
-                if (mx >= xy[0] && mx < xy[0] + SLOT && my >= xy[1] && my < xy[1] + SLOT) {
-                    if (main.get(i).getItem() instanceof BreedingUpgradeItem) sendKernel(cfg);
-                    break;
-                }
+                if (inSlot(mx, my, xy[0], xy[1])) { if (main.get(i).getItem() instanceof BreedingUpgradeItem) sendKernel(cfg); break; }
             }
         }
         return true;   // consume any click inside the panel
@@ -246,6 +252,7 @@ public class NotebookBrowserScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (draggingInv) { draggingInv = false; return true; }
         if (browser != null) { browser.sendMouseRelease(px(mouseX), px(mouseY), button); browser.setFocus(true); }
         return super.mouseReleased(mouseX, mouseY, button);
     }
@@ -254,6 +261,18 @@ public class NotebookBrowserScreen extends Screen {
     public void mouseMoved(double mouseX, double mouseY) {
         if (browser != null) browser.sendMouseMove(px(mouseX), px(mouseY));
         super.mouseMoved(mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dx, double dy) {
+        if (draggingInv) {
+            invX = (int) (mouseX - grabX);
+            invY = (int) (mouseY - grabY);
+            placeInv();
+            return true;
+        }
+        if (browser != null) browser.sendMouseMove(px(mouseX), px(mouseY));   // browser drags (scrollbars, sliders)
+        return super.mouseDragged(mouseX, mouseY, button, dx, dy);
     }
 
     @Override
