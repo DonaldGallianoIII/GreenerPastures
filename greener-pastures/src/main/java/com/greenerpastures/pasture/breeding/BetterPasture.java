@@ -4,8 +4,6 @@ import com.greenerpastures.GreenerPastures;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.economy.AugmentFunction;
 import com.greenerpastures.notebook.PastureSnapshotStore;
-import com.greenerpastures.pasture.breeding.compiler.AugmentItem;
-import com.greenerpastures.pasture.breeding.compiler.AugmentType;
 import com.greenerpastures.pasture.breeding.gui.PastureMenu;
 import com.greenerpastures.pasture.breeding.net.PastureNet;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -26,7 +24,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Better Pasture module — opt-in multi-pair breeding via the Pasture Wand GUI + slotted Pasture
+ * Better Pasture module — opt-in multi-pair breeding via the Notebook + slotted Pasture
  * Upgrades. All Cobbreeding contact is isolated in {@link CobbreedingBridge} (version-guarded);
  * the breeding engine is {@link MultiPairBreeder}. Stays dormant if Cobbreeding is unavailable.
  */
@@ -35,9 +33,6 @@ public final class BetterPasture {
 
     /** Pasture Upgrade items (the slot-expander / pair-scaler line), keyed by tier. */
     public static final Map<BreedingTier, BreedingUpgradeItem> ITEMS = new EnumMap<>(BreedingTier.class);
-    /** Craftable augment "packages" (applied to a Kernel in the Notebook's Augmenter), keyed by type — one item
-     *  per live-effect AugmentFunction (Shiny / Speed / Enrichment / Drop Rate / Drop Yield). */
-    public static final Map<AugmentType, AugmentItem> AUGMENTS = new EnumMap<>(AugmentType.class);
 
     public static void init() {
         GpComponents.init();        // register greenerpastures:augments before any item can carry it
@@ -65,16 +60,10 @@ public final class BetterPasture {
             Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "breeding_upgrade_" + tier.id()), item);
             ITEMS.put(tier, item);
         }
-        // Craftable augment "packages" — applied to a Kernel in the Notebook's Augmenter tab.
-        for (AugmentType type : AugmentType.values()) {
-            AugmentItem aug = new AugmentItem(type, new Item.Settings());
-            Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "augment_" + type.id()), aug);
-            AUGMENTS.put(type, aug);
-        }
-
+        // Augments are no longer physical items — they're applied to a Kernel in the Notebook's Augmenter tab
+        // (the AugmentType catalog + a GPU reagent). Only the Kernels themselves show in the creative group.
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> {
             ITEMS.values().forEach(entries::add);
-            AUGMENTS.values().forEach(entries::add);
         });
     }
 
