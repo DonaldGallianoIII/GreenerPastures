@@ -16,6 +16,7 @@ import io.wispforest.owo.ui.core.OwoUIAdapter;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.ui.core.VerticalAlignment;
+import com.greenerpastures.core.GpLog;
 import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.net.NotebookActionC2S;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
@@ -374,7 +375,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         row.child(label(s.eggCount() + " eggs", AMBER));
         row.mouseDown().subscribe((mx, my, btn) -> {
             selectedPastureKey = s.key();
-            this.clearAndInit();
+            MinecraftClient.getInstance().execute(this::rebuild);   // defer: don't dispose the owo tree mid-click
             return true;
         });
         return row;
@@ -551,7 +552,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         row.child(label("×" + count, MUTED));
         row.mouseDown().subscribe((mx, my, btn) -> {
             expandedSpecies = open ? null : species;
-            this.clearAndInit();
+            MinecraftClient.getInstance().execute(this::rebuild);   // defer: don't dispose the owo tree mid-click
             return true;
         });
         return row;
@@ -648,11 +649,24 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         MinecraftClient.getInstance().setScreen(new NotebookScreen(i));
     }
 
-    /** Rebuild the console in place when fresh {@link NotebookState} arrives (re-runs init/build, not the
-     *  constructor → no re-request → no loop). Called from the S2C receiver on the client thread. */
+    /** Rebuild the console in place when fresh {@link NotebookState} arrives. Called from the S2C receivers
+     *  (client thread) — NOT the constructor, so no re-request, no loop. */
     public static void refreshIfOpen() {
         MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.currentScreen instanceof NotebookScreen ns) ns.clearAndInit();
+        if (mc.currentScreen instanceof NotebookScreen ns) ns.rebuild();
+    }
+
+    /** Force an owo rebuild. {@link BaseOwoScreen#init()} only calls {@link #build} when {@code uiAdapter == null};
+     *  a plain {@code clearAndInit()} REUSES the already-built (empty) component tree, so the console would freeze
+     *  on its construction-time paint (before the async data push lands). Dispose + null the adapter so init()
+     *  re-runs build() against the current {@link NotebookState}. (Verified against owo-lib 0.12.15 bytecode.) */
+    private void rebuild() {
+        GpLog.d("notebook", "rebuild", "tab", tab().name());   // breadcrumb: proves the repaint fired (perf-audit observability)
+        if (this.uiAdapter != null) {
+            this.uiAdapter.dispose();
+            this.uiAdapter = null;
+        }
+        this.clearAndInit();
     }
 
     private static String fmt(long n) { return String.format("%,d", n); }

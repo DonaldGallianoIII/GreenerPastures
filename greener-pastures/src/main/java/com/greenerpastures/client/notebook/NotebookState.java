@@ -27,11 +27,14 @@ public final class NotebookState {
     public static volatile int gpu = 0;
     public static volatile boolean daemonOn = false;
 
-    public static void applyStatus(NotebookStatusS2C p) {
+    /** Returns true iff this push actually changed the cache (so the screen only repaints on real change). */
+    public static boolean applyStatus(NotebookStatusS2C p) {
+        boolean changed = !hasStatus || data != p.data() || gpu != p.gpu() || daemonOn != p.daemonOn();
         data = p.data();
         gpu = p.gpu();
         daemonOn = p.daemonOn();
         hasStatus = true;
+        return changed;
     }
 
     // ── Harvester / Storage tab ──────────────────────────────────────────────
@@ -39,10 +42,12 @@ public final class NotebookState {
     public static volatile Map<String, Long> storage = Map.of();
     public static volatile long storageCap = 0L;
 
-    public static void applyStorage(NotebookStorageS2C p) {
+    public static boolean applyStorage(NotebookStorageS2C p) {
+        boolean changed = !hasStorage || storageCap != p.capacity() || !storage.equals(p.items());
         storage = p.items();
         storageCap = p.capacity();
         hasStorage = true;
+        return changed;
     }
 
     // ── Compiler (Daemon) tab ────────────────────────────────────────────────
@@ -52,19 +57,25 @@ public final class NotebookState {
     public static volatile List<NotebookCompilerS2C.Buff> compilerCatalog = List.of();
     public static volatile Map<String, Integer> compilerInstalled = Map.of();
 
-    public static void applyCompiler(NotebookCompilerS2C p) {
+    public static boolean applyCompiler(NotebookCompilerS2C p) {
+        boolean changed = compilerHasDaemon != p.hasDaemon() || compilerDaemonOn != p.daemonOn()
+                || compilerDrain != p.drainPerSec() || !compilerCatalog.equals(p.catalog())
+                || !compilerInstalled.equals(p.installed());
         compilerHasDaemon = p.hasDaemon();
         compilerDaemonOn = p.daemonOn();
         compilerDrain = p.drainPerSec();
         compilerCatalog = p.catalog();
         compilerInstalled = p.installed();
+        return changed;
     }
 
     // ── Pastures tab ─────────────────────────────────────────────────────────
     public static volatile List<PastureSnapshot> pastures = List.of();
 
-    public static void applyPastures(NotebookPasturesS2C p) {
+    public static boolean applyPastures(NotebookPasturesS2C p) {
+        boolean changed = !pastures.equals(p.pastures());
         pastures = p.pastures();
+        return changed;
     }
 
     // ── Augmenter tab ────────────────────────────────────────────────────────
@@ -74,20 +85,25 @@ public final class NotebookState {
     public static volatile int augSlotCap = 0;
     public static volatile List<NotebookAugmenterS2C.Aug> augCatalog = List.of();
 
-    public static void applyAugmenter(NotebookAugmenterS2C p) {
+    public static boolean applyAugmenter(NotebookAugmenterS2C p) {
+        boolean changed = augHasKernel != p.hasKernel() || !augTier.equals(p.tier())
+                || augSlotsUsed != p.slotsUsed() || augSlotCap != p.slotCap() || !augCatalog.equals(p.catalog());
         augHasKernel = p.hasKernel();
         augTier = p.tier();
         augSlotsUsed = p.slotsUsed();
         augSlotCap = p.slotCap();
         augCatalog = p.catalog();
+        return changed;
     }
 
     // ── BioBank tab ──────────────────────────────────────────────────────────
     public static volatile int biobankTotal = 0;
     public static volatile List<NotebookBioBankS2C.Entry> biobank = List.of();
 
-    public static void applyBiobank(NotebookBioBankS2C p) {
+    public static boolean applyBiobank(NotebookBioBankS2C p) {
+        boolean changed = biobankTotal != p.total() || !biobank.equals(p.entries());
         biobankTotal = p.total();
         biobank = p.entries();
+        return changed;
     }
 }

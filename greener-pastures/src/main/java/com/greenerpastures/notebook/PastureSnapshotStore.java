@@ -74,6 +74,10 @@ public final class PastureSnapshotStore extends PersistentState {
         String tierLabel = tier != null ? tier.name() : "no Kernel";
         int maxPairs = tier != null ? tier.maxPairs : 0;
         int eggCount = pd.eggQueue.size();
+        try {   // eggQueue is only our OVERFLOW buffer (usually 0) — the real eggs sit in the pasture's own tray
+            var tray = CobbreedingBridge.eggsAt(pos);
+            if (tray != null) for (net.minecraft.item.ItemStack egg : tray) if (!egg.isEmpty()) eggCount++;
+        } catch (Throwable ignored) { }
 
         boolean activated = CobbreedingBridge.isBreedingActivated(be.getCachedState());
         boolean breeding = activated && world.getTime() < pd.nextBreedTick;
