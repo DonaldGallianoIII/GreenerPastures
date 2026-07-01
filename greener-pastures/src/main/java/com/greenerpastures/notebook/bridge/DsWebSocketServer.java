@@ -104,6 +104,7 @@ public final class DsWebSocketServer {
                 if (!handshake(in, out)) { close(); return; }
                 open = true;
                 conns.add(this);
+                GpLog.i("bridge", "client_connect", "clients", Integer.toString(conns.size()));
                 if (onConnect != null) { try { onConnect.run(); } catch (Throwable ignored) { } }
                 readLoop(in);
             } catch (IOException ignored) {
@@ -116,12 +117,13 @@ public final class DsWebSocketServer {
         /** Read the HTTP upgrade, validate the loopback token, reply 101. Returns false to reject. */
         private boolean handshake(InputStream in, OutputStream out) throws IOException {
             StringBuilder req = new StringBuilder();
-            int b, prevNl = 0;
+            int b;
             while ((b = in.read()) != -1) {
                 req.append((char) b);
-                if (b == '\n') { if (prevNl >= 1 && (req.length() < 2 || req.charAt(req.length() - 2) == '\n')) break; prevNl++; }
-                else if (b != '\r') prevNl = 0;
-                if (req.length() > 8192) break;   // header flood guard
+                int len = req.length();
+                if (len >= 4 && req.charAt(len - 4) == '\r' && req.charAt(len - 3) == '\n'
+                        && req.charAt(len - 2) == '\r' && req.charAt(len - 1) == '\n') break;   // blank line = end of headers
+                if (len > 8192) break;   // header flood guard
             }
             String headers = req.toString();
             String key = headerValue(headers, "sec-websocket-key");

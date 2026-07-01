@@ -33,7 +33,7 @@ export function connect() {
   if (typeof WebSocket === 'undefined') return enterMock()
   let s
   try {
-    s = new WebSocket(`ws://127.0.0.1:${PORT}?ds_token=${encodeURIComponent(TOKEN)}`)
+    s = new WebSocket(`ws://127.0.0.1:${PORT}/?ds_token=${encodeURIComponent(TOKEN)}`)
   } catch {
     return enterMock()
   }
