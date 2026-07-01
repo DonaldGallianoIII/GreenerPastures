@@ -39,6 +39,15 @@ const CSS = `
   padding:6px 9px; font-family:'Space Grotesk',sans-serif; font-size:12px; outline:none; }
 .gp-input:focus{ border-color:#2e5a47; }
 .gp-input::placeholder{ color:var(--dim); }
+.daemon-canvas{ position:relative; width:100%; height:340px; background:var(--inset); border:1px solid var(--line2); border-radius:8px; overflow:hidden; }
+.daemon-wires{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+.dwire{ stroke-width:2.5; fill:none; pointer-events:stroke; cursor:pointer; }
+.dwire:hover{ stroke:var(--red) !important; }
+.dwire.live{ stroke:var(--cyan); stroke-dasharray:5 4; }
+.dnode{ position:absolute; width:92px; height:34px; background:var(--panel); border:1px solid var(--line); border-radius:7px;
+  display:flex; align-items:center; padding:0 8px; cursor:grab; box-shadow:0 4px 12px -4px rgba(0,0,0,.6); }
+.dnode-name{ font-size:12px; font-weight:500; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dport{ width:13px; height:13px; border-radius:50%; border:2px solid var(--bg); cursor:crosshair; flex:none; box-shadow:0 0 5px rgba(0,0,0,.5); }
 
 .gp-stage{ position:relative; width:1180px; height:724px;
   transform:scale(var(--gp-scale,1)); transform-origin:center center; }
@@ -594,6 +603,80 @@ function sortEggs(list, key) {
   else { const s = +key; arr.sort((a, b) => ((b.e.ivs[s] ?? 0) - (a.e.ivs[s] ?? 0)) || (eggIvTotal(b.e) - eggIvTotal(a.e))) }
   return arr
 }
+// The Daemon node graph (visual scripting, Arrangement v2). Each tethered mon is a draggable node; drag a mon's
+// port onto another mon to WIRE them = a breeding pair. Wires are derived from PastureData.pairings (two mons in
+// one bucket = a pair) and mutate it via the PAIRINGS action. Positions are client-side (auto-laid-out) for now.
+function DaemonGraph({ cfg }) {
+  const roster = cfg.roster || []
+  const maxPairs = cfg.maxPairs || 0
+  const [positions, setPositions] = useState({})
+  const [wiring, setWiring] = useState(null)
+  const drag = useRef(null)
+  const boxRef = useRef(null)
+  const idx = {}; roster.forEach((m, i) => { idx[m.id] = i })
+  const scale = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
+  const nodePos = (id) => positions[id] || { x: 16 + (idx[id] % 5) * 150, y: 16 + Math.floor(idx[id] / 5) * 88 }
+  const center = (m) => { const p = nodePos(m.id); return { x: p.x + 46, y: p.y + 17 } }
+
+  const byBucket = {}
+  roster.forEach((m) => { if (m.bucket > 0) (byBucket[m.bucket] ||= []).push(m) })
+  const wires = Object.entries(byBucket).filter(([, g]) => g.length >= 2).map(([b, g]) => ({ b: +b, a: g[0], c: g[1] }))
+
+  const pairings = () => { const p = {}; roster.forEach((m) => { if (m.bucket > 0) p[m.id] = m.bucket }); return p }
+  const save = (p) => send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p })
+  const pair = (aId, bId) => {
+    if (aId === bId || !maxPairs) return
+    const p = pairings(); delete p[aId]; delete p[bId]
+    const used = new Set(Object.values(p)); let b = 1; while (used.has(b)) b++
+    if (b > maxPairs) return
+    p[aId] = b; p[bId] = b; save(p)
+  }
+  const unpair = (w) => { const p = pairings(); delete p[w.a.id]; delete p[w.c.id]; save(p) }
+
+  const onNodeDown = (e, id) => {
+    e.stopPropagation()
+    const np = nodePos(id)
+    drag.current = { type: 'node', id, sx: e.clientX, sy: e.clientY, bx: np.x, by: np.y, s: scale() }
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }
+  const onPortDown = (e, id) => {
+    e.stopPropagation()
+    const c = center({ id })
+    drag.current = { type: 'wire', from: id, s: scale() }
+    setWiring({ from: id, x: c.x, y: c.y })
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp)
+  }
+  const onMove = (e) => {
+    const d = drag.current; if (!d) return
+    if (d.type === 'node') setPositions((p) => ({ ...p, [d.id]: { x: d.bx + (e.clientX - d.sx) / d.s, y: d.by + (e.clientY - d.sy) / d.s } }))
+    else if (boxRef.current) { const r = boxRef.current.getBoundingClientRect(); setWiring({ from: d.from, x: (e.clientX - r.left) / d.s, y: (e.clientY - r.top) / d.s }) }
+  }
+  const onUp = (e) => {
+    const d = drag.current; drag.current = null
+    window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp)
+    if (d && d.type === 'wire' && boxRef.current) {
+      const r = boxRef.current.getBoundingClientRect(), mx = (e.clientX - r.left) / d.s, my = (e.clientY - r.top) / d.s
+      const t = roster.find((m) => { const p = nodePos(m.id); return mx >= p.x && mx <= p.x + 92 && my >= p.y && my <= p.y + 34 })
+      if (t && t.id !== d.from) pair(d.from, t.id)
+      setWiring(null)
+    }
+  }
+  return (
+    <div className="daemon-canvas" ref={boxRef}>
+      <svg className="daemon-wires">
+        {wires.map((w, i) => { const a = center(w.a), c = center(w.c); return <line key={i} x1={a.x} y1={a.y} x2={c.x} y2={c.y} stroke={pairHue(w.b)} className="dwire" onClick={() => unpair(w)} /> })}
+        {wiring && (() => { const src = roster.find((m) => m.id === wiring.from); if (!src) return null; const c = center(src); return <line x1={c.x} y1={c.y} x2={wiring.x} y2={wiring.y} className="dwire live" /> })()}
+      </svg>
+      {roster.map((m) => { const p = nodePos(m.id); const on = m.bucket > 0; return (
+        <div key={m.id} className="dnode" style={{ left: p.x, top: p.y, borderColor: on ? pairHue(m.bucket) : undefined }} onMouseDown={(e) => onNodeDown(e, m.id)}>
+          <span className="dnode-name">{cap(m.species)}</span>
+          <span className="dport" title="drag onto another mon to pair" onMouseDown={(e) => onPortDown(e, m.id)} style={{ background: on ? pairHue(m.bucket) : 'var(--muted)' }} />
+        </div>
+      )})}
+    </div>
+  )
+}
+
 // The editable pasture config — shown when you right-click a pasture with the Notebook (replaces the owo screen).
 // Wired to the server over the `pasture` bridge channel: NAME · PAIRINGS · CLAIM (link) · KERNEL · CLOSE (← back).
 function PastureConfig({ cfg }) {
@@ -629,17 +712,9 @@ function PastureConfig({ cfg }) {
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
       </div>
       <div className="dim" style={{ fontSize: 11, marginBottom: 6 }}>
-        {roster.length} mons in this pasture · breeding pairs are arranged in the visual-scripting layer
+        Daemon · {roster.length} mons · drag a mon's port onto another to wire a breeding pair · click a wire to unpair{maxPairs ? '' : ' — slot a Kernel first'}
       </div>
-      {!roster.length ? <div className="muted" style={{ fontSize: 12 }}>empty — tether some Pokémon into this pasture in-world</div> : (
-        <div className="grid">
-          {roster.map((m) => (
-            <div key={m.id} className="cell" title={m.label || m.species}>
-              <span className="nm">{cap(m.species)}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {!roster.length ? <div className="muted" style={{ fontSize: 12 }}>empty — tether some Pokémon into this pasture in-world</div> : <DaemonGraph cfg={cfg} />}
     </div>
   )
 }
