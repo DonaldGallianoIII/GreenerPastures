@@ -82,11 +82,11 @@ export function applyMock(state, channel, action, payload) {
       inv.slots[payload.slot] = null
       out.storage = s
       out.inventory = inv
-    } else {                                                                     // PULL_ONE / PULL_ID → inventory
+    } else {                                                                     // PULL_ONE (1) / PULL_STACK (64) / PULL_ID (all) → inventory
       const id = payload.item
       const have = s.items[id] || 0
       if (have <= 0) return {}
-      const n = action === 'PULL_ID' ? have : Math.min(64, have)
+      const n = action === 'PULL_ID' ? have : action === 'PULL_STACK' ? Math.min(64, have) : 1
       s.items = { ...s.items }
       s.items[id] = have - n
       if (s.items[id] <= 0) delete s.items[id]

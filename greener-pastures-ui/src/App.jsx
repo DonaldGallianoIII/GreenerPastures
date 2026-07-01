@@ -4,7 +4,7 @@
    wired to the live data contract (NOTEBOOK_DATA_CONTRACT.md) via the bridge SDK.
    Viewport-sized window; every tab reads its channel; buttons send actions.
    ============================================================ */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
 
 const CSS = `
@@ -167,7 +167,7 @@ export default function App() {
           <span className="gp-fname">pasture.ipynb</span>
           <span className="gp-sub">· greener-pastures :: notebook</span>
           <Conn />
-          <span className="gp-x">✕</span>
+          <span className="gp-x" title="close" onClick={() => send('console', 'CLOSE_CONSOLE', {})}>✕</span>
         </div>
         <div className="gp-tabs">
           {TABS.map((t) => (
@@ -217,16 +217,39 @@ function StatusBar() {
 
 // A tiny floating window (bottom-right) mocking the player's MC inventory + hotbar, so slot/item flow is
 // visible: GPU is consumed on apply, storage grabs land in a slot. (Real bridge: an `inventory` channel of slots.)
+// Floating inventory window: mirrors the player's REAL inventory (server `inventory` channel). Draggable by its
+// header (persists across tabs — it's always mounted outside the tab body). Coords are in stage space, so the
+// drag delta is divided by --gp-scale to track the cursor under the viewport zoom.
 function InventoryWindow() {
   const inv = useChannel('inventory')
   const slots = inv?.slots || Array(36).fill(null)
+  const [pos, setPos] = useState({ x: 892, y: 512 })   // stage coords; default ≈ bottom-right of the 1180×724 stage
+  const drag = useRef(null)
+  const onDown = (e) => {
+    const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
+    drag.current = { sx: e.clientX, sy: e.clientY, bx: pos.x, by: pos.y, scale }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    e.preventDefault()
+  }
+  const onMove = (e) => {
+    const d = drag.current; if (!d) return
+    const nx = d.bx + (e.clientX - d.sx) / d.scale
+    const ny = d.by + (e.clientY - d.sy) / d.scale
+    setPos({ x: Math.max(4, Math.min(1180 - 274, nx)), y: Math.max(4, Math.min(724 - 188, ny)) })
+  }
+  const onUp = () => {
+    drag.current = null
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+  }
   return (
-    <div className="gp-invwin">
-      <div className="hd">
+    <div className="gp-invwin" style={{ left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' }}>
+      <div className="hd" onMouseDown={onDown} style={{ cursor: 'grab' }}>
         <span className="dot" style={{ background: 'var(--green)', width: 7, height: 7 }} />
         <span className="t">inventory</span>
         <span style={{ flex: 1 }} />
-        <span className="dim" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>⇧-click → storage</span>
+        <span className="dim" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>⇧-click → storage · drag ⠿</span>
       </div>
       <div className="invgrid">{slots.slice(9, 36).map((s, i) => <Slot key={i} s={s} idx={i + 9} />)}</div>
       <div className="invgrid hot">{slots.slice(0, 9).map((s, i) => <Slot key={i} s={s} idx={i} hot />)}</div>
@@ -327,13 +350,13 @@ function Harvester() {
         <span className="h">Storage</span>
         <span className="muted" style={{ fontSize: 11 }}>{list.length} types · {compact(total)} items</span>
         <span style={{ flex: 1 }} />
-        <span className="dim" style={{ fontSize: 11 }}>L: one stack · R / ⇧-click: all → inventory</span>
+        <span className="dim" style={{ fontSize: 11 }}>L: one · ⇧-click: stack · R: all → inventory</span>
       </div>
       {!list.length ? <div style={{ color: 'var(--muted)', fontSize: 12 }}>empty — harvested loot from your linked pastures collects here</div> : (
         <div className="grid">
           {list.map(([id, n]) => (
-            <div key={id} className="cell" title={`${id} · L: one · R / ⇧-click: all`}
-              onClick={(ev) => send('storage', ev.shiftKey ? 'PULL_ID' : 'PULL_ONE', { item: id })}
+            <div key={id} className="cell" title={`${id} · L: one · ⇧: stack · R: all`}
+              onClick={(ev) => send('storage', ev.shiftKey ? 'PULL_STACK' : 'PULL_ONE', { item: id })}
               onContextMenu={(ev) => { ev.preventDefault(); send('storage', 'PULL_ID', { item: id }) }}>
               <span className="ct">{compact(n)}</span>
               <span className="nm">{shortId(id)}</span>

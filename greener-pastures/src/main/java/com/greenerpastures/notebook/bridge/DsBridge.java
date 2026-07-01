@@ -8,8 +8,12 @@ import com.greenerpastures.notebook.net.NotebookRequestC2S;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registries;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -65,6 +69,10 @@ public final class DsBridge {
                 if (msg == null || !"action".equals(msg.get("type"))) return;
                 String channel = (String) msg.get("channel");
                 String action = (String) msg.get("action");
+                if ("CLOSE_CONSOLE".equals(action)) {   // the React window's ✕ → close the in-game screen
+                    MinecraftClient.getInstance().setScreen(null);
+                    return;
+                }
                 @SuppressWarnings("unchecked")
                 Map<String, Object> p = (Map<String, Object>) msg.getOrDefault("payload", Map.of());
                 NotebookActionC2S packet = mapAction(action, p);
@@ -83,6 +91,7 @@ public final class DsBridge {
         int tier = (int) num(p, "tier", 0);
         return switch (action == null ? "" : action) {
             case "PULL_ONE"       -> new NotebookActionC2S(NotebookActionC2S.PULL_ONE, str(p, "item", ""), 0);
+            case "PULL_STACK"     -> new NotebookActionC2S(NotebookActionC2S.PULL_STACK, str(p, "item", ""), 0);
             case "PULL_ID"        -> new NotebookActionC2S(NotebookActionC2S.PULL_ID, str(p, "item", ""), 0);
             case "SET_BUFF"       -> new NotebookActionC2S(NotebookActionC2S.SET_BUFF, str(p, "buff", ""), tier);
             case "TOGGLE_DAEMON"  -> new NotebookActionC2S(NotebookActionC2S.TOGGLE_DAEMON, "", 0);
@@ -101,6 +110,27 @@ public final class DsBridge {
         push("pastures", pasturesData());
         push("augmenter", augmenterData());
         push("biobank", biobankData());
+        push("inventory", inventoryData());
+    }
+
+    /** The player's REAL inventory (read client-side): 36 main slots — [0..8] hotbar, [9..35] main — so the console's
+     *  inventory window mirrors what the player actually holds (Deuce, 2026-07-01), not mock data. */
+    private static Object inventoryData() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null) return null;
+        var main = client.player.getInventory().main;
+        List<Object> slots = new ArrayList<>(36);
+        for (int i = 0; i < 36 && i < main.size(); i++) {
+            ItemStack s = main.get(i);
+            if (s.isEmpty()) { slots.add(null); continue; }
+            Map<String, Object> slot = new LinkedHashMap<>();
+            slot.put("id", Registries.ITEM.getId(s.getItem()).toString());
+            slot.put("count", s.getCount());
+            slots.add(slot);
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("slots", slots);
+        return m;
     }
 
     private static void push(String channel, Object data) {

@@ -87,8 +87,9 @@ public final class NotebookNet {
         if (server == null) return;
         server.execute(() -> {
             switch (p.action()) {
-                case NotebookActionC2S.PULL_ONE -> { pull(player, p.arg(), false); pushStorage(player); }
-                case NotebookActionC2S.PULL_ID  -> { pull(player, p.arg(), true);  pushStorage(player); }
+                case NotebookActionC2S.PULL_ONE   -> { pull(player, p.arg(), 0); pushStorage(player); }
+                case NotebookActionC2S.PULL_STACK -> { pull(player, p.arg(), 1); pushStorage(player); }
+                case NotebookActionC2S.PULL_ID    -> { pull(player, p.arg(), 2); pushStorage(player); }
                 case NotebookActionC2S.SET_BUFF -> { setBuff(player, p.arg(), p.amount()); pushCompiler(player); }
                 case NotebookActionC2S.TOGGLE_DAEMON -> { toggleDaemon(player); pushCompiler(player); }
                 case NotebookActionC2S.APPLY_AUGMENT -> { applyAugment(player, p.arg()); pushAugmenter(player); }
@@ -120,8 +121,10 @@ public final class NotebookNet {
         ServerPlayNetworking.send(player, new NotebookStorageS2C(st.snapshot(), st.capacity()));
     }
 
-    /** Withdraw from the player's Notebook storage into their inventory. {@code all=false} pulls one stack. */
-    private static void pull(ServerPlayerEntity player, String itemId, boolean all) {
+    /** Take from Notebook storage into the player's inventory. mode: 0 = one item · 1 = one stack · 2 = all.
+     *  <b>Space-aware</b>: inserts into the inventory first and removes from storage ONLY what actually fit, so a
+     *  full inventory leaves items in the Notebook — nothing is ever dropped in-world or destroyed (Deuce, 2026-07-01). */
+    private static void pull(ServerPlayerEntity player, String itemId, int mode) {
         MinecraftServer server = player.getServer();
         if (server == null || itemId == null || itemId.isEmpty()) return;
         Item item = Registries.ITEM.get(Identifier.of(itemId));
@@ -130,16 +133,23 @@ public final class NotebookNet {
         long have = store.storageOf(player.getUuid()).count(itemId);
         if (have <= 0) return;
         int maxStack = new ItemStack(item).getMaxCount();
-        long want = all ? have : Math.min(maxStack, have);
-        long removed = store.withdraw(player.getUuid(), itemId, want);
-        long remaining = removed;
-        while (remaining > 0) {
-            int n = (int) Math.min(maxStack, remaining);
-            player.getInventory().offerOrDrop(new ItemStack(item, n));
-            remaining -= n;
+        long want = switch (mode) {
+            case 0 -> 1L;
+            case 1 -> Math.min(maxStack, have);
+            default -> have;
+        };
+        want = Math.min(want, have);
+        long gave = 0;
+        while (want - gave >= 1) {
+            int n = (int) Math.min(maxStack, want - gave);
+            ItemStack stack = new ItemStack(item, n);
+            player.getInventory().insertStack(stack);
+            gave += n - stack.getCount();       // stack.getCount() = what did NOT fit
+            if (!stack.isEmpty()) break;         // inventory full → stop, leave the rest in storage
         }
+        if (gave > 0) store.withdraw(player.getUuid(), itemId, gave);
         GpLog.i("notebook", "pull", "player", player.getUuid().toString(),
-                "item", itemId, "n", Long.toString(removed), "all", Boolean.toString(all));
+                "item", itemId, "n", Long.toString(gave), "mode", Integer.toString(mode));
     }
 
     // ── Compiler (Daemon) ─────────────────────────────────────────────────────────────────────────────
@@ -305,9 +315,13 @@ public final class NotebookNet {
     private static void withdrawEgg(ServerPlayerEntity player, int flatIndex) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
+        if (player.getInventory().getEmptySlot() < 0) {   // no room — leave the egg in the BioBank (never destroy)
+            GpLog.i("notebook", "biobank_full", "player", player.getUuid().toString());
+            return;
+        }
         ItemStack egg = BioBankStore.get(server).withdraw(player.getUuid(), flatIndex);
         if (!egg.isEmpty()) {
-            player.getInventory().offerOrDrop(egg);
+            player.getInventory().insertStack(egg);
             GpLog.i("notebook", "biobank_withdraw", "player", player.getUuid().toString(), "index", Integer.toString(flatIndex));
         }
     }
