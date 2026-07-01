@@ -1,6 +1,7 @@
 package com.greenerpastures.notebook.bridge;
 
 import com.google.gson.Gson;
+import com.greenerpastures.client.notebook.NotebookBrowserScreen;
 import com.greenerpastures.client.notebook.NotebookState;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.notebook.net.NotebookActionC2S;
@@ -80,6 +81,7 @@ public final class DsBridge {
                 }
                 @SuppressWarnings("unchecked")
                 Map<String, Object> p = (Map<String, Object>) msg.getOrDefault("payload", Map.of());
+                if ("INPUT_FOCUS".equals(action)) { NotebookBrowserScreen.browserInputFocused = Boolean.TRUE.equals(p.get("v")); return; }
                 if ("pasture".equals(channel)) { handlePastureAction(action, p); return; }
                 NotebookActionC2S packet = mapAction(action, p);
                 if (packet == null) {

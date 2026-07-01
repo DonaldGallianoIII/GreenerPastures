@@ -612,7 +612,9 @@ function PastureConfig({ cfg }) {
       </div>
       <div className="row" style={{ marginBottom: 8, gap: 8 }}>
         <input className="gp-input" value={name} maxLength={64} placeholder="Name this pasture"
-          onChange={(e) => setName(e.target.value)} onBlur={saveName}
+          onFocus={() => send('console', 'INPUT_FOCUS', { v: true })}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => { send('console', 'INPUT_FOCUS', { v: false }); saveName() }}
           onKeyDown={(e) => { if (e.key === 'Enter') { saveName(); e.target.blur() } }} />
         <button className="btn" style={{ color: cfg.linked ? 'var(--green)' : 'var(--muted)', borderColor: cfg.linked ? '#2e5a47' : 'var(--line)' }}
           onClick={() => send('pasture', 'CLAIM', { pos: cfg.pos })}>{cfg.linked ? '🔗 linked' : 'link'}</button>

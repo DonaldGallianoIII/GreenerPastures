@@ -149,6 +149,8 @@ public class NotebookBrowserScreen extends Screen {
     private static final int SLOT = 18, INV_PAD = 8, HEADER = 16;
     private static int invX = -1, invY = -1;       // panel top-left (px); -1 = default to bottom-right on first layout
     private static boolean invCollapsed = false;    // header-only when true
+    private static boolean invShown = true;         // E toggles the whole panel
+    public static boolean browserInputFocused = false;   // set by DsBridge when a React text field has focus (don't steal 'e')
     private boolean draggingInv;
     private double grabX, grabY;
 
@@ -175,13 +177,13 @@ public class NotebookBrowserScreen extends Screen {
     private boolean inSlot(double mx, double my, int x, int y) { return mx >= x && mx < x + SLOT && my >= y && my < y + SLOT; }
 
     private void drawInventory(DrawContext ctx, int mouseX, int mouseY) {
-        if (client == null || client.player == null) return;
+        if (!invShown || client == null || client.player == null) return;
         placeInv();
         int pw = panelW(), ph = panelH();
         ctx.fill(invX, invY, invX + pw, invY + ph, 0xE60E131A);
         ctx.drawBorder(invX, invY, pw, ph, 0xFF2A3543);
         ctx.drawText(textRenderer, Text.literal("Inventory"), invX + INV_PAD, invY + 4, 0xFF8593A4, false);
-        ctx.drawText(textRenderer, Text.literal("drag · " + (invCollapsed ? "▢" : "—")), invX + pw - 40, invY + 4, 0xFF566273, false);
+        ctx.drawText(textRenderer, Text.literal(invCollapsed ? "▢" : "—"), invX + pw - 13, invY + 4, 0xFF8593A4, false);
         if (invCollapsed) return;
 
         ItemStack hover = null;
@@ -215,6 +217,7 @@ public class NotebookBrowserScreen extends Screen {
     /** Returns true if the click landed inside the panel (consume it — don't pass to the browser). Also starts a
      *  drag on the header and toggles collapse. */
     private boolean handleInventoryClick(double mx, double my) {
+        if (!invShown) return false;
         int pw = panelW(), ph = panelH();
         if (!(mx >= invX && mx < invX + pw && my >= invY && my < invY + ph)) return false;
         if (my < invY + HEADER) {                         // header row
@@ -283,6 +286,10 @@ public class NotebookBrowserScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_E && !browserInputFocused) {
+            invShown = !invShown;   // E shows/hides the inventory panel (unless a browser text field is focused)
+            return true;
+        }
         if (browser != null) { browser.sendKeyPress(keyCode, scanCode, modifiers); browser.setFocus(true); }
         return super.keyPressed(keyCode, scanCode, modifiers);   // Esc still closes the screen
     }
