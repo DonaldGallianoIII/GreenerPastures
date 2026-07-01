@@ -27,7 +27,8 @@
     "minecraft": "~1.21.1",
     "java": ">=21",
     "fabric-api": "*",
-    "cobblemon": "*"
+    "cobblemon": "*",
+    "owo": ">=0.12.15"
   },
   "suggests": {
     "cobbreeding": "*"

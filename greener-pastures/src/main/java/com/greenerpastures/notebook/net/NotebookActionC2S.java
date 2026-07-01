@@ -1,0 +1,35 @@
+package com.greenerpastures.notebook.net;
+
+import com.greenerpastures.GreenerPastures;
+import net.minecraft.network.RegistryByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.util.Identifier;
+
+/**
+ * Client → server: a tagged console action (INTERACTIVE_SPEC §2.1). Slice 2 uses {@link #PULL_ONE} (withdraw
+ * one stack of {@code arg}) and {@link #PULL_ID} (withdraw all of {@code arg}); later actions extend the
+ * {@code action} code space. The server validates, mutates the store, then re-pushes status + the affected
+ * tab. Costs are deferred (INTERACTIVE_SPEC §7.5) — no GPU/Data gate yet.
+ */
+public record NotebookActionC2S(int action, String arg, int amount) implements CustomPayload {
+    public static final int PULL_ONE = 0;        // withdraw one stack of arg (a registry id)
+    public static final int PULL_ID  = 1;        // withdraw all of arg
+    public static final int SET_BUFF = 2;        // Compiler: arg = buff id, amount = tier (≤0 removes)
+    public static final int TOGGLE_DAEMON = 3;   // Compiler: flip the held Daemon ON/OFF
+
+    public static final Id<NotebookActionC2S> ID =
+            new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));
+
+    public static final PacketCodec<RegistryByteBuf, NotebookActionC2S> CODEC = PacketCodec.tuple(
+            PacketCodecs.VAR_INT, NotebookActionC2S::action,
+            PacketCodecs.STRING, NotebookActionC2S::arg,
+            PacketCodecs.VAR_INT, NotebookActionC2S::amount,
+            NotebookActionC2S::new);
+
+    @Override
+    public Id<? extends CustomPayload> getId() {
+        return ID;
+    }
+}

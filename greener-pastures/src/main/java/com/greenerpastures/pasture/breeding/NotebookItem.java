@@ -26,10 +26,17 @@ import java.util.List;
  *   <li><b>Right-click a pasture</b> → that pasture's config screen (reuses {@link PastureWand#openMenu}).</li>
  *   <li><b>Right-click anything else / the air</b> → the tabbed console (Pastures · Storage · Augmenter · …).</li>
  * </ul>
- * The console UI isn't built yet (task #36), so that path currently just posts a stub message — the item is
- * live and does the wand's job today; the console lands with the full build.
+ * Right-click-the-air opens the owo-ui {@code NotebookScreen} shell client-side (via {@code CONSOLE_OPENER});
+ * per-tab content (Pastures · Storage · Augmenter · …) is being built out next.
  */
 public class NotebookItem extends Item {
+
+    /**
+     * Client-only hook that opens the Notebook console. Defaults to a no-op so this common/server class carries no
+     * client references; {@code GreenerPasturesClient} sets it to open {@code NotebookScreen}. Invoked from
+     * {@link #use} on the client when the Notebook is right-clicked in the air / at a non-pasture.
+     */
+    public static Runnable CONSOLE_OPENER = () -> {};
 
     public NotebookItem(Settings settings) {
         super(settings);
@@ -58,11 +65,10 @@ public class NotebookItem extends Item {
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         ItemStack held = user.getStackInHand(hand);
-        if (!world.isClient && user instanceof ServerPlayerEntity sp) {
-            // Console UI not built yet (NOTEBOOK_CONSOLE_SPEC.md / task #36) — stub the entry point so the
-            // gesture is discoverable and logged.
-            sp.sendMessage(Text.literal("§a🖥 Notebook console§r — coming soon (pastures · storage · augmenter · dashboard)"), true);
-            GpLog.i("notebook", "console_open_stub", "player", sp.getUuid().toString());
+        if (world.isClient) {
+            CONSOLE_OPENER.run();   // client-only: open the owo-ui Notebook console (hook set in GreenerPasturesClient)
+        } else if (user instanceof ServerPlayerEntity sp) {
+            GpLog.i("notebook", "console_open", "player", sp.getUuid().toString());
         }
         return TypedActionResult.success(held, world.isClient);
     }

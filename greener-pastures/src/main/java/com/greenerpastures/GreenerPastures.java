@@ -13,6 +13,7 @@ import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.economy.DataCommand;
 import com.greenerpastures.economy.GpItems;
 import com.greenerpastures.notebook.PastureHarvest;
+import com.greenerpastures.notebook.net.NotebookNet;
 import com.greenerpastures.pasture.breeding.AugmentCommand;
 import com.greenerpastures.pasture.breeding.BreedCommand;
 import com.greenerpastures.pasture.breeding.BetterPasture;
@@ -78,5 +79,8 @@ public final class GreenerPastures implements ModInitializer {
         // notebook/ — block-free harvest: owned (Notebook-linked) pastures roll drops → owner's Notebook storage
         // (replaces the Harvester block for owned pastures; the block stands down for them to avoid double-dip).
         PastureHarvest.init();
+
+        // notebook/ — console sync layer (C2S request → S2C status; per-tab payloads land with each tab)
+        NotebookNet.init();
     }
 }
