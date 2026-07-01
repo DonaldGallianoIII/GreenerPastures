@@ -93,6 +93,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.TOGGLE_DAEMON -> { toggleDaemon(player); pushCompiler(player); }
                 case NotebookActionC2S.APPLY_AUGMENT -> { applyAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
+                case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player); }
                 default -> { }
             }
             pushStatus(player);
@@ -299,6 +300,17 @@ public final class NotebookNet {
     }
 
     // ── BioBank (per-player; browse-only in 6a) ─────────────────────────────────────────────────────────
+
+    /** Withdraw the egg at {@code flatIndex} (the console's flattened BioBank order) back into the player's inventory. */
+    private static void withdrawEgg(ServerPlayerEntity player, int flatIndex) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        ItemStack egg = BioBankStore.get(server).withdraw(player.getUuid(), flatIndex);
+        if (!egg.isEmpty()) {
+            player.getInventory().offerOrDrop(egg);
+            GpLog.i("notebook", "biobank_withdraw", "player", player.getUuid().toString(), "index", Integer.toString(flatIndex));
+        }
+    }
 
     /** Send the player's BioBank contents: one entry per stored egg (species · shiny · IV total · # perfect). */
     public static void pushBiobank(ServerPlayerEntity player) {

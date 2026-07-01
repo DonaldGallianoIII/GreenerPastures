@@ -6,6 +6,7 @@ import com.greenerpastures.analytics.Event;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.economy.AugmentFunction;
 import com.greenerpastures.goal.GoalTracker;
+import com.greenerpastures.notebook.EggIngest;
 import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.EffectiveAugments;
 import com.greenerpastures.economy.TetherRuntime;
@@ -174,7 +175,13 @@ public final class MultiPairBreeder {
                     eff.teachEggMoves());                         // Egg Moves toggle → teach species egg moves
             CobbreedingBridge.BredEgg egg = CobbreedingBridge.buildEggForPair(pairs.get(i), shape);
             if (egg == null) continue;                              // incompatible pair, skip
-            if (!pd.eggQueue.offer(egg.stack())) {                  // FIFO full → pause (keep eggs aren't evicted)
+            if (pd.owner != null) {                                 // LINKED → eggs as DATA into the owner's Notebook BioBank
+                if (!EggIngest.ingest(world.getServer(), pd.owner, egg.stack())
+                        && !pd.eggQueue.offer(egg.stack())) {       // BioBank full → tray fallback → tray full → pause
+                    GpLog.w("breeder", "queue_full", "pos", pos.toShortString(), "cap", pd.eggQueue.cap());
+                    break;
+                }
+            } else if (!pd.eggQueue.offer(egg.stack())) {           // unlinked → physical eggs in the tray (unchanged)
                 GpLog.w("breeder", "queue_full", "pos", pos.toShortString(), "cap", pd.eggQueue.cap());
                 break;
             }

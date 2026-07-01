@@ -52,6 +52,25 @@ public final class BioBankData {
         return bySpecies.getOrDefault(species, List.of());
     }
 
+    /** Remove + return the egg at {@code flat} in species-grouped order (matches the console's flattened list);
+     *  EMPTY if out of range. Empties the species bucket when its last egg leaves. */
+    public ItemStack removeAt(int flat) {
+        if (flat < 0) return ItemStack.EMPTY;
+        int i = 0;
+        var it = bySpecies.entrySet().iterator();
+        while (it.hasNext()) {
+            List<ItemStack> eggs = it.next().getValue();
+            if (flat < i + eggs.size()) {
+                ItemStack removed = eggs.remove(flat - i);
+                total--;
+                if (eggs.isEmpty()) it.remove();
+                return removed;
+            }
+            i += eggs.size();
+        }
+        return ItemStack.EMPTY;
+    }
+
     // --- persistence (egg ItemStacks are stored losslessly, one NbtList per species) ---
 
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {

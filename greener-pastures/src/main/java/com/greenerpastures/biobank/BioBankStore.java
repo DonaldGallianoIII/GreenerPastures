@@ -1,6 +1,7 @@
 package com.greenerpastures.biobank;
 
 import com.greenerpastures.core.GpLog;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
@@ -33,6 +34,22 @@ public final class BioBankStore extends PersistentState {
     /** The player's bank, created empty on first touch. */
     public BioBankData bankOf(UUID player) {
         return banks.computeIfAbsent(player, u -> { markDirty(); return new BioBankData(); });
+    }
+
+    /** Deposit one egg into a player's bank as data (EGG_PIPELINE_SPEC ingest). False when the bank is full. */
+    public boolean deposit(UUID player, String species, ItemStack egg) {
+        boolean added = bankOf(player).add(species, egg);
+        if (added) markDirty();
+        return added;
+    }
+
+    /** Withdraw the egg at {@code flatIndex} (species-grouped order) back out as a real ItemStack; EMPTY if none. */
+    public ItemStack withdraw(UUID player, int flatIndex) {
+        BioBankData bank = banks.get(player);
+        if (bank == null) return ItemStack.EMPTY;
+        ItemStack egg = bank.removeAt(flatIndex);
+        if (!egg.isEmpty()) markDirty();
+        return egg;
     }
 
     @Override

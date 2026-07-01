@@ -88,7 +88,8 @@ public final class DsBridge {
             case "TOGGLE_DAEMON"  -> new NotebookActionC2S(NotebookActionC2S.TOGGLE_DAEMON, "", 0);
             case "APPLY_AUGMENT"  -> new NotebookActionC2S(NotebookActionC2S.APPLY_AUGMENT, str(p, "type", ""), 0);
             case "REMOVE_AUGMENT" -> new NotebookActionC2S(NotebookActionC2S.REMOVE_AUGMENT, str(p, "type", ""), 0);
-            default -> null;   // DEPOSIT / WITHDRAW / inventory land when the server side adds them (EGG_PIPELINE_SPEC)
+            case "WITHDRAW"       -> new NotebookActionC2S(NotebookActionC2S.WITHDRAW, "", (int) num(p, "index", 0));
+            default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }
 
