@@ -1,6 +1,12 @@
 # 🎯 PICKUP — Decked-out Daemon node-graph (stages 2–3), phased build
 
-> **DIRECTIVE (Deuce, 2026-07-01):** Execute **every phase below, in order, autonomously** — build + `git commit` each phase, do **NOT deploy between phases**. Deuce **batch-tests everything at the very end** (his [[batch-qa-workflow]]): deploy the final jar **only when he asks**. If a phase reveals a blocker, note it, pick the sanest default, keep going. When all phases are done + building green, tell him "all N phases built + committed, ready to deploy + batch-test."
+> **✅ STATUS (2026-07-01): ALL 4 PHASES BUILT + COMMITTED, green, NOT deployed.** Jar `ebd78db5`
+> (`greener-pastures-0.1.0.jar`, zip-OK, UI bundled). Commits: Phase 1 `3788a0a` · Phase 2 `23636bd` ·
+> Phase 3 `6d90317` · Phase 4 `a67ef29`. **Next action = Deuce closes MC → I deploy the one jar → he
+> batch-tests.** Batch-test steps + known v1 limits are in the [[daemon-nodegraph-deckedout]] memory. The
+> per-phase plan below is kept as the build record.
+>
+> **Original DIRECTIVE (Deuce, 2026-07-01):** Execute **every phase below, in order, autonomously** — build + `git commit` each phase, do **NOT deploy between phases**. Deuce **batch-tests everything at the very end** (his [[batch-qa-workflow]]): deploy the final jar **only when he asks**. If a phase reveals a blocker, note it, pick the sanest default, keep going. When all phases are done + building green, tell him "all N phases built + committed, ready to deploy + batch-test."
 
 ## Where we are (already shipped this session)
 - MCEF console renders React in-game (`NotebookBrowserScreen`, browser kept alive). Data over the loopback WS bridge (`DsBridge` :25599). Right-click a pasture → `NotebookItem.PASTURE_OPENER` (client: open console + set a placeholder `NotebookState.pastureConfig`, `DsBridge.pushNow()`) + `NotebookNet.pushPastureConfig` (server sends `NotebookPastureConfigS2C`). React `PastureConfig` shows name/link/Kernel + the **DaemonGraph**.
