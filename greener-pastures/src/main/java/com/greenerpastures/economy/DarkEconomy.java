@@ -26,11 +26,8 @@ import net.minecraft.util.Identifier;
 public final class DarkEconomy {
     private DarkEconomy() {}
 
-    public static final Identifier RENDERER_ID = Identifier.of(GreenerPastures.MOD_ID, "renderer");
     public static final Identifier DAEMON_ID = Identifier.of(GreenerPastures.MOD_ID, "daemon");
 
-    public static Block RENDERER;
-    public static BlockEntityType<RendererBlockEntity> BE;
     public static Item DAEMON;
     /** The {@code greenerpastures:daemon_level} int a Daemon carries — its Mk tier (1–3), the buff strength ceiling.
      *  <b>Superseded by {@link #DAEMON_LOADOUT} (BUG-004)</b>; still registered so old saved Daemons decode cleanly. */
@@ -44,12 +41,6 @@ public final class DarkEconomy {
     public static Item SOUL_TETHER;
 
     public static void init() {
-        RENDERER = Registry.register(Registries.BLOCK, RENDERER_ID,
-                new RendererBlock(AbstractBlock.Settings.create().strength(3.0f).requiresTool()));
-        Registry.register(Registries.ITEM, RENDERER_ID, new BlockItem(RENDERER, new Item.Settings()));
-        BE = Registry.register(Registries.BLOCK_ENTITY_TYPE, RENDERER_ID,
-                FabricBlockEntityTypeBuilder.create(RendererBlockEntity::new, RENDERER).build());
-
         DAEMON_LEVEL = Registry.register(Registries.DATA_COMPONENT_TYPE,
                 Identifier.of(GreenerPastures.MOD_ID, "daemon_level"),
                 ComponentType.<Integer>builder().codec(Codec.INT).packetCodec(PacketCodecs.VAR_INT).build());
@@ -68,9 +59,8 @@ public final class DarkEconomy {
         SOUL_TETHER = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "soul_tether"),
                 new SoulTetherItem(new Item.Settings().maxCount(16)));
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(e -> e.add(RENDERER));
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(e -> { e.add(DAEMON); e.add(SOUL_TETHER); });
 
-        GreenerPastures.LOG.info("[dark-economy] loaded — Renderer + Daemon + Data store + Soul Tether item.");
+        GreenerPastures.LOG.info("[dark-economy] loaded — Daemon + Data store + Soul Tether item.");
     }
 }

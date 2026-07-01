@@ -7,7 +7,7 @@ import com.greenerpastures.pasture.breeding.GpComponents;
 import net.minecraft.item.ItemStack;
 
 /**
- * The augment "packages" a {@link CompilerBlock} can install onto a Kernel (a Pasture Upgrade item).
+ * The augment "packages" the Notebook's Augmenter can install onto a Kernel (a Pasture Upgrade item).
  * Each type names an {@link AugmentFunction} and the level/magnitude it writes; install + apply are
  * <b>generic</b> over that function (merge into the {@code greenerpastures:augments} component), so adding
  * an augment is just one new constant (+ a display line in {@link #effectSummary}). Ships all SEVEN v1

@@ -2,7 +2,13 @@ package com.greenerpastures.pasture.breeding;
 
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.notebook.PastureSnapshotStore;
+import com.greenerpastures.pasture.breeding.gui.PastureMenu;
+import com.greenerpastures.pasture.breeding.gui.PastureOpenData;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.screen.ScreenHandler;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -23,7 +29,7 @@ import java.util.List;
  * The Notebook — the player's unified console (see {@code NOTEBOOK_CONSOLE_SPEC.md}). It <b>replaces the
  * Pasture Wand</b> and has two open modes:
  * <ul>
- *   <li><b>Right-click a pasture</b> → that pasture's config screen (reuses {@link PastureWand#openMenu}).</li>
+ *   <li><b>Right-click a pasture</b> → that pasture's config screen ({@link #openMenu}).</li>
  *   <li><b>Right-click anything else / the air</b> → the tabbed console (Pastures · Storage · Augmenter · …).</li>
  * </ul>
  * Right-click-the-air opens the owo-ui {@code NotebookScreen} shell client-side (via {@code CONSOLE_OPENER});
@@ -57,9 +63,40 @@ public class NotebookItem extends Item {
             return ActionResult.SUCCESS;
         }
         if (ctx.getPlayer() instanceof ServerPlayerEntity sp) {
-            PastureWand.openMenu(sp, be.getPos());
+            openMenu(sp, be.getPos());
         }
         return ActionResult.SUCCESS;
+    }
+
+    /**
+     * Open a pasture's config screen (moved here from the retired Pasture Wand). Shared by the Notebook's
+     * right-click-a-pasture path and the {@code OpenPasturePayload} Esc-return path — so closing a sub-screen
+     * with Esc lands the player back on this menu instead of dropping to the world.
+     */
+    public static void openMenu(ServerPlayerEntity sp, BlockPos pasturePos) {
+        if (sp.getServer() == null) return;
+        World world = sp.getServerWorld();
+        BlockEntity be = world.getBlockEntity(pasturePos);
+        if (!(be instanceof PokemonPastureBlockEntity pasture)) return;
+        final PastureData pd = PastureRegistry.get(sp.getServer()).getOrCreate(world, pasturePos);
+        // snapshot this pasture into the player's console (read-only remote view; INTERACTIVE_SPEC §3.2)
+        PastureSnapshotStore.get(sp.getServer()).capture(sp.getUuid(), world, pasturePos, pd, pasture);
+        sp.openHandledScreen(new ExtendedScreenHandlerFactory<PastureOpenData>() {
+            @Override
+            public Text getDisplayName() {
+                return Text.literal(pd.name.isEmpty() ? "Pasture" : pd.name);
+            }
+
+            @Override
+            public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
+                return new PastureMenu(syncId, inv, pd.upgrades, pasturePos, pd.name);
+            }
+
+            @Override
+            public PastureOpenData getScreenOpeningData(ServerPlayerEntity player) {
+                return new PastureOpenData(pasturePos, pd.name, CobbreedingBridge.rosterOf(pasture, pd));
+            }
+        });
     }
 
     @Override

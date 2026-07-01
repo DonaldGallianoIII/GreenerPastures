@@ -1,6 +1,4 @@
 {
-  "block.greenerpastures.renderer": "Renderer",
-  "block.greenerpastures.harvester": "Harvester",
   "item.greenerpastures.daemon": "Daemon",
   "item.greenerpastures.soul_tether": "Soul Tether",
   "item.greenerpastures.breeding_upgrade_copper": "Copper Kernel",
@@ -15,8 +13,6 @@
   "key.eggoracle.pasturecheck": "Toggle pasture fill check",
   "key.shinyegghighlighter.dump": "Dump Held Egg Data",
   "category.shinyegghighlighter": "Shiny Egg Highlighter",
-  "item.greenerpastures.pasture_wand": "Pasture Wand",
-  "block.greenerpastures.compiler": "Compiler",
   "item.greenerpastures.augment_shiny": "Shiny Augment",
   "item.greenerpastures.augment_speed": "Speed Augment",
   "item.greenerpastures.augment_enrichment": "Enrichment Augment",
@@ -24,7 +20,6 @@
   "item.greenerpastures.augment_drop_yield": "Drop Yield Augment",
   "item.greenerpastures.augment_iv_floor": "IV Floor Augment",
   "item.greenerpastures.augment_ev": "EV Augment",
-  "block.greenerpastures.biobank": "BioBank",
   "item.greenerpastures.gpu": "GPU",
   "item.greenerpastures.notebook": "Notebook",
   "item.greenerpastures.data_disk_blank": "Blank Data Disk",

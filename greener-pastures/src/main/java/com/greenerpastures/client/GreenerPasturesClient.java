@@ -14,8 +14,6 @@ import com.greenerpastures.notebook.net.NotebookRequestC2S;
 import com.greenerpastures.notebook.net.NotebookStatusS2C;
 import com.greenerpastures.notebook.net.NotebookStorageS2C;
 import com.greenerpastures.pasture.breeding.NotebookItem;
-import com.greenerpastures.pasture.breeding.compiler.CompilerMenu;
-import com.greenerpastures.pasture.breeding.compiler.CompilerScreen;
 import com.greenerpastures.pasture.breeding.gui.PastureMenu;
 import com.greenerpastures.pasture.breeding.gui.PastureScreen;
 import net.fabricmc.api.ClientModInitializer;
@@ -41,7 +39,6 @@ public final class GreenerPasturesClient implements ClientModInitializer {
 
         // pasture/ wand GUI + Compiler bench
         HandledScreens.register(PastureMenu.TYPE, PastureScreen::new);
-        HandledScreens.register(CompilerMenu.TYPE, CompilerScreen::new);
 
         // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click)
         NotebookItem.CONSOLE_OPENER = () -> MinecraftClient.getInstance().setScreen(new NotebookScreen());

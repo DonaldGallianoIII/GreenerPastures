@@ -3,8 +3,8 @@ package com.greenerpastures.pasture.breeding.net;
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
 import com.greenerpastures.pasture.breeding.PastureClaim;
 import com.greenerpastures.pasture.breeding.PastureData;
+import com.greenerpastures.pasture.breeding.NotebookItem;
 import com.greenerpastures.pasture.breeding.PastureRegistry;
-import com.greenerpastures.pasture.breeding.PastureWand;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
@@ -51,7 +51,7 @@ public final class PastureNet {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         server.execute(() -> {
-            if (withinReach(player, payload.pos())) PastureWand.openMenu(player, payload.pos());
+            if (withinReach(player, payload.pos())) NotebookItem.openMenu(player, payload.pos());
         });
     }
 

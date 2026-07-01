@@ -23,12 +23,14 @@ public final class BioBankData {
 
     public int total() { return total; }
 
-    /** Bank one egg under its species key. Enforces the capacity ceiling here as the single source of
-     *  truth, so a migrated/hand-edited save can't load past the cap and then scatter an unbounded pile
-     *  of loose items on break (bug-hunt #4). Returns false when the bank is already full. */
+    /** Bank one egg under its species key. The cap is <b>per unique species</b> (Deuce, 2026-07-01): each species
+     *  holds up to {@link BioBank#capacity()} eggs, so many species coexist. Enforced here as the single source
+     *  of truth, so a migrated/hand-edited save can't load a species past its cap. Returns false when THAT
+     *  species' bucket is full — the breeder then falls back to the tray for that egg. */
     public boolean add(String species, ItemStack egg) {
-        if (total >= BioBank.capacity()) return false;
-        bySpecies.computeIfAbsent(species, s -> new ArrayList<>()).add(egg);
+        List<ItemStack> bucket = bySpecies.computeIfAbsent(species, s -> new ArrayList<>());
+        if (bucket.size() >= BioBank.capacity()) return false;
+        bucket.add(egg);
         total++;
         return true;
     }

@@ -1,13 +1,11 @@
 package com.greenerpastures;
 
 import com.greenerpastures.analytics.Analytics;
-import com.greenerpastures.biobank.BioBank;
 import com.greenerpastures.buff.BuffSystem;
 import com.greenerpastures.buff.DaemonBuffs;
 import com.greenerpastures.goal.GoalCommand;
 import com.greenerpastures.notify.NotifySystem;
 import com.greenerpastures.core.GpLog;
-import com.greenerpastures.drops.Harvester;
 import com.greenerpastures.economy.DaemonCommand;
 import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.economy.DataCommand;
@@ -59,9 +57,6 @@ public final class GreenerPastures implements ModInitializer {
         PastureKeeper.init();   // per-pasture no-wander toggle + loot collector
         BetterPasture.init();   // opt-in multi-pair breeding (Cobbreeding bridge)
 
-        // biobank/ — AE2-style egg storage block (eggs as data, bucketed by species)
-        BioBank.init();
-
         // economy/ — dark economy min-slice: Renderer block (eggs → Data) + Daemon item + per-player Data
         DarkEconomy.init();
         GpItems.init();         // console-economy items: GPU reagent, Data-disk denominations, Notebook (art + registration; behaviour later)
@@ -72,9 +67,6 @@ public final class GreenerPastures implements ModInitializer {
 
         // ritual/ — load the custom-drop config (type-drops + gacha rituals) the Harvester reads
         RitualSystem.init();
-
-        // drops/ — passive-drops Harvester block (rolls tethered mons' drop tables → its own chest)
-        Harvester.init();
 
         // notebook/ — block-free harvest: owned (Notebook-linked) pastures roll drops → owner's Notebook storage
         // (replaces the Harvester block for owned pastures; the block stands down for them to avoid double-dip).

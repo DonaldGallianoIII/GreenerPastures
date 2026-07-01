@@ -6,8 +6,6 @@ import com.greenerpastures.economy.AugmentFunction;
 import com.greenerpastures.notebook.PastureSnapshotStore;
 import com.greenerpastures.pasture.breeding.compiler.AugmentItem;
 import com.greenerpastures.pasture.breeding.compiler.AugmentType;
-import com.greenerpastures.pasture.breeding.compiler.CompilerBlock;
-import com.greenerpastures.pasture.breeding.compiler.CompilerMenu;
 import com.greenerpastures.pasture.breeding.gui.PastureMenu;
 import com.greenerpastures.pasture.breeding.net.PastureNet;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -37,25 +35,20 @@ public final class BetterPasture {
 
     /** Pasture Upgrade items (the slot-expander / pair-scaler line), keyed by tier. */
     public static final Map<BreedingTier, BreedingUpgradeItem> ITEMS = new EnumMap<>(BreedingTier.class);
-    public static PastureWand WAND;
-    /** The Compiler block (apply augments to a Kernel) + its item form. */
-    public static Block COMPILER_BLOCK;
-    public static Item COMPILER_ITEM;
-    /** Craftable augment "packages" (slot with a Kernel at the Compiler), keyed by type — one item per
-     *  live-effect AugmentFunction (Shiny / Speed / Enrichment / Drop Rate / Drop Yield). */
+    /** Craftable augment "packages" (applied to a Kernel in the Notebook's Augmenter), keyed by type — one item
+     *  per live-effect AugmentFunction (Shiny / Speed / Enrichment / Drop Rate / Drop Yield). */
     public static final Map<AugmentType, AugmentItem> AUGMENTS = new EnumMap<>(AugmentType.class);
 
     public static void init() {
         GpComponents.init();        // register greenerpastures:augments before any item can carry it
         CobbreedingBridge.init();
         PastureMenu.register();
-        CompilerMenu.register();    // the Compiler bench container
         PastureNet.init();          // C2S: save pasture name + pair assignments
         registerBreakCleanup();     // return a broken pasture's items + eggs, free its record (review H1)
         registerItems();
         if (CobbreedingBridge.isAvailable()) {
             MultiPairBreeder.init();
-            GreenerPastures.LOG.info("[better-pasture] active; {} pasture-upgrade tiers + wand registered.", ITEMS.size());
+            GreenerPastures.LOG.info("[better-pasture] active; {} pasture-upgrade tiers registered.", ITEMS.size());
         } else {
             GreenerPastures.LOG.info("[better-pasture] items registered; breeding dormant (Cobbreeding unavailable).");
         }
@@ -72,14 +65,7 @@ public final class BetterPasture {
             Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "breeding_upgrade_" + tier.id()), item);
             ITEMS.put(tier, item);
         }
-        WAND = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "pasture_wand"),
-                new PastureWand(new Item.Settings().maxCount(1)));
-
-        // Compiler block (+ its item) and the augment packages it installs onto a Kernel.
-        COMPILER_BLOCK = Registry.register(Registries.BLOCK, Identifier.of(GreenerPastures.MOD_ID, "compiler"),
-                new CompilerBlock(AbstractBlock.Settings.create().strength(2.5f).requiresTool().nonOpaque()));
-        COMPILER_ITEM = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "compiler"),
-                new BlockItem(COMPILER_BLOCK, new Item.Settings()));
+        // Craftable augment "packages" — applied to a Kernel in the Notebook's Augmenter tab.
         for (AugmentType type : AugmentType.values()) {
             AugmentItem aug = new AugmentItem(type, new Item.Settings());
             Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "augment_" + type.id()), aug);
@@ -87,10 +73,8 @@ public final class BetterPasture {
         }
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> {
-            entries.add(WAND);
             ITEMS.values().forEach(entries::add);
             AUGMENTS.values().forEach(entries::add);
-            entries.add(COMPILER_ITEM);
         });
     }
 
