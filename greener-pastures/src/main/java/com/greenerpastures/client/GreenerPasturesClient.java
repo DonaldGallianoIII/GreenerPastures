@@ -10,6 +10,7 @@ import com.greenerpastures.notebook.bridge.DsBridge;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookEggLogS2C;
 import com.greenerpastures.notebook.net.NotebookGraphS2C;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
@@ -87,6 +88,10 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(NotebookGraphS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
                     if (NotebookState.applyGraph(payload)) NotebookScreen.refreshIfOpen();
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(NotebookEggLogS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyEggLog(payload)) NotebookScreen.refreshIfOpen();
                 }));
 
         // notebook/ console — poll the server ~1×/s while the console is open so the status bar + tabs tick live.

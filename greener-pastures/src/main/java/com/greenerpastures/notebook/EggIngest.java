@@ -52,9 +52,11 @@ public final class EggIngest {
                         .put("x", pos.getX()).put("y", pos.getY()).put("z", pos.getZ()));
                 GpLog.i("egg_ingest", "void", "owner", owner.toString(), "species", species,
                         "filter", filter, "data", Long.toString(value));
+                EggLog.record(owner, species, true, filter);   // player-facing void feed
                 return true;   // rendered to Data → egg consumed; the breeder must NOT tray-fallback
             }
             boolean added = BioBankStore.get(server).deposit(owner, species, egg);
+            if (added) EggLog.record(owner, species, false, "");
             GpLog.d("egg_ingest", added ? "bank" : "full", "owner", owner.toString(), "species", species);
             return added;      // false = bank full → the breeder keeps the physical egg (tray fallback)
         } catch (Throwable t) {

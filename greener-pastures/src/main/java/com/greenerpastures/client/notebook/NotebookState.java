@@ -4,6 +4,7 @@ import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookEggLogS2C;
 import com.greenerpastures.notebook.net.NotebookGraphS2C;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
@@ -124,6 +125,19 @@ public final class NotebookState {
         boolean changed = biobankTotal != p.total() || !biobank.equals(p.entries());
         biobankTotal = p.total();
         biobank = p.entries();
+        return changed;
+    }
+
+    // ── Egg log (the void-log trust feed) ────────────────────────────────────
+    public static volatile long eggKept = 0L;
+    public static volatile long eggVoided = 0L;
+    public static volatile List<NotebookEggLogS2C.Entry> eggLog = List.of();
+
+    public static boolean applyEggLog(NotebookEggLogS2C p) {
+        boolean changed = eggKept != p.kept() || eggVoided != p.voided() || !eggLog.equals(p.entries());
+        eggKept = p.kept();
+        eggVoided = p.voided();
+        eggLog = p.entries();
         return changed;
     }
 }

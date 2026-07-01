@@ -70,6 +70,10 @@ const CSS = `
 .dcfg-natures{ display:flex; gap:4px; flex-wrap:wrap; }
 .dchip2{ background:var(--inset); border:1px solid var(--line); border-radius:5px; padding:2px 7px; font-size:9px; cursor:pointer; color:var(--muted); }
 .dchip2.on{ background:var(--cyan); color:#04222b; border-color:var(--cyan); font-weight:700; }
+.egglog{ margin-top:8px; border:1px solid var(--line); border-radius:8px; background:var(--inset); padding:7px 9px; }
+.egglog-h{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; margin-bottom:5px; }
+.egglog-feed{ max-height:92px; overflow:auto; display:flex; flex-direction:column; gap:2px; }
+.egglog-row{ font-size:10px; display:flex; gap:6px; align-items:center; }
 .dwire{ stroke-width:2.5; fill:none; pointer-events:stroke; cursor:pointer; }
 .dwire:hover{ stroke:var(--red) !important; }
 .dwire.live{ stroke:var(--cyan); stroke-dasharray:5 4; }
@@ -825,6 +829,34 @@ function DaemonGraph({ cfg }) {
 
 // The editable pasture config — shown when you right-click a pasture with the Notebook (replaces the owo screen).
 // Wired to the server over the `pasture` bridge channel: NAME · PAIRINGS · CLAIM (link) · KERNEL · CLOSE (← back).
+// The player-facing egg-ingest feed — the void-log trust feature (kept K · voided V by which filter · recent).
+function EggLogStrip() {
+  const d = useChannel('eggLog')
+  const entries = (d && d.entries) || []
+  return (
+    <div className="egglog">
+      <div className="egglog-h">
+        <span style={{ color: 'var(--green)' }}>✓ {d ? d.kept : 0} kept</span>
+        <span className="dim">·</span>
+        <span style={{ color: 'var(--red)' }}>✕ {d ? d.voided : 0} voided</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim" style={{ fontSize: 9 }}>recent activity</span>
+      </div>
+      <div className="egglog-feed">
+        {entries.length === 0
+          ? <span className="dim" style={{ fontSize: 10 }}>no eggs yet — link a Kernel'd pasture and wire a pipeline</span>
+          : entries.map((e, i) => (
+            <div key={i} className="egglog-row">
+              <span style={{ color: e.voided ? 'var(--red)' : 'var(--green)' }}>{e.voided ? '✕' : '✓'}</span>
+              <span style={{ color: 'var(--text)', fontWeight: 500 }}>{cap(e.species)}</span>
+              <span className="dim">{e.voided ? (e.filter ? `voided · ${e.filter}` : 'voided') : 'kept'}</span>
+            </div>
+          ))}
+      </div>
+    </div>
+  )
+}
+
 function PastureConfig({ cfg }) {
   const [name, setName] = useState(cfg.name || '')
   useEffect(() => { setName(cfg.name || '') }, [cfg.pos])   // reset the field when switching pastures
@@ -861,6 +893,7 @@ function PastureConfig({ cfg }) {
         Daemon · {roster.length} mon{roster.length === 1 ? '' : 's'} · wire mons into pairs, then pipe their eggs through filters to BioBank / Data{maxPairs ? '' : ' — slot a Kernel to pair'}
       </div>
       <DaemonGraph cfg={cfg} />
+      <EggLogStrip />
     </div>
   )
 }

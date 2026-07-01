@@ -17,6 +17,7 @@ import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.GpItems;
 import com.greenerpastures.egg.oracle.cull.EggCard;
 import com.greenerpastures.egg.oracle.cull.EggReader;
+import com.greenerpastures.notebook.EggLog;
 import com.greenerpastures.notebook.NotebookStorage;
 import com.greenerpastures.notebook.NotebookStore;
 import com.greenerpastures.notebook.PastureSnapshot;
@@ -79,6 +80,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playC2S().register(NotebookInvSwapC2S.ID, NotebookInvSwapC2S.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookGraphS2C.ID, NotebookGraphS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookGraphSaveC2S.ID, NotebookGraphSaveC2S.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookEggLogS2C.ID, NotebookEggLogS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -96,7 +98,15 @@ public final class NotebookNet {
             pushPastures(player);
             pushAugmenter(player);
             pushBiobank(player);
+            pushEggLog(player);
         });
+    }
+
+    /** Send the viewing player's recent egg-ingest feed (kept/voided + filter) + totals — the console Log view. */
+    public static void pushEggLog(ServerPlayerEntity player) {
+        List<NotebookEggLogS2C.Entry> out = new ArrayList<>();
+        for (EggLog.Entry e : EggLog.recent(player.getUuid())) out.add(new NotebookEggLogS2C.Entry(e.species(), e.voided(), e.filter()));
+        ServerPlayNetworking.send(player, new NotebookEggLogS2C(EggLog.kept(player.getUuid()), EggLog.voided(player.getUuid()), out));
     }
 
     private static void onAction(NotebookActionC2S p, ServerPlayNetworking.Context ctx) {

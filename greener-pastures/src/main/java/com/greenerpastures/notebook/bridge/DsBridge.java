@@ -5,6 +5,7 @@ import com.greenerpastures.client.notebook.NotebookBrowserScreen;
 import com.greenerpastures.client.notebook.NotebookState;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.notebook.net.NotebookActionC2S;
+import com.greenerpastures.notebook.net.NotebookEggLogS2C;
 import com.greenerpastures.notebook.net.NotebookGraphSaveC2S;
 import com.greenerpastures.notebook.net.NotebookPastureActionC2S;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
@@ -166,6 +167,24 @@ public final class DsBridge {
         push("biobank", biobankData());
         push("inventory", inventoryData());
         push("pastureConfig", pastureConfigData());
+        push("eggLog", eggLogData());
+    }
+
+    /** The viewing player's recent egg-ingest feed (kept/voided + which filter) + totals — the console Log view. */
+    private static Object eggLogData() {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("kept", NotebookState.eggKept);
+        m.put("voided", NotebookState.eggVoided);
+        List<Object> entries = new ArrayList<>();
+        for (NotebookEggLogS2C.Entry e : NotebookState.eggLog) {
+            Map<String, Object> o = new LinkedHashMap<>();
+            o.put("species", e.species());
+            o.put("voided", e.voided());
+            o.put("filter", e.filter());
+            entries.add(o);
+        }
+        m.put("entries", entries);
+        return m;
     }
 
     /** The focused pasture's editable config (right-clicked with the Notebook), or {@code present:false} when none. */
