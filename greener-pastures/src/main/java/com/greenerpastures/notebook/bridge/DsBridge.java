@@ -142,6 +142,12 @@ public final class DsBridge {
             ClientPlayNetworking.send(new NotebookPastureActionC2S(pos, act, arg, pairings));
     }
 
+    /** Force an immediate broadcast — used when a pasture is right-clicked so its config view appears at once,
+     *  without waiting for the next diff-push tick (so the previously-open tab doesn't linger). */
+    public static void pushNow() {
+        if (server != null && server.hasClients()) pushChangedChannels();
+    }
+
     // ── serialize NotebookState → per-channel JSON, push only what changed ─────────────────────────────────
     private static void pushChangedChannels() {
         push("status", statusData());

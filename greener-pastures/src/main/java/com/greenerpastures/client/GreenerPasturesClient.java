@@ -45,7 +45,13 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click).
         // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
         NotebookItem.CONSOLE_OPENER = () -> { NotebookState.pastureConfig = null; openConsole(); };   // air → tabbed console
-        NotebookItem.PASTURE_OPENER = (pos) -> openConsole();   // pasture → same console; the server pushes its config
+        NotebookItem.PASTURE_OPENER = (pos) -> {
+            // Show the config view immediately (a shell) so the previously-open tab doesn't linger while the real
+            // config round-trips from the server; the S2C then fills in the name / roster / Kernel.
+            NotebookState.pastureConfig = new NotebookPastureConfigS2C(pos.asLong(), "", "", false, 0, java.util.List.of());
+            DsBridge.pushNow();
+            openConsole();
+        };
 
         // notebook/ console sync — receive status pushes → cache + refresh the open console
         ClientPlayNetworking.registerGlobalReceiver(NotebookStatusS2C.ID, (payload, context) ->
