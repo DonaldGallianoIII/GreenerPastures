@@ -16,7 +16,9 @@ import io.wispforest.owo.ui.core.OwoUIAdapter;
 import io.wispforest.owo.ui.core.Sizing;
 import io.wispforest.owo.ui.core.Surface;
 import io.wispforest.owo.ui.core.VerticalAlignment;
+import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.net.NotebookActionC2S;
+import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
 import com.greenerpastures.notebook.net.NotebookRequestC2S;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -61,6 +63,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private final int activeTab;
+    private String selectedPastureKey = null;   // Pastures tab selection; survives refreshIfOpen, resets on tab switch
 
     public NotebookScreen() { this(Tab.PASTURES.ordinal()); }
 
@@ -144,6 +147,8 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
     private Component content() {
         if (tab() == Tab.HARVESTER) return storageContent();
         if (tab() == Tab.COMPILER) return compilerContent();
+        if (tab() == Tab.PASTURES) return pasturesContent();
+        if (tab() == Tab.AUGMENTER) return augmenterContent();
         FlowLayout body = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
         body.gap(6);
         body.surface(Surface.flat(PANEL))
@@ -327,6 +332,178 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         if (seconds < 3600) return (seconds / 60) + "m";
         if (seconds < 86400) return (seconds / 3600) + "h";
         return (seconds / 86400) + "d";
+    }
+
+    // ── Pastures tab — read-only snapshot monitor ───────────────────────────────────────────────────────
+    private Component pasturesContent() {
+        FlowLayout body = Containers.horizontalFlow(Sizing.fill(100), Sizing.expand());
+        body.surface(Surface.flat(PANEL));
+        body.padding(Insets.of(6));
+        body.gap(6);
+
+        FlowLayout listCol = Containers.verticalFlow(Sizing.fixed(150), Sizing.fill(100));
+        listCol.surface(Surface.flat(INSET));
+        listCol.padding(Insets.of(6));
+        listCol.gap(3);
+        listCol.child(label("PASTURES · " + NotebookState.pastures.size(), MUTED));
+        if (NotebookState.pastures.isEmpty()) {
+            listCol.child(label("open a pasture in-world to track it here", MUTED));
+        } else {
+            FlowLayout items = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+            items.gap(2);
+            for (PastureSnapshot s : NotebookState.pastures) items.child(pastureListItem(s));
+            listCol.child(Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), items));
+        }
+        body.child(listCol);
+        body.child(pastureDetail());
+        return body;
+    }
+
+    private Component pastureListItem(PastureSnapshot s) {
+        boolean sel = s.key().equals(selectedPastureKey);
+        FlowLayout row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        row.surface(Surface.flat(sel ? PANEL_HI : SLOT));
+        row.padding(Insets.of(3, 3, 5, 5));
+        row.verticalAlignment(VerticalAlignment.CENTER);
+        row.cursorStyle(CursorStyle.POINTER);
+        row.child(label(s.name(), sel ? TEXT : MUTED));
+        row.child(expander());
+        row.child(label(s.eggCount() + " eggs", AMBER));
+        row.mouseDown().subscribe((mx, my, btn) -> {
+            selectedPastureKey = s.key();
+            this.clearAndInit();
+            return true;
+        });
+        return row;
+    }
+
+    private Component pastureDetail() {
+        FlowLayout col = Containers.verticalFlow(Sizing.expand(), Sizing.fill(100));
+        col.surface(Surface.flat(INSET));
+        col.padding(Insets.of(8));
+        col.gap(4);
+        PastureSnapshot sel = selectedPasture();
+        if (sel == null) {
+            col.horizontalAlignment(HorizontalAlignment.CENTER);
+            col.verticalAlignment(VerticalAlignment.CENTER);
+            col.child(label(NotebookState.pastures.isEmpty() ? "no pastures tracked yet" : "select a pasture", MUTED));
+            return col;
+        }
+        col.child(label(sel.name(), GREEN));
+        col.child(label(sel.tier() + " · " + sel.eggCount() + " eggs queued · " + sel.pairs().size() + " pairs", MUTED));
+        col.child(label("read-only — modify at the pasture in-world", MUTED));
+        FlowLayout pairs = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        pairs.gap(2);
+        if (sel.pairs().isEmpty()) {
+            pairs.child(label("no pairs arranged", MUTED));
+        } else {
+            for (String p : sel.pairs()) {
+                FlowLayout pr = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+                pr.surface(Surface.flat(SLOT));
+                pr.padding(Insets.of(2, 2, 5, 5));
+                pr.child(label(p, statusColor(p)));
+                pairs.child(pr);
+            }
+        }
+        col.child(Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), pairs));
+        return col;
+    }
+
+    private PastureSnapshot selectedPasture() {
+        for (PastureSnapshot s : NotebookState.pastures) if (s.key().equals(selectedPastureKey)) return s;
+        return null;
+    }
+
+    private static int statusColor(String pairLine) {
+        if (pairLine.endsWith("Breeding")) return CYAN;
+        if (pairLine.endsWith("Ready")) return GREEN;
+        if (pairLine.endsWith("Incomplete")) return MUTED;
+        return TEXT;
+    }
+
+    // ── Augmenter (Kernel) tab — KERNEL slots + AUGMENT catalog ─────────────────────────────────────────
+    private Component augmenterContent() {
+        if (!NotebookState.augHasKernel) {
+            FlowLayout empty = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
+            empty.surface(Surface.flat(PANEL));
+            empty.horizontalAlignment(HorizontalAlignment.CENTER);
+            empty.verticalAlignment(VerticalAlignment.CENTER);
+            empty.gap(6);
+            empty.child(label("no Kernel in your inventory", GREEN));
+            empty.child(label("hold a Kernel (a Pasture Upgrade) to augment it", MUTED));
+            return empty;
+        }
+        FlowLayout body = Containers.horizontalFlow(Sizing.fill(100), Sizing.expand());
+        body.surface(Surface.flat(PANEL));
+        body.padding(Insets.of(6));
+        body.gap(6);
+        body.child(kernelCol());
+        body.child(augCatalogCol());
+        return body;
+    }
+
+    private Component kernelCol() {
+        FlowLayout col = Containers.verticalFlow(Sizing.fixed(112), Sizing.fill(100));
+        col.surface(Surface.flat(INSET));
+        col.padding(Insets.of(6));
+        col.gap(4);
+        col.child(label("KERNEL", MUTED));
+        col.child(label(NotebookState.augTier, GREEN));
+        col.child(label("slots " + NotebookState.augSlotsUsed + "/" + NotebookState.augSlotCap, TEXT));
+        FlowLayout pips = Containers.horizontalFlow(Sizing.content(), Sizing.content());
+        pips.gap(2);
+        for (int i = 0; i < NotebookState.augSlotCap; i++) pips.child(dot(i < NotebookState.augSlotsUsed ? GREEN : MUTED));
+        col.child(pips);
+        return col;
+    }
+
+    private Component augCatalogCol() {
+        FlowLayout col = Containers.verticalFlow(Sizing.expand(), Sizing.fill(100));
+        col.surface(Surface.flat(INSET));
+        col.padding(Insets.of(6));
+        col.gap(4);
+        col.child(label("AUGMENTS", MUTED));
+        FlowLayout list = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        list.gap(2);
+        for (NotebookAugmenterS2C.Aug a : NotebookState.augCatalog) list.child(augRow(a));
+        col.child(Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), list));
+        return col;
+    }
+
+    private Component augRow(NotebookAugmenterS2C.Aug a) {
+        boolean applied = a.applied();
+        FlowLayout row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        row.verticalAlignment(VerticalAlignment.CENTER);
+        row.gap(4);
+        row.surface(Surface.flat(applied ? PANEL_HI : SLOT));
+        row.padding(Insets.of(2, 2, 4, 4));
+        row.child(label(a.label(), applied ? TEXT : MUTED));
+        row.child(expander());
+        row.child(label(a.slotCost() + (a.slotCost() == 1 ? " slot" : " slots"), MUTED));
+        if (applied) {
+            ButtonComponent btn = Components.button(Text.literal("REMOVE").styled(s -> s.withColor(AMBER)),
+                    b -> removeAug(a.type()));
+            btn.renderer(ButtonComponent.Renderer.flat(0xFF241318, 0xFF3A1D24, 0xFF241318));
+            btn.sizing(Sizing.fixed(54), Sizing.fixed(14));
+            row.child(btn);
+        } else {
+            boolean canApply = NotebookState.augSlotsUsed + a.slotCost() <= NotebookState.augSlotCap;
+            ButtonComponent btn = Components.button(Text.literal("APPLY").styled(s -> s.withColor(canApply ? GREEN : MUTED)),
+                    b -> applyAug(a.type()));
+            btn.renderer(ButtonComponent.Renderer.flat(0xFF0E2417, 0xFF17401F, 0xFF0A1219));
+            btn.sizing(Sizing.fixed(54), Sizing.fixed(14));
+            btn.active(canApply);
+            row.child(btn);
+        }
+        return row;
+    }
+
+    private void applyAug(String type) {
+        ClientPlayNetworking.send(new NotebookActionC2S(NotebookActionC2S.APPLY_AUGMENT, type, 0));
+    }
+
+    private void removeAug(String type) {
+        ClientPlayNetworking.send(new NotebookActionC2S(NotebookActionC2S.REMOVE_AUGMENT, type, 0));
     }
 
     private Component statusBar() {

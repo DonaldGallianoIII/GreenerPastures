@@ -1,6 +1,9 @@
 package com.greenerpastures.client.notebook;
 
+import com.greenerpastures.notebook.PastureSnapshot;
+import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookPasturesS2C;
 import com.greenerpastures.notebook.net.NotebookStatusS2C;
 import com.greenerpastures.notebook.net.NotebookStorageS2C;
 
@@ -54,5 +57,27 @@ public final class NotebookState {
         compilerDrain = p.drainPerSec();
         compilerCatalog = p.catalog();
         compilerInstalled = p.installed();
+    }
+
+    // ── Pastures tab ─────────────────────────────────────────────────────────
+    public static volatile List<PastureSnapshot> pastures = List.of();
+
+    public static void applyPastures(NotebookPasturesS2C p) {
+        pastures = p.pastures();
+    }
+
+    // ── Augmenter tab ────────────────────────────────────────────────────────
+    public static volatile boolean augHasKernel = false;
+    public static volatile String augTier = "";
+    public static volatile int augSlotsUsed = 0;
+    public static volatile int augSlotCap = 0;
+    public static volatile List<NotebookAugmenterS2C.Aug> augCatalog = List.of();
+
+    public static void applyAugmenter(NotebookAugmenterS2C p) {
+        augHasKernel = p.hasKernel();
+        augTier = p.tier();
+        augSlotsUsed = p.slotsUsed();
+        augSlotCap = p.slotCap();
+        augCatalog = p.catalog();
     }
 }

@@ -18,6 +18,8 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int PULL_ID  = 1;        // withdraw all of arg
     public static final int SET_BUFF = 2;        // Compiler: arg = buff id, amount = tier (≤0 removes)
     public static final int TOGGLE_DAEMON = 3;   // Compiler: flip the held Daemon ON/OFF
+    public static final int APPLY_AUGMENT = 4;   // Augmenter: arg = AugmentType name
+    public static final int REMOVE_AUGMENT = 5;  // Augmenter: arg = AugmentType name
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

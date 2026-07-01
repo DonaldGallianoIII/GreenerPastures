@@ -1,6 +1,7 @@
 package com.greenerpastures.pasture.breeding;
 
 import com.cobblemon.mod.common.block.entity.PokemonPastureBlockEntity;
+import com.greenerpastures.notebook.PastureSnapshotStore;
 import com.greenerpastures.pasture.breeding.gui.PastureMenu;
 import com.greenerpastures.pasture.breeding.gui.PastureOpenData;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
@@ -58,6 +59,9 @@ public class PastureWand extends Item {
         BlockEntity be = world.getBlockEntity(pasturePos);
         if (!(be instanceof PokemonPastureBlockEntity pasture)) return;
         final PastureData pd = PastureRegistry.get(sp.getServer()).getOrCreate(world, pasturePos);
+
+        // Notebook: snapshot this pasture into the player's console (read-only remote view; INTERACTIVE_SPEC §3.2).
+        PastureSnapshotStore.get(sp.getServer()).capture(sp.getUuid(), world, pasturePos, pd, pasture);
 
         sp.openHandledScreen(new ExtendedScreenHandlerFactory<PastureOpenData>() {
             @Override

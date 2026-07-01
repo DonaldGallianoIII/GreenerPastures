@@ -5,7 +5,9 @@ import com.greenerpastures.egg.highlighter.ShinyEggHighlighterClient;
 import com.greenerpastures.egg.oracle.EggOracleClient;
 import com.greenerpastures.client.notebook.NotebookScreen;
 import com.greenerpastures.client.notebook.NotebookState;
+import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookPasturesS2C;
 import com.greenerpastures.notebook.net.NotebookStatusS2C;
 import com.greenerpastures.notebook.net.NotebookStorageS2C;
 import com.greenerpastures.pasture.breeding.NotebookItem;
@@ -51,6 +53,16 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(NotebookCompilerS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
                     NotebookState.applyCompiler(payload);
+                    NotebookScreen.refreshIfOpen();
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(NotebookPasturesS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    NotebookState.applyPastures(payload);
+                    NotebookScreen.refreshIfOpen();
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(NotebookAugmenterS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    NotebookState.applyAugmenter(payload);
                     NotebookScreen.refreshIfOpen();
                 }));
 

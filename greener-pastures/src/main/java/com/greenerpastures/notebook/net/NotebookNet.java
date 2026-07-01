@@ -15,6 +15,13 @@ import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.GpItems;
 import com.greenerpastures.notebook.NotebookStorage;
 import com.greenerpastures.notebook.NotebookStore;
+import com.greenerpastures.notebook.PastureSnapshot;
+import com.greenerpastures.notebook.PastureSnapshotStore;
+import com.greenerpastures.pasture.breeding.Augments;
+import com.greenerpastures.pasture.breeding.BreedingTier;
+import com.greenerpastures.pasture.breeding.BreedingUpgradeItem;
+import com.greenerpastures.pasture.breeding.GpComponents;
+import com.greenerpastures.pasture.breeding.compiler.AugmentType;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.player.PlayerInventory;
@@ -32,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Notebook console networking — the shared server↔client <b>sync layer</b> (NOTEBOOK_INTERACTIVE_SPEC §2).
@@ -49,6 +57,8 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookStatusS2C.ID, NotebookStatusS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookStorageS2C.ID, NotebookStorageS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookCompilerS2C.ID, NotebookCompilerS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookPasturesS2C.ID, NotebookPasturesS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookAugmenterS2C.ID, NotebookAugmenterS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
     }
@@ -60,6 +70,8 @@ public final class NotebookNet {
             pushStatus(player);
             pushStorage(player);
             pushCompiler(player);
+            pushPastures(player);
+            pushAugmenter(player);
         });
     }
 
@@ -73,6 +85,8 @@ public final class NotebookNet {
                 case NotebookActionC2S.PULL_ID  -> { pull(player, p.arg(), true);  pushStorage(player); }
                 case NotebookActionC2S.SET_BUFF -> { setBuff(player, p.arg(), p.amount()); pushCompiler(player); }
                 case NotebookActionC2S.TOGGLE_DAEMON -> { toggleDaemon(player); pushCompiler(player); }
+                case NotebookActionC2S.APPLY_AUGMENT -> { applyAugment(player, p.arg()); pushAugmenter(player); }
+                case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
                 default -> { }
             }
             pushStatus(player);
@@ -180,6 +194,102 @@ public final class NotebookNet {
         for (ItemStack s : inv.main) if (s.getItem() instanceof DaemonItem) return s;
         for (ItemStack s : inv.offHand) if (s.getItem() instanceof DaemonItem) return s;
         return ItemStack.EMPTY;
+    }
+
+    // ── Pastures (read-only snapshots) ──────────────────────────────────────────────────────────────────
+
+    /** Send the player's tracked pasture snapshots (captured when they opened each pasture in-world). */
+    public static void pushPastures(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        List<PastureSnapshot> snaps = PastureSnapshotStore.get(server).snapshotsOf(player.getUuid());
+        ServerPlayNetworking.send(player, new NotebookPasturesS2C(snaps));
+    }
+
+    // ── Kernel Augmenter (slot model; GPU/Data cost DEFERRED per §7.5) ──────────────────────────────────
+
+    /** A found Kernel + a writer that puts a replacement stack back in its inventory slot (apply returns a copy). */
+    private record KernelRef(ItemStack stack, Consumer<ItemStack> writer) {}
+
+    private static KernelRef firstKernel(ServerPlayerEntity player) {
+        PlayerInventory inv = player.getInventory();
+        for (int i = 0; i < inv.main.size(); i++) {
+            if (inv.main.get(i).getItem() instanceof BreedingUpgradeItem) {
+                final int idx = i;
+                return new KernelRef(inv.main.get(i), ns -> inv.main.set(idx, ns));
+            }
+        }
+        for (int i = 0; i < inv.offHand.size(); i++) {
+            if (inv.offHand.get(i).getItem() instanceof BreedingUpgradeItem) {
+                final int idx = i;
+                return new KernelRef(inv.offHand.get(i), ns -> inv.offHand.set(idx, ns));
+            }
+        }
+        return null;
+    }
+
+    private static int slotCost(AugmentType at) {
+        return 1;   // uniform 1 slot per augment for v1 (per-augment costs arrive with the economy pass)
+    }
+
+    private static int slotsUsed(ItemStack kernel) {
+        int n = 0;
+        for (AugmentType at : AugmentType.values()) if (at.installedOn(kernel)) n += slotCost(at);
+        return n;
+    }
+
+    private static AugmentType augmentType(String name) {
+        try {
+            return AugmentType.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /** Send the Augmenter tab: the first held Kernel's tier + slot usage/capacity + the augment catalog. */
+    public static void pushAugmenter(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        KernelRef ref = firstKernel(player);
+        boolean has = ref != null;
+        String tierLabel = "no Kernel";
+        int slotCap = 0, used = 0;
+        List<NotebookAugmenterS2C.Aug> catalog = new ArrayList<>();
+        if (has) {
+            BreedingTier tier = ((BreedingUpgradeItem) ref.stack().getItem()).tier();
+            tierLabel = tier.name();
+            slotCap = tier.slots;
+            used = slotsUsed(ref.stack());
+            for (AugmentType at : AugmentType.values()) {
+                catalog.add(new NotebookAugmenterS2C.Aug(at.name(), at.effectSummary(), slotCost(at),
+                        at.installedOn(ref.stack())));
+            }
+        }
+        ServerPlayNetworking.send(player, new NotebookAugmenterS2C(has, tierLabel, used, slotCap, catalog));
+    }
+
+    private static void applyAugment(ServerPlayerEntity player, String typeName) {
+        KernelRef ref = firstKernel(player);
+        if (ref == null) return;
+        AugmentType at = augmentType(typeName);
+        if (at == null || !at.appliesTo(ref.stack()) || at.installedOn(ref.stack())) return;   // no-dupe
+        BreedingTier tier = ((BreedingUpgradeItem) ref.stack().getItem()).tier();
+        if (slotsUsed(ref.stack()) + slotCost(at) > tier.slots) return;   // slot gate (GPU/Data cost deferred)
+        ref.writer().accept(at.apply(ref.stack()));
+        GpLog.i("notebook", "augment_apply", "player", player.getUuid().toString(), "type", typeName);
+    }
+
+    private static void removeAugment(ServerPlayerEntity player, String typeName) {
+        KernelRef ref = firstKernel(player);
+        if (ref == null) return;
+        AugmentType at = augmentType(typeName);
+        if (at == null || !at.appliesTo(ref.stack())) return;
+        Augments a = ref.stack().get(GpComponents.AUGMENTS);
+        if (a == null || a.level(at.function) <= 0) return;
+        ItemStack out = ref.stack().copy();
+        out.set(GpComponents.AUGMENTS, a.withLevel(at.function, 0));
+        ref.writer().accept(out);
+        GpLog.i("notebook", "augment_remove", "player", player.getUuid().toString(), "type", typeName);
     }
 
     private static int countGpu(ServerPlayerEntity player) {
