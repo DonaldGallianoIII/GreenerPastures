@@ -4,7 +4,7 @@
    wired to the live data contract (NOTEBOOK_DATA_CONTRACT.md) via the bridge SDK.
    Viewport-sized window; every tab reads its channel; buttons send actions.
    ============================================================ */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
 
 const CSS = `
@@ -13,14 +13,16 @@ const CSS = `
   --bg:#0c0f14; --bg2:#0a0d12; --panel:#161c25; --panel-hi:#1d2530; --inset:#0e131a; --slot:#080b10;
   --line:#2a3543; --line2:#212a36; --text:#e7eef6; --muted:#8593a4; --dim:#566273;
   --green:#4fd6a0; --amber:#ffb454; --cyan:#5cc8ff; --pink:#f2a7c4; --red:#ff6b6b; --pair:#d56bff;
-  position:fixed; inset:0; display:grid; place-items:center; padding:2vh;
+  position:fixed; inset:0; display:grid; place-items:center; overflow:hidden;
   background:radial-gradient(circle at 28% 8%,#11161f,#06080c 72%);
   font-family:'Space Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; color:var(--text); user-select:none;
 }
 .gp-backdrop *,.gp-backdrop *::before,.gp-backdrop *::after{ box-sizing:border-box; }
 .mono{ font-family:'JetBrains Mono',monospace; }
 
-.gp-win{ width:min(97vw,1180px); height:min(94vh,724px); background:var(--bg); border:1px solid var(--line);
+.gp-stage{ position:relative; width:1180px; height:724px;
+  transform:scale(var(--gp-scale,1)); transform-origin:center center; }
+.gp-win{ width:100%; height:100%; background:var(--bg); border:1px solid var(--line);
   border-radius:14px; overflow:hidden; display:flex; flex-direction:column;
   box-shadow:0 44px 130px -30px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.02) inset; }
 
@@ -107,7 +109,7 @@ const CSS = `
 .dgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
 .dcard{ background:linear-gradient(180deg,#11161e,#0e131a); border:1px solid var(--line); border-radius:12px; padding:10px; }
 
-.gp-invwin{ position:fixed; bottom:14px; right:14px; z-index:60; width:270px;
+.gp-invwin{ position:absolute; bottom:14px; right:14px; z-index:60; width:270px;
   background:linear-gradient(180deg,#12171f,#0d1219); border:1px solid var(--line); border-radius:10px;
   box-shadow:0 24px 70px -24px rgba(0,0,0,.85); padding:8px; }
 .gp-invwin .hd{ display:flex; align-items:center; gap:6px; margin-bottom:7px; }
@@ -141,9 +143,22 @@ const fmtTime = (s) => (s < 60 ? `${s}s` : s < 3600 ? `${(s / 60) | 0}m` : s < 8
 export default function App() {
   const [tab, setTab] = useState('biobank')
   const active = TABS.find((t) => t.id === tab)
+  // Viewport scaling: uniformly zoom the fixed-design stage to fill the MC window (viewport-ui-principle),
+  // so the console holds the same proportion at any window size instead of being a fixed-px panel in black.
+  useEffect(() => {
+    const DESIGN_W = 1180, DESIGN_H = 724, MARGIN = 0.97
+    const fit = () => {
+      const s = Math.min(window.innerWidth / DESIGN_W, window.innerHeight / DESIGN_H) * MARGIN
+      document.documentElement.style.setProperty('--gp-scale', s)
+    }
+    fit()
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [])
   return (
     <div className="gp-backdrop">
       <style>{CSS}</style>
+      <div className="gp-stage">
       <div className="gp-win">
         <div className="gp-title">
           <span className="dot" style={{ background: '#ff5f57' }} />
@@ -171,6 +186,7 @@ export default function App() {
         <StatusBar />
       </div>
       <InventoryWindow />
+      </div>
     </div>
   )
 }
