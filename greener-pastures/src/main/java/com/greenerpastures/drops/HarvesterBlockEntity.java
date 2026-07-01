@@ -92,26 +92,26 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
         if (world.getTime() % INTERVAL != 0L) return;
         if (!(world instanceof ServerWorld sw)) return;
         if (!CobbreedingBridge.isAvailable()) {
-            GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "cobbreeding_unavailable");
+            GpLog.t("harvester", "skip_tick", "pos", pos.toShortString(), "why", "cobbreeding_unavailable");
             return;
         }
         if (firstEmpty(be.inv) < 0) {                        // full → pause (no roll, no loss, no ground items)
-            GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "container_full");
+            GpLog.t("harvester", "skip_tick", "pos", pos.toShortString(), "why", "container_full");
             return;
         }
         try {
             BlockPos pasturePos = adjacentPasture(world, pos);
             if (pasturePos == null) {                        // not face-adjacent to a pasture's block entity (its LOWER block)
-                GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "no_adjacent_pasture");
+                GpLog.t("harvester", "skip_tick", "pos", pos.toShortString(), "why", "no_adjacent_pasture");
                 return;
             }
             if (!(world.getBlockEntity(pasturePos) instanceof PokemonPastureBlockEntity pasture)) {
-                GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "not_a_pasture");
+                GpLog.t("harvester", "skip_tick", "pos", pos.toShortString(), "why", "not_a_pasture");
                 return;
             }
             PastureData opd = PastureRegistry.get(sw.getServer()).get(sw, pasturePos);
             if (opd != null && opd.owner != null) {   // owned → collected by the Notebook network tick (PastureHarvest); block stands down, no double-dip
-                GpLog.d("harvester", "skip_tick", "pos", pos.toShortString(), "why", "owned_uses_notebook");
+                GpLog.t("harvester", "skip_tick", "pos", pos.toShortString(), "why", "owned_uses_notebook");
                 return;
             }
             int mons = pasture.getTetheredPokemon().size();
@@ -140,8 +140,8 @@ public class HarvesterBlockEntity extends BlockEntity implements NamedScreenHand
             // heartbeat: one line every harvest tick (IRL minute) so "is it alive + finding mons?" is always answerable.
             // mons = how many are TETHERED to this pasture (what we roll); max = the pasture's tether cap. Free-roaming
             // mons NOT assigned to this pasture are invisible here — the Harvester only rolls tethered mons, never ground items.
-            GpLog.d("harvester", "tick", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
-                    "mons", mons, "max", pasture.getMaxTethered(), "proc", String.format("%.3f", proc), "added", added);
+            GpLog.t("harvester", "tick", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
+                    "mons", mons, "max", pasture.getMaxTethered(), "proc", String.format("%.3f", proc), "added", added);   // TRACE: per-minute heartbeat
         } catch (Throwable t) {
             // a Cobblemon API edge must never crash the world tick (mirrors the breeder/Renderer guards)
             GpLog.w("harvester", "skip", "pos", pos.toShortString(), "err", String.valueOf(t));

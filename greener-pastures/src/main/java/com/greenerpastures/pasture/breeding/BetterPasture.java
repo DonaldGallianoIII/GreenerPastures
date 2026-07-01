@@ -3,6 +3,7 @@ package com.greenerpastures.pasture.breeding;
 import com.greenerpastures.GreenerPastures;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.economy.AugmentFunction;
+import com.greenerpastures.notebook.PastureSnapshotStore;
 import com.greenerpastures.pasture.breeding.compiler.AugmentItem;
 import com.greenerpastures.pasture.breeding.compiler.AugmentType;
 import com.greenerpastures.pasture.breeding.compiler.CompilerBlock;
@@ -125,6 +126,9 @@ public final class BetterPasture {
             if (!egg.isEmpty()) ItemScatterer.spawn(world, at.getX(), at.getY(), at.getZ(), egg);
         });
         reg.remove(world, at);
+        // forget any per-player console snapshots of this now-gone pasture so the store shrinks with the world (perf-audit H1)
+        PastureSnapshotStore.get(world.getServer()).removeAt(
+                world.getRegistryKey().getValue().toString(), at.asLong());
         GpLog.i("pasture", "reclaim", "pos", at.toShortString(), "eggsDropped", eggs);
     }
 }

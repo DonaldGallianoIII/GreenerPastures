@@ -60,6 +60,7 @@ public final class PastureHarvest {
             PastureData pd = e.getValue();
             if (pd.owner == null) continue;                 // only linked/owned pastures collect into a Notebook
             BlockPos pos = e.getKey();
+            if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;   // don't force-load idle chunks (perf-audit — mirrors the breeder)
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity pasture)) continue;
             try {
                 // tether-amplified drop plan — the Kernel's base drop mods × any FED drop tether, on this clock

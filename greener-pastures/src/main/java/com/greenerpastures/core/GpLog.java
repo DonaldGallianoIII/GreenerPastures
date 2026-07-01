@@ -50,7 +50,7 @@ public final class GpLog {
 
     private static volatile boolean ready;
     private static BlockingQueue<String> queue;
-    private static Thread writer;
+    private static volatile Thread writer;
     private static volatile boolean running;
     private static final AtomicLong dropped = new AtomicLong();   // events lost to a full queue; surfaced inline by the writer (M2)
 
@@ -58,6 +58,7 @@ public final class GpLog {
     public static synchronized void init() {
         if (ready) return;
         try {
+            applyConfiguredLevel();   // honor -Dgp.log.level / GP_LOG_LEVEL before we log the session banner
             Path dir = FabricLoader.getInstance().getGameDir().resolve("gp-logs");
             Files.createDirectories(dir);
             Path latest = dir.resolve("latest.log");
@@ -69,6 +70,10 @@ public final class GpLog {
             writer.setDaemon(true);
             writer.start();
             ready = true;
+            // Drain the queue + close the file cleanly on JVM exit so the tail keeps its last lines. This is a
+            // JVM shutdown hook, NOT a SERVER_STOPPING hook: GpLog opens once for the whole JVM (mod-init), so
+            // closing it on quit-to-title would silence the log for the next world loaded this session (perf-audit).
+            Runtime.getRuntime().addShutdownHook(new Thread(GpLog::shutdown, "GreenerPastures-GpLog-shutdown"));
 
             i("gplog", "session_start",
                     "gameDir", FabricLoader.getInstance().getGameDir().toString(),
@@ -76,6 +81,29 @@ public final class GpLog {
         } catch (Throwable t) {
             GreenerPastures.LOG.error("[gplog] init failed; debug log disabled", t);
         }
+    }
+
+    /** Honor a launch-time level override: {@code -Dgp.log.level=INFO} (or env {@code GP_LOG_LEVEL}); default DEBUG. */
+    private static void applyConfiguredLevel() {
+        String raw = System.getProperty("gp.log.level");
+        if (raw == null || raw.isBlank()) raw = System.getenv("GP_LOG_LEVEL");
+        if (raw == null || raw.isBlank()) return;
+        try {
+            minLevel = Level.valueOf(raw.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            GreenerPastures.LOG.warn("[gplog] ignoring unknown gp.log.level '{}' (want TRACE|DEBUG|INFO|WARN|ERROR)", raw);
+        }
+    }
+
+    /** Drain the queue + close the file on JVM exit (registered as a shutdown hook by {@link #init}). Idempotent. */
+    public static void shutdown() {
+        if (!running) return;                 // not started, or already shutting down
+        running = false;                      // the drain loop finishes the backlog, then its finally closes the writer
+        Thread w = writer;
+        if (w != null) {
+            try { w.join(2000L); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+        }
+        ready = false;
     }
 
     public static void t(String tag, String ev, Object... kv) { log(Level.TRACE, tag, ev, kv); }

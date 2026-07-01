@@ -102,8 +102,8 @@ public class RendererBlockEntity extends BlockEntity {
                 GpLog.d("tether", "drain", "pos", pos.toShortString(),
                         "data", plan.drain(), "owner", plan.operator().toString(), "src", "renderer");
             }
-            GpLog.i("renderer", "render", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
-                    "culled", culled, "data", data, "owner", be.owner.toString());
+            GpLog.d("renderer", "render", "pos", pos.toShortString(), "pasture", pasturePos.toShortString(),
+                    "culled", culled, "data", data, "owner", be.owner.toString());   // DEBUG: routine cull, up to 1/sec — silent at INFO
             Analytics.record(world, Event.of("egg_rendered")
                     .put("culled", culled).put("data", data)
                     .put("x", pos.getX()).put("y", pos.getY()).put("z", pos.getZ())

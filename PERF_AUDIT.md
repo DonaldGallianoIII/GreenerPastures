@@ -65,6 +65,35 @@ economy/* (O(1) scalars) · `DashboardStats`/`RenderLedger`/`EggQueue`/`ShinyOdd
 
 All fixes are pure perf (no gameplay/behavior change), test-backed, build-clean — **committed, NOT deployed** (one QA item, Q7).
 
+## 🩺 2026-07-01 — Overnight-crash audit (5-agent sweep) + fixes
+
+_Trigger: Deuce reported a crash after the game was left running ~3–4h overnight. Five read-only agents swept
+tick loops · collections/state · logging · threadlocals/mixins/registration · networking._
+
+**Verdict: almost certainly NOT us.** No `hs_err_pid` (JVM fatal), no heapdump (`-XX:HeapDumpPath` is set — a
+heap OOM writes one), no OOM report; the last session ended on a clean `Saving and pausing game…` with breeding
+still hatching. The only GP crash on record is a **corrupted-jar deploy race** (`ZipException: invalid LOC
+header` reading a GP class at startup, 0 players) — a half-written jar, not a leak. All slices agree: **nothing
+grows unbounded on the heap while idle with zero players** (egg queue capped, log queue bounded+pruned, registry
+has eviction). Likeliest real cause: external (Windows sleep/hibernate, GPU driver, another mod).
+
+Still, the sweep found real 24/7-server hardening. **Fixed (build-clean, tests green):**
+- 🔴 **`PastureSnapshotStore` unbounded + NBT-per-autosave** → access-order **LRU cap 64/player** + `removeAt(dim,pos)` wired into `BetterPasture.reclaim`.
+- 🟡 **`GpLog` never drained on exit** → `shutdown()` + **JVM shutdown hook** (deliberately NOT `SERVER_STOPPING` — GpLog is JVM-lifetime; closing on quit-to-title would kill it for the next world that session).
+- 🟡 **`PastureHarvest` could force-load idle chunks** → added the breeder's `isChunkLoaded` guard.
+- 🟡 **Daemon buff caches never evicted a disconnected player** → `ServerPlayConnectionEvents.DISCONNECT → clear(player)` (covers `lastPaid`/`drainCarry`/`attributed`).
+- 🟢 **Log volume** → launch-time knob `-Dgp.log.level` / `GP_LOG_LEVEL` (default DEBUG) + **TRACE-gated the idle heartbeats** (`buff:tick`, Harvester `skip_tick`/`tick`; Renderer `render` INFO→DEBUG). Finishes the 06-28 M2 "INFO for release" item as a runtime knob.
+- 🟢 **`PastureRegistry.dimKey`** memoized (identity `ConcurrentHashMap<World,String>`) — no per-tick string alloc.
+- ⓘ **`BlockDropBoostMixin`** exception-path self-heal documented (no behavior change).
+
+**Deferred / skipped (with reason):** in-session log size-roll (writer is safety-critical; volume already
+solved — add later if wanted) · duplicate `HandledScreen` accessors (cosmetic dedup, not perf) · `GoalStore`
+disconnect eviction (**skipped** — would delete the player's active goal; the "leak" is 2 self-healing in-memory
+entries).
+
+**Deploy lesson:** the corrupted-jar crash was a deploy race — **fully close MC before copying the jar in, and
+confirm the copy finished.**
+
 ## 📈 How to capture a real flame graph + heap histogram (in-game)
 A true flame graph needs a profiled JVM — do it on the live dev instance (dev greenlit).
 - **`spark` mod (recommended):** drop `spark-fabric` (1.21.1) into `mods/`. Flame graph: `/spark profiler start --alloc --thread "Render thread"` while dragging a Daemon wire (catches the per-frame garbage), or `--thread "Server thread"` during an autosave (catches the NBT re-encode) → auto-stops, prints a browser URL. Heap: `/spark heapsummary` before/after farming 1000+ eggs and diff (watch `ItemStack`/`NbtCompound`/`byte[]` + the queue maps). `/spark health` for GC pauses.

@@ -29,7 +29,20 @@ import java.util.UUID;
 public final class PastureSnapshotStore extends PersistentState {
     private static final String ID = "greenerpastures_pasture_snapshots";
 
+    /** Cap per-player snapshots so the store — and the NBT rewritten on every autosave — can't grow unbounded
+     *  as a farm sprawls (perf-audit H1). Access-order LRU keeps the 64 most-recently-opened pastures per player. */
+    private static final int MAX_PER_PLAYER = 64;
+
     private final Map<UUID, LinkedHashMap<String, PastureSnapshot>> byPlayer = new LinkedHashMap<>();
+
+    /** A per-player bucket that self-evicts its eldest (least-recently-opened) entry past {@link #MAX_PER_PLAYER}. */
+    private static LinkedHashMap<String, PastureSnapshot> newBucket() {
+        return new LinkedHashMap<>(16, 0.75f, true) {
+            @Override protected boolean removeEldestEntry(Map.Entry<String, PastureSnapshot> eldest) {
+                return size() > MAX_PER_PLAYER;
+            }
+        };
+    }
 
     public List<PastureSnapshot> snapshotsOf(UUID player) {
         LinkedHashMap<String, PastureSnapshot> m = byPlayer.get(player);
@@ -39,8 +52,19 @@ public final class PastureSnapshotStore extends PersistentState {
     /** Build + store a fresh snapshot of the pasture at {@code pos} for {@code player} (called on open). */
     public void capture(UUID player, World world, BlockPos pos, PastureData pd, PokemonPastureBlockEntity be) {
         PastureSnapshot snap = build(world, pos, pd, be);
-        byPlayer.computeIfAbsent(player, u -> new LinkedHashMap<>()).put(snap.key(), snap);
+        byPlayer.computeIfAbsent(player, u -> newBucket()).put(snap.key(), snap);
         markDirty();
+    }
+
+    /** Forget a pasture's snapshot for every player — called when its block is reclaimed, so the console can't
+     *  show a destroyed pasture and the store shrinks with the world (perf-audit H1). */
+    public void removeAt(String dim, long posLong) {
+        String key = dim + "|" + posLong;
+        boolean changed = false;
+        for (LinkedHashMap<String, PastureSnapshot> m : byPlayer.values()) {
+            if (m.remove(key) != null) changed = true;
+        }
+        if (changed) markDirty();
     }
 
     private static PastureSnapshot build(World world, BlockPos pos, PastureData pd, PokemonPastureBlockEntity be) {
@@ -90,7 +114,7 @@ public final class PastureSnapshotStore extends PersistentState {
             try {
                 UUID id = UUID.fromString(k);
                 NbtList list = players.getList(k, NbtElement.COMPOUND_TYPE);
-                LinkedHashMap<String, PastureSnapshot> m = new LinkedHashMap<>();
+                LinkedHashMap<String, PastureSnapshot> m = newBucket();   // self-trims if a legacy save is over cap
                 for (int i = 0; i < list.size(); i++) {
                     PastureSnapshot s = PastureSnapshot.fromNbt(list.getCompound(i));
                     m.put(s.key(), s);

@@ -22,8 +22,12 @@ public final class PastureRegistry extends PersistentState {
 
     private final Map<String, Map<BlockPos, PastureData>> byDim = new HashMap<>();
 
+    /** Cache the dim-key string per world so the per-tick {@link #inWorld}/{@link #get} lookups don't allocate a
+     *  fresh Identifier string every call (perf-audit; identity-keyed, bounded by loaded-world count). */
+    private static final Map<World, String> DIM_KEY = new java.util.concurrent.ConcurrentHashMap<>();
+
     private static String dimKey(World world) {
-        return world.getRegistryKey().getValue().toString();
+        return DIM_KEY.computeIfAbsent(world, w -> w.getRegistryKey().getValue().toString());
     }
 
     public PastureData get(World world, BlockPos pos) {

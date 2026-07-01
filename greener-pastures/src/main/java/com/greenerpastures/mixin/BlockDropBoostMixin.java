@@ -32,6 +32,8 @@ public class BlockDropBoostMixin {
             at = @At("HEAD"))
     private static void gp$beginBoost(BlockState state, ServerWorld world, BlockPos pos, BlockEntity blockEntity,
                                       Entity breaker, ItemStack tool, CallbackInfoReturnable<List<ItemStack>> cir) {
+        // begin() clears the ThreadLocal window FIRST, so even if a prior getDroppedStacks threw (skipping its
+        // RETURN close) the stale window is wiped here — the exception path is self-healing (perf-audit).
         if (breaker instanceof ServerPlayerEntity sp) DaemonEnchantBoost.begin(sp);
         else DaemonEnchantBoost.end();
     }

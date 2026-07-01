@@ -5,6 +5,7 @@ import com.greenerpastures.economy.DaemonItem;
 import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.economy.DataStore;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -73,6 +74,10 @@ public final class DaemonBuffs {
 
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(DaemonBuffs::onServerTick);
+        // Evict a player's buff caches when they log off (lastPaid + drainCarry here, and attributed in
+        // DaemonAttributeBuffs): the settle loop only ever visits ONLINE players, so without this a player who
+        // disconnects while buffed leaves stale per-UUID entries that never clear (perf-audit).
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> clear(handler.player));
         DaemonVeinMine.init();   // event-driven HOOK (block-break), reads the same paid-buff state
         GpLog.i("buff", "adapter_init", "interval", INTERVAL, "supported", SUPPORTED.toString());
     }
@@ -116,8 +121,8 @@ public final class DaemonBuffs {
 
         applyEffects(player, buffs);
         DaemonAttributeBuffs.reconcile(player, buffs);       // attribute enchants: grant/scale/strip to match the bill
-        GpLog.d("buff", "tick", "player", id.toString(), "top", buffs.daemonLevel(),
-                "buffs", buffs.tiers().size(), "paid", pay);
+        GpLog.t("buff", "tick", "player", id.toString(), "top", buffs.daemonLevel(),
+                "buffs", buffs.tiers().size(), "paid", pay);   // TRACE: 1/sec/holder heartbeat — off unless gp.log.level=TRACE
     }
 
     /** Drop a player's buff state — clears the per-tick caches AND strips any attribute modifiers we added. */
