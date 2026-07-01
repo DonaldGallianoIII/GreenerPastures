@@ -7,6 +7,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
 
+// MCEF forwards key events but NOT mouse-click modifiers, so ev.shiftKey is always false in-game. Track Shift via
+// key events (which DO come through) and OR it into click handlers, so ⇧-click works both in-game and in a browser.
+let SHIFT_HELD = false
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', (e) => { if (e.key === 'Shift' || e.shiftKey) SHIFT_HELD = true })
+  window.addEventListener('keyup', (e) => { if (e.key === 'Shift' || !e.shiftKey) SHIFT_HELD = false })
+  window.addEventListener('blur', () => { SHIFT_HELD = false })
+}
+const shiftHeld = (ev) => (ev && ev.shiftKey) || SHIFT_HELD
+
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 .gp-backdrop{
@@ -18,6 +28,12 @@ const CSS = `
   font-family:'Space Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; color:var(--text); user-select:none;
 }
 .gp-backdrop *,.gp-backdrop *::before,.gp-backdrop *::after{ box-sizing:border-box; }
+.gp-backdrop ::-webkit-scrollbar{ width:8px; height:8px; }
+.gp-backdrop ::-webkit-scrollbar-track{ background:transparent; }
+.gp-backdrop ::-webkit-scrollbar-thumb{ background:linear-gradient(180deg,#6cd2ff,#2f8fd0); border-radius:20px;
+  box-shadow:0 0 6px rgba(92,200,255,.55),0 0 0 1px rgba(0,0,0,.35); }
+.gp-backdrop ::-webkit-scrollbar-thumb:hover{ background:linear-gradient(180deg,#8fddff,#43a6e6); }
+.gp-backdrop ::-webkit-scrollbar-corner{ background:transparent; }
 .mono{ font-family:'JetBrains Mono',monospace; }
 
 .gp-stage{ position:relative; width:1180px; height:724px;
@@ -215,44 +231,49 @@ function StatusBar() {
   )
 }
 
-// A tiny floating window (bottom-right) mocking the player's MC inventory + hotbar, so slot/item flow is
-// visible: GPU is consumed on apply, storage grabs land in a slot. (Real bridge: an `inventory` channel of slots.)
-// Floating inventory window: mirrors the player's REAL inventory (server `inventory` channel). Draggable by its
-// header (persists across tabs — it's always mounted outside the tab body). Coords are in stage space, so the
-// drag delta is divided by --gp-scale to track the cursor under the viewport zoom.
+// Floating inventory window: mirrors the player's REAL inventory (`inventory` channel). Draggable by its header
+// (persists across tabs — always mounted outside the tab body) and minimizable to a single line. Drag applies a
+// GPU transform straight to the node (no per-move React re-render → smooth in MCEF), committed to state on release;
+// the delta is divided by --gp-scale to track the cursor under the viewport zoom.
 function InventoryWindow() {
   const inv = useChannel('inventory')
   const slots = inv?.slots || Array(36).fill(null)
   const [pos, setPos] = useState({ x: 892, y: 512 })   // stage coords; default ≈ bottom-right of the 1180×724 stage
+  const [min, setMin] = useState(false)
+  const winRef = useRef(null)
   const drag = useRef(null)
   const onDown = (e) => {
     const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
-    drag.current = { sx: e.clientX, sy: e.clientY, bx: pos.x, by: pos.y, scale }
+    drag.current = { sx: e.clientX, sy: e.clientY, bx: pos.x, by: pos.y, scale, dx: 0, dy: 0 }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
     e.preventDefault()
   }
   const onMove = (e) => {
     const d = drag.current; if (!d) return
-    const nx = d.bx + (e.clientX - d.sx) / d.scale
-    const ny = d.by + (e.clientY - d.sy) / d.scale
-    setPos({ x: Math.max(4, Math.min(1180 - 274, nx)), y: Math.max(4, Math.min(724 - 188, ny)) })
+    d.dx = (e.clientX - d.sx) / d.scale
+    d.dy = (e.clientY - d.sy) / d.scale
+    if (winRef.current) winRef.current.style.transform = `translate(${d.dx}px,${d.dy}px)`
   }
   const onUp = () => {
-    drag.current = null
+    const d = drag.current; drag.current = null
     window.removeEventListener('mousemove', onMove)
     window.removeEventListener('mouseup', onUp)
+    if (winRef.current) winRef.current.style.transform = ''
+    if (d) setPos({ x: Math.max(4, Math.min(906, d.bx + d.dx)), y: Math.max(4, Math.min(534, d.by + d.dy)) })
   }
   return (
-    <div className="gp-invwin" style={{ left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' }}>
-      <div className="hd" onMouseDown={onDown} style={{ cursor: 'grab' }}>
+    <div className="gp-invwin" ref={winRef} style={{ left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' }}>
+      <div className="hd" onMouseDown={onDown} style={{ cursor: 'grab', marginBottom: min ? 0 : undefined }}>
         <span className="dot" style={{ background: 'var(--green)', width: 7, height: 7 }} />
         <span className="t">inventory</span>
         <span style={{ flex: 1 }} />
-        <span className="dim" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>⇧-click → storage · drag ⠿</span>
+        {!min && <span className="dim" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>⇧-click → storage</span>}
+        <span onMouseDown={(e) => e.stopPropagation()} onClick={() => setMin((m) => !m)} title={min ? 'expand' : 'minimize'}
+          style={{ cursor: 'pointer', marginLeft: 8, color: 'var(--muted)', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, lineHeight: 1 }}>{min ? '▢' : '—'}</span>
       </div>
-      <div className="invgrid">{slots.slice(9, 36).map((s, i) => <Slot key={i} s={s} idx={i + 9} />)}</div>
-      <div className="invgrid hot">{slots.slice(0, 9).map((s, i) => <Slot key={i} s={s} idx={i} hot />)}</div>
+      {!min && <div className="invgrid">{slots.slice(9, 36).map((s, i) => <Slot key={i} s={s} idx={i + 9} />)}</div>}
+      {!min && <div className="invgrid hot">{slots.slice(0, 9).map((s, i) => <Slot key={i} s={s} idx={i} hot />)}</div>}
     </div>
   )
 }
@@ -262,7 +283,7 @@ function Slot({ s, idx, hot }) {
   const label = isGpu ? '◈' : shortId(s.id).replace(/\s/g, '').slice(0, 3)
   return (
     <div className={`islot2 has${hot ? ' hot' : ''}${isGpu ? ' gpu' : ''}`} title={`${shortId(s.id)} ×${s.count} · ⇧-click → storage`}
-      onClick={(ev) => { if (ev.shiftKey) send('storage', 'DEPOSIT', { slot: idx }) }}>
+      onClick={(ev) => { if (shiftHeld(ev)) send('storage', 'DEPOSIT', { slot: idx }) }}>
       <span className="g" style={isGpu ? { color: 'var(--cyan)' } : null}>{label}</span>
       <span className="c">{s.count}</span>
     </div>
@@ -274,6 +295,7 @@ function BioBank() {
   const d = useChannel('biobank')
   const [open, setOpen] = useState(null)
   const [sortKey, setSortKey] = useState('iv')
+  if (!d) return <div className="pane" />   // channel not received yet → blank, not a flash of the empty state
   const entries = d?.entries || []
   const groups = {}
   entries.forEach((e, i) => (groups[e.species] ||= []).push({ e, i }))
@@ -356,7 +378,7 @@ function Harvester() {
         <div className="grid">
           {list.map(([id, n]) => (
             <div key={id} className="cell" title={`${id} · L: one · ⇧: stack · R: all`}
-              onClick={(ev) => send('storage', ev.shiftKey ? 'PULL_STACK' : 'PULL_ONE', { item: id })}
+              onClick={(ev) => send('storage', shiftHeld(ev) ? 'PULL_STACK' : 'PULL_ONE', { item: id })}
               onContextMenu={(ev) => { ev.preventDefault(); send('storage', 'PULL_ID', { item: id }) }}>
               <span className="ct">{compact(n)}</span>
               <span className="nm">{shortId(id)}</span>
