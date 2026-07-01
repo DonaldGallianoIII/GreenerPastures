@@ -350,6 +350,8 @@ public final class NotebookNet {
         ServerWorld world = player.getServerWorld();
         if (world == null || !(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity pasture)) return;
         PastureData pd = PastureRegistry.get(server).getOrCreate(world, pos);
+        // Refresh this pasture's Pastures-tab snapshot too, so a rename / edit shows up there (Deuce, 2026-07-01).
+        PastureSnapshotStore.get(server).capture(player.getUuid(), world, pos, pd, pasture);
         BreedingTier tier = pd.tier();
         boolean linked = pd.owner != null && pd.owner.equals(player.getUuid());
         List<MonEntry> roster = CobbreedingBridge.rosterOf(pasture, pd);
