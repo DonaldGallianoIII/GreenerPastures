@@ -47,6 +47,11 @@ public final class BioBankData {
         return out;
     }
 
+    /** The eggs banked under one species key (empty if none) — for the console's per-species drill-in. */
+    public List<ItemStack> entries(String species) {
+        return bySpecies.getOrDefault(species, List.of());
+    }
+
     // --- persistence (egg ItemStacks are stored losslessly, one NbtList per species) ---
 
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {

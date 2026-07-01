@@ -2,6 +2,7 @@ package com.greenerpastures.client.notebook;
 
 import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
+import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
 import com.greenerpastures.notebook.net.NotebookStatusS2C;
@@ -79,5 +80,14 @@ public final class NotebookState {
         augSlotsUsed = p.slotsUsed();
         augSlotCap = p.slotCap();
         augCatalog = p.catalog();
+    }
+
+    // ── BioBank tab ──────────────────────────────────────────────────────────
+    public static volatile int biobankTotal = 0;
+    public static volatile List<NotebookBioBankS2C.Entry> biobank = List.of();
+
+    public static void applyBiobank(NotebookBioBankS2C p) {
+        biobankTotal = p.total();
+        biobank = p.entries();
     }
 }

@@ -4,43 +4,41 @@ import com.greenerpastures.core.GpLog;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.PersistentState;
 import net.minecraft.world.World;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * World-saved store of every {@link BioBankData}, keyed by dimension + block position (mirrors
- * {@code PastureRegistry}). The eggs live here — in the per-world save — rather than in the block
- * entity's chunk NBT, so a BioBank can hold many eggs without bloating chunk saves.
+ * World-saved store of every player's {@link BioBankData}, keyed by <b>player UUID</b> (INTERACTIVE_SPEC §7.2:
+ * BioBank is per-player, block-free — the Notebook is the hub). The eggs live in this overworld save (not in
+ * block-entity chunk NBT), so a bank scales to thousands without bloating chunk saves. A BioBank block is now
+ * just a deposit station that fills the depositing player's bank; the console's BioBank tab reads it.
+ *
+ * <p>(Migration note: old block-keyed banks — {@code dim|pos} keys — are dropped on load, since keys are now
+ * UUIDs. Fine for the in-dev mod; re-deposit.)
  */
 public final class BioBankStore extends PersistentState {
     private static final String ID = "greenerpastures_biobanks";
 
-    private final Map<String, BioBankData> data = new HashMap<>();
+    private final Map<UUID, BioBankData> banks = new HashMap<>();
 
-    private static String key(World world, BlockPos pos) {
-        return world.getRegistryKey().getValue() + "|" + pos.asLong();
+    /** The player's bank, or null if they've never banked anything. */
+    public BioBankData get(UUID player) {
+        return banks.get(player);
     }
 
-    public BioBankData get(World world, BlockPos pos) {
-        return data.get(key(world, pos));
-    }
-
-    public BioBankData getOrCreate(World world, BlockPos pos) {
-        return data.computeIfAbsent(key(world, pos), k -> { markDirty(); return new BioBankData(); });
-    }
-
-    public void remove(World world, BlockPos pos) {
-        if (data.remove(key(world, pos)) != null) markDirty();
+    /** The player's bank, created empty on first touch. */
+    public BioBankData bankOf(UUID player) {
+        return banks.computeIfAbsent(player, u -> { markDirty(); return new BioBankData(); });
     }
 
     @Override
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         NbtCompound map = new NbtCompound();
-        data.forEach((k, v) -> map.put(k, v.writeNbt(new NbtCompound(), lookup)));
+        banks.forEach((u, v) -> map.put(u.toString(), v.writeNbt(new NbtCompound(), lookup)));
         nbt.put("banks", map);
         return nbt;
     }
@@ -50,9 +48,9 @@ public final class BioBankStore extends PersistentState {
         NbtCompound map = nbt.getCompound("banks");
         for (String k : map.getKeys()) {
             try {
-                s.data.put(k, BioBankData.fromNbt(map.getCompound(k), lookup));
+                s.banks.put(UUID.fromString(k), BioBankData.fromNbt(map.getCompound(k), lookup));
             } catch (Exception e) {
-                // one malformed bank must not fail the whole world load (re-audit M2); skip + log it
+                // a malformed / legacy (dim|pos) key must not fail the whole world load — skip + log it
                 GpLog.w("biobank", "load_skip_malformed", "key", k, "err", String.valueOf(e));
             }
         }

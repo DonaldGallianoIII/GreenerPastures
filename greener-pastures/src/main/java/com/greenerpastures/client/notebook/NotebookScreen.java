@@ -19,6 +19,7 @@ import io.wispforest.owo.ui.core.VerticalAlignment;
 import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.net.NotebookActionC2S;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
+import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
 import com.greenerpastures.notebook.net.NotebookRequestC2S;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -64,6 +65,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
 
     private final int activeTab;
     private String selectedPastureKey = null;   // Pastures tab selection; survives refreshIfOpen, resets on tab switch
+    private String expandedSpecies = null;      // BioBank accordion — the one open species (null = all collapsed)
 
     public NotebookScreen() { this(Tab.PASTURES.ordinal()); }
 
@@ -149,6 +151,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         if (tab() == Tab.COMPILER) return compilerContent();
         if (tab() == Tab.PASTURES) return pasturesContent();
         if (tab() == Tab.AUGMENTER) return augmenterContent();
+        if (tab() == Tab.BIOBANK) return biobankContent();
         FlowLayout body = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
         body.gap(6);
         body.surface(Surface.flat(PANEL))
@@ -504,6 +507,70 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
 
     private void removeAug(String type) {
         ClientPlayNetworking.send(new NotebookActionC2S(NotebookActionC2S.REMOVE_AUGMENT, type, 0));
+    }
+
+    // ── BioBank tab — species accordion (browse; slice 6a stats) ────────────────────────────────────────
+    private Component biobankContent() {
+        FlowLayout body = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
+        body.gap(6);
+        body.surface(Surface.flat(PANEL));
+        body.padding(Insets.of(8));
+
+        java.util.LinkedHashMap<String, java.util.List<NotebookBioBankS2C.Entry>> groups = new java.util.LinkedHashMap<>();
+        for (NotebookBioBankS2C.Entry e : NotebookState.biobank) {
+            groups.computeIfAbsent(e.species(), s -> new java.util.ArrayList<>()).add(e);
+        }
+        body.child(label("BioBank · " + NotebookState.biobankTotal + " kept · " + groups.size() + " species", MUTED));
+        if (groups.isEmpty()) {
+            FlowLayout empty = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
+            empty.horizontalAlignment(HorizontalAlignment.CENTER);
+            empty.verticalAlignment(VerticalAlignment.CENTER);
+            empty.child(label("empty — deposit eggs at a BioBank block (right-click)", MUTED));
+            body.child(empty);
+            return body;
+        }
+        FlowLayout list = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        list.gap(2);
+        for (var g : groups.entrySet()) {
+            boolean open = g.getKey().equals(expandedSpecies);
+            list.child(speciesHeader(g.getKey(), g.getValue().size(), open));
+            if (open) for (NotebookBioBankS2C.Entry e : g.getValue()) list.child(bioEntryRow(e));
+        }
+        body.child(Containers.verticalScroll(Sizing.fill(100), Sizing.expand(), list));
+        return body;
+    }
+
+    private Component speciesHeader(String species, int count, boolean open) {
+        FlowLayout row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        row.surface(Surface.flat(open ? PANEL_HI : SLOT));
+        row.padding(Insets.of(3, 3, 5, 5));
+        row.verticalAlignment(VerticalAlignment.CENTER);
+        row.cursorStyle(CursorStyle.POINTER);
+        row.child(label((open ? "▾ " : "▸ ") + capitalize(species), open ? TEXT : GREEN));
+        row.child(expander());
+        row.child(label("×" + count, MUTED));
+        row.mouseDown().subscribe((mx, my, btn) -> {
+            expandedSpecies = open ? null : species;
+            this.clearAndInit();
+            return true;
+        });
+        return row;
+    }
+
+    private Component bioEntryRow(NotebookBioBankS2C.Entry e) {
+        FlowLayout row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        row.surface(Surface.flat(INSET));
+        row.padding(Insets.of(2, 2, 14, 5));
+        row.verticalAlignment(VerticalAlignment.CENTER);
+        row.gap(10);
+        row.child(label(e.shiny() ? "★ shiny" : "·", e.shiny() ? AMBER : MUTED));
+        row.child(label("IVΣ " + e.ivTotal() + "/186", e.ivTotal() >= 160 ? GREEN : TEXT));
+        row.child(label(e.perfect() + "×31", e.perfect() > 0 ? GREEN : MUTED));
+        return row;
+    }
+
+    private static String capitalize(String s) {
+        return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     private Component statusBar() {

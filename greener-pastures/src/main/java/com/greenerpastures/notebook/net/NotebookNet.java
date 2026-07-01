@@ -1,5 +1,7 @@
 package com.greenerpastures.notebook.net;
 
+import com.greenerpastures.biobank.BioBankData;
+import com.greenerpastures.biobank.BioBankStore;
 import com.greenerpastures.buff.BuffConfig;
 import com.greenerpastures.buff.BuffId;
 import com.greenerpastures.buff.BuffResolver;
@@ -13,6 +15,8 @@ import com.greenerpastures.economy.DaemonItem;
 import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.GpItems;
+import com.greenerpastures.egg.oracle.cull.EggInfo;
+import com.greenerpastures.egg.oracle.cull.EggReader;
 import com.greenerpastures.notebook.NotebookStorage;
 import com.greenerpastures.notebook.NotebookStore;
 import com.greenerpastures.notebook.PastureSnapshot;
@@ -59,6 +63,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookCompilerS2C.ID, NotebookCompilerS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookPasturesS2C.ID, NotebookPasturesS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookAugmenterS2C.ID, NotebookAugmenterS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookBioBankS2C.ID, NotebookBioBankS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
     }
@@ -72,6 +77,7 @@ public final class NotebookNet {
             pushCompiler(player);
             pushPastures(player);
             pushAugmenter(player);
+            pushBiobank(player);
         });
     }
 
@@ -290,6 +296,28 @@ public final class NotebookNet {
         out.set(GpComponents.AUGMENTS, a.withLevel(at.function, 0));
         ref.writer().accept(out);
         GpLog.i("notebook", "augment_remove", "player", player.getUuid().toString(), "type", typeName);
+    }
+
+    // ── BioBank (per-player; browse-only in 6a) ─────────────────────────────────────────────────────────
+
+    /** Send the player's BioBank contents: one entry per stored egg (species · shiny · IV total · # perfect). */
+    public static void pushBiobank(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        BioBankData bank = BioBankStore.get(server).get(player.getUuid());
+        List<NotebookBioBankS2C.Entry> entries = new ArrayList<>();
+        if (bank != null) {
+            for (String species : bank.speciesCounts().keySet()) {
+                for (ItemStack egg : bank.entries(species)) {
+                    EggInfo info = EggReader.read(egg);
+                    boolean shiny = info != null && info.shiny();
+                    int ivTotal = info != null ? info.ivTotal() : 0;
+                    int perfect = info != null ? info.perfectCount() : 0;
+                    entries.add(new NotebookBioBankS2C.Entry(species, shiny, ivTotal, perfect));
+                }
+            }
+        }
+        ServerPlayNetworking.send(player, new NotebookBioBankS2C(entries.size(), entries));
     }
 
     private static int countGpu(ServerPlayerEntity player) {

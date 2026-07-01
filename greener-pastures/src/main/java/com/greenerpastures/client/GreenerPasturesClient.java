@@ -6,6 +6,7 @@ import com.greenerpastures.egg.oracle.EggOracleClient;
 import com.greenerpastures.client.notebook.NotebookScreen;
 import com.greenerpastures.client.notebook.NotebookState;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
+import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
 import com.greenerpastures.notebook.net.NotebookStatusS2C;
@@ -63,6 +64,11 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(NotebookAugmenterS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
                     NotebookState.applyAugmenter(payload);
+                    NotebookScreen.refreshIfOpen();
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(NotebookBioBankS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    NotebookState.applyBiobank(payload);
                     NotebookScreen.refreshIfOpen();
                 }));
 
