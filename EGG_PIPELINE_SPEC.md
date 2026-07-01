@@ -32,7 +32,13 @@ if (pd.owner != null) {                                          // Kernel'd + L
 No tray-slot cap on the data path → breeding never stalls on a full tray (capped only by the BioBank, §5). The
 `EggQueue` + tray drain stay exactly as-is for the unlinked path.
 
-## 3. Ingest — keeper-routing (folds the Renderer's cull in at birth)
+## 3. Ingest — KEEP EVERYTHING (revised 2026-07-01, Deuce)
+> **Superseded:** the BioBank keeps **every** egg — no auto-cull. Rendering an egg to Data is an *explicit* choice
+> in the visual-scripting layer (wire an egg stream into a void/Data node), never automatic at ingest. `ingestEgg`
+> just deposits the egg to the owner's BioBank; BioBank full → tray fallback. Per-species **sort** (ΣIV / per-stat /
+> shiny) in the console lets you find the good ones. _(The original keeper-routing design is kept below for history.)_
+
+### (historical) Ingest — keeper-routing (folds the Renderer's cull in at birth)
 `ingestEgg(server, owner, eggStack)`:
 1. Read the egg's card once: `EggCard c = EggReader.card(eggStack)` (species · shiny · IVs · EVs · nature · gender · ability).
 2. **SACRED guard first:** if `c.shiny()` **or** the read failed (`c == null` / `!ivsKnown`) → **keep** (never cull a shiny or an unreadable egg — same 4-guard as the Renderer).

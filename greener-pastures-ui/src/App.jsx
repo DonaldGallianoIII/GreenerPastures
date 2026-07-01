@@ -234,6 +234,7 @@ function Slot({ s, idx, hot }) {
 function BioBank() {
   const d = useChannel('biobank')
   const [open, setOpen] = useState(null)
+  const [sortKey, setSortKey] = useState('iv')
   const entries = d?.entries || []
   const groups = {}
   entries.forEach((e, i) => (groups[e.species] ||= []).push({ e, i }))
@@ -241,7 +242,14 @@ function BioBank() {
   if (!species.length) return <Empty title="BioBank empty" msg="link a pasture — its eggs are pulled in here automatically while it's loaded" />
   return (
     <div className="pane">
-      <div className="h" style={{ marginBottom: 10 }}>BioBank · {d.total} kept · {species.length} species</div>
+      <div className="row" style={{ marginBottom: 8 }}>
+        <span className="h">BioBank · {d.total} eggs · {species.length} species</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim" style={{ fontSize: 10 }}>sort ↓</span>
+        <SortBtn k="iv" cur={sortKey} set={setSortKey}>ΣIV</SortBtn>
+        {STAT_NAMES.map((n, i) => <SortBtn key={i} k={String(i)} cur={sortKey} set={setSortKey}>{n}</SortBtn>)}
+        <SortBtn k="shiny" cur={sortKey} set={setSortKey}>★</SortBtn>
+      </div>
       <div className="acc">
         {species.map((sp) => {
           const on = sp === open
@@ -253,7 +261,7 @@ function BioBank() {
                 <span style={{ flex: 1 }} />
                 <span className="chip">×{groups[sp].length}</span>
               </div>
-              {on && groups[sp].map(({ e, i }) => <EggCard key={i} e={e} idx={i} />)}
+              {on && sortEggs(groups[sp], sortKey).map(({ e, i }) => <EggCard key={i} e={e} idx={i} />)}
             </div>
           )
         })}
@@ -500,4 +508,16 @@ function Histogram({ bins }) {
   )
 }
 
+function SortBtn({ k, cur, set, children }) {
+  const on = k === cur
+  return <button className="btn" style={{ padding: '2px 6px', fontSize: 10, color: on ? 'var(--green)' : 'var(--muted)', borderColor: on ? '#2e5a47' : 'var(--line)' }} onClick={() => set(k)}>{children}</button>
+}
+const eggIvTotal = (e) => e.ivs.reduce((a, b) => a + b, 0)
+function sortEggs(list, key) {
+  const arr = [...list]
+  if (key === 'shiny') arr.sort((a, b) => (b.e.shiny - a.e.shiny) || (eggIvTotal(b.e) - eggIvTotal(a.e)))
+  else if (key === 'iv') arr.sort((a, b) => eggIvTotal(b.e) - eggIvTotal(a.e))
+  else { const s = +key; arr.sort((a, b) => ((b.e.ivs[s] ?? 0) - (a.e.ivs[s] ?? 0)) || (eggIvTotal(b.e) - eggIvTotal(a.e))) }
+  return arr
+}
 function Empty({ title, msg }) { return <div className="empty"><div><b>{title}</b><span className="muted">{msg}</span></div></div> }
