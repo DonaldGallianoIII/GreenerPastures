@@ -23,13 +23,13 @@ export const MOCK = {
     drainPerSec: 3.5,
     installed: { fortune: 3, haste: 2 },
     catalog: [
-      { id: 'fortune', label: 'Fortune', category: 'ENCHANT', cap: 3, costPerTier: 0.75 },
-      { id: 'looting', label: 'Looting', category: 'ENCHANT', cap: 3, costPerTier: 0.75 },
-      { id: 'haste', label: 'Haste', category: 'EFFECT', cap: 3, costPerTier: 0.5 },
-      { id: 'saturation', label: 'Saturation', category: 'EFFECT', cap: 3, costPerTier: 0.5 },
-      { id: 'magnet', label: 'Item Magnet', category: 'HOOK', cap: 3, costPerTier: 0.4 },
-      { id: 'auto_smelt', label: 'Auto-Smelt', category: 'HOOK', cap: 3, costPerTier: 0.4 },
-      { id: 'vein_mine', label: 'Vein-Miner', category: 'HOOK', cap: 3, costPerTier: 0.6 },
+      { id: 'fortune', label: 'Fortune', category: 'ENCHANT', cap: 3, costPerTier: 0.75, gpuCost: 2 },
+      { id: 'looting', label: 'Looting', category: 'ENCHANT', cap: 3, costPerTier: 0.75, gpuCost: 2 },
+      { id: 'haste', label: 'Haste', category: 'EFFECT', cap: 3, costPerTier: 0.5, gpuCost: 1 },
+      { id: 'saturation', label: 'Saturation', category: 'EFFECT', cap: 3, costPerTier: 0.5, gpuCost: 1 },
+      { id: 'magnet', label: 'Item Magnet', category: 'HOOK', cap: 3, costPerTier: 0.4, gpuCost: 1 },
+      { id: 'auto_smelt', label: 'Auto-Smelt', category: 'HOOK', cap: 3, costPerTier: 0.4, gpuCost: 1 },
+      { id: 'vein_mine', label: 'Vein-Miner', category: 'HOOK', cap: 3, costPerTier: 0.6, gpuCost: 3 },
     ],
   },
 
@@ -51,11 +51,11 @@ export const MOCK = {
   augmenter: {
     hasKernel: true, tier: 'GREENER', slotsUsed: 2, slotCap: 4,
     catalog: [
-      { type: 'SHINY', label: 'Shiny Odds', slotCost: 1, applied: true },
-      { type: 'SPEED', label: 'Breed Speed', slotCost: 1, applied: true },
-      { type: 'IV_FLOOR', label: 'IV Floor', slotCost: 1, applied: false },
-      { type: 'EV', label: 'EV Spread', slotCost: 1, applied: false },
-      { type: 'ENRICHMENT', label: 'Enrichment', slotCost: 1, applied: false },
+      { type: 'SHINY', label: 'Shiny Odds', slotCost: 1, gpuCost: 3, applied: true },
+      { type: 'SPEED', label: 'Breed Speed', slotCost: 1, gpuCost: 2, applied: true },
+      { type: 'IV_FLOOR', label: 'IV Floor', slotCost: 1, gpuCost: 2, applied: false },
+      { type: 'EV', label: 'EV Spread', slotCost: 1, gpuCost: 2, applied: false },
+      { type: 'ENRICHMENT', label: 'Enrichment', slotCost: 1, gpuCost: 2, applied: false },
     ],
   },
 
@@ -65,6 +65,18 @@ export const MOCK = {
       { species: 'eevee', shiny: true, ivs: [31, 31, 31, 31, 31, 31], evs: [0, 0, 0, 0, 0, 0], nature: 'timid', gender: 'female', ability: 'adaptability' },
       { species: 'eevee', shiny: false, ivs: [31, 31, 31, 0, 31, 31], evs: [252, 0, 0, 0, 4, 252], nature: 'jolly', gender: 'male', ability: 'run_away' },
       { species: 'ditto', shiny: false, ivs: [31, 0, 31, 31, 0, 31], evs: [0, 0, 0, 0, 0, 0], nature: '', gender: '', ability: '' },
+    ],
+  },
+
+  // the player's relevant items — GPU reagent, augment items, the Daemon + Kernel being edited. Shown in the
+  // inventory bar so apply/remove item-flow is visible. (Real bridge: a new `inventory` channel — see contract.)
+  inventory: {
+    items: [
+      { id: 'greenerpastures:gpu', count: 64 },
+      { id: 'greenerpastures:augment_iv_floor', count: 2 },
+      { id: 'greenerpastures:augment_ev', count: 1 },
+      { id: 'greenerpastures:daemon', count: 1 },
+      { id: 'greenerpastures:breeding_upgrade_greener', count: 1 },
     ],
   },
 }

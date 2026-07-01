@@ -106,6 +106,15 @@ const CSS = `
 
 .dgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
 .dcard{ background:linear-gradient(180deg,#11161e,#0e131a); border:1px solid var(--line); border-radius:12px; padding:10px; }
+
+.gp-inv{ height:46px; flex:none; display:flex; align-items:center; gap:6px; padding:0 12px; overflow-x:auto;
+  background:var(--bg2); border-top:1px solid var(--line2); }
+.gp-inv .lbl{ font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); margin-right:4px; flex:none; }
+.islot{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:54px; height:34px; flex:none;
+  border-radius:8px; background:var(--slot); border:1px solid var(--line); padding:3px 6px; }
+.islot.gpu{ border-color:#2e5a47; }
+.islot .ic{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text); }
+.islot .il{ font-size:8px; color:var(--muted); line-height:1.1; }
 `
 
 const TABS = [
@@ -153,6 +162,7 @@ export default function App() {
           {tab === 'augmenter' && <Augmenter />}
           {tab === 'dashboard' && <Dashboard />}
         </div>
+        <InvBar />
         <StatusBar />
       </div>
     </div>
@@ -179,6 +189,28 @@ function StatusBar() {
       <span className="muted">⌬ Kernel</span>
       <span className="sp" />
       <span style={{ color: s?.daemonOn ? 'var(--green)' : 'var(--dim)' }}>● Daemon {s ? (s.daemonOn ? 'ON' : 'OFF') : '…'}</span>
+    </div>
+  )
+}
+
+// Live inventory strip — GPU reagent + augment items + the Daemon/Kernel. Apply consumes GPU, remove refunds it,
+// visibly, right here (mock reducer emulates the server; the real bridge will feed an `inventory` channel).
+function InvBar() {
+  const inv = useChannel('inventory')
+  const items = inv?.items || []
+  return (
+    <div className="gp-inv">
+      <span className="lbl">inventory</span>
+      {items.length === 0 && <span className="dim" style={{ fontSize: 11 }}>empty</span>}
+      {items.map((it) => {
+        const isGpu = it.id.endsWith(':gpu')
+        return (
+          <div key={it.id} className={`islot${isGpu ? ' gpu' : ''}`} title={it.id}>
+            <span className="ic" style={isGpu ? { color: 'var(--cyan)' } : null}>{isGpu ? '◈ ' : '×'}{it.count}</span>
+            <span className="il">{shortId(it.id)}</span>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -311,6 +343,7 @@ function Compiler() {
   if (!d) return <Empty title="…" msg="loading the Compiler channel" />
   if (!d.hasDaemon) return <Empty title="No Daemon in your inventory" msg="hold a Daemon (anywhere in your pack) to compile its buffs" />
   const installed = d.installed || {}
+  const gpu = status?.gpu ?? 0
   const runtime = d.drainPerSec > 0 ? Math.floor((status?.data ?? 0) / d.drainPerSec) : null
   return (
     <div className="trip">
@@ -318,20 +351,22 @@ function Compiler() {
         <span className="h">Daemon</span>
         <span style={{ color: d.daemonOn ? 'var(--green)' : 'var(--muted)' }}>{d.daemonOn ? '● running' : '○ idle'}</span>
         <span className="amb">Data {status ? fmt(status.data) : '…'}</span>
+        <span className="cyn">◈ {gpu} GPU</span>
         <span className="muted">{Object.keys(installed).length} buffs on</span>
       </div>
       <div className="tcol inset" style={{ flex: 1 }}>
-        <span className="h">Effect · buff catalog</span>
+        <span className="h">Effect · −/+ tier · ◈ = GPU per tier</span>
         {(d.catalog || []).map((b) => {
           const tier = installed[b.id] || 0
           return (
             <div key={b.id} className={`brow${tier > 0 ? ' on' : ''}`}>
               <span style={{ color: tier > 0 ? 'var(--text)' : 'var(--muted)', flex: 1 }}>{b.label}</span>
               <span className="dim mono" style={{ fontSize: 9 }}>{b.category}</span>
+              <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= b.gpuCost ? 'var(--cyan)' : 'var(--red)' }} title="GPU to add one tier">◈{b.gpuCost}</span>
               <button className="step" disabled={tier <= 0} onClick={() => send('compiler', 'SET_BUFF', { buff: b.id, tier: tier - 1 })}>−</button>
               <span className="mono" style={{ fontSize: 11, color: tier > 0 ? 'var(--green)' : 'var(--muted)', width: 36, textAlign: 'center' }}>L{tier}/{b.cap}</span>
-              <button className="step" disabled={tier >= b.cap} onClick={() => send('compiler', 'SET_BUFF', { buff: b.id, tier: tier + 1 })}>+</button>
-              <span className="amb mono" style={{ fontSize: 10, width: 48, textAlign: 'right' }}>{(tier * b.costPerTier).toFixed(2)}/s</span>
+              <button className="step" disabled={tier >= b.cap || gpu < b.gpuCost} title={gpu < b.gpuCost ? 'not enough GPU' : ''} onClick={() => send('compiler', 'SET_BUFF', { buff: b.id, tier: tier + 1 })}>+</button>
+              <span className="amb mono" style={{ fontSize: 10, width: 44, textAlign: 'right' }}>{(tier * b.costPerTier).toFixed(2)}/s</span>
             </div>
           )
         })}
@@ -352,6 +387,8 @@ function Compiler() {
 // ── Augmenter (Kernel augments) ──────────────────────────────────────────────
 function Augmenter() {
   const d = useChannel('augmenter')
+  const status = useChannel('status')
+  const gpu = status?.gpu ?? 0
   if (!d) return <Empty title="…" msg="loading the Augmenter channel" />
   if (!d.hasKernel) return <Empty title="No Kernel in your inventory" msg="hold a Kernel (a Pasture Upgrade) to augment it" />
   return (
@@ -363,18 +400,20 @@ function Augmenter() {
         <div className="row" style={{ gap: 4 }}>
           {Array.from({ length: d.slotCap }).map((_, i) => <span key={i} className={`pip${i < d.slotsUsed ? ' on' : ''}`} />)}
         </div>
+        <span className="cyn" style={{ marginTop: 6 }}>◈ {gpu} GPU</span>
       </div>
       <div className="tcol inset" style={{ flex: 1 }}>
-        <span className="h">Augments</span>
+        <span className="h">Augments · ◈ = GPU cost</span>
         {(d.catalog || []).map((a) => {
-          const canApply = d.slotsUsed + a.slotCost <= d.slotCap
+          const canApply = d.slotsUsed + a.slotCost <= d.slotCap && gpu >= a.gpuCost
           return (
             <div key={a.type} className={`brow${a.applied ? ' on' : ''}`}>
               <span style={{ color: a.applied ? 'var(--text)' : 'var(--muted)', flex: 1 }}>{a.label}</span>
               <span className="dim mono" style={{ fontSize: 10 }}>{a.slotCost} slot{a.slotCost !== 1 ? 's' : ''}</span>
+              <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= a.gpuCost ? 'var(--cyan)' : 'var(--red)' }} title="GPU cost">◈{a.gpuCost}</span>
               {a.applied
-                ? <button className="btn warn" onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
-                : <button className="btn go" disabled={!canApply} onClick={() => send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>APPLY</button>}
+                ? <button className="btn warn" title={`refunds ◈${a.gpuCost}`} onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
+                : <button className="btn go" disabled={!canApply} title={gpu < a.gpuCost ? 'not enough GPU' : (d.slotsUsed + a.slotCost > d.slotCap ? 'no free slots' : '')} onClick={() => send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>APPLY</button>}
             </div>
           )
         })}

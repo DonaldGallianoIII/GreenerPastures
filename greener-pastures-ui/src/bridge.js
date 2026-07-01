@@ -13,6 +13,7 @@
  */
 import { useSyncExternalStore } from 'react'
 import { MOCK } from './mockData.js'
+import { applyMock } from './mockReducer.js'
 
 const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
 const PORT = params.get('ds_port') || import.meta.env?.VITE_DS_PORT || '25599'
@@ -63,10 +64,15 @@ function enterMock() {
   console.info('[ds-bridge] no game socket — MOCK MODE (contract sample data). Actions are logged, not sent.')
 }
 
-/** Send an action to the game. In mock/offline it's logged, not sent. */
+/** Send an action. LIVE → the game; MOCK → applied to local state so the UI updates instantly. */
 export function send(channel, action, payload = {}) {
-  if (mockMode || !socket || socket.readyState !== WebSocket.OPEN) {
-    console.info(`[ds-bridge]${mockMode ? '[mock]' : '[offline]'} action`, { channel, action, payload })
+  if (mockMode) {
+    const updates = applyMock(state, channel, action, payload)
+    for (const [ch, data] of Object.entries(updates)) setChannel(ch, data)
+    return
+  }
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.info('[ds-bridge][offline] action (no game socket)', { channel, action, payload })
     return
   }
   socket.send(JSON.stringify({ type: 'action', channel, action, payload }))
