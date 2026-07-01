@@ -5,6 +5,7 @@ import com.greenerpastures.egg.highlighter.ShinyEggHighlighterClient;
 import com.greenerpastures.egg.oracle.EggOracleClient;
 import com.greenerpastures.client.notebook.NotebookScreen;
 import com.greenerpastures.client.notebook.NotebookState;
+import com.greenerpastures.notebook.bridge.DsBridge;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
@@ -78,6 +79,9 @@ public final class GreenerPasturesClient implements ClientModInitializer {
             if (client.getNetworkHandler() == null) return;
             if (++notebookPollTick % 20 == 0) ClientPlayNetworking.send(new NotebookRequestC2S(0));
         });
+
+        // notebook/ console — live WS bridge for the React UI (dev browser now, MCEF in-game later). Loopback :25599.
+        DsBridge.init();
 
         // analytics/ chart screens land here later.
     }
