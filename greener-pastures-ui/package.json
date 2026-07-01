@@ -1,0 +1,20 @@
+{
+  "name": "greener-pastures-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Greener Pastures Notebook console — React UI, rendered in-game via MCEF, developed live over the localhost WS bridge. See MCEF_REACT_SPEC.md + NOTEBOOK_DATA_CONTRACT.md.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}
