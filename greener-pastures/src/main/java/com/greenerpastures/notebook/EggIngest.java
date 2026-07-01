@@ -1,29 +1,62 @@
 package com.greenerpastures.notebook;
 
+import com.greenerpastures.analytics.Analytics;
+import com.greenerpastures.analytics.Event;
 import com.greenerpastures.biobank.BioBankStore;
 import com.greenerpastures.core.GpLog;
+import com.greenerpastures.economy.DataStore;
+import com.greenerpastures.economy.RenderValuation;
+import com.greenerpastures.egg.oracle.cull.EggCard;
 import com.greenerpastures.egg.oracle.cull.EggReader;
+import com.greenerpastures.pasture.breeding.PastureData;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.UUID;
 
 /**
- * Eggs-as-data ingest (EGG_PIPELINE_SPEC). A Kernel'd <b>+ linked</b> pasture routes each bred egg here, and it
- * is stored <b>losslessly in the owner's BioBank — every egg, no auto-cull</b> (Deuce, 2026-07-01: the BioBank
- * is a keep-everything store; rendering an egg to Data is an <i>explicit</i> choice made in the visual-scripting
- * layer's void/Data node, never automatic here). Returns false only when the bank is full, so the breeder falls
- * back to the tray and no egg is lost. Never throws.
+ * Eggs-as-data ingest (EGG_PIPELINE_SPEC). A Kernel'd <b>+ linked</b> pasture routes each bred egg here, and the
+ * pasture's <b>Daemon graph</b> ({@link GraphEval}) decides its fate: <b>KEEP</b> → stored losslessly in the
+ * owner's BioBank, or <b>VOID</b> → rendered to Data (credited + logged) when the player has wired a filter that
+ * culls it. With no graph (or nothing wired to the egg output) it keeps <i>everything</i> — the old behaviour, so
+ * existing pastures are unchanged. Shiny / unreadable eggs are always kept (SACRED, in {@link GraphEval}).
+ *
+ * <p>The <b>void log is the trust feature</b> (VISUAL_SCRIPTING_UI_IDEA.md): every void is an observable
+ * {@code egg_voided} analytics event <i>and</i> a {@code GpLog} line — so "no eggs for hours" reads as
+ * "produced N, voided N-1 by IV≥31, kept 1", not "bugged". Returns false only when the BioBank is full, so the
+ * breeder trays the physical egg and nothing is lost. Never throws.
  */
 public final class EggIngest {
     private EggIngest() {}
 
-    public static boolean ingest(MinecraftServer server, UUID owner, ItemStack egg) {
+    /** Data credited per egg the graph renders (voids) — a modest per-egg trickle; the dark-economy income. */
+    private static final long VOID_DATA_PER_EGG = 10L;
+
+    public static boolean ingest(ServerWorld world, UUID owner, ItemStack egg, PastureData pd, BlockPos pos) {
         try {
+            MinecraftServer server = world.getServer();
             String species = EggReader.species(egg);
+            EggCard card = EggReader.card(egg);
+            GraphEval.Result r = GraphEval.route(pd.graphJson, card);
+            if (r.route() == GraphEval.Route.VOID) {
+                long value = RenderValuation.dataFor(1, VOID_DATA_PER_EGG, 1.0);
+                DataStore.get(server).credit(owner, value);
+                String filter = r.rejectedBy() == null ? "pipeline" : r.rejectedBy();
+                Analytics.record(world, Event.of("egg_voided")
+                        .put("species", species).put("shiny", card != null && card.shiny())
+                        .put("iv_total", card != null ? card.ivTotal() : 0)
+                        .put("nature", card != null ? card.nature() : "")
+                        .put("filter", filter).put("data", value)
+                        .put("x", pos.getX()).put("y", pos.getY()).put("z", pos.getZ()));
+                GpLog.i("egg_ingest", "void", "owner", owner.toString(), "species", species,
+                        "filter", filter, "data", Long.toString(value));
+                return true;   // rendered to Data → egg consumed; the breeder must NOT tray-fallback
+            }
             boolean added = BioBankStore.get(server).deposit(owner, species, egg);
             GpLog.d("egg_ingest", added ? "bank" : "full", "owner", owner.toString(), "species", species);
-            return added;   // false = bank full → the breeder keeps the physical egg (tray fallback)
+            return added;      // false = bank full → the breeder keeps the physical egg (tray fallback)
         } catch (Throwable t) {
             GpLog.w("egg_ingest", "err", "err", String.valueOf(t));
             return false;
