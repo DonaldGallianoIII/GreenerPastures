@@ -15,7 +15,7 @@ const CSS = `
   --green:#4fd6a0; --amber:#ffb454; --cyan:#5cc8ff; --pink:#f2a7c4; --red:#ff6b6b; --pair:#d56bff;
   position:fixed; inset:0; display:grid; place-items:center; padding:2vh;
   background:radial-gradient(circle at 28% 8%,#11161f,#06080c 72%);
-  font-family:'Space Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; color:var(--text);
+  font-family:'Space Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; color:var(--text); user-select:none;
 }
 .gp-backdrop *,.gp-backdrop *::before,.gp-backdrop *::after{ box-sizing:border-box; }
 .mono{ font-family:'JetBrains Mono',monospace; }
@@ -117,7 +117,7 @@ const CSS = `
 .islot2{ aspect-ratio:1; border-radius:5px; background:var(--slot); border:1px solid var(--line2); position:relative;
   display:flex; align-items:center; justify-content:center; overflow:hidden; }
 .islot2.hot{ background:#0d1420; }
-.islot2.has{ border-color:var(--line); background:var(--panel); }
+.islot2.has{ border-color:var(--line); background:var(--panel); cursor:pointer; }
 .islot2.gpu{ border-color:#2e5a47; }
 .islot2 .g{ font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--muted); line-height:1; text-align:center; }
 .islot2 .c{ position:absolute; bottom:0; right:2px; font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--text); }
@@ -206,18 +206,24 @@ function InventoryWindow() {
   const slots = inv?.slots || Array(36).fill(null)
   return (
     <div className="gp-invwin">
-      <div className="hd"><span className="dot" style={{ background: 'var(--green)', width: 7, height: 7 }} /><span className="t">inventory</span></div>
-      <div className="invgrid">{slots.slice(9, 36).map((s, i) => <Slot key={i} s={s} />)}</div>
-      <div className="invgrid hot">{slots.slice(0, 9).map((s, i) => <Slot key={i} s={s} hot />)}</div>
+      <div className="hd">
+        <span className="dot" style={{ background: 'var(--green)', width: 7, height: 7 }} />
+        <span className="t">inventory</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>⇧-click → storage</span>
+      </div>
+      <div className="invgrid">{slots.slice(9, 36).map((s, i) => <Slot key={i} s={s} idx={i + 9} />)}</div>
+      <div className="invgrid hot">{slots.slice(0, 9).map((s, i) => <Slot key={i} s={s} idx={i} hot />)}</div>
     </div>
   )
 }
-function Slot({ s, hot }) {
+function Slot({ s, idx, hot }) {
   if (!s) return <div className={`islot2${hot ? ' hot' : ''}`} />
   const isGpu = s.id.endsWith(':gpu')
   const label = isGpu ? '◈' : shortId(s.id).replace(/\s/g, '').slice(0, 3)
   return (
-    <div className={`islot2 has${hot ? ' hot' : ''}${isGpu ? ' gpu' : ''}`} title={`${shortId(s.id)} ×${s.count}`}>
+    <div className={`islot2 has${hot ? ' hot' : ''}${isGpu ? ' gpu' : ''}`} title={`${shortId(s.id)} ×${s.count} · ⇧-click → storage`}
+      onClick={(ev) => { if (ev.shiftKey) send('storage', 'DEPOSIT', { slot: idx }) }}>
       <span className="g" style={isGpu ? { color: 'var(--cyan)' } : null}>{label}</span>
       <span className="c">{s.count}</span>
     </div>
@@ -296,13 +302,13 @@ function Harvester() {
         <span className="h">Storage</span>
         <span className="muted" style={{ fontSize: 11 }}>{list.length} types · {compact(total)} items</span>
         <span style={{ flex: 1 }} />
-        <span className="dim" style={{ fontSize: 11 }}>L-click: pull a stack &nbsp; R-click: pull all</span>
+        <span className="dim" style={{ fontSize: 11 }}>L: one stack · R / ⇧-click: all → inventory</span>
       </div>
       {!list.length ? <div style={{ color: 'var(--muted)', fontSize: 12 }}>empty — harvested loot from your linked pastures collects here</div> : (
         <div className="grid">
           {list.map(([id, n]) => (
-            <div key={id} className="cell" title={id}
-              onClick={() => send('storage', 'PULL_ONE', { item: id })}
+            <div key={id} className="cell" title={`${id} · L: one · R / ⇧-click: all`}
+              onClick={(ev) => send('storage', ev.shiftKey ? 'PULL_ID' : 'PULL_ONE', { item: id })}
               onContextMenu={(ev) => { ev.preventDefault(); send('storage', 'PULL_ID', { item: id }) }}>
               <span className="ct">{compact(n)}</span>
               <span className="nm">{shortId(id)}</span>

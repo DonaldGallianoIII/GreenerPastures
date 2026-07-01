@@ -74,16 +74,26 @@ export function applyMock(state, channel, action, payload) {
   } else if (channel === 'storage') {
     const s = clone(state.storage)
     if (!s) return {}
-    const id = payload.item
-    const have = s.items[id] || 0
-    if (have <= 0) return {}
-    const n = action === 'PULL_ID' ? have : Math.min(64, have)
-    s.items = { ...s.items }
-    s.items[id] = have - n
-    if (s.items[id] <= 0) delete s.items[id]
-    addItem(inv, id, n)                                                          // loot → inventory
-    out.storage = s
-    out.inventory = inv
+    if (action === 'DEPOSIT') {                                                  // shift-click inventory slot → storage
+      const slot = inv.slots[payload.slot]
+      if (!slot) return {}
+      s.items = { ...s.items }
+      s.items[slot.id] = (s.items[slot.id] || 0) + slot.count                    // merges with the same type if present
+      inv.slots[payload.slot] = null
+      out.storage = s
+      out.inventory = inv
+    } else {                                                                     // PULL_ONE / PULL_ID → inventory
+      const id = payload.item
+      const have = s.items[id] || 0
+      if (have <= 0) return {}
+      const n = action === 'PULL_ID' ? have : Math.min(64, have)
+      s.items = { ...s.items }
+      s.items[id] = have - n
+      if (s.items[id] <= 0) delete s.items[id]
+      addItem(inv, id, n)                                                        // merges into matching inv stacks first
+      out.storage = s
+      out.inventory = inv
+    }
   }
   return out
 }
