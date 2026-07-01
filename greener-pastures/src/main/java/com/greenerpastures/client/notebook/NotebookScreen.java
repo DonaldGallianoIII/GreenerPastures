@@ -558,15 +558,67 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private Component bioEntryRow(NotebookBioBankS2C.Entry e) {
+        FlowLayout card = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
+        card.surface(Surface.flat(INSET));
+        card.padding(Insets.of(3, 3, 6, 6));
+        card.gap(2);
+
+        // meta line: ★ · gender · nature · ability · IV total
+        FlowLayout meta = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
+        meta.verticalAlignment(VerticalAlignment.CENTER);
+        meta.gap(8);
+        if (e.shiny()) meta.child(label("★", AMBER));
+        if (!e.gender().isEmpty()) meta.child(label(genderGlyph(e.gender()), genderColor(e.gender())));
+        if (!e.nature().isEmpty()) meta.child(label(capitalize(e.nature()), TEXT));
+        if (!e.ability().isEmpty()) meta.child(label(capitalize(e.ability()), CYAN));
+        meta.child(expander());
+        int ivt = ivTotalOf(e.ivs());
+        meta.child(label("Σ" + ivt + "/186", ivt >= 160 ? GREEN : MUTED));
+        card.child(meta);
+
+        // IV chips (green = 31); EV chips only if the egg carries any (e.g. from the EV augment)
+        card.child(statRow("IV", e.ivs(), 31, GREEN));
+        if (anyPositive(e.evs())) card.child(statRow("EV", e.evs(), 252, AMBER));
+        return card;
+    }
+
+    private Component statRow(String tag, int[] stats, int perfect, int perfectColor) {
         FlowLayout row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        row.surface(Surface.flat(INSET));
-        row.padding(Insets.of(2, 2, 14, 5));
         row.verticalAlignment(VerticalAlignment.CENTER);
-        row.gap(10);
-        row.child(label(e.shiny() ? "★ shiny" : "·", e.shiny() ? AMBER : MUTED));
-        row.child(label("IVΣ " + e.ivTotal() + "/186", e.ivTotal() >= 160 ? GREEN : TEXT));
-        row.child(label(e.perfect() + "×31", e.perfect() > 0 ? GREEN : MUTED));
+        row.gap(5);
+        row.child(label(tag, MUTED));
+        String[] names = {"HP", "At", "Df", "SA", "SD", "Sp"};
+        for (int i = 0; i < 6; i++) {
+            int v = i < stats.length ? stats[i] : 0;
+            int color = v >= perfect ? perfectColor : (v == 0 ? MUTED : TEXT);
+            row.child(label(names[i] + " " + v, color));
+        }
         return row;
+    }
+
+    private static int ivTotalOf(int[] a) {
+        int t = 0;
+        for (int v : a) t += v;
+        return t;
+    }
+
+    private static boolean anyPositive(int[] a) {
+        for (int v : a) if (v > 0) return true;
+        return false;
+    }
+
+    private static String genderGlyph(String g) {
+        String l = g.toLowerCase(java.util.Locale.ROOT);
+        if (l.contains("female")) return "♀";
+        if (l.contains("male")) return "♂";
+        return "⚲";
+    }
+
+    private static int genderColor(String g) {
+        String l = g.toLowerCase(java.util.Locale.ROOT);
+        if (l.contains("female")) return 0xF2A7C4;   // pink
+        if (l.contains("male")) return CYAN;
+        return MUTED;
     }
 
     private static String capitalize(String s) {

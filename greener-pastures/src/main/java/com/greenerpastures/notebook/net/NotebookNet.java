@@ -15,7 +15,7 @@ import com.greenerpastures.economy.DaemonItem;
 import com.greenerpastures.economy.DarkEconomy;
 import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.GpItems;
-import com.greenerpastures.egg.oracle.cull.EggInfo;
+import com.greenerpastures.egg.oracle.cull.EggCard;
 import com.greenerpastures.egg.oracle.cull.EggReader;
 import com.greenerpastures.notebook.NotebookStorage;
 import com.greenerpastures.notebook.NotebookStore;
@@ -309,11 +309,13 @@ public final class NotebookNet {
         if (bank != null) {
             for (String species : bank.speciesCounts().keySet()) {
                 for (ItemStack egg : bank.entries(species)) {
-                    EggInfo info = EggReader.read(egg);
-                    boolean shiny = info != null && info.shiny();
-                    int ivTotal = info != null ? info.ivTotal() : 0;
-                    int perfect = info != null ? info.perfectCount() : 0;
-                    entries.add(new NotebookBioBankS2C.Entry(species, shiny, ivTotal, perfect));
+                    EggCard c = EggReader.card(egg);
+                    if (c != null) {
+                        entries.add(new NotebookBioBankS2C.Entry(species, c.shiny(), c.ivs(), c.evs(),
+                                c.nature(), c.gender(), c.ability()));
+                    } else {
+                        entries.add(new NotebookBioBankS2C.Entry(species, false, new int[6], new int[6], "", "", ""));
+                    }
                 }
             }
         }

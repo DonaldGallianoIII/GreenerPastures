@@ -44,6 +44,10 @@ public final class EggReader {
     private static Method getShiny;            // PokemonProperties.getShiny() -> Boolean
     private static Method getIvs;              // PokemonProperties.getIvs() -> IVs (Iterable)
     private static Method getSpecies;          // PokemonProperties.getSpecies() -> String
+    private static Method getEvs;              // PokemonProperties.getEvs() -> EVs (Iterable) — may be absent
+    private static Method getNature;           // PokemonProperties.getNature() -> Nature/String
+    private static Method getGender;           // PokemonProperties.getGender() -> Gender/String
+    private static Method getAbility;          // PokemonProperties.getAbility() -> Ability/String
 
     private static synchronized void init() {
         if (initDone) return;
@@ -61,6 +65,10 @@ public final class EggReader {
             getShiny = props.getMethod("getShiny");
             getIvs = props.getMethod("getIvs");
             try { getSpecies = props.getMethod("getSpecies"); } catch (Throwable t) { getSpecies = null; }
+            getEvs = tryMethod(props, "getEvs");
+            getNature = tryMethod(props, "getNature");
+            getGender = tryMethod(props, "getGender");
+            getAbility = tryMethod(props, "getAbility");
             LOGGER.info("[EggOracle] Cobbreeding egg API found — IV culling enabled.");
         } catch (Throwable t) {
             extractProperties = null;
@@ -93,8 +101,8 @@ public final class EggReader {
                 }
             });
 
-    /** One egg's decoded properties (species + IV/shiny), from a single decrypt. */
-    private record Decoded(String species, EggInfo info) {}
+    /** One egg's decoded properties (species + IV/shiny summary + the full competitive card), one decrypt. */
+    private record Decoded(String species, EggInfo info, EggCard card) {}
 
     private static Decoded decode(ItemStack stack) {
         Decoded cached = CACHE.get(stack);
@@ -109,23 +117,37 @@ public final class EggReader {
         init();
         boolean shiny = false, ivsKnown = false;
         int ivTotal = 0, perfect = 0;
-        String species = null;
+        int[] ivs = new int[6], evs = new int[6];
+        String species = null, nature = "", gender = "", ability = "";
         if (extractProperties != null) {
             try {
                 Object props = extractProperties.invoke(eggUtils, stack);
                 if (props != null) {
                     Object sh = getShiny.invoke(props);
                     if (sh instanceof Boolean b) shiny = b;
-                    Object ivs = getIvs.invoke(props);
-                    if (ivs instanceof Iterable<?> it) {
+                    Object ivObj = getIvs.invoke(props);
+                    if (ivObj instanceof Iterable<?> it) {
                         for (Object e : it) {
                             if (e instanceof Map.Entry<?, ?> me && me.getValue() instanceof Integer v) {
                                 ivTotal += v;
                                 if (v >= 31) perfect++;
                                 ivsKnown = true;
+                                int slot = statSlot(me.getKey());
+                                if (slot >= 0) ivs[slot] = v;
                             }
                         }
                     }
+                    if (getEvs != null && getEvs.invoke(props) instanceof Iterable<?> evIt) {
+                        for (Object e : evIt) {
+                            if (e instanceof Map.Entry<?, ?> me && me.getValue() instanceof Integer v) {
+                                int slot = statSlot(me.getKey());
+                                if (slot >= 0) evs[slot] = v;
+                            }
+                        }
+                    }
+                    nature = readString(getNature, props);
+                    gender = readString(getGender, props);
+                    ability = readString(getAbility, props);
                     if (getSpecies != null) {
                         Object sp = getSpecies.invoke(props);
                         if (sp instanceof String s && !s.isBlank()) species = normalizeSpecies(s);
@@ -137,7 +159,8 @@ public final class EggReader {
         }
         if (!shiny) shiny = shinyByName(stack);            // ★ in the name flags a shiny even if the API missed it
         if (species == null) species = speciesByName(stack);
-        return new Decoded(species, new EggInfo(shiny, ivsKnown, ivTotal, perfect));
+        return new Decoded(species, new EggInfo(shiny, ivsKnown, ivTotal, perfect),
+                new EggCard(species, shiny, ivs, evs, nature, gender, ability));
     }
 
     /** Read what we can off an egg. Returns null if it isn't an egg. Never throws. Cached per stack. */
@@ -154,6 +177,44 @@ public final class EggReader {
     public static String species(ItemStack stack) {
         if (!isEgg(stack)) return "unknown";
         return decode(stack).species();
+    }
+
+    /** The full competitive card for an egg (per-stat IVs/EVs · nature · gender · ability); null if not an egg. */
+    public static EggCard card(ItemStack stack) {
+        if (!isEgg(stack)) return null;
+        return decode(stack).card();
+    }
+
+    private static Method tryMethod(Class<?> c, String name) {
+        try { return c.getMethod(name); } catch (Throwable t) { return null; }
+    }
+
+    /** Invoke a no-arg getter and return a trimmed, namespace-stripped string ("" on any failure/null). */
+    private static String readString(Method getter, Object props) {
+        if (getter == null) return "";
+        try {
+            Object v = getter.invoke(props);
+            if (v == null) return "";
+            String s = v.toString().trim();
+            int colon = s.indexOf(':');
+            if (colon >= 0) s = s.substring(colon + 1);   // cobblemon:adamant -> adamant
+            return s;
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** Map a Cobblemon Stat key to a slot in HP · Atk · Def · SpA · SpD · Spe order (−1 if unrecognized). */
+    private static int statSlot(Object stat) {
+        if (stat == null) return -1;
+        String n = stat.toString().toLowerCase(java.util.Locale.ROOT);
+        if (n.contains("hp") || n.contains("health")) return 0;
+        if (n.contains("special") && n.contains("att")) return 3;
+        if (n.contains("special") && n.contains("def")) return 4;
+        if (n.contains("speed")) return 5;
+        if (n.contains("att")) return 1;
+        if (n.contains("def")) return 2;
+        return -1;
     }
 
     private static String normalizeSpecies(String s) {
