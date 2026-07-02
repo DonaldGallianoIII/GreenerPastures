@@ -55,16 +55,23 @@ public final class GreenerPasturesClient implements ClientModInitializer {
             openConsole();
         };
         NotebookItem.PASTURE_OPENER = (pos) -> {
-            // Show the config view immediately so the previously-open tab doesn't linger. Only reset to a LOADING
-            // shell when opening a DIFFERENT pasture — reopening the same one keeps its cached config (no flash);
-            // an unrelated pasture shows "loading…" (not misleading empty/unlinked data) until the S2C lands, and
-            // a curtain hides the previous (air / other-pasture) view until this one paints.
+            // Stale-while-revalidate: a pasture seen this session renders its cached config INSTANTLY (fully
+            // interactive) and the server refresh lands silently. Only a first-ever open shows the loading
+            // shell + native overlay (lifted the moment React confirms the pasture view painted).
+            long key = pos.asLong();
             NotebookPastureConfigS2C cur = NotebookState.pastureConfig;
-            if (cur == null || cur.pos() != pos.asLong()) {
-                NotebookState.pastureConfig = new NotebookPastureConfigS2C(pos.asLong(), "", "", false, 0, java.util.List.of());
-                NotebookState.pastureGraphJson = "";
-                NotebookState.pastureConfigLoading = true;
-                NotebookBrowserScreen.awaitPasture();   // native loading overlay until React confirms the pasture view painted
+            if (cur == null || cur.pos() != key) {
+                NotebookPastureConfigS2C cached = NotebookState.pastureConfigCache.get(key);
+                if (cached != null) {
+                    NotebookState.pastureConfig = cached;
+                    NotebookState.pastureGraphJson = NotebookState.pastureGraphCache.getOrDefault(key, "");
+                    NotebookState.pastureConfigLoading = false;
+                } else {
+                    NotebookState.pastureConfig = new NotebookPastureConfigS2C(key, "", "", false, 0, java.util.List.of());
+                    NotebookState.pastureGraphJson = "";
+                    NotebookState.pastureConfigLoading = true;
+                    NotebookBrowserScreen.awaitPasture();
+                }
             }
             DsBridge.pushNow();
             openConsole();
@@ -126,9 +133,12 @@ public final class GreenerPasturesClient implements ClientModInitializer {
 
         // Pre-warm the MCEF console browser in the background once in a world, so the FIRST open shows an
         // already-painted page (no black/loading blip). preload() self-guards: no MCEF / not-ready / already-warm.
+        // Also give Chromium a small background slice budget each tick — MCEF's own pump is 1 slice/frame, which
+        // starves bursts (the 2-3s view swaps); this keeps the kept-alive page current while the console is closed.
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.getNetworkHandler() == null) return;
             if (!net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef")) return;
+            NotebookBrowserScreen.pump(4, 1_000_000L);
             if (++warmTick % 40 == 0) NotebookBrowserScreen.preload();
         });
 

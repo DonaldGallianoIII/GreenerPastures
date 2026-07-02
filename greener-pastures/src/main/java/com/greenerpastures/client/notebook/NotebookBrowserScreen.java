@@ -54,6 +54,23 @@ public class NotebookBrowserScreen extends Screen {
     /** React signalled the pasture config finished rendering — lift the overlay. */
     public static void pastureReady() { awaitPastureUntil = 0L; }
 
+    /**
+     * Give Chromium extra message-loop slices. MCEF pumps {@code N_DoMessageLoopWork()} exactly ONCE per rendered
+     * frame (CefRenderUpdateMixin) — each call runs one small slice of Chromium's work queue, so a burst like a
+     * view swap (JS → layout → paint → composite + inter-process hops) needs hundreds of slices and crawled at
+     * 2-3s. Pumping a time-boxed batch per frame multiplies throughput ~10×; idle slices return immediately, so
+     * this is near-free when there's nothing to do. Render-thread only (same thread MCEF pumps from).
+     */
+    public static void pump(int maxSlices, long budgetNanos) {
+        if (!MCEF.isInitialized()) return;
+        var handle = MCEF.getApp().getHandle();
+        long start = System.nanoTime();
+        for (int i = 0; i < maxSlices; i++) {
+            handle.N_DoMessageLoopWork();
+            if (System.nanoTime() - start > budgetNanos) break;
+        }
+    }
+
     /** Pre-warm the browser BEFORE the console is first opened (called from the client tick once MCEF + a world are
      *  ready) so the first open shows an already-painted page instead of a black/loading blip. Safe to call every
      *  tick: no-ops once created, or while MCEF is still downloading Chromium at the title screen. */
@@ -142,6 +159,7 @@ public class NotebookBrowserScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        pump(10, 2_500_000L);   // console open → feed Chromium a real slice budget (~10 slices / 2.5ms per frame)
         if (browser == null) tryCreate();
         int texId = browser == null ? 0 : browser.getRenderer().getTextureID();
         if (texId <= 0) {

@@ -15,6 +15,7 @@ import com.greenerpastures.notebook.net.NotebookStorageS2C;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Client-side cache the {@link NotebookScreen} renders from (NOTEBOOK_INTERACTIVE_SPEC §2.1) — the screen never
@@ -89,9 +90,15 @@ public final class NotebookState {
     /** True while a pasture's real config is round-tripping — the UI shows a "loading" shell, not stale/empty data. */
     public static volatile boolean pastureConfigLoading = false;
 
+    /** Last-known config/graph per pasture (stale-while-revalidate): a reopened pasture renders its cached view
+     *  INSTANTLY and the server refresh lands silently — no loading state for pastures you've seen this session. */
+    public static final Map<Long, NotebookPastureConfigS2C> pastureConfigCache = new ConcurrentHashMap<>();
+    public static final Map<Long, String> pastureGraphCache = new ConcurrentHashMap<>();
+
     public static boolean applyPastureConfig(NotebookPastureConfigS2C p) {
         pastureConfig = p;
         pastureConfigLoading = false;
+        pastureConfigCache.put(p.pos(), p);
         return true;
     }
 
@@ -102,6 +109,7 @@ public final class NotebookState {
 
     public static boolean applyGraph(NotebookGraphS2C p) {
         pastureGraphJson = p.json() == null ? "" : p.json();
+        pastureGraphCache.put(p.pos(), pastureGraphJson);
         return true;
     }
 
