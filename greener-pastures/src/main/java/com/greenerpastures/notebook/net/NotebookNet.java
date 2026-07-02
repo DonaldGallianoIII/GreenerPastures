@@ -1,5 +1,8 @@
 package com.greenerpastures.notebook.net;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.greenerpastures.biobank.BioBankData;
 import com.greenerpastures.biobank.BioBankStore;
 import com.greenerpastures.buff.BuffConfig;
@@ -17,6 +20,9 @@ import com.greenerpastures.economy.DataStore;
 import com.greenerpastures.economy.GpItems;
 import com.greenerpastures.egg.oracle.cull.EggCard;
 import com.greenerpastures.egg.oracle.cull.EggReader;
+import com.greenerpastures.goal.BreedingGoal;
+import com.greenerpastures.goal.GoalProgress;
+import com.greenerpastures.goal.GoalStore;
 import com.greenerpastures.notebook.EggLog;
 import com.greenerpastures.notebook.NotebookStorage;
 import com.greenerpastures.notebook.NotebookStore;
@@ -66,6 +72,8 @@ import java.util.function.Consumer;
 public final class NotebookNet {
     private NotebookNet() {}
 
+    private static final Gson GSON = new Gson();
+
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookActionC2S.ID, NotebookActionC2S.CODEC);
@@ -81,11 +89,15 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookGraphS2C.ID, NotebookGraphS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookGraphSaveC2S.ID, NotebookGraphSaveC2S.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookEggLogS2C.ID, NotebookEggLogS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookDashboardS2C.ID, NotebookDashboardS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookGoalsS2C.ID, NotebookGoalsS2C.CODEC);
+        PayloadTypeRegistry.playC2S().register(NotebookGoalC2S.ID, NotebookGoalC2S.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookInvSwapC2S.ID, NotebookNet::onInvSwap);
         ServerPlayNetworking.registerGlobalReceiver(NotebookGraphSaveC2S.ID, NotebookNet::onGraphSave);
+        ServerPlayNetworking.registerGlobalReceiver(NotebookGoalC2S.ID, NotebookNet::onGoal);
     }
 
     private static void onRequest(NotebookRequestC2S payload, ServerPlayNetworking.Context ctx) {
@@ -99,6 +111,8 @@ public final class NotebookNet {
             pushAugmenter(player);
             pushBiobank(player);
             pushEggLog(player);
+            pushDashboard(player);
+            pushGoals(player);
         });
     }
 
@@ -107,6 +121,70 @@ public final class NotebookNet {
         List<NotebookEggLogS2C.Entry> out = new ArrayList<>();
         for (EggLog.Entry e : EggLog.recent(player.getUuid())) out.add(new NotebookEggLogS2C.Entry(e.species(), e.voided(), e.filter()));
         ServerPlayNetworking.send(player, new NotebookEggLogS2C(EggLog.kept(player.getUuid()), EggLog.voided(player.getUuid()), out));
+    }
+
+    /** Send the viewing player's live breeding analytics (eggs/shiny/kept/voided/Data/by-tier/spark) for the Dashboard. */
+    public static void pushDashboard(ServerPlayerEntity player) {
+        UUID id = player.getUuid();
+        long now = player.getServerWorld() != null ? player.getServerWorld().getTime() : 0L;
+        long[] t = EggLog.totals(id);
+        JsonObject o = new JsonObject();
+        o.addProperty("laid", t[0]); o.addProperty("shiny", t[1]); o.addProperty("procShiny", t[2]); o.addProperty("dataEarned", t[3]);
+        o.addProperty("kept", EggLog.kept(id)); o.addProperty("voided", EggLog.voided(id));
+        JsonObject tiers = new JsonObject();
+        EggLog.byTier(id).forEach((k, v) -> tiers.addProperty(k, v));
+        o.add("byTier", tiers);
+        JsonArray spark = new JsonArray();
+        for (int v : EggLog.spark(id, now)) spark.add(v);
+        o.add("spark", spark);
+        ServerPlayNetworking.send(player, new NotebookDashboardS2C(GSON.toJson(o)));
+    }
+
+    /** Send the viewing player's active breeding goal + live progress for the Dashboard's Goal panel. */
+    public static void pushGoals(ServerPlayerEntity player) {
+        UUID id = player.getUuid();
+        BreedingGoal goal = GoalStore.goalOf(id);
+        JsonObject o = new JsonObject();
+        if (goal == null) { o.addProperty("present", false); ServerPlayNetworking.send(player, new NotebookGoalsS2C(GSON.toJson(o))); return; }
+        GoalProgress pr = GoalStore.progressOf(id);
+        o.addProperty("present", true);
+        o.addProperty("species", goal.species() == null ? "" : goal.species());
+        o.addProperty("shiny", goal.shiny() == null ? -1 : (goal.shiny() ? 1 : 0));
+        o.addProperty("minPerfect", goal.minPerfectIvs());
+        o.addProperty("minIvTotal", goal.minIvTotal());
+        o.addProperty("count", goal.count());
+        o.addProperty("describe", goal.describe());
+        o.addProperty("checked", pr.checked());
+        o.addProperty("matched", pr.matched());
+        o.addProperty("bestIvTotal", pr.bestIvTotal());
+        o.addProperty("remaining", pr.remaining(goal));
+        o.addProperty("reached", pr.reached(goal));
+        ServerPlayNetworking.send(player, new NotebookGoalsS2C(GSON.toJson(o)));
+    }
+
+    /** Set or clear the player's breeding goal from the console's Goal panel. */
+    private static void onGoal(NotebookGoalC2S p, ServerPlayNetworking.Context ctx) {
+        ServerPlayerEntity player = ctx.player();
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        server.execute(() -> {
+            try {
+                JsonObject o = GSON.fromJson(p.json() == null ? "{}" : p.json(), JsonObject.class);
+                if (o == null) return;
+                if (o.has("clear") && o.get("clear").getAsBoolean()) {
+                    GoalStore.clear(player.getUuid());
+                } else {
+                    String species = o.has("species") && !o.get("species").isJsonNull() ? o.get("species").getAsString() : null;
+                    int sh = o.has("shiny") ? o.get("shiny").getAsInt() : -1;
+                    Boolean shiny = sh == 1 ? Boolean.TRUE : sh == 0 ? Boolean.FALSE : null;
+                    int mp = o.has("minPerfect") ? o.get("minPerfect").getAsInt() : 0;
+                    int mt = o.has("minIvTotal") ? o.get("minIvTotal").getAsInt() : 0;
+                    int cn = o.has("count") ? o.get("count").getAsInt() : 1;
+                    GoalStore.set(player.getUuid(), new BreedingGoal(species, shiny, mp, mt, cn));
+                }
+                pushGoals(player);
+            } catch (Exception ignored) { }
+        });
     }
 
     private static void onAction(NotebookActionC2S p, ServerPlayNetworking.Context ctx) {

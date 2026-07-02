@@ -87,6 +87,22 @@ const CSS = `
 .monchip.here{ background:#173341; border-color:var(--cyan); color:var(--cyan); font-weight:600; }
 .monchip.busy{ opacity:.5; }
 .gnode.mon{ background:#1a2230; }
+.statrow{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+.stat{ flex:1; min-width:78px; background:var(--inset); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+.stat-v{ font-size:20px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
+.stat-l{ font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+.tbar-row{ display:flex; align-items:center; gap:6px; font-size:10px; margin-bottom:3px; }
+.tbar-k{ width:54px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tbar-track{ flex:1; height:9px; background:var(--bg); border-radius:5px; overflow:hidden; }
+.tbar-fill{ height:100%; background:var(--cyan); border-radius:5px; }
+.tbar-v{ width:28px; text-align:right; color:var(--text); font-family:'JetBrains Mono',monospace; }
+.goalbox{ background:var(--inset); border:1px solid var(--line2); border-radius:8px; padding:9px 11px; margin-bottom:10px; }
+.goal-bar{ height:8px; background:var(--bg); border-radius:5px; overflow:hidden; }
+.goal-fill{ height:100%; background:linear-gradient(90deg,var(--amber),var(--green)); border-radius:5px; transition:width .3s; }
+.goal-form{ display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; }
+.goal-form label{ display:flex; flex-direction:column; gap:2px; font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+.goal-form input, .goal-form select{ background:var(--bg); border:1px solid var(--line); border-radius:5px; color:var(--text); font-size:12px; padding:3px 6px; }
+.goal-form button{ grid-column:1 / -1; }
 .dwire{ stroke-width:2.5; fill:none; pointer-events:stroke; cursor:pointer; }
 .dwire:hover{ stroke:var(--red) !important; }
 .dwire.live{ stroke:var(--cyan); stroke-dasharray:5 4; }
@@ -575,20 +591,92 @@ function Augmenter() {
   )
 }
 
-// ── Dashboard (sample charts — live analytics channel is next) ────────────────
+// ── Dashboard (live analytics — real breeding data over the `dashboard` channel) ──
 function Dashboard() {
+  const d = useChannel('dashboard')
+  const laid = d?.laid || 0, shiny = d?.shiny || 0, kept = d?.kept || 0, voided = d?.voided || 0, dataEarned = d?.dataEarned || 0
+  const spark = d?.spark && d.spark.length ? d.spark : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  const shinyRate = laid ? (shiny / laid * 100) : 0
   return (
     <div className="pane">
       <div className="row" style={{ marginBottom: 10 }}>
         <span className="h">Dashboard</span>
-        <span className="dim" style={{ fontSize: 11 }}>sample plots — the live analytics feed lands with the bridge</span>
+        <span className="dim" style={{ fontSize: 11 }}>live · this session</span>
+      </div>
+      <Goals />
+      <div className="statrow">
+        <Stat label="eggs" value={laid} />
+        <Stat label="shiny" value={shiny} sub={`${shinyRate.toFixed(2)}%`} color="var(--pair)" />
+        <Stat label="kept" value={kept} color="var(--green)" />
+        <Stat label="voided" value={voided} color="var(--red)" />
+        <Stat label="data earned" value={dataEarned} color="var(--cyan)" />
       </div>
       <div className="dgrid">
-        <div className="dcard"><LinePlot title="eggs/hr" sub="daemon.throughput" color="var(--amber)" data={[8, 14, 11, 19, 22, 18, 26, 24, 31, 28, 34, 39]} /></div>
-        <div className="dcard"><LinePlot title="shiny_rate" sub="rolling · per 1k" color="var(--pair)" data={[0.4, 0.6, 0.5, 0.9, 1.1, 1, 1.6, 2.1, 1.9, 2.6, 3, 3.4]} /></div>
-        <div className="dcard"><Donut accepted={341} voided={1289} /></div>
-        <div className="dcard"><Histogram bins={[2, 5, 9, 14, 20, 27, 31, 24, 16, 9, 4, 2]} /></div>
+        <div className="dcard"><LinePlot title="eggs/min" sub="last 12 min" color="var(--amber)" data={spark} /></div>
+        <div className="dcard"><Donut accepted={kept} voided={voided} /></div>
+        <div className="dcard"><TierBars byTier={d?.byTier || {}} /></div>
       </div>
+    </div>
+  )
+}
+function Stat({ label, value, sub, color }) {
+  return (
+    <div className="stat">
+      <div className="stat-v" style={{ color: color || 'var(--text)' }}>{typeof value === 'number' ? value.toLocaleString() : value}</div>
+      <div className="stat-l">{label}{sub ? <span className="dim"> · {sub}</span> : null}</div>
+    </div>
+  )
+}
+function TierBars({ byTier }) {
+  const entries = Object.entries(byTier || {})
+  const max = Math.max(1, ...entries.map(([, v]) => v))
+  return (
+    <div style={{ padding: '4px 2px' }}>
+      <div className="mono" style={{ fontSize: 10, color: 'var(--text)', fontWeight: 600, marginBottom: 6 }}>eggs by kernel</div>
+      {entries.length === 0 ? <div className="dim" style={{ fontSize: 10 }}>no eggs yet</div> : entries.map(([k, v]) => (
+        <div key={k} className="tbar-row">
+          <span className="tbar-k">{cap(String(k).toLowerCase())}</span>
+          <div className="tbar-track"><div className="tbar-fill" style={{ width: `${v / max * 100}%` }} /></div>
+          <span className="tbar-v">{v}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+// The breeding-goal hunt panel — set a target (species/shiny/IVs/count), watch live progress.
+function Goals() {
+  const g = useChannel('goals')
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState({ species: '', shiny: 1, minPerfect: 0, minIvTotal: 0, count: 1 })
+  const present = g?.present
+  const focusOn = () => send('console', 'INPUT_FOCUS', { v: true })
+  const focusOff = () => send('console', 'INPUT_FOCUS', { v: false })
+  return (
+    <div className="goalbox">
+      <div className="row" style={{ alignItems: 'center' }}>
+        <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: 'var(--amber)' }}>🎯 breeding goal</span>
+        <span style={{ flex: 1 }} />
+        {present && <button className="btn" style={{ fontSize: 10, padding: '2px 7px' }} onClick={() => send('goals', 'CLEAR', {})}>clear</button>}
+        <button className="btn" style={{ fontSize: 10, padding: '2px 7px', marginLeft: 4 }} onClick={() => setOpen((o) => !o)}>{open ? 'close' : present ? 'edit' : 'set goal'}</button>
+      </div>
+      {present && !open && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 5 }}>{g.describe}{g.reached ? ' ✓ reached' : ''}</div>
+          <div className="goal-bar"><div className="goal-fill" style={{ width: `${Math.min(100, g.count ? g.matched / g.count * 100 : 0)}%` }} /></div>
+          <div className="dim" style={{ fontSize: 10, marginTop: 4 }}>{g.matched}/{g.count} matched · {g.checked} eggs checked · best IV total {g.bestIvTotal}</div>
+        </div>
+      )}
+      {!present && !open && <div className="dim" style={{ fontSize: 11, marginTop: 6 }}>no active hunt — set a target and watch progress as your pastures lay.</div>}
+      {open && (
+        <div className="goal-form">
+          <label>species<input className="gp-input" value={form.species} placeholder="any" onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, species: e.target.value })} /></label>
+          <label>shiny<select value={form.shiny} onChange={(e) => setForm({ ...form, shiny: +e.target.value })}><option value={1}>must be shiny</option><option value={0}>non-shiny</option><option value={-1}>either</option></select></label>
+          <label>min perfect IVs<input type="number" min={0} max={6} value={form.minPerfect} onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, minPerfect: Math.max(0, Math.min(6, +e.target.value || 0)) })} /></label>
+          <label>min IV total<input type="number" min={0} max={186} value={form.minIvTotal} onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, minIvTotal: Math.max(0, Math.min(186, +e.target.value || 0)) })} /></label>
+          <label>count<input type="number" min={1} value={form.count} onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, count: Math.max(1, +e.target.value || 1) })} /></label>
+          <button className="btn" onClick={() => { send('goals', 'SET', form); setOpen(false) }}>{present ? 'update hunt' : 'start hunt'}</button>
+        </div>
+      )}
     </div>
   )
 }

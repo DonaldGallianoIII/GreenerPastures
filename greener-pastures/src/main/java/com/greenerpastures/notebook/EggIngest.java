@@ -53,6 +53,7 @@ public final class EggIngest {
                 GpLog.i("egg_ingest", "void", "owner", owner.toString(), "species", species,
                         "filter", filter, "data", Long.toString(value));
                 EggLog.record(owner, species, true, filter);   // player-facing void feed
+                EggLog.addData(owner, value);                  // dashboard "Data earned"
                 return true;   // rendered to Data → egg consumed; the breeder must NOT tray-fallback
             }
             boolean added = BioBankStore.get(server).deposit(owner, species, egg);

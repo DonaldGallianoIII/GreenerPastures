@@ -6,6 +6,7 @@ import com.greenerpastures.client.notebook.NotebookState;
 import com.greenerpastures.core.GpLog;
 import com.greenerpastures.notebook.net.NotebookActionC2S;
 import com.greenerpastures.notebook.net.NotebookEggLogS2C;
+import com.greenerpastures.notebook.net.NotebookGoalC2S;
 import com.greenerpastures.notebook.net.NotebookGraphSaveC2S;
 import com.greenerpastures.notebook.net.NotebookPastureActionC2S;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
@@ -85,6 +86,7 @@ public final class DsBridge {
                 Map<String, Object> p = (Map<String, Object>) msg.getOrDefault("payload", Map.of());
                 if ("INPUT_FOCUS".equals(action)) { NotebookBrowserScreen.browserInputFocused = Boolean.TRUE.equals(p.get("v")); return; }
                 if ("pasture".equals(channel)) { handlePastureAction(action, p); return; }
+                if ("goals".equals(channel)) { handleGoalAction(action, p); return; }
                 NotebookActionC2S packet = mapAction(action, p);
                 if (packet == null) {
                     GpLog.d("bridge", "action_unmapped", "channel", String.valueOf(channel), "action", String.valueOf(action));
@@ -151,6 +153,21 @@ public final class DsBridge {
             ClientPlayNetworking.send(new NotebookPastureActionC2S(pos, act, arg, pairings));
     }
 
+    /** Route a React {@code goals} action → NotebookGoalC2S (set or clear the breeding goal). */
+    private static void handleGoalAction(String action, Map<String, Object> p) {
+        if (MinecraftClient.getInstance().getNetworkHandler() == null) return;
+        Map<String, Object> spec = new LinkedHashMap<>();
+        if ("CLEAR".equals(action)) spec.put("clear", true);
+        else {
+            spec.put("species", str(p, "species", ""));
+            spec.put("shiny", (int) num(p, "shiny", -1));
+            spec.put("minPerfect", (int) num(p, "minPerfect", 0));
+            spec.put("minIvTotal", (int) num(p, "minIvTotal", 0));
+            spec.put("count", (int) num(p, "count", 1));
+        }
+        ClientPlayNetworking.send(new NotebookGoalC2S(GSON.toJson(spec)));
+    }
+
     /** Force an immediate broadcast — used when a pasture is right-clicked so its config view appears at once,
      *  without waiting for the next diff-push tick (so the previously-open tab doesn't linger). */
     public static void pushNow() {
@@ -168,6 +185,14 @@ public final class DsBridge {
         push("inventory", inventoryData());
         push("pastureConfig", pastureConfigData());
         push("eggLog", eggLogData());
+        push("dashboard", jsonChannel(NotebookState.dashboardJson));
+        push("goals", jsonChannel(NotebookState.goalsJson));
+    }
+
+    /** Pass a server-built JSON blob (dashboard / goals) straight through as a channel object (React parses it). */
+    private static Object jsonChannel(String s) {
+        if (s == null || s.isEmpty()) return null;
+        try { return GSON.fromJson(s, com.google.gson.JsonObject.class); } catch (Exception e) { return null; }
     }
 
     /** The viewing player's recent egg-ingest feed (kept/voided + which filter) + totals — the console Log view. */

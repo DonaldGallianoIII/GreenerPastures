@@ -23,6 +23,9 @@ public final class EggLog {
     private static final int CAP = 40;
     private static final Map<UUID, Deque<Entry>> BY_PLAYER = new HashMap<>();
     private static final Map<UUID, long[]> COUNTS = new HashMap<>();   // [kept, voided]
+    private static final Map<UUID, long[]> TOTALS = new HashMap<>();          // [laid, shiny, procShiny, dataEarned]
+    private static final Map<UUID, Map<String, Integer>> BY_TIER = new HashMap<>();
+    private static final Map<UUID, Map<Long, Integer>> SPARK = new HashMap<>(); // eggs per world-minute bucket
 
     public static synchronized void record(UUID owner, String species, boolean voided, String filter) {
         if (owner == null) return;
@@ -40,4 +43,34 @@ public final class EggLog {
 
     public static synchronized long kept(UUID owner) { long[] c = COUNTS.get(owner); return c == null ? 0 : c[0]; }
     public static synchronized long voided(UUID owner) { long[] c = COUNTS.get(owner); return c == null ? 0 : c[1]; }
+
+    // ── dashboard totals (laid / shiny / proc-shiny / Data earned + by-tier + a per-minute sparkline) ─────────
+    /** Record one laid egg for the dashboard totals + the per-minute sparkline (nowTicks = world time). */
+    public static synchronized void recordLaid(UUID owner, String tier, boolean shiny, boolean procShiny, long nowTicks) {
+        if (owner == null) return;
+        long[] t = TOTALS.computeIfAbsent(owner, k -> new long[4]);
+        t[0]++; if (shiny) t[1]++; if (procShiny) t[2]++;
+        BY_TIER.computeIfAbsent(owner, k -> new HashMap<>()).merge(tier == null || tier.isEmpty() ? "?" : tier, 1, Integer::sum);
+        java.util.TreeMap<Long, Integer> s = (java.util.TreeMap<Long, Integer>) SPARK.computeIfAbsent(owner, k -> new java.util.TreeMap<>());
+        s.merge(nowTicks / 1200L, 1, Integer::sum);
+        while (s.size() > 48) s.remove(s.firstKey());
+    }
+
+    /** Credit Data earned from a rendered (voided) egg — folds into the dashboard's "Data earned" total. */
+    public static synchronized void addData(UUID owner, long amt) {
+        if (owner != null) TOTALS.computeIfAbsent(owner, k -> new long[4])[3] += amt;
+    }
+
+    public static synchronized long[] totals(UUID owner) { return TOTALS.getOrDefault(owner, new long[4]).clone(); }
+    public static synchronized Map<String, Integer> byTier(UUID owner) { return new java.util.LinkedHashMap<>(BY_TIER.getOrDefault(owner, Map.of())); }
+
+    /** The last 12 world-minute egg counts (oldest→newest, ending at the current minute) — the eggs/min sparkline. */
+    public static synchronized int[] spark(UUID owner, long nowTicks) {
+        int[] out = new int[12];
+        Map<Long, Integer> s = SPARK.get(owner);
+        if (s == null) return out;
+        long cur = nowTicks / 1200L;
+        for (int i = 0; i < 12; i++) out[i] = s.getOrDefault(cur - (11 - i), 0);
+        return out;
+    }
 }

@@ -4,7 +4,9 @@ import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
 import com.greenerpastures.notebook.net.NotebookBioBankS2C;
 import com.greenerpastures.notebook.net.NotebookCompilerS2C;
+import com.greenerpastures.notebook.net.NotebookDashboardS2C;
 import com.greenerpastures.notebook.net.NotebookEggLogS2C;
+import com.greenerpastures.notebook.net.NotebookGoalsS2C;
 import com.greenerpastures.notebook.net.NotebookGraphS2C;
 import com.greenerpastures.notebook.net.NotebookPastureConfigS2C;
 import com.greenerpastures.notebook.net.NotebookPasturesS2C;
@@ -142,6 +144,24 @@ public final class NotebookState {
         eggKept = p.kept();
         eggVoided = p.voided();
         eggLog = p.entries();
+        return changed;
+    }
+
+    // ── Dashboard + Goals (JSON blobs, parsed in React) ──────────────────────
+    public static volatile String dashboardJson = "";
+    public static volatile String goalsJson = "";
+
+    public static boolean applyDashboard(NotebookDashboardS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !dashboardJson.equals(j);
+        dashboardJson = j;
+        return changed;
+    }
+
+    public static boolean applyGoals(NotebookGoalsS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !goalsJson.equals(j);
+        goalsJson = j;
         return changed;
     }
 }
