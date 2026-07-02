@@ -45,7 +45,7 @@ public class NotebookBrowserScreen extends Screen {
 
     /** Start a short transition curtain — call on an air↔pasture / pasture↔pasture switch so the previous view
      *  (still in the kept-alive browser) doesn't flash before the new one paints. */
-    public static void curtain() { curtainUntil = System.currentTimeMillis() + 220L; }
+    public static void curtain() { curtainUntil = System.currentTimeMillis() + 140L; }
 
     /** Pre-warm the browser BEFORE the console is first opened (called from the client tick once MCEF + a world are
      *  ready) so the first open shows an already-painted page instead of a black/loading blip. Safe to call every

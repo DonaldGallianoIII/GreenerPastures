@@ -98,6 +98,9 @@ const CSS = `
 .insp-row{ display:flex; justify-content:space-between; font-size:11px; padding:2px 0; color:var(--text); }
 .dcfg-drag{ cursor:move; user-select:none; }
 .sb-bad{ color:var(--red); font-weight:600; }
+.loadsplash{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:52px 0; color:var(--muted); font-size:13px; }
+.spinner{ width:30px; height:30px; border:3px solid var(--line); border-top-color:var(--cyan); border-radius:50%; animation:gpspin .8s linear infinite; }
+@keyframes gpspin{ to{ transform:rotate(360deg); } }
 .statrow{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 .stat{ flex:1; min-width:78px; background:var(--inset); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
 .stat-v{ font-size:20px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
@@ -1139,7 +1142,7 @@ function PastureConfig({ cfg }) {
         <span style={{ flex: 1 }} />
         <span className="dim mono" style={{ fontSize: 11 }}>pasture config</span>
       </div>
-      <div className="muted" style={{ fontSize: 12, padding: '28px 4px', textAlign: 'center' }}>loading pasture…</div>
+      <div className="loadsplash"><div className="spinner" /><span>loading pasture…</span></div>
     </div>
   )
   const hasKernel = !!cfg.tier

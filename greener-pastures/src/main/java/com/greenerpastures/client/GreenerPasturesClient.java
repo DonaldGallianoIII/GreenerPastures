@@ -97,11 +97,11 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookPastureConfigS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyPastureConfig(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyPastureConfig(payload)) { NotebookScreen.refreshIfOpen(); DsBridge.pushNow(); }
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookGraphS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyGraph(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyGraph(payload)) { NotebookScreen.refreshIfOpen(); DsBridge.pushNow(); }
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookEggLogS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
