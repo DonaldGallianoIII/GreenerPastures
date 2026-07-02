@@ -34,12 +34,12 @@ public final class EggIngest {
     /** Data credited per egg the graph renders (voids) — a modest per-egg trickle; the dark-economy income. */
     private static final long VOID_DATA_PER_EGG = 10L;
 
-    public static boolean ingest(ServerWorld world, UUID owner, ItemStack egg, PastureData pd, BlockPos pos) {
+    public static boolean ingest(ServerWorld world, UUID owner, ItemStack egg, PastureData pd, BlockPos pos, UUID monId) {
         try {
             MinecraftServer server = world.getServer();
             String species = EggReader.species(egg);
             EggCard card = EggReader.card(egg);
-            GraphEval.Result r = GraphEval.route(pd.graphJson, card);
+            GraphEval.Result r = GraphEval.route(pd.graphJson, monId, card);
             if (r.route() == GraphEval.Route.VOID) {
                 long value = RenderValuation.dataFor(1, VOID_DATA_PER_EGG, 1.0);
                 DataStore.get(server).credit(owner, value);

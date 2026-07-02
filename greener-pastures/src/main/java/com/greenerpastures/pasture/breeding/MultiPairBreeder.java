@@ -176,7 +176,7 @@ public final class MultiPairBreeder {
             CobbreedingBridge.BredEgg egg = CobbreedingBridge.buildEggForPair(pairs.get(i), shape);
             if (egg == null) continue;                              // incompatible pair, skip
             if (pd.owner != null) {                                 // LINKED → eggs as DATA into the owner's Notebook BioBank
-                if (!EggIngest.ingest(world, pd.owner, egg.stack(), pd, pos)
+                if (!EggIngest.ingest(world, pd.owner, egg.stack(), pd, pos, pairs.get(i).get(0).getTetheringId())
                         && !pd.eggQueue.offer(egg.stack())) {       // BioBank full → tray fallback → tray full → pause
                     GpLog.w("breeder", "queue_full", "pos", pos.toShortString(), "cap", pd.eggQueue.cap());
                     break;

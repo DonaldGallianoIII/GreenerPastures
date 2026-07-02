@@ -6,11 +6,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.greenerpastures.egg.oracle.cull.EggCard;
 
+import java.util.UUID;
+
 /**
  * Evaluates a pasture's Daemon graph ({@link com.greenerpastures.pasture.breeding.PastureData#graphJson}) for one
- * bred egg → {@link Route#KEEP} (store in the BioBank) or {@link Route#VOID} (render to Data). The pipeline is
- * entered at whatever a MON {@code eggs} port or a {@code SOURCE} {@code out} port wires into, then walked
- * filter → filter (following the {@code pass} / {@code void} output that matches the egg) until it hits a sink.
+ * bred egg → {@link Route#KEEP} (store in the BioBank) or {@link Route#VOID} (render to Data). The graph is a set
+ * of <b>threads</b> (named breeding lines); the egg is routed through the thread that owns its parent mon. Within
+ * a thread the pipeline is entered at whatever a MON {@code eggs} port (or a {@code SOURCE} {@code out} port) wires
+ * into, then walked filter → filter (following the {@code pass} / {@code void} output that matches) until a sink.
  *
  * <p><b>SACRED:</b> a shiny or unreadable egg is ALWAYS kept, regardless of the graph — you can cull hard for IVs
  * without ever risking a shiny (Deuce's rule). An empty / unwired graph keeps everything (back-compat). A pass
@@ -25,18 +28,42 @@ public final class GraphEval {
     private static final Gson GSON = new Gson();
     private static final String[] STATS = {"HP", "Atk", "Def", "SpA", "SpD", "Spe"};
 
-    public static Result route(String graphJson, EggCard card) {
+    public static Result route(String graphJson, UUID monId, EggCard card) {
         if (card == null || card.shiny()) return keep(null);            // SACRED — never lose a shiny / unreadable egg
         if (graphJson == null || graphJson.isEmpty()) return keep(null);
         JsonObject g;
         try { g = GSON.fromJson(graphJson, JsonObject.class); } catch (Exception e) { return keep(null); }
-        if (g == null || !g.has("nodes") || !g.has("edges")) return keep(null);
-        JsonArray nodes = g.getAsJsonArray("nodes"), edges = g.getAsJsonArray("edges");
+        if (g == null) return keep(null);
+        JsonObject thread = findThread(g, monId);                      // the breeding line that owns this egg's parent
+        if (thread == null) return keep(null);                         // parent not in any wired line → keep
+        JsonArray nodes = thread.getAsJsonArray("nodes"), edges = thread.getAsJsonArray("edges");
         if (nodes == null || edges == null) return keep(null);
+        return walk(nodes, edges, card);
+    }
 
+    /** The thread whose MON nodes include {@code monId}; falls back to the whole object for the legacy single-graph
+     *  format (no {@code threads} array). Null when the mon isn't placed in any thread. */
+    private static JsonObject findThread(JsonObject g, UUID monId) {
+        JsonArray threads = g.getAsJsonArray("threads");
+        if (threads == null) return g.has("nodes") ? g : null;         // legacy { nodes, edges }
+        if (monId == null) return null;
+        String target = monId.toString();
+        for (JsonElement el : threads) {
+            JsonObject t = el.getAsJsonObject();
+            JsonArray tn = t.getAsJsonArray("nodes");
+            if (tn == null) continue;
+            for (JsonElement ne : tn) {
+                JsonObject n = ne.getAsJsonObject();
+                if ("MON".equals(str(n, "type")) && target.equals(str(n, "monId"))) return t;
+            }
+        }
+        return null;
+    }
+
+    /** Walk one thread's pipeline for the egg: entry (a MON eggs / SOURCE out wire) → filters → sink. */
+    private static Result walk(JsonArray nodes, JsonArray edges, EggCard card) {
         String entry = entryNode(edges);                               // node fed by a MON 'eggs' / SOURCE 'out' port
         if (entry == null) return keep(null);                          // nothing wired to eggs → keep-all fallback
-
         String id = entry, rejectedBy = null;
         for (int guard = 0; id != null && guard < 64; guard++) {
             JsonObject node = findNode(nodes, id);

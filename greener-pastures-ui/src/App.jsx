@@ -74,6 +74,19 @@ const CSS = `
 .egglog-h{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; margin-bottom:5px; }
 .egglog-feed{ max-height:92px; overflow:auto; display:flex; flex-direction:column; gap:2px; }
 .egglog-row{ font-size:10px; display:flex; gap:6px; align-items:center; }
+.thread-tabs{ display:flex; gap:3px; align-items:center; flex-wrap:wrap; }
+.ttab{ display:flex; align-items:center; gap:5px; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:3px 9px; font-size:11px; cursor:pointer; color:var(--muted); }
+.ttab.on{ background:var(--inset); border-color:var(--cyan); color:var(--text); }
+.tab-name{ background:transparent; border:none; color:var(--text); font-size:11px; font-weight:600; width:92px; outline:none; padding:0; }
+.tab-x{ color:var(--dim); font-size:8px; }
+.tab-x:hover{ color:var(--red); }
+.tab-add{ background:transparent; border:1px dashed var(--line); border-radius:7px; color:var(--muted); font-size:11px; padding:3px 9px; cursor:pointer; }
+.tab-add:disabled{ opacity:.4; cursor:default; }
+.thread-roster{ display:flex; gap:4px; align-items:center; flex-wrap:wrap; }
+.monchip{ background:var(--panel); border:1px solid var(--line); border-radius:5px; padding:2px 8px; font-size:10px; cursor:pointer; color:var(--muted); }
+.monchip.here{ background:#173341; border-color:var(--cyan); color:var(--cyan); font-weight:600; }
+.monchip.busy{ opacity:.5; }
+.gnode.mon{ background:#1a2230; }
 .dwire{ stroke-width:2.5; fill:none; pointer-events:stroke; cursor:pointer; }
 .dwire:hover{ stroke:var(--red) !important; }
 .dwire.live{ stroke:var(--cyan); stroke-dasharray:5 4; }
@@ -662,9 +675,16 @@ const NODE_META = {
   SOURCE: { hue: '#9aa4b2', title: () => 'Source' },
 }
 const isFilter = (t) => typeof t === 'string' && t.startsWith('FILTER_')
-const parseGraph = (s) => { try { const o = JSON.parse(s || '{}'); return { nodes: Array.isArray(o.nodes) ? o.nodes : [], edges: Array.isArray(o.edges) ? o.edges : [] } } catch { return { nodes: [], edges: [] } } }
+const parseDoc = (s) => {
+  try {
+    const o = JSON.parse(s || '{}')
+    if (Array.isArray(o.threads)) return { threads: o.threads, active: o.active || (o.threads[0] && o.threads[0].id) || null }
+    if (Array.isArray(o.nodes)) return { threads: [{ id: 'th1', name: 'Line 1', nodes: o.nodes, edges: Array.isArray(o.edges) ? o.edges : [] }], active: 'th1' }   // migrate old single canvas
+  } catch { /* fall through to empty */ }
+  return { threads: [], active: null }
+}
 const defaultConfig = (t) => t === 'FILTER_IV' || t === 'FILTER_EV' ? { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 } : t === 'FILTER_SHINY' ? { gate: 'only' } : t === 'FILTER_NATURE' ? { list: [] } : {}
-const portsFor = (t) => t === 'MON' ? [{ k: 'pair', side: 'l', ry: 0.5, kind: 'pair' }, { k: 'eggs', side: 'r', ry: 0.5, kind: 'flow', dir: 'out' }]
+const portsFor = (t) => t === 'MON' ? [{ k: 'eggs', side: 'r', ry: 0.5, kind: 'flow', dir: 'out' }]
   : isFilter(t) ? [{ k: 'in', side: 'l', ry: 0.5, kind: 'flow', dir: 'in' }, { k: 'pass', side: 'r', ry: 0.32, kind: 'flow', dir: 'out' }, { k: 'void', side: 'r', ry: 0.72, kind: 'void', dir: 'out' }]
   : t === 'SOURCE' ? [{ k: 'out', side: 'r', ry: 0.5, kind: 'flow', dir: 'out' }]
   : [{ k: 'in', side: 'l', ry: 0.5, kind: 'flow', dir: 'in' }]
@@ -672,7 +692,7 @@ const portByK = (t, k) => portsFor(t).find((p) => p.k === k)
 const portXY = (n, p) => ({ x: n.x + (p.side === 'l' ? 0 : NODE_W), y: n.y + p.ry * NODE_H })
 const wirePath = (x1, y1, x2, y2) => { const dx = Math.max(28, Math.abs(x2 - x1) * 0.5); return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}` }
 const nodeSub = (n) => {
-  if (n.type === 'MON') return n.bucket > 0 ? 'pair ' + n.bucket : 'unpaired'
+  if (n.type === 'MON') return 'parent'
   if (n.type === 'FILTER_IV' || n.type === 'FILTER_EV') { const c = n.config || {}; const on = STATS.filter((s) => (c[s] || 0) > 0); return on.length ? on.map((s) => `${s}≥${c[s]}`).join(' ') : (n.type === 'FILTER_IV' ? 'any IV' : 'any EV') }
   if (n.type === 'FILTER_NATURE') { const l = (n.config && n.config.list) || []; return l.length ? l.length + ' natures' : 'any nature' }
   if (n.type === 'FILTER_SHINY') { const g = (n.config && n.config.gate) || 'only'; return g === 'no' ? 'non-shiny' : g === 'any' ? 'any' : 'shiny only' }
@@ -717,7 +737,7 @@ function ConfigPanel({ node, onSet, onClose }) {
 function DaemonGraph({ cfg }) {
   const roster = cfg.roster || []
   const maxPairs = cfg.maxPairs || 0
-  const [g, setG] = useState(() => parseGraph(cfg.graph))
+  const [doc, setDoc] = useState(() => parseDoc(cfg.graph))
   const [view, setView] = useState({ x: 0, y: 0, zoom: 1 })
   const [wiring, setWiring] = useState(null)
   const [dragPos, setDragPos] = useState(null)
@@ -727,50 +747,62 @@ function DaemonGraph({ cfg }) {
   const touched = useRef(false)
   const lastPos = useRef(cfg.pos)
 
-  // Adopt the server graph on pasture-switch, or while still untouched (so the shell→real-graph arrival loads
-  // in), but never overwrite the player's own local edits (the editor is the authority once touched).
+  // Adopt the server graph on pasture-switch, or while still untouched (shell→real-graph arrival), but never
+  // overwrite the player's own local edits (the editor is the authority once touched).
   useEffect(() => {
-    if (cfg.pos !== lastPos.current) { lastPos.current = cfg.pos; touched.current = false; setSel(null); setG(parseGraph(cfg.graph)) }
-    else if (!touched.current) setG(parseGraph(cfg.graph))
+    if (cfg.pos !== lastPos.current) { lastPos.current = cfg.pos; touched.current = false; setSel(null); setView({ x: 0, y: 0, zoom: 1 }); setDoc(parseDoc(cfg.graph)) }
+    else if (!touched.current) setDoc(parseDoc(cfg.graph))
   }, [cfg.pos, cfg.graph])
+
+  const threads = doc.threads || []
+  const active = threads.find((t) => t.id === doc.active) || threads[0] || null
+  const nodes = active ? (active.nodes || []) : []
+  const edges = active ? (active.edges || []) : []
+  const speciesOf = (id) => { const m = roster.find((r) => r.id === id); return m ? m.species : String(id).slice(0, 6) }
+  const monThread = (id) => threads.find((t) => (t.nodes || []).some((n) => n.type === 'MON' && n.monId === id))
+  const renderNodes = nodes.map((n) => n.type === 'MON' ? { ...n, species: speciesOf(n.monId) } : n)
+  const byId = (id) => renderNodes.find((n) => n.id === id)
+  const liveNode = (n) => (n && dragPos && dragPos.id === n.id) ? { ...n, x: dragPos.x, y: dragPos.y } : n
 
   const scale = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
   const toGraph = (cx, cy) => { const r = boxRef.current.getBoundingClientRect(), s = scale(); return { x: ((cx - r.left) / s - view.x) / view.zoom, y: ((cy - r.top) / s - view.y) / view.zoom } }
 
-  // MON nodes come from the live roster (positions saved in the graph by monId); other nodes come from the graph.
-  const autoPos = (i) => ({ x: 24 + (i % 4) * 152, y: 20 + Math.floor(i / 4) * 92 })
-  const monNodes = roster.map((m, i) => { const s = g.nodes.find((n) => n.type === 'MON' && n.monId === m.id); const p = s || autoPos(i); return { id: 'mon:' + m.id, type: 'MON', monId: m.id, species: m.species, bucket: m.bucket, x: p.x, y: p.y } })
-  const allNodes = [...monNodes, ...g.nodes.filter((n) => n.type !== 'MON')]
-  const byId = (id) => allNodes.find((n) => n.id === id)
-  const monNode = (monId) => monNodes.find((n) => n.monId === monId)
-  const liveNode = (n) => (n && dragPos && dragPos.id === n.id) ? { ...n, x: dragPos.x, y: dragPos.y } : n
+  // persistence + pairing derivation (each line's ≤2 parents → a bucket, so the breeder pairs them)
+  const persist = (nd) => { touched.current = true; setDoc(nd); send('pasture', 'GRAPH', { pos: cfg.pos, json: JSON.stringify(nd) }) }
+  const pushPairings = (nd) => { const p = {}; nd.threads.forEach((t, k) => { const mons = (t.nodes || []).filter((n) => n.type === 'MON').map((n) => n.monId); if (mons.length >= 2 && k + 1 <= maxPairs) { p[mons[0]] = k + 1; p[mons[1]] = k + 1 } }); send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p }) }
+  const commit = (nd, repair) => { persist(nd); if (repair) pushPairings(nd) }
+  const updateActive = (mut, repair = false) => { if (!active) return; const nt = mut({ ...active, nodes: [...nodes], edges: [...edges] }); commit({ ...doc, threads: threads.map((t) => t.id === active.id ? nt : t) }, repair) }
 
-  // pairs (mon↔mon) stay in PastureData.pairings via roster buckets
-  const byBucket = {}; roster.forEach((m) => { if (m.bucket > 0) (byBucket[m.bucket] ||= []).push(m) })
-  const pairWires = Object.entries(byBucket).filter(([, gr]) => gr.length >= 2).map(([b, gr]) => ({ b: +b, a: gr[0], c: gr[1] }))
-  const pairings = () => { const p = {}; roster.forEach((m) => { if (m.bucket > 0) p[m.id] = m.bucket }); return p }
-  const pair = (aMon, bMon) => { if (aMon === bMon || !maxPairs) return; const p = pairings(); delete p[aMon]; delete p[bMon]; const used = new Set(Object.values(p)); let b = 1; while (used.has(b)) b++; if (b > maxPairs) return; p[aMon] = b; p[bMon] = b; send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p }) }
-  const unpair = (w) => { const p = pairings(); delete p[w.a.id]; delete p[w.c.id]; send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p }) }
+  // thread tabs (breeding lines)
+  const capLines = Math.max(1, maxPairs)
+  const addThread = () => { if (threads.length >= capLines) return; const id = 'th' + Date.now().toString(36) + Math.floor(Math.random() * 1000); setSel(null); setView({ x: 0, y: 0, zoom: 1 }); commit({ threads: [...threads, { id, name: 'Line ' + (threads.length + 1), nodes: [], edges: [] }], active: id }, false) }
+  const renameThread = (id, name) => commit({ ...doc, threads: threads.map((t) => t.id === id ? { ...t, name } : t) }, false)
+  const delThread = (id) => { const nt = threads.filter((t) => t.id !== id); setSel(null); commit({ threads: nt, active: nt[0] ? nt[0].id : null }, true) }
+  const switchThread = (id) => { setSel(null); setView({ x: 0, y: 0, zoom: 1 }); persist({ ...doc, active: id }) }
 
-  // the flow graph (filter/sink/source nodes + flow edges + mon positions) persists as graphJson
-  const apply = (next) => { touched.current = true; setG(next); send('pasture', 'GRAPH', { pos: cfg.pos, json: JSON.stringify(next) }) }
-  const addNode = (type) => { const r = boxRef.current.getBoundingClientRect(); const c = toGraph(r.left + r.width / 2, r.top + r.height / 2); const id = 'n' + Date.now().toString(36) + Math.floor(Math.random() * 1000); apply({ nodes: [...g.nodes, { id, type, x: Math.round(c.x - NODE_W / 2), y: Math.round(c.y - NODE_H / 2), config: defaultConfig(type) }], edges: g.edges }); setSel(id) }
-  const delNode = (id) => { apply({ nodes: g.nodes.filter((n) => n.id !== id), edges: g.edges.filter((e) => e.from !== id && e.to !== id) }); if (sel === id) setSel(null) }
-  const setConfig = (id, key, val) => apply({ nodes: g.nodes.map((n) => n.id === id ? { ...n, config: { ...(n.config || {}), [key]: val } } : n), edges: g.edges })
-  const setNodePos = (n, x, y) => {
-    if (n.type === 'MON') { const has = g.nodes.some((z) => z.type === 'MON' && z.monId === n.monId); apply({ nodes: has ? g.nodes.map((z) => (z.type === 'MON' && z.monId === n.monId) ? { ...z, x, y } : z) : [...g.nodes, { id: n.id, type: 'MON', monId: n.monId, x, y }], edges: g.edges }) }
-    else apply({ nodes: g.nodes.map((z) => z.id === n.id ? { ...z, x, y } : z), edges: g.edges })
+  // assign parents to the active line (a mon breeds in one line; max 2 parents per line)
+  const toggleMon = (monId) => {
+    if (!active) return
+    const mid = 'mon:' + monId
+    if (nodes.some((n) => n.id === mid)) { commit({ ...doc, threads: threads.map((t) => t.id === active.id ? { ...t, nodes: t.nodes.filter((n) => n.id !== mid), edges: (t.edges || []).filter((e) => e.from !== mid && e.to !== mid) } : t) }, true); return }
+    const cnt = nodes.filter((n) => n.type === 'MON').length
+    if (cnt >= 2) return
+    commit({ ...doc, threads: threads.map((t) => {
+      if (t.id === active.id) return { ...t, nodes: [...(t.nodes || []), { id: mid, type: 'MON', monId, x: 26, y: 20 + cnt * 76 }] }
+      if ((t.nodes || []).some((n) => n.id === mid)) return { ...t, nodes: t.nodes.filter((n) => n.id !== mid), edges: (t.edges || []).filter((e) => e.from !== mid && e.to !== mid) }
+      return t
+    }) }, true)
   }
-  const addEdge = (from, fromPort, to, toPort) => { if (from === to) return; apply({ nodes: g.nodes, edges: [...g.edges.filter((e) => !(e.to === to && e.toPort === toPort)), { from, fromPort, to, toPort }] }) }
-  const delEdge = (e) => apply({ nodes: g.nodes, edges: g.edges.filter((x) => !(x.from === e.from && x.fromPort === e.fromPort && x.to === e.to && x.toPort === e.toPort)) })
-  const tryConnect = (aN, aP, bN, bP) => {
-    if (aN.id === bN.id) return
-    if (aP.kind === 'pair' && bP.kind === 'pair' && aN.type === 'MON' && bN.type === 'MON') { pair(aN.monId, bN.monId); return }
-    let out, inp
-    if (aP.dir === 'out' && bP.dir === 'in') { out = [aN, aP]; inp = [bN, bP] } else if (bP.dir === 'out' && aP.dir === 'in') { out = [bN, bP]; inp = [aN, aP] } else return
-    addEdge(out[0].id, out[1].k, inp[0].id, inp[1].k)
-  }
-  const portHit = (cx, cy) => { const gpt = toGraph(cx, cy); for (const raw of allNodes) { const n = liveNode(raw); for (const port of portsFor(n.type)) { const pp = portXY(n, port); if (Math.hypot(pp.x - gpt.x, pp.y - gpt.y) <= 13) return { node: raw, port } } } return null }
+
+  // node + edge mutations on the active line
+  const addNode = (type) => { const r = boxRef.current.getBoundingClientRect(); const c = toGraph(r.left + r.width / 2, r.top + r.height / 2); const id = 'n' + Date.now().toString(36) + Math.floor(Math.random() * 1000); updateActive((t) => { t.nodes = [...t.nodes, { id, type, x: Math.round(c.x - NODE_W / 2), y: Math.round(c.y - NODE_H / 2), config: defaultConfig(type) }]; return t }); setSel(id) }
+  const delNode = (id) => { const node = nodes.find((n) => n.id === id); updateActive((t) => { t.nodes = t.nodes.filter((n) => n.id !== id); t.edges = t.edges.filter((e) => e.from !== id && e.to !== id); return t }, !!(node && node.type === 'MON')); if (sel === id) setSel(null) }
+  const setConfig = (id, key, val) => updateActive((t) => { t.nodes = t.nodes.map((n) => n.id === id ? { ...n, config: { ...(n.config || {}), [key]: val } } : n); return t })
+  const setNodePos = (n, x, y) => updateActive((t) => { t.nodes = t.nodes.map((z) => z.id === n.id ? { ...z, x, y } : z); return t })
+  const addEdge = (from, fromPort, to, toPort) => { if (from === to) return; updateActive((t) => { t.edges = [...t.edges.filter((e) => !(e.to === to && e.toPort === toPort)), { from, fromPort, to, toPort }]; return t }) }
+  const delEdge = (e) => updateActive((t) => { t.edges = t.edges.filter((x) => !(x.from === e.from && x.fromPort === e.fromPort && x.to === e.to && x.toPort === e.toPort)); return t })
+  const tryConnect = (aN, aP, bN, bP) => { if (aN.id === bN.id) return; let out, inp; if (aP.dir === 'out' && bP.dir === 'in') { out = [aN, aP]; inp = [bN, bP] } else if (bP.dir === 'out' && aP.dir === 'in') { out = [bN, bP]; inp = [aN, aP] } else return; addEdge(out[0].id, out[1].k, inp[0].id, inp[1].k) }
+  const portHit = (cx, cy) => { const gpt = toGraph(cx, cy); for (const raw of renderNodes) { const n = liveNode(raw); for (const port of portsFor(n.type)) { const pp = portXY(n, port); if (Math.hypot(pp.x - gpt.x, pp.y - gpt.y) <= 13) return { node: raw, port } } } return null }
 
   const bind = () => { window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp) }
   const onCanvasDown = (e) => { setSel(null); drag.current = { type: 'pan', sx: e.clientX, sy: e.clientY, bx: view.x, by: view.y, s: scale() }; bind() }
@@ -799,30 +831,50 @@ function DaemonGraph({ cfg }) {
 
   return (
     <div className="daemon-wrap">
-      <div className="daemon-palette" onMouseDown={(e) => e.stopPropagation()}>
-        {PALETTE.map((p) => <button key={p.type} className="dchip" style={{ borderColor: p.hue, color: p.hue }} onClick={() => addNode(p.type)}>{p.label}</button>)}
-        <span className="dim mono" style={{ marginLeft: 'auto', fontSize: 10 }}>{Math.round(view.zoom * 100)}%</span>
+      <div className="thread-tabs" onMouseDown={(e) => e.stopPropagation()}>
+        {threads.map((t) => { const on = active && t.id === active.id; return (
+          <div key={t.id} className={`ttab${on ? ' on' : ''}`} onClick={() => on ? null : switchThread(t.id)}>
+            {on
+              ? <input className="tab-name" value={t.name} maxLength={24} onFocus={() => send('console', 'INPUT_FOCUS', { v: true })} onBlur={() => send('console', 'INPUT_FOCUS', { v: false })} onChange={(e) => renameThread(t.id, e.target.value)} />
+              : <span>{t.name || 'line'}</span>}
+            <span className="tab-x" title="delete line" onClick={(e) => { e.stopPropagation(); delThread(t.id) }}>✕</span>
+          </div>
+        )})}
+        <button className="tab-add" disabled={threads.length >= capLines} title={threads.length >= capLines ? `Kernel allows ${maxPairs} lines` : 'new breeding line'} onClick={addThread}>+ line</button>
       </div>
-      <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown} onWheel={onWheel}>
-        <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
-          <svg className="daemon-wires">
-            {pairWires.map((w, i) => { const a = liveNode(monNode(w.a.id)), c = liveNode(monNode(w.c.id)); if (!a || !c) return null; const pa = portXY(a, portByK('MON', 'pair')), pc = portXY(c, portByK('MON', 'pair')); return <path key={'p' + i} d={wirePath(pa.x, pa.y, pc.x, pc.y)} stroke={pairHue(w.b)} className="dwire" onClick={(ev) => { ev.stopPropagation(); unpair(w) }} /> })}
-            {g.edges.map((e, i) => { const fn = byId(e.from), tn = byId(e.to); if (!fn || !tn) return null; const fp = portByK(fn.type, e.fromPort), tp = portByK(tn.type, e.toPort); if (!fp || !tp) return null; const a = portXY(liveNode(fn), fp), b = portXY(liveNode(tn), tp); return <path key={'e' + i} d={wirePath(a.x, a.y, b.x, b.y)} stroke={fp.kind === 'void' ? 'var(--red)' : 'var(--cyan)'} className="dwire" onClick={(ev) => { ev.stopPropagation(); delEdge(e) }} /> })}
-            {wiring && (() => { const pp = portXY(liveNode(wiring.node), wiring.port); return <path d={wirePath(pp.x, pp.y, wiring.x, wiring.y)} className="dwire live" /> })()}
-          </svg>
-          {allNodes.map((raw) => { const n = liveNode(raw); const meta = NODE_META[n.type] || NODE_META.SOURCE; const paired = n.type === 'MON' && n.bucket > 0; const accent = paired ? pairHue(n.bucket) : meta.hue; return (
-            <div key={n.id} className={`gnode${sel === n.id ? ' sel' : ''}`} style={{ left: n.x, top: n.y, width: NODE_W, height: NODE_H, borderColor: accent }} onMouseDown={(e) => onNodeDown(e, n)}>
-              <span className="gnode-bar" style={{ background: accent }} />
-              <div className="gnode-body"><span className="gnode-title">{meta.title(n)}</span><span className="gnode-sub">{nodeSub(n)}</span></div>
-              {n.type !== 'MON' && <span className="gnode-x" title="delete node" onMouseDown={(e) => { e.stopPropagation(); delNode(n.id) }}>✕</span>}
-              {portsFor(n.type).map((port) => { const pp = portXY(n, port); return <span key={port.k} className="gport" title={port.k} onMouseDown={(e) => onPortDown(e, n, port)}
-                style={{ left: pp.x - n.x - 6, top: pp.y - n.y - 6, background: port.kind === 'pair' ? '#c9a227' : port.kind === 'void' ? 'var(--red)' : (port.dir === 'out' ? 'var(--cyan)' : '#2b6cb0'), borderRadius: port.kind === 'pair' ? '3px' : '50%' }} /> })}
-            </div>
+      {!active ? (
+        <div className="muted" style={{ fontSize: 12, padding: '18px 4px' }}>No breeding lines yet — <b>+ line</b> to start one, add two parents, then wire their egg pipeline.{maxPairs ? '' : ' (Slot a Kernel first.)'}</div>
+      ) : (<>
+        <div className="thread-roster" onMouseDown={(e) => e.stopPropagation()}>
+          <span className="dim" style={{ fontSize: 10 }}>parents</span>
+          {roster.length === 0 ? <span className="dim" style={{ fontSize: 10 }}>— tether mons in-world</span> : roster.map((m) => { const home = monThread(m.id); const here = home && home.id === active.id; return (
+            <button key={m.id} className={`monchip${here ? ' here' : home ? ' busy' : ''}`} title={home ? (here ? 'in this line — click to remove' : 'in ' + home.name) : 'add to this line'} onClick={() => toggleMon(m.id)}>{cap(m.species)}{home && !here ? ` · ${home.name}` : ''}</button>
           )})}
         </div>
-        {sel && byId(sel) && isFilter(byId(sel).type) && <ConfigPanel node={byId(sel)} onSet={(k, v) => setConfig(sel, k, v)} onClose={() => setSel(null)} />}
-        <div className="daemon-hud">scroll = zoom · drag canvas = pan · drag a port to wire · click a wire to remove</div>
-      </div>
+        <div className="daemon-palette" onMouseDown={(e) => e.stopPropagation()}>
+          {PALETTE.filter((p) => p.type !== 'SOURCE').map((p) => <button key={p.type} className="dchip" style={{ borderColor: p.hue, color: p.hue }} onClick={() => addNode(p.type)}>{p.label}</button>)}
+          <span className="dim mono" style={{ marginLeft: 'auto', fontSize: 10 }}>{Math.round(view.zoom * 100)}%</span>
+        </div>
+        <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown} onWheel={onWheel}>
+          <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
+            <svg className="daemon-wires">
+              {edges.map((e, i) => { const fn = byId(e.from), tn = byId(e.to); if (!fn || !tn) return null; const fp = portByK(fn.type, e.fromPort), tp = portByK(tn.type, e.toPort); if (!fp || !tp) return null; const a = portXY(liveNode(fn), fp), b = portXY(liveNode(tn), tp); return <path key={'e' + i} d={wirePath(a.x, a.y, b.x, b.y)} stroke={fp.kind === 'void' ? 'var(--red)' : 'var(--cyan)'} className="dwire" onClick={(ev) => { ev.stopPropagation(); delEdge(e) }} /> })}
+              {wiring && (() => { const pp = portXY(liveNode(wiring.node), wiring.port); return <path d={wirePath(pp.x, pp.y, wiring.x, wiring.y)} className="dwire live" /> })()}
+            </svg>
+            {renderNodes.map((raw) => { const n = liveNode(raw); const meta = NODE_META[n.type] || NODE_META.SOURCE; const accent = meta.hue; return (
+              <div key={n.id} className={`gnode${sel === n.id ? ' sel' : ''}${n.type === 'MON' ? ' mon' : ''}`} style={{ left: n.x, top: n.y, width: NODE_W, height: NODE_H, borderColor: accent }} onMouseDown={(e) => onNodeDown(e, n)}>
+                <span className="gnode-bar" style={{ background: accent }} />
+                <div className="gnode-body"><span className="gnode-title">{meta.title(n)}</span><span className="gnode-sub">{nodeSub(n)}</span></div>
+                {n.type !== 'SOURCE' && <span className="gnode-x" title={n.type === 'MON' ? 'remove parent' : 'delete node'} onMouseDown={(e) => { e.stopPropagation(); delNode(n.id) }}>✕</span>}
+                {portsFor(n.type).map((port) => { const pp = portXY(n, port); return <span key={port.k} className="gport" title={port.k} onMouseDown={(e) => onPortDown(e, n, port)}
+                  style={{ left: pp.x - n.x - 6, top: pp.y - n.y - 6, background: port.kind === 'void' ? 'var(--red)' : (port.dir === 'out' ? 'var(--cyan)' : '#2b6cb0'), borderRadius: '50%' }} /> })}
+              </div>
+            )})}
+          </div>
+          {sel && byId(sel) && isFilter(byId(sel).type) && <ConfigPanel node={byId(sel)} onSet={(k, v) => setConfig(sel, k, v)} onClose={() => setSel(null)} />}
+          <div className="daemon-hud">{active.name} · {nodes.filter((n) => n.type === 'MON').length}/2 parents · scroll=zoom · drag=pan · drag a port to wire</div>
+        </div>
+      </>)}
     </div>
   )
 }
@@ -890,7 +942,7 @@ function PastureConfig({ cfg }) {
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
       </div>
       <div className="dim" style={{ fontSize: 11, marginBottom: 6 }}>
-        Daemon · {roster.length} mon{roster.length === 1 ? '' : 's'} · wire mons into pairs, then pipe their eggs through filters to BioBank / Data{maxPairs ? '' : ' — slot a Kernel to pair'}
+        Daemon · one tab per breeding line — add two parents, then wire their eggs through filters to BioBank / Data{maxPairs ? '' : ' · slot a Kernel to start'}
       </div>
       <DaemonGraph cfg={cfg} />
       <EggLogStrip />
