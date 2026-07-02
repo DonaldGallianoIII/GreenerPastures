@@ -48,16 +48,22 @@ public final class GreenerPasturesClient implements ClientModInitializer {
 
         // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click).
         // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
-        NotebookItem.CONSOLE_OPENER = () -> { NotebookState.pastureConfig = null; NotebookState.pastureGraphJson = ""; NotebookState.pastureConfigLoading = false; openConsole(); };   // air → tabbed console
+        NotebookItem.CONSOLE_OPENER = () -> {   // air → tabbed console
+            if (NotebookState.pastureConfig != null) NotebookBrowserScreen.curtain();   // coming from a pasture view → curtain the switch
+            NotebookState.pastureConfig = null; NotebookState.pastureGraphJson = ""; NotebookState.pastureConfigLoading = false;
+            openConsole();
+        };
         NotebookItem.PASTURE_OPENER = (pos) -> {
             // Show the config view immediately so the previously-open tab doesn't linger. Only reset to a LOADING
             // shell when opening a DIFFERENT pasture — reopening the same one keeps its cached config (no flash);
-            // an unrelated pasture shows "loading…" (not misleading empty/unlinked data) until the S2C lands.
+            // an unrelated pasture shows "loading…" (not misleading empty/unlinked data) until the S2C lands, and
+            // a curtain hides the previous (air / other-pasture) view until this one paints.
             NotebookPastureConfigS2C cur = NotebookState.pastureConfig;
             if (cur == null || cur.pos() != pos.asLong()) {
                 NotebookState.pastureConfig = new NotebookPastureConfigS2C(pos.asLong(), "", "", false, 0, java.util.List.of());
                 NotebookState.pastureGraphJson = "";
                 NotebookState.pastureConfigLoading = true;
+                NotebookBrowserScreen.curtain();
             }
             DsBridge.pushNow();
             openConsole();

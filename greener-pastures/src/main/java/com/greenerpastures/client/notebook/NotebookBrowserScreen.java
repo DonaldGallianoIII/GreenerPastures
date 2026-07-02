@@ -41,6 +41,11 @@ public class NotebookBrowserScreen extends Screen {
     private static String consoleUrl;
 
     private static MCEFBrowser browser;   // static → survives screen close: reopening is instant, no reload/blip
+    private static long curtainUntil = 0L;   // brief dark cover after a view-switch → hides the kept-alive browser's stale frame
+
+    /** Start a short transition curtain — call on an air↔pasture / pasture↔pasture switch so the previous view
+     *  (still in the kept-alive browser) doesn't flash before the new one paints. */
+    public static void curtain() { curtainUntil = System.currentTimeMillis() + 220L; }
 
     public NotebookBrowserScreen() {
         super(Text.literal("Notebook"));
@@ -142,6 +147,10 @@ public class NotebookBrowserScreen extends Screen {
         RenderSystem.setShaderTexture(0, 0);
         RenderSystem.enableDepthTest();
 
+        if (System.currentTimeMillis() < curtainUntil) {   // view-switch curtain: cover the stale frame until the new view paints
+            context.fill(0, 0, width, height, 0xFF06080C);
+            return;
+        }
         drawInventory(context, mouseX, mouseY);   // native MC inventory (real icons) painted OVER the browser
     }
 
