@@ -34,6 +34,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreens;
 public final class GreenerPasturesClient implements ClientModInitializer {
     /** Ticks since load; gates the notebook live-poll to ~1×/s while the console is open. */
     private static int notebookPollTick;
+    private static int warmTick;
 
     @Override
     public void onInitializeClient() {
@@ -121,6 +122,14 @@ public final class GreenerPasturesClient implements ClientModInitializer {
             if (!(client.currentScreen instanceof NotebookScreen)) return;
             if (client.getNetworkHandler() == null) return;
             if (++notebookPollTick % 20 == 0) ClientPlayNetworking.send(new NotebookRequestC2S(0));
+        });
+
+        // Pre-warm the MCEF console browser in the background once in a world, so the FIRST open shows an
+        // already-painted page (no black/loading blip). preload() self-guards: no MCEF / not-ready / already-warm.
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.getNetworkHandler() == null) return;
+            if (!net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef")) return;
+            if (++warmTick % 40 == 0) NotebookBrowserScreen.preload();
         });
 
         // notebook/ console — live WS bridge for the React UI (dev browser now, MCEF in-game later). Loopback :25599.

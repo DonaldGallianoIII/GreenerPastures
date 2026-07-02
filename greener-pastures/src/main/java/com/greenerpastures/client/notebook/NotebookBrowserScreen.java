@@ -47,6 +47,20 @@ public class NotebookBrowserScreen extends Screen {
      *  (still in the kept-alive browser) doesn't flash before the new one paints. */
     public static void curtain() { curtainUntil = System.currentTimeMillis() + 220L; }
 
+    /** Pre-warm the browser BEFORE the console is first opened (called from the client tick once MCEF + a world are
+     *  ready) so the first open shows an already-painted page instead of a black/loading blip. Safe to call every
+     *  tick: no-ops once created, or while MCEF is still downloading Chromium at the title screen. */
+    public static void preload() {
+        if (browser != null || !MCEF.isInitialized()) return;
+        String url = consoleUrl();
+        if (url == null) return;
+        browser = MCEF.createBrowser(url, true);
+        browser.useBrowserControls(false);
+        var win = MinecraftClient.getInstance().getWindow();
+        browser.resize(Math.max(1, win.getFramebufferWidth()), Math.max(1, win.getFramebufferHeight()));
+        GpLog.i("console", "preloaded");
+    }
+
     public NotebookBrowserScreen() {
         super(Text.literal("Notebook"));
     }
