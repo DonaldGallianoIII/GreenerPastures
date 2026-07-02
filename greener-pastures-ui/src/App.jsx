@@ -87,6 +87,7 @@ const CSS = `
 .monchip.here{ background:#173341; border-color:var(--cyan); color:var(--cyan); font-weight:600; }
 .monchip.busy{ opacity:.5; }
 .gnode.mon{ background:#1a2230; }
+.pairlink{ stroke:#c9a227; stroke-width:2; stroke-dasharray:3 4; opacity:.55; pointer-events:none; }
 .statrow{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 .stat{ flex:1; min-width:78px; background:var(--inset); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
 .stat-v{ font-size:20px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
@@ -879,7 +880,11 @@ function DaemonGraph({ cfg }) {
     const cnt = nodes.filter((n) => n.type === 'MON').length
     if (cnt >= 2) return
     commit({ ...doc, threads: threads.map((t) => {
-      if (t.id === active.id) return { ...t, nodes: [...(t.nodes || []), { id: mid, type: 'MON', monId, x: 26, y: 20 + cnt * 76 }] }
+      if (t.id === active.id) {
+        // a pair shares its egg stream — auto-wire the new parent to whatever the existing parent already feeds
+        const targets = [...new Map((t.edges || []).filter((e) => { const fn = (t.nodes || []).find((n) => n.id === e.from); return fn && fn.type === 'MON' && e.fromPort === 'eggs' }).map((e) => [e.to + '/' + e.toPort, { to: e.to, toPort: e.toPort }])).values()]
+        return { ...t, nodes: [...(t.nodes || []), { id: mid, type: 'MON', monId, x: 26, y: 20 + cnt * 76 }], edges: [...(t.edges || []), ...targets.map((s) => ({ from: mid, fromPort: 'eggs', to: s.to, toPort: s.toPort }))] }
+      }
       if ((t.nodes || []).some((n) => n.id === mid)) return { ...t, nodes: t.nodes.filter((n) => n.id !== mid), edges: (t.edges || []).filter((e) => e.from !== mid && e.to !== mid) }
       return t
     }) }, true)
@@ -890,8 +895,32 @@ function DaemonGraph({ cfg }) {
   const delNode = (id) => { const node = nodes.find((n) => n.id === id); updateActive((t) => { t.nodes = t.nodes.filter((n) => n.id !== id); t.edges = t.edges.filter((e) => e.from !== id && e.to !== id); return t }, !!(node && node.type === 'MON')); if (sel === id) setSel(null) }
   const setConfig = (id, key, val) => updateActive((t) => { t.nodes = t.nodes.map((n) => n.id === id ? { ...n, config: { ...(n.config || {}), [key]: val } } : n); return t })
   const setNodePos = (n, x, y) => updateActive((t) => { t.nodes = t.nodes.map((z) => z.id === n.id ? { ...z, x, y } : z); return t })
-  const addEdge = (from, fromPort, to, toPort) => { if (from === to) return; updateActive((t) => { t.edges = [...t.edges.filter((e) => !(e.to === to && e.toPort === toPort)), { from, fromPort, to, toPort }]; return t }) }
-  const delEdge = (e) => updateActive((t) => { t.edges = t.edges.filter((x) => !(x.from === e.from && x.fromPort === e.fromPort && x.to === e.to && x.toPort === e.toPort)); return t })
+  const addEdge = (from, fromPort, to, toPort) => {
+    if (from === to) return
+    updateActive((t) => {
+      const fromNode = t.nodes.find((n) => n.id === from)
+      const monIds = new Set(t.nodes.filter((n) => n.type === 'MON').map((n) => n.id))
+      if (fromNode && fromNode.type === 'MON' && fromPort === 'eggs') {
+        // a pair shares ONE egg stream → wire BOTH parents to this target, and move the whole pair off any old one
+        const kept = t.edges.filter((e) => !(monIds.has(e.from) && e.fromPort === 'eggs') && !(e.to === to && e.toPort === toPort))
+        const pair = [...monIds].map((id) => ({ from: id, fromPort: 'eggs', to, toPort }))
+        t.edges = [...kept, ...pair]
+      } else {
+        t.edges = [...t.edges.filter((e) => !(e.to === to && e.toPort === toPort)), { from, fromPort, to, toPort }]
+      }
+      return t
+    })
+  }
+  const delEdge = (e) => updateActive((t) => {
+    const fromNode = t.nodes.find((n) => n.id === e.from)
+    if (fromNode && fromNode.type === 'MON') {   // deleting a pair wire removes BOTH parents' eggs edges to that target
+      const monIds = new Set(t.nodes.filter((n) => n.type === 'MON').map((n) => n.id))
+      t.edges = t.edges.filter((x) => !(monIds.has(x.from) && x.fromPort === 'eggs' && x.to === e.to && x.toPort === e.toPort))
+    } else {
+      t.edges = t.edges.filter((x) => !(x.from === e.from && x.fromPort === e.fromPort && x.to === e.to && x.toPort === e.toPort))
+    }
+    return t
+  })
   const tryConnect = (aN, aP, bN, bP) => { if (aN.id === bN.id) return; let out, inp; if (aP.dir === 'out' && bP.dir === 'in') { out = [aN, aP]; inp = [bN, bP] } else if (bP.dir === 'out' && aP.dir === 'in') { out = [bN, bP]; inp = [aN, aP] } else return; addEdge(out[0].id, out[1].k, inp[0].id, inp[1].k) }
   const portHit = (cx, cy) => { const gpt = toGraph(cx, cy); for (const raw of renderNodes) { const n = liveNode(raw); for (const port of portsFor(n.type)) { const pp = portXY(n, port); if (Math.hypot(pp.x - gpt.x, pp.y - gpt.y) <= 13) return { node: raw, port } } } return null }
 
@@ -949,6 +978,7 @@ function DaemonGraph({ cfg }) {
         <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown} onWheel={onWheel}>
           <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
             <svg className="daemon-wires">
+              {(() => { const ms = renderNodes.filter((n) => n.type === 'MON'); if (ms.length !== 2) return null; const a = liveNode(ms[0]), b = liveNode(ms[1]); return <line x1={a.x + NODE_W / 2} y1={a.y + NODE_H / 2} x2={b.x + NODE_W / 2} y2={b.y + NODE_H / 2} className="pairlink" /> })()}
               {edges.map((e, i) => { const fn = byId(e.from), tn = byId(e.to); if (!fn || !tn) return null; const fp = portByK(fn.type, e.fromPort), tp = portByK(tn.type, e.toPort); if (!fp || !tp) return null; const a = portXY(liveNode(fn), fp), b = portXY(liveNode(tn), tp); return <path key={'e' + i} d={wirePath(a.x, a.y, b.x, b.y)} stroke={fp.kind === 'void' ? 'var(--red)' : 'var(--cyan)'} className="dwire" onClick={(ev) => { ev.stopPropagation(); delEdge(e) }} /> })}
               {wiring && (() => { const pp = portXY(liveNode(wiring.node), wiring.port); return <path d={wirePath(pp.x, pp.y, wiring.x, wiring.y)} className="dwire live" /> })()}
             </svg>
