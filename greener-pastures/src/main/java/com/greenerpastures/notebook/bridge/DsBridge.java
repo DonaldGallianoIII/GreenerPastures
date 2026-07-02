@@ -231,6 +231,7 @@ public final class DsBridge {
             r.put("species", mon.species());
             r.put("label", mon.label());
             r.put("bucket", mon.bucket());
+            r.put("stats", jsonChannel(mon.stats()));   // parent inspector: ivs/nature/gender/shiny/ot
             roster.add(r);
         }
         m.put("roster", roster);

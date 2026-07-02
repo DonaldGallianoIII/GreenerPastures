@@ -137,6 +137,9 @@ public final class NotebookNet {
         JsonArray spark = new JsonArray();
         for (int v : EggLog.spark(id, now)) spark.add(v);
         o.add("spark", spark);
+        JsonObject methods = new JsonObject();
+        CobbreedingBridge.shinyMethods().forEach((k, v) -> methods.addProperty(k, v));
+        o.add("shinyMethods", methods);   // {always, crystal, masuda} multipliers → the shiny-breeding indicator
         ServerPlayNetworking.send(player, new NotebookDashboardS2C(GSON.toJson(o)));
     }
 

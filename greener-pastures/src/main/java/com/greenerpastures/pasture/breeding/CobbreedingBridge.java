@@ -498,6 +498,35 @@ public final class CobbreedingBridge {
         return egg;
     }
 
+    private static final com.google.gson.Gson GSON_CB = new com.google.gson.Gson();
+
+    /** A tethered mon's inspectable stats (ivs / nature / gender / shiny / OT) as JSON — for the console's parent
+     *  inspector. Every field is best-effort so a reflection hiccup on one never blanks the rest. */
+    private static String monStats(Pokemon pkm) {
+        com.google.gson.JsonObject o = new com.google.gson.JsonObject();
+        try {
+            IVs ivs = pkm.getIvs();
+            com.google.gson.JsonArray iv = new com.google.gson.JsonArray();
+            for (Stat s : Stats.Companion.getPERMANENT()) { Integer v = (ivs == null) ? null : ivs.get(s); iv.add(v == null ? 0 : v); }
+            o.add("ivs", iv);
+        } catch (Throwable t) { }
+        try { o.addProperty("nature", natureName(pkm)); } catch (Throwable t) { }
+        try { o.addProperty("gender", String.valueOf(pkm.getGender())); } catch (Throwable t) { }
+        try { o.addProperty("shiny", Boolean.TRUE.equals(pkm.getShiny())); } catch (Throwable t) { }
+        try { String ot = trainerOf(pkm); o.addProperty("ot", ot == null ? "" : ot); } catch (Throwable t) { }
+        return GSON_CB.toJson(o);
+    }
+
+    private static String natureName(Pokemon pkm) {
+        try { return pkm.getNature().getName().getPath(); } catch (Throwable t) { return ""; }
+    }
+
+    /** The server's shiny-method multipliers (always / crystal / masuda) — for the console's shiny-breeding indicator. */
+    public static java.util.Map<String, Float> shinyMethods() {
+        try { java.util.Map<String, Float> m = Cobbreeding.INSTANCE.getConfig().getShinyMethod(); return m == null ? java.util.Map.of() : m; }
+        catch (Throwable t) { return java.util.Map.of(); }
+    }
+
     /** Snapshot this pasture's tethered mons for the wand GUI (server-side read of Cobblemon data). */
     public static java.util.List<MonEntry> rosterOf(PokemonPastureBlockEntity be, PastureData pd) {
         java.util.List<MonEntry> out = new java.util.ArrayList<>();
@@ -505,15 +534,13 @@ public final class CobbreedingBridge {
         try {
             for (PokemonPastureBlockEntity.Tethering t : new java.util.ArrayList<>(be.getTetheredPokemon())) {
                 java.util.UUID id = t.getTetheringId();
-                String species;
+                String species = "?", stats = "{}";
                 try {
                     Pokemon pkm = t.getPokemon();
-                    species = (pkm != null) ? pkm.getSpecies().getName() : "?";
-                } catch (Throwable ex) {
-                    species = "?";
-                }
+                    if (pkm != null) { species = pkm.getSpecies().getName(); stats = monStats(pkm); }
+                } catch (Throwable ex) { }
                 int bucket = pd.pairings.getOrDefault(id, 0);
-                out.add(new MonEntry(id, species, species, bucket));
+                out.add(new MonEntry(id, species, species, bucket, stats));
             }
         } catch (Throwable t) {
             GreenerPastures.LOG.warn("[better-pasture] could not read pasture roster", t);

@@ -88,6 +88,14 @@ const CSS = `
 .monchip.busy{ opacity:.5; }
 .gnode.mon{ background:#1a2230; }
 .pairlink{ stroke:#c9a227; stroke-width:2; stroke-dasharray:3 4; opacity:.55; pointer-events:none; }
+.shinybadge{ display:flex; gap:10px; align-items:center; font-size:10px; }
+.sb-on{ color:var(--pair); font-weight:700; }
+.sb-off{ color:var(--dim); }
+.mon-insp .iv-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-bottom:7px; }
+.iv-cell{ background:var(--bg); border:1px solid var(--line); border-radius:5px; padding:3px 2px; display:flex; flex-direction:column; align-items:center; gap:1px; }
+.iv-k{ font-size:8px; color:var(--muted); text-transform:uppercase; }
+.iv-v{ font-size:13px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
+.insp-row{ display:flex; justify-content:space-between; font-size:11px; padding:2px 0; color:var(--text); }
 .statrow{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 .stat{ flex:1; min-width:78px; background:var(--inset); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
 .stat-v{ font-size:20px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
@@ -826,6 +834,26 @@ function ConfigPanel({ node, onSet, onClose }) {
   )
 }
 
+// Parent inspector — click a mon node to see IVs / nature / gender / shiny / original trainer.
+function MonInspector({ species, stats, onClose }) {
+  const ivs = stats.ivs || [0, 0, 0, 0, 0, 0]
+  const total = ivs.reduce((a, b) => a + (b || 0), 0)
+  const g = String(stats.gender || '')
+  const sym = /female/i.test(g) ? '♀' : /male/i.test(g) ? '♂' : '⚲'
+  const ot = stats.ot || ''
+  return (
+    <div className="dcfg mon-insp" onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+      <div className="dcfg-h">{cap(species)} <span style={{ color: sym === '♀' ? '#ff8fb0' : sym === '♂' ? '#7db6ff' : 'var(--muted)' }}>{sym}</span>{stats.shiny ? ' ✨' : ''}<span className="dcfg-x" onClick={onClose}>✕</span></div>
+      <div className="iv-grid">
+        {STATS.map((k, i) => <div key={k} className="iv-cell"><span className="iv-k">{k}</span><span className="iv-v" style={{ color: ivs[i] >= 31 ? 'var(--green)' : !ivs[i] ? 'var(--dim)' : 'var(--text)' }}>{ivs[i] || 0}</span></div>)}
+      </div>
+      <div className="insp-row"><span className="dim">IV total</span><span className="mono">{total}/186</span></div>
+      <div className="insp-row"><span className="dim">nature</span><span>{stats.nature ? cap(stats.nature) : '—'}</span></div>
+      <div className="insp-row"><span className="dim">OT</span><span className="mono" title={ot}>{ot ? (ot.length > 14 ? ot.slice(0, 14) + '…' : ot) : '—'}</span></div>
+    </div>
+  )
+}
+
 function DaemonGraph({ cfg }) {
   const roster = cfg.roster || []
   const maxPairs = cfg.maxPairs || 0
@@ -838,6 +866,7 @@ function DaemonGraph({ cfg }) {
   const boxRef = useRef(null)
   const touched = useRef(false)
   const lastPos = useRef(cfg.pos)
+  const dash = useChannel('dashboard')   // for the server's shiny-method multipliers (Masuda/Crystal indicator)
 
   // Adopt the server graph on pasture-switch, or while still untouched (shell→real-graph arrival), but never
   // overwrite the player's own local edits (the editor is the authority once touched).
@@ -855,6 +884,15 @@ function DaemonGraph({ cfg }) {
   const renderNodes = nodes.map((n) => n.type === 'MON' ? { ...n, species: speciesOf(n.monId) } : n)
   const byId = (id) => renderNodes.find((n) => n.id === id)
   const liveNode = (n) => (n && dragPos && dragPos.id === n.id) ? { ...n, x: dragPos.x, y: dragPos.y } : n
+  const monStats = (id) => { const m = roster.find((r) => r.id === id); return (m && m.stats) || {} }
+  const monNodesActive = nodes.filter((n) => n.type === 'MON')
+  const methods = (dash && dash.shinyMethods) || {}
+  let masuda = false, crystal = false
+  if (monNodesActive.length === 2) {
+    const a = monStats(monNodesActive[0].monId), b = monStats(monNodesActive[1].monId)
+    masuda = methods.masuda > 1 && !!a.ot && !!b.ot && a.ot !== b.ot
+    crystal = methods.crystal > 1 && (!!a.shiny || !!b.shiny)
+  }
 
   const scale = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
   const toGraph = (cx, cy) => { const r = boxRef.current.getBoundingClientRect(), s = scale(); return { x: ((cx - r.left) / s - view.x) / view.zoom, y: ((cy - r.top) / s - view.y) / view.zoom } }
@@ -975,6 +1013,13 @@ function DaemonGraph({ cfg }) {
           {PALETTE.filter((p) => p.type !== 'SOURCE').map((p) => <button key={p.type} className="dchip" style={{ borderColor: p.hue, color: p.hue }} onClick={() => addNode(p.type)}>{p.label}</button>)}
           <span className="dim mono" style={{ marginLeft: 'auto', fontSize: 10 }}>{Math.round(view.zoom * 100)}%</span>
         </div>
+        {monNodesActive.length === 2 && (
+          <div className="shinybadge" onMouseDown={(e) => e.stopPropagation()}>
+            <span className="dim">shiny breeding:</span>
+            <span className={masuda ? 'sb-on' : 'sb-off'} title={methods.masuda > 1 ? 'parents have different original trainers → boosted shiny odds' : 'Masuda not enabled on this server'}>✨ Masuda {masuda ? '✓' : '—'}</span>
+            <span className={crystal ? 'sb-on' : 'sb-off'} title={methods.crystal > 1 ? 'a parent is shiny → boosted shiny odds' : 'Crystal not enabled on this server'}>💎 Crystal {crystal ? '✓' : '—'}</span>
+          </div>
+        )}
         <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown} onWheel={onWheel}>
           <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
             <svg className="daemon-wires">
@@ -993,6 +1038,7 @@ function DaemonGraph({ cfg }) {
             )})}
           </div>
           {sel && byId(sel) && isFilter(byId(sel).type) && <ConfigPanel node={byId(sel)} onSet={(k, v) => setConfig(sel, k, v)} onClose={() => setSel(null)} />}
+          {sel && byId(sel) && byId(sel).type === 'MON' && <MonInspector species={speciesOf(byId(sel).monId)} stats={monStats(byId(sel).monId)} onClose={() => setSel(null)} />}
           <div className="daemon-hud">{active.name} · {nodes.filter((n) => n.type === 'MON').length}/2 parents · scroll=zoom · drag=pan · drag a port to wire</div>
         </div>
       </>)}
