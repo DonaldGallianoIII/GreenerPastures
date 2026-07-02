@@ -193,6 +193,7 @@ public final class DsBridge {
         Map<String, Object> m = new LinkedHashMap<>();
         if (c == null) { m.put("present", false); return m; }
         m.put("present", true);
+        m.put("loading", NotebookState.pastureConfigLoading);   // real config still round-tripping → UI shows "loading…"
         m.put("pos", c.pos());
         m.put("name", c.name());
         m.put("tier", c.tier());

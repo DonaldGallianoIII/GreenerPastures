@@ -84,8 +84,12 @@ public final class NotebookState {
     /** The pasture the player right-clicked with the Notebook (its editable config), or null when none is focused. */
     public static volatile NotebookPastureConfigS2C pastureConfig = null;
 
+    /** True while a pasture's real config is round-tripping — the UI shows a "loading" shell, not stale/empty data. */
+    public static volatile boolean pastureConfigLoading = false;
+
     public static boolean applyPastureConfig(NotebookPastureConfigS2C p) {
         pastureConfig = p;
+        pastureConfigLoading = false;
         return true;
     }
 

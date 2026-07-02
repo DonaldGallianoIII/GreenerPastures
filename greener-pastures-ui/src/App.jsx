@@ -912,6 +912,16 @@ function EggLogStrip() {
 function PastureConfig({ cfg }) {
   const [name, setName] = useState(cfg.name || '')
   useEffect(() => { setName(cfg.name || '') }, [cfg.pos])   // reset the field when switching pastures
+  if (cfg.loading) return (
+    <div className="pane">
+      <div className="row" style={{ marginBottom: 10 }}>
+        <span className="grn" style={{ cursor: 'pointer', fontWeight: 600 }} onClick={() => send('pasture', 'CLOSE', {})}>← console</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim mono" style={{ fontSize: 11 }}>pasture config</span>
+      </div>
+      <div className="muted" style={{ fontSize: 12, padding: '28px 4px', textAlign: 'center' }}>loading pasture…</div>
+    </div>
+  )
   const hasKernel = !!cfg.tier
   const maxPairs = cfg.maxPairs || 0
   const roster = cfg.roster || []
