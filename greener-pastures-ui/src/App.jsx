@@ -914,7 +914,7 @@ function DaemonGraph({ cfg }) {
     }
     el.addEventListener('wheel', onWheelNative, { passive: false })
     return () => el.removeEventListener('wheel', onWheelNative)
-  }, [active])
+  }, [doc.active])   // doc is declared at the top; `active` (derived below) would be a TDZ ReferenceError → blank app
 
   const threads = doc.threads || []
   const active = threads.find((t) => t.id === doc.active) || threads[0] || null
