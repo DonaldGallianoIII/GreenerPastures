@@ -85,6 +85,7 @@ public final class DsBridge {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> p = (Map<String, Object>) msg.getOrDefault("payload", Map.of());
                 if ("INPUT_FOCUS".equals(action)) { NotebookBrowserScreen.browserInputFocused = Boolean.TRUE.equals(p.get("v")); return; }
+                if ("PASTURE_READY".equals(action)) { NotebookBrowserScreen.pastureReady(); return; }   // React painted the pasture view → lift the loading overlay
                 if ("pasture".equals(channel)) { handlePastureAction(action, p); return; }
                 if ("goals".equals(channel)) { handleGoalAction(action, p); return; }
                 NotebookActionC2S packet = mapAction(action, p);

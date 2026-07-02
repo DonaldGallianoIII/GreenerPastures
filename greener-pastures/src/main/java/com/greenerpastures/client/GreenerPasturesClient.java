@@ -64,7 +64,7 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 NotebookState.pastureConfig = new NotebookPastureConfigS2C(pos.asLong(), "", "", false, 0, java.util.List.of());
                 NotebookState.pastureGraphJson = "";
                 NotebookState.pastureConfigLoading = true;
-                NotebookBrowserScreen.curtain();
+                NotebookBrowserScreen.awaitPasture();   // native loading overlay until React confirms the pasture view painted
             }
             DsBridge.pushNow();
             openConsole();

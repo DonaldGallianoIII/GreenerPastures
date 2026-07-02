@@ -47,6 +47,13 @@ public class NotebookBrowserScreen extends Screen {
      *  (still in the kept-alive browser) doesn't flash before the new one paints. */
     public static void curtain() { curtainUntil = System.currentTimeMillis() + 140L; }
 
+    private static long awaitPastureUntil = 0L;   // >0 → cover the browser with a native "loading pasture" overlay
+    /** Cover the browser with a native loading overlay when switching to a DIFFERENT pasture, until the React
+     *  pasture view confirms it painted ({@code PASTURE_READY}) or a 5s safety cap — so no stale air-console flashes. */
+    public static void awaitPasture() { awaitPastureUntil = System.currentTimeMillis() + 5000L; }
+    /** React signalled the pasture config finished rendering — lift the overlay. */
+    public static void pastureReady() { awaitPastureUntil = 0L; }
+
     /** Pre-warm the browser BEFORE the console is first opened (called from the client tick once MCEF + a world are
      *  ready) so the first open shows an already-painted page instead of a black/loading blip. Safe to call every
      *  tick: no-ops once created, or while MCEF is still downloading Chromium at the title screen. */
@@ -161,11 +168,22 @@ public class NotebookBrowserScreen extends Screen {
         RenderSystem.setShaderTexture(0, 0);
         RenderSystem.enableDepthTest();
 
+        if (awaitPastureUntil > 0L) {   // switching pastures — hide the stale browser with a native loading overlay
+            if (System.currentTimeMillis() > awaitPastureUntil) awaitPastureUntil = 0L;   // safety timeout
+            else { drawLoadingOverlay(context); return; }
+        }
         if (System.currentTimeMillis() < curtainUntil) {   // view-switch curtain: cover the stale frame until the new view paints
             context.fill(0, 0, width, height, 0xFF06080C);
             return;
         }
         drawInventory(context, mouseX, mouseY);   // native MC inventory (real icons) painted OVER the browser
+    }
+
+    /** Native "loading pasture…" cover shown over the browser while a pasture's config round-trips + paints. */
+    private void drawLoadingOverlay(DrawContext context) {
+        context.fill(0, 0, width, height, 0xFF06080C);
+        String dots = ".".repeat((int) (System.currentTimeMillis() / 350 % 4));
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal("loading pasture" + dots), width / 2, height / 2, 0xFF8AA0B4);
     }
 
     // ── native MC inventory overlay (real item icons — the browser can't draw MC textures) ───────────────────

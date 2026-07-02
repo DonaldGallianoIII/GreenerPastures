@@ -1135,6 +1135,7 @@ function EggLogStrip() {
 function PastureConfig({ cfg }) {
   const [name, setName] = useState(cfg.name || '')
   useEffect(() => { setName(cfg.name || '') }, [cfg.pos])   // reset the field when switching pastures
+  useEffect(() => { if (cfg.present && !cfg.loading) send('console', 'PASTURE_READY', {}) }, [cfg.loading, cfg.pos])   // tell Java to lift the native loading overlay
   if (cfg.loading) return (
     <div className="pane">
       <div className="row" style={{ marginBottom: 10 }}>
