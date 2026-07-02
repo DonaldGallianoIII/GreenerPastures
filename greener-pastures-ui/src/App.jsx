@@ -948,12 +948,14 @@ function DaemonGraph({ cfg }) {
 
   // persistence + pairing derivation (each line's ≤2 parents → a bucket, so the breeder pairs them)
   const persist = (nd) => { touched.current = true; setDoc(nd); send('pasture', 'GRAPH', { pos: cfg.pos, json: JSON.stringify(nd) }) }
-  const pushPairings = (nd) => { const p = {}; nd.threads.forEach((t, k) => { const mons = (t.nodes || []).filter((n) => n.type === 'MON').map((n) => n.monId); if (mons.length >= 2 && k + 1 <= maxPairs) { p[mons[0]] = k + 1; p[mons[1]] = k + 1 } }); send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p }) }
+  // Derive pairings from thread ORDER (bucket = k+1, clamped to the server's 1..8) — NOT gated on the live Kernel's
+  // maxPairs, so removing/swapping the Kernel never wipes the graph's pairs. The breeder clamps buckets > maxPairs.
+  const pushPairings = (nd) => { const p = {}; nd.threads.forEach((t, k) => { const mons = (t.nodes || []).filter((n) => n.type === 'MON').map((n) => n.monId); if (mons.length >= 2 && k < 8) { p[mons[0]] = k + 1; p[mons[1]] = k + 1 } }); send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p }) }
   const commit = (nd, repair) => { persist(nd); if (repair) pushPairings(nd) }
   const updateActive = (mut, repair = false) => { if (!active) return; const nt = mut({ ...active, nodes: [...nodes], edges: [...edges] }); commit({ ...doc, threads: threads.map((t) => t.id === active.id ? nt : t) }, repair) }
 
   // thread tabs (breeding lines)
-  const capLines = Math.max(1, maxPairs)
+  const capLines = maxPairs   // no Kernel (maxPairs 0) → can't add new lines; existing lines still render + persist
   const addThread = () => { if (threads.length >= capLines) return; const id = 'th' + Date.now().toString(36) + Math.floor(Math.random() * 1000); setSel(null); setView({ x: 0, y: 0, zoom: 1 }); commit({ threads: [...threads, { id, name: 'Line ' + (threads.length + 1), nodes: [], edges: [] }], active: id }, false) }
   const renameThread = (id, name) => commit({ ...doc, threads: threads.map((t) => t.id === id ? { ...t, name } : t) }, false)
   const delThread = (id) => { const nt = threads.filter((t) => t.id !== id); setSel(null); commit({ threads: nt, active: nt[0] ? nt[0].id : null }, true) }
