@@ -159,7 +159,8 @@ public class NotebookBrowserScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        pump(10, 2_500_000L);   // console open → feed Chromium a real slice budget (~10 slices / 2.5ms per frame)
+        boolean burst = awaitPastureUntil > 0L;   // transitioning → burst budget so the swap lands in a blink
+        pump(burst ? 48 : 10, burst ? 8_000_000L : 2_500_000L);
         if (browser == null) tryCreate();
         int texId = browser == null ? 0 : browser.getRenderer().getTextureID();
         if (texId <= 0) {

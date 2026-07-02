@@ -74,6 +74,9 @@ public final class NotebookNet {
 
     private static final Gson GSON = new Gson();
 
+    /** Per-player last prefetch-sweep time (ms) — the console poll re-warms the client cache at most 1×/min. */
+    private static final Map<UUID, Long> lastPrefetch = new HashMap<>();
+
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookActionC2S.ID, NotebookActionC2S.CODEC);
@@ -98,6 +101,30 @@ public final class NotebookNet {
         ServerPlayNetworking.registerGlobalReceiver(NotebookInvSwapC2S.ID, NotebookNet::onInvSwap);
         ServerPlayNetworking.registerGlobalReceiver(NotebookGraphSaveC2S.ID, NotebookNet::onGraphSave);
         ServerPlayNetworking.registerGlobalReceiver(NotebookGoalC2S.ID, NotebookNet::onGoal);
+        // Warm the client's pasture-config cache at join, so the FIRST right-click of any known pasture renders
+        // instantly from cache (stale-while-revalidate) instead of showing a loading state.
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
+                server.execute(() -> prefetchConfigs(handler.player)));
+    }
+
+    /** Push every known (snapshotted) pasture's config + graph for {@code player} — pre-warms the client cache.
+     *  Current dimension + loaded chunks only (a live roster needs the block entity); the 1-min console-poll sweep
+     *  self-heals any pasture whose chunk wasn't loaded yet. Capped for sanity. */
+    public static void prefetchConfigs(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        ServerWorld world = player.getServerWorld();
+        if (server == null || world == null) return;
+        String dim = world.getRegistryKey().getValue().toString();
+        int sent = 0;
+        for (com.greenerpastures.notebook.PastureSnapshot s : PastureSnapshotStore.get(server).snapshotsOf(player.getUuid())) {
+            if (!dim.equals(s.dim())) continue;
+            BlockPos pos = BlockPos.fromLong(s.pos());
+            if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;
+            if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) continue;
+            pushPastureConfig(player, pos);
+            if (++sent >= 16) break;
+        }
+        if (sent > 0) GpLog.d("notebook", "prefetch", "player", player.getUuid().toString(), "n", Integer.toString(sent));
     }
 
     private static void onRequest(NotebookRequestC2S payload, ServerPlayNetworking.Context ctx) {
@@ -113,6 +140,12 @@ public final class NotebookNet {
             pushEggLog(player);
             pushDashboard(player);
             pushGoals(player);
+            long nowMs = System.currentTimeMillis();
+            Long last = lastPrefetch.get(player.getUuid());
+            if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
+                lastPrefetch.put(player.getUuid(), nowMs);
+                prefetchConfigs(player);
+            }
         });
     }
 

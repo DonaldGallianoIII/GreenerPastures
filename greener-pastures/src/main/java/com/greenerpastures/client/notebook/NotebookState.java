@@ -96,10 +96,14 @@ public final class NotebookState {
     public static final Map<Long, String> pastureGraphCache = new ConcurrentHashMap<>();
 
     public static boolean applyPastureConfig(NotebookPastureConfigS2C p) {
-        pastureConfig = p;
-        pastureConfigLoading = false;
         pastureConfigCache.put(p.pos(), p);
-        return true;
+        NotebookPastureConfigS2C cur = pastureConfig;
+        if (cur != null && cur.pos() == p.pos()) {   // only the FOCUSED pasture updates the live view —
+            pastureConfig = p;                        // a background prefetch must never hijack the open screen
+            pastureConfigLoading = false;
+            return true;
+        }
+        return false;
     }
 
     /** The focused pasture's Daemon graph JSON (filter/sink nodes + flow edges + mon-node positions), or "" when
@@ -108,9 +112,14 @@ public final class NotebookState {
     public static volatile String pastureGraphJson = "";
 
     public static boolean applyGraph(NotebookGraphS2C p) {
-        pastureGraphJson = p.json() == null ? "" : p.json();
-        pastureGraphCache.put(p.pos(), pastureGraphJson);
-        return true;
+        String json = p.json() == null ? "" : p.json();
+        pastureGraphCache.put(p.pos(), json);
+        NotebookPastureConfigS2C cur = pastureConfig;
+        if (cur != null && cur.pos() == p.pos()) {   // focused only — prefetches stay cache-only
+            pastureGraphJson = json;
+            return true;
+        }
+        return false;
     }
 
     // ── Augmenter tab ────────────────────────────────────────────────────────
