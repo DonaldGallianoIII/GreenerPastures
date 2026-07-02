@@ -96,6 +96,8 @@ const CSS = `
 .iv-k{ font-size:8px; color:var(--muted); text-transform:uppercase; }
 .iv-v{ font-size:13px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
 .insp-row{ display:flex; justify-content:space-between; font-size:11px; padding:2px 0; color:var(--text); }
+.dcfg-drag{ cursor:move; user-select:none; }
+.sb-bad{ color:var(--red); font-weight:600; }
 .statrow{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 .stat{ flex:1; min-width:78px; background:var(--inset); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
 .stat-v{ font-size:20px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
@@ -804,10 +806,11 @@ const nodeSub = (n) => {
 
 // The per-filter config popover (IV/EV mins · shiny gate · nature multi-select). Writes into the node's config.
 function ConfigPanel({ node, onSet, onClose }) {
+  const d = usePanelDrag()
   const c = node.config || {}, t = node.type
   return (
-    <div className="dcfg" onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
-      <div className="dcfg-h">{(NODE_META[t] || {}).title?.(node) || 'filter'}<span className="dcfg-x" onClick={onClose}>✕</span></div>
+    <div className="dcfg" ref={d.ref} style={d.style} onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>{(NODE_META[t] || {}).title?.(node) || 'filter'}<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
       {(t === 'FILTER_IV' || t === 'FILTER_EV') && (
         <div className="dcfg-grid">
           {STATS.map((s) => (
@@ -834,16 +837,37 @@ function ConfigPanel({ node, onSet, onClose }) {
   )
 }
 
-// Parent inspector — click a mon node to see IVs / nature / gender / shiny / original trainer.
+// Gender helpers (Cobblemon gives MALE / FEMALE / GENDERLESS). ^-anchored so "FEMALE" isn't caught by /male/.
+const gsym = (g) => /^female/i.test(String(g)) ? '♀' : /^male/i.test(String(g)) ? '♂' : '⚲'
+const gcol = (g) => /^female/i.test(String(g)) ? '#ff8fb0' : /^male/i.test(String(g)) ? '#7db6ff' : 'var(--muted)'
+
+// Draggable pop-up — the header is the handle; offsetLeft/Top base + delta/scale keeps it under the cursor.
+function usePanelDrag() {
+  const ref = useRef(null)
+  const [pos, setPos] = useState(null)
+  const start = (e) => {
+    e.stopPropagation(); e.preventDefault()
+    const el = ref.current; if (!el) return
+    const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
+    const bx = el.offsetLeft, by = el.offsetTop, sx = e.clientX, sy = e.clientY
+    const move = (ev) => setPos({ x: bx + (ev.clientX - sx) / s, y: by + (ev.clientY - sy) / s })
+    const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
+    window.addEventListener('mousemove', move); window.addEventListener('mouseup', up)
+  }
+  return { ref, start, style: pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined }
+}
+
+// Parent inspector — click a mon node OR right-click a parent chip to see IVs / nature / gender / shiny / OT.
 function MonInspector({ species, stats, onClose }) {
+  const d = usePanelDrag()
   const ivs = stats.ivs || [0, 0, 0, 0, 0, 0]
   const total = ivs.reduce((a, b) => a + (b || 0), 0)
   const g = String(stats.gender || '')
-  const sym = /female/i.test(g) ? '♀' : /male/i.test(g) ? '♂' : '⚲'
+  const sym = gsym(g)
   const ot = stats.ot || ''
   return (
-    <div className="dcfg mon-insp" onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
-      <div className="dcfg-h">{cap(species)} <span style={{ color: sym === '♀' ? '#ff8fb0' : sym === '♂' ? '#7db6ff' : 'var(--muted)' }}>{sym}</span>{stats.shiny ? ' ✨' : ''}<span className="dcfg-x" onClick={onClose}>✕</span></div>
+    <div className="dcfg mon-insp" ref={d.ref} style={d.style} onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>{cap(species)} <span style={{ color: gcol(g) }}>{sym}</span>{stats.shiny ? ' ✨' : ''}<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
       <div className="iv-grid">
         {STATS.map((k, i) => <div key={k} className="iv-cell"><span className="iv-k">{k}</span><span className="iv-v" style={{ color: ivs[i] >= 31 ? 'var(--green)' : !ivs[i] ? 'var(--dim)' : 'var(--text)' }}>{ivs[i] || 0}</span></div>)}
       </div>
@@ -862,11 +886,13 @@ function DaemonGraph({ cfg }) {
   const [wiring, setWiring] = useState(null)
   const [dragPos, setDragPos] = useState(null)
   const [sel, setSel] = useState(null)
+  const [inspectMon, setInspectMon] = useState(null)
   const drag = useRef(null)
   const boxRef = useRef(null)
   const touched = useRef(false)
   const lastPos = useRef(cfg.pos)
   const dash = useChannel('dashboard')   // for the server's shiny-method multipliers (Masuda/Crystal indicator)
+  const viewRef = useRef(view); viewRef.current = view
 
   // Adopt the server graph on pasture-switch, or while still untouched (shell→real-graph arrival), but never
   // overwrite the player's own local edits (the editor is the authority once touched).
@@ -874,6 +900,21 @@ function DaemonGraph({ cfg }) {
     if (cfg.pos !== lastPos.current) { lastPos.current = cfg.pos; touched.current = false; setSel(null); setView({ x: 0, y: 0, zoom: 1 }); setDoc(parseDoc(cfg.graph)) }
     else if (!touched.current) setDoc(parseDoc(cfg.graph))
   }, [cfg.pos, cfg.graph])
+
+  // Native non-passive wheel → zoom WITHOUT the console pane scrolling (React's onWheel is passive, can't preventDefault).
+  useEffect(() => {
+    const el = boxRef.current; if (!el) return
+    const onWheelNative = (e) => {
+      e.preventDefault(); e.stopPropagation()
+      const v = viewRef.current
+      const nz = Math.max(0.35, Math.min(2.5, v.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12)))
+      const r = el.getBoundingClientRect(), s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
+      const sx = (e.clientX - r.left) / s, sy = (e.clientY - r.top) / s
+      setView({ x: sx - ((sx - v.x) / v.zoom) * nz, y: sy - ((sy - v.y) / v.zoom) * nz, zoom: nz })
+    }
+    el.addEventListener('wheel', onWheelNative, { passive: false })
+    return () => el.removeEventListener('wheel', onWheelNative)
+  }, [active])
 
   const threads = doc.threads || []
   const active = threads.find((t) => t.id === doc.active) || threads[0] || null
@@ -893,6 +934,14 @@ function DaemonGraph({ cfg }) {
     masuda = methods.masuda > 1 && !!a.ot && !!b.ot && a.ot !== b.ot
     crystal = methods.crystal > 1 && (!!a.shiny || !!b.shiny)
   }
+  const pairValid = (() => {   // a pair needs ♂+♀, or exactly one Ditto (Ditto can't breed Ditto)
+    if (monNodesActive.length !== 2) return true
+    const a = monStats(monNodesActive[0].monId), b = monStats(monNodesActive[1].monId)
+    const dA = speciesOf(monNodesActive[0].monId).toLowerCase() === 'ditto', dB = speciesOf(monNodesActive[1].monId).toLowerCase() === 'ditto'
+    const gA = String(a.gender || '').toLowerCase(), gB = String(b.gender || '').toLowerCase()
+    const mf = (gA === 'male' && gB === 'female') || (gA === 'female' && gB === 'male')
+    return (dA !== dB) || mf
+  })()
 
   const scale = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gp-scale')) || 1
   const toGraph = (cx, cy) => { const r = boxRef.current.getBoundingClientRect(), s = scale(); return { x: ((cx - r.left) / s - view.x) / view.zoom, y: ((cy - r.top) / s - view.y) / view.zoom } }
@@ -1006,7 +1055,7 @@ function DaemonGraph({ cfg }) {
         <div className="thread-roster" onMouseDown={(e) => e.stopPropagation()}>
           <span className="dim" style={{ fontSize: 10 }}>parents</span>
           {roster.length === 0 ? <span className="dim" style={{ fontSize: 10 }}>— tether mons in-world</span> : roster.map((m) => { const home = monThread(m.id); const here = home && home.id === active.id; return (
-            <button key={m.id} className={`monchip${here ? ' here' : home ? ' busy' : ''}`} title={home ? (here ? 'in this line — click to remove' : 'in ' + home.name) : 'add to this line'} onClick={() => toggleMon(m.id)}>{cap(m.species)}{home && !here ? ` · ${home.name}` : ''}</button>
+            <button key={m.id} className={`monchip${here ? ' here' : home ? ' busy' : ''}`} title={(home ? (here ? 'in this line — click to remove' : 'in ' + home.name) : 'click to add') + ' · right-click to inspect'} onClick={() => toggleMon(m.id)} onContextMenu={(e) => { e.preventDefault(); setInspectMon(m.id) }}>{cap(m.species)} <span style={{ color: gcol(m.stats?.gender) }}>{gsym(m.stats?.gender)}</span>{home && !here ? ` · ${home.name}` : ''}</button>
           )})}
         </div>
         <div className="daemon-palette" onMouseDown={(e) => e.stopPropagation()}>
@@ -1015,12 +1064,14 @@ function DaemonGraph({ cfg }) {
         </div>
         {monNodesActive.length === 2 && (
           <div className="shinybadge" onMouseDown={(e) => e.stopPropagation()}>
-            <span className="dim">shiny breeding:</span>
-            <span className={masuda ? 'sb-on' : 'sb-off'} title={methods.masuda > 1 ? 'parents have different original trainers → boosted shiny odds' : 'Masuda not enabled on this server'}>✨ Masuda {masuda ? '✓' : '—'}</span>
-            <span className={crystal ? 'sb-on' : 'sb-off'} title={methods.crystal > 1 ? 'a parent is shiny → boosted shiny odds' : 'Crystal not enabled on this server'}>💎 Crystal {crystal ? '✓' : '—'}</span>
+            {!pairValid ? <span className="sb-bad" title="A pair needs one male + one female, or exactly one Ditto (Ditto can't breed Ditto).">⚠ this pair can't breed — need ♂ + ♀, or exactly one Ditto</span> : <>
+              <span className="dim">shiny breeding:</span>
+              <span className={masuda ? 'sb-on' : 'sb-off'} title={methods.masuda > 1 ? 'parents have different original trainers → boosted shiny odds' : 'Masuda not enabled on this server'}>✨ Masuda {masuda ? '✓' : '—'}</span>
+              <span className={crystal ? 'sb-on' : 'sb-off'} title={methods.crystal > 1 ? 'a parent is shiny → boosted shiny odds' : 'Crystal not enabled on this server'}>💎 Crystal {crystal ? '✓' : '—'}</span>
+            </>}
           </div>
         )}
-        <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown} onWheel={onWheel}>
+        <div className="daemon-canvas" ref={boxRef} onMouseDown={onCanvasDown}>
           <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
             <svg className="daemon-wires">
               {(() => { const ms = renderNodes.filter((n) => n.type === 'MON'); if (ms.length !== 2) return null; const a = liveNode(ms[0]), b = liveNode(ms[1]); return <line x1={a.x + NODE_W / 2} y1={a.y + NODE_H / 2} x2={b.x + NODE_W / 2} y2={b.y + NODE_H / 2} className="pairlink" /> })()}
@@ -1038,7 +1089,7 @@ function DaemonGraph({ cfg }) {
             )})}
           </div>
           {sel && byId(sel) && isFilter(byId(sel).type) && <ConfigPanel node={byId(sel)} onSet={(k, v) => setConfig(sel, k, v)} onClose={() => setSel(null)} />}
-          {sel && byId(sel) && byId(sel).type === 'MON' && <MonInspector species={speciesOf(byId(sel).monId)} stats={monStats(byId(sel).monId)} onClose={() => setSel(null)} />}
+          {(() => { const iid = inspectMon || (sel && byId(sel) && byId(sel).type === 'MON' ? byId(sel).monId : null); return iid ? <MonInspector species={speciesOf(iid)} stats={monStats(iid)} onClose={() => { setInspectMon(null); setSel(null) }} /> : null })()}
           <div className="daemon-hud">{active.name} · {nodes.filter((n) => n.type === 'MON').length}/2 parents · scroll=zoom · drag=pan · drag a port to wire</div>
         </div>
       </>)}
