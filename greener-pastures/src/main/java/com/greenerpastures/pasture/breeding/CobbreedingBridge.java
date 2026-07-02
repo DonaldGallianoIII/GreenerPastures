@@ -94,6 +94,14 @@ public final class CobbreedingBridge {
         return available;
     }
 
+    /** True if {@code name} is a real Cobblemon species — for breeding-goal validation. Blank = "any" = valid;
+     *  if the species API is unavailable we don't block the player (return true). */
+    public static boolean isSpecies(String name) {
+        if (name == null || name.isBlank()) return true;
+        try { return PokemonSpecies.INSTANCE.getByName(name.trim().toLowerCase()) != null; }
+        catch (Throwable t) { return true; }
+    }
+
     private static ComponentType<?> component(String path) {
         return Registries.DATA_COMPONENT_TYPE.get(Identifier.of(COBBREEDING, path));
     }

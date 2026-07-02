@@ -180,6 +180,10 @@ public final class NotebookNet {
                     int mp = o.has("minPerfect") ? o.get("minPerfect").getAsInt() : 0;
                     int mt = o.has("minIvTotal") ? o.get("minIvTotal").getAsInt() : 0;
                     int cn = o.has("count") ? o.get("count").getAsInt() : 1;
+                    if (species != null && !CobbreedingBridge.isSpecies(species)) {   // reject a fake species (would never match)
+                        player.sendMessage(Text.literal("§c[Greener Pastures]§r No such species: \"" + species + "\" — goal not set."), false);
+                        return;
+                    }
                     GoalStore.set(player.getUuid(), new BreedingGoal(species, shiny, mp, mt, cn));
                 }
                 pushGoals(player);

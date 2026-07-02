@@ -646,6 +646,8 @@ function TierBars({ byTier }) {
 // The breeding-goal hunt panel — set a target (species/shiny/IVs/count), watch live progress.
 function Goals() {
   const g = useChannel('goals')
+  const bank = useChannel('biobank')
+  const speciesList = [...new Set((bank?.entries || []).map((e) => e.species).filter(Boolean))].sort()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ species: '', shiny: 1, minPerfect: 0, minIvTotal: 0, count: 1 })
   const present = g?.present
@@ -669,7 +671,8 @@ function Goals() {
       {!present && !open && <div className="dim" style={{ fontSize: 11, marginTop: 6 }}>no active hunt — set a target and watch progress as your pastures lay.</div>}
       {open && (
         <div className="goal-form">
-          <label>species<input className="gp-input" value={form.species} placeholder="any" onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, species: e.target.value })} /></label>
+          <label>species<input className="gp-input" list="gp-species" value={form.species} placeholder="any species" onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, species: e.target.value })} />
+            <datalist id="gp-species">{speciesList.map((s) => <option key={s} value={cap(s)} />)}</datalist></label>
           <label>shiny<select value={form.shiny} onChange={(e) => setForm({ ...form, shiny: +e.target.value })}><option value={1}>must be shiny</option><option value={0}>non-shiny</option><option value={-1}>either</option></select></label>
           <label>min perfect IVs<input type="number" min={0} max={6} value={form.minPerfect} onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, minPerfect: Math.max(0, Math.min(6, +e.target.value || 0)) })} /></label>
           <label>min IV total<input type="number" min={0} max={186} value={form.minIvTotal} onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, minIvTotal: Math.max(0, Math.min(186, +e.target.value || 0)) })} /></label>
