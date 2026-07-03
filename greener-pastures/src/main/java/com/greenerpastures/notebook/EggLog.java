@@ -64,6 +64,16 @@ public final class EggLog {
     public static synchronized long[] totals(UUID owner) { return TOTALS.getOrDefault(owner, new long[4]).clone(); }
     public static synchronized Map<String, Integer> byTier(UUID owner) { return new java.util.LinkedHashMap<>(BY_TIER.getOrDefault(owner, Map.of())); }
 
+    /** Wipe everything — called on SERVER_STARTED so a new world (same JVM in singleplayer) never inherits the
+     *  previous world's session stats (Deuce hit exactly this: a fresh world showing the old world's numbers). */
+    public static synchronized void clearAll() {
+        BY_PLAYER.clear();
+        COUNTS.clear();
+        TOTALS.clear();
+        BY_TIER.clear();
+        SPARK.clear();
+    }
+
     /** The last 12 world-minute egg counts (oldest→newest, ending at the current minute) — the eggs/min sparkline. */
     public static synchronized int[] spark(UUID owner, long nowTicks) {
         int[] out = new int[12];

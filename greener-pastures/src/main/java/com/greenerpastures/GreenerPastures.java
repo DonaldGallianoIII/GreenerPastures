@@ -74,5 +74,15 @@ public final class GreenerPastures implements ModInitializer {
 
         // notebook/ — console sync layer (C2S request → S2C status; per-tab payloads land with each tab)
         NotebookNet.init();
+
+        // Session hygiene: statics survive across worlds in singleplayer (one JVM, integrated server restarts),
+        // so wipe every per-session store on server start — a fresh world must never show the last world's stats
+        // (Deuce hit exactly this: a brand-new world inheriting the old world's dashboard/goal numbers).
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            com.greenerpastures.notebook.EggLog.clearAll();               // dashboard totals + the void-log feed
+            com.greenerpastures.goal.GoalStore.clearAll();                // active hunts + progress
+            NotebookNet.resetSession();                                    // prefetch cooldowns
+            com.greenerpastures.pasture.breeding.MultiPairBreeder.testIntervalTicks = 0L;   // QA cadence override
+        });
     }
 }

@@ -77,6 +77,9 @@ public final class NotebookNet {
     /** Per-player last prefetch-sweep time (ms) — the console poll re-warms the client cache at most 1×/min. */
     private static final Map<UUID, Long> lastPrefetch = new HashMap<>();
 
+    /** Reset per-server-session state — called on SERVER_STARTED (a new SP world shares the JVM). */
+    public static void resetSession() { lastPrefetch.clear(); }
+
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookActionC2S.ID, NotebookActionC2S.CODEC);

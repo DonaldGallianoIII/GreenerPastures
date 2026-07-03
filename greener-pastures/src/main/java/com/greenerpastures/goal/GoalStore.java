@@ -31,6 +31,13 @@ public final class GoalStore {
         progress.remove(player);
     }
 
+    /** Wipe every player's goal — called on SERVER_STARTED so a new world (same JVM in singleplayer) never
+     *  inherits the previous world's hunts. */
+    public static void clearAll() {
+        goals.clear();
+        progress.clear();
+    }
+
     public static BreedingGoal goalOf(UUID player) {
         return player == null ? null : goals.get(player);
     }

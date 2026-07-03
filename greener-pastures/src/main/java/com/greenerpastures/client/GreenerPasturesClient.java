@@ -145,6 +145,16 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // notebook/ console — live WS bridge for the React UI (dev browser now, MCEF in-game later). Loopback :25599.
         DsBridge.init();
 
+        // World-leave hygiene: wipe the client cache + re-baseline the bridge, so a new world (same JVM) never
+        // shows the previous world's data in the console.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                client.execute(() -> {
+                    NotebookState.clearAll();
+                    NotebookBrowserScreen.browserInputFocused = false;
+                    NotebookBrowserScreen.pastureReady();   // drop any pending loading overlay
+                    DsBridge.onWorldLeave();
+                }));
+
         // analytics/ chart screens land here later.
     }
 

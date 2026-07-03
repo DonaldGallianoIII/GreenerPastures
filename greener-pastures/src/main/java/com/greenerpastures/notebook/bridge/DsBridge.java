@@ -175,6 +175,13 @@ public final class DsBridge {
         if (server != null && server.hasClients()) pushChangedChannels();
     }
 
+    /** World-leave: forget the diff baseline so EVERY channel re-broadcasts fresh (post-clear) values — the React
+     *  app must not keep rendering the previous world's data into the next one. */
+    public static void onWorldLeave() {
+        lastSent.clear();
+        pushNow();   // pastureConfig present:false etc. reach the (kept-alive) browser immediately
+    }
+
     // ── serialize NotebookState → per-channel JSON, push only what changed ─────────────────────────────────
     private static void pushChangedChannels() {
         push("status", statusData());

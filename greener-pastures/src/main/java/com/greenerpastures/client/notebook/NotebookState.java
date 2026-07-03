@@ -181,4 +181,20 @@ public final class NotebookState {
         goalsJson = j;
         return changed;
     }
+
+    /** Wipe the whole client cache — called on world-leave so a new world (or server) never renders the previous
+     *  one's data. The pasture caches are keyed by POSITION only, so cross-world they could even collide. */
+    public static void clearAll() {
+        hasStatus = false; data = 0L; gpu = 0; daemonOn = false;
+        hasStorage = false; storage = Map.of(); storageCap = 0L;
+        compilerHasDaemon = false; compilerDaemonOn = false; compilerDrain = 0.0;
+        compilerCatalog = List.of(); compilerInstalled = Map.of();
+        pastures = List.of();
+        pastureConfig = null; pastureConfigLoading = false; pastureGraphJson = "";
+        pastureConfigCache.clear(); pastureGraphCache.clear();
+        augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of();
+        biobankTotal = 0; biobank = List.of();
+        eggKept = 0L; eggVoided = 0L; eggLog = List.of();
+        dashboardJson = ""; goalsJson = "";
+    }
 }
