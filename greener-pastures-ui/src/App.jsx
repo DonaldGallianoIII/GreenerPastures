@@ -99,6 +99,21 @@ const CSS = `
 .dcfg-drag{ cursor:move; user-select:none; }
 .cell-full{ opacity:.42; cursor:not-allowed; }
 .tab-badge{ display:inline-block; margin-left:5px; background:var(--cyan); color:#04222b; border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; vertical-align:1px; }
+.hstrip{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+.hflag{ display:flex; align-items:center; gap:5px; background:rgba(122,92,30,.16); border:1px solid #5a4a2e; color:var(--amber); border-radius:6px; padding:3px 8px; font-size:10px; }
+.pbadge{ background:rgba(122,92,30,.3); border:1px solid #5a4a2e; color:var(--amber); border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; }
+.kload{ display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+.kchip{ background:var(--inset); border:1px solid var(--line); border-radius:5px; padding:2px 7px; font-size:9px; color:var(--cyan); font-family:'JetBrains Mono',monospace; }
+.nat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:4px; }
+.nat-grid .dchip2{ display:flex; flex-direction:column; align-items:center; gap:1px; padding:4px 2px; }
+.nat-fx{ font-size:8px; opacity:.75; }
+.ball-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:4px; max-height:230px; overflow:auto; }
+.ev-row{ display:flex; align-items:center; gap:6px; font-size:10px; color:var(--muted); margin-bottom:5px; }
+.ev-row input[type=range]{ flex:1; accent-color:var(--cyan); }
+.ev-row input[type=number]{ width:44px; background:var(--inset); border:1px solid var(--line); border-radius:4px; color:var(--text); font-size:10px; padding:2px 4px; }
+.evbar{ height:6px; border-radius:3px; background:var(--inset); overflow:hidden; margin:6px 0; }
+.evbar>div{ height:100%; background:var(--cyan); transition:width .15s; }
+.augval{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--cyan); margin-right:6px; }
 .note{ display:flex; align-items:center; gap:8px; background:var(--inset); border:1px solid var(--line); border-radius:8px; padding:7px 10px; }
 .note-ic{ font-size:14px; flex:none; }
 .note-tx{ font-size:12px; color:var(--text); flex:1; }
@@ -540,28 +555,48 @@ function Harvester() {
 }
 
 // ── Pastures ─────────────────────────────────────────────────────────────────
+const FLAG_TEXT = {
+  unlinked: '🔗 not linked — drops & eggs are not collected',
+  no_kernel: '🧬 no Kernel — breeding & harvest offline',
+  no_parents: '👥 fewer than 2 parents',
+  tray_full: '🥚 egg tray full — breeding paused',
+}
+const flagLine = (id) => id.startsWith('bank_full:') ? `🏦 BioBank full for ${id.slice(10)}` : (FLAG_TEXT[id] || `⚠ ${id}`)
+
 function Pastures() {
   const d = useChannel('pastures')
   const [sel, setSel] = useState(0)
   const list = d?.pastures || []
+  const health = d?.health || {}
+  const flagsOf = (x) => { const csv = health[`${x.dim}|${x.pos}`]; return csv ? csv.split(',') : [] }
   if (!list.length) return <Empty title="No pastures tracked" msg="open a pasture in-world (right-click with the wand) to monitor it here" />
   const p = list[Math.min(sel, list.length - 1)]
+  const pFlags = flagsOf(p)
   return (
     <div className="pane split">
       <div className="plist inset">
         <div className="h" style={{ marginBottom: 8 }}>Pastures · {list.length}</div>
-        {list.map((x, i) => (
-          <div key={i} className={`pitem${i === sel ? ' on' : ''}`} onClick={() => setSel(i)}>
-            <span style={{ fontWeight: 500 }}>{x.name}</span>
-            <span style={{ flex: 1 }} />
-            <span className="amb mono" style={{ fontSize: 10 }}>{x.eggCount} eggs</span>
-          </div>
-        ))}
+        {list.map((x, i) => {
+          const n = flagsOf(x).length
+          return (
+            <div key={i} className={`pitem${i === sel ? ' on' : ''}`} onClick={() => setSel(i)}>
+              <span style={{ fontWeight: 500 }}>{x.name}</span>
+              {n > 0 && <span className="pbadge" title={flagsOf(x).map(flagLine).join('\n')}>⚠{n}</span>}
+              <span style={{ flex: 1 }} />
+              <span className="amb mono" style={{ fontSize: 10 }}>{x.eggCount} eggs</span>
+            </div>
+          )
+        })}
       </div>
       <div className="pdetail inset">
         <div className="grn" style={{ fontWeight: 600, fontSize: 15 }}>{p.name}</div>
         <div className="muted mono" style={{ fontSize: 11, margin: '4px 0 2px' }}>{p.tier} · {p.eggCount} eggs queued · {p.pairs.length} pairs</div>
         <div className="dim" style={{ fontSize: 11, marginBottom: 10 }}>read-only — modify at the pasture in-world</div>
+        {pFlags.length > 0 && (
+          <div className="hstrip">
+            {pFlags.map((id) => <span key={id} className="hflag">{flagLine(id)}</span>)}
+          </div>
+        )}
         {p.pairs.length ? p.pairs.map((line, i) => <div key={i} className="pair" style={{ color: pairColor(line) }}>{line}</div>)
           : <div className="dim" style={{ fontSize: 11 }}>no pairs arranged</div>}
       </div>
@@ -618,15 +653,35 @@ function Compiler() {
   )
 }
 
-// ── Augmenter (Kernel augments) ──────────────────────────────────────────────
+// ── Augmenter (Kernel augments · #34 EV allocator · #35 nature/ball pickers) ─
+// Standard nature table (universal Pokémon canon, stable) — display hints only; the LIST comes from the server.
+const NATURE_FX = {
+  hardy: '—', docile: '—', serious: '—', bashful: '—', quirky: '—',
+  lonely: '+Atk −Def', brave: '+Atk −Spe', adamant: '+Atk −SpA', naughty: '+Atk −SpD',
+  bold: '+Def −Atk', relaxed: '+Def −Spe', impish: '+Def −SpA', lax: '+Def −SpD',
+  timid: '+Spe −Atk', hasty: '+Spe −Def', jolly: '+Spe −SpA', naive: '+Spe −SpD',
+  modest: '+SpA −Atk', mild: '+SpA −Def', quiet: '+SpA −Spe', rash: '+SpA −SpD',
+  calm: '+SpD −Atk', gentle: '+SpD −Def', sassy: '+SpD −Spe', careful: '+SpD −SpA',
+}
+const PARAM_TYPES = ['EV', 'NATURE', 'BALL']   // these open a picker instead of applying bare
+
 function Augmenter() {
   const d = useChannel('augmenter')
   const status = useChannel('status')
   const gpu = status?.gpu ?? 0
+  const [picker, setPicker] = useState(null)   // 'NATURE' | 'BALL' | 'EV' | null
   if (!d) return <Empty title="…" msg="loading the Augmenter channel" />
   if (!d.hasKernel) return <Empty title="No Kernel in your inventory" msg="hold a Kernel (a Pasture Upgrade) to augment it" />
+  const meta = d.meta || {}
+  const values = meta.values || {}
+  const valueChip = (t) => {
+    if (t === 'NATURE') return values.NATURE ? cap(values.NATURE.label) : null
+    if (t === 'BALL') return values.BALL ? cap(shortId(values.BALL.label)) : null
+    if (t === 'EV') return values.EV?.spread ? values.EV.spread.join('/') : null
+    return null
+  }
   return (
-    <div className="trip">
+    <div className="trip" style={{ position: 'relative' }}>
       <div className="tcol inset" style={{ width: 150 }}>
         <span className="h">Kernel</span>
         <span className="grn" style={{ fontWeight: 600 }}>{d.tier}</span>
@@ -639,18 +694,99 @@ function Augmenter() {
       <div className="tcol inset" style={{ flex: 1 }}>
         <span className="h">Augments · ◈ = GPU cost</span>
         {(d.catalog || []).map((a) => {
-          const canApply = d.slotsUsed + a.slotCost <= d.slotCap && gpu >= a.gpuCost
+          const gcost = a.gpuCost ?? 0   // GPU economy deferred server-side — treat "not sent" as free
+          const canApply = d.slotsUsed + a.slotCost <= d.slotCap && gpu >= gcost
+          const param = PARAM_TYPES.includes(a.type)
+          const chip = param ? valueChip(a.type) : null
           return (
             <div key={a.type} className={`brow${a.applied ? ' on' : ''}`}>
               <span style={{ color: a.applied ? 'var(--text)' : 'var(--muted)', flex: 1 }}>{a.label}</span>
+              {chip && <span className="augval" title="current setting">{chip}</span>}
               <span className="dim mono" style={{ fontSize: 10 }}>{a.slotCost} slot{a.slotCost !== 1 ? 's' : ''}</span>
-              <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= a.gpuCost ? 'var(--cyan)' : 'var(--red)' }} title="GPU cost">◈{a.gpuCost}</span>
+              {gcost > 0 && <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= gcost ? 'var(--cyan)' : 'var(--red)' }} title="GPU cost">◈{gcost}</span>}
+              {a.applied && param && <button className="btn" onClick={() => setPicker(a.type)}>EDIT</button>}
               {a.applied
-                ? <button className="btn warn" title="frees the slot — GPU already spent, not refunded" onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
-                : <button className="btn go" disabled={!canApply} title={gpu < a.gpuCost ? 'not enough GPU' : (d.slotsUsed + a.slotCost > d.slotCap ? 'no free slots' : '')} onClick={() => send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>APPLY</button>}
+                ? <button className="btn warn" title="frees the slot" onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
+                : <button className="btn go" disabled={!canApply} title={gpu < gcost ? 'not enough GPU' : (d.slotsUsed + a.slotCost > d.slotCap ? 'no free slots' : '')}
+                    onClick={() => param ? setPicker(a.type) : send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>{param ? 'PICK…' : 'APPLY'}</button>}
             </div>
           )
         })}
+      </div>
+      {picker === 'NATURE' && <NaturePicker natures={meta.natures || []} current={values.NATURE?.value || 0} onClose={() => setPicker(null)} />}
+      {picker === 'BALL' && <BallPicker balls={meta.balls || []} current={values.BALL?.value || 0} onClose={() => setPicker(null)} />}
+      {picker === 'EV' && <EvAllocator initial={values.EV?.spread} onClose={() => setPicker(null)} />}
+    </div>
+  )
+}
+
+// #35 — Nature Lock picker: the full server catalog (25), each with its stat-effect hint. Click = install.
+function NaturePicker({ natures, current, onClose }) {
+  const d = usePanelDrag()
+  return (
+    <div className="dcfg" ref={d.ref} style={{ ...d.style, width: 300 }} onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>🧬 Nature Lock — every egg hatches this nature<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
+      <div className="nat-grid">
+        {natures.map((n, i) => (
+          <button key={n} className={`dchip2${current === i + 1 ? ' on' : ''}`}
+            onClick={() => { send('augmenter', 'APPLY_AUGMENT', { type: `NATURE:${i + 1}` }); onClose() }}>
+            <span>{cap(n)}</span><span className="nat-fx">{NATURE_FX[n.toLowerCase()] || ''}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// #35 — Ball Lock picker: every breedable ball from the server catalog. Click = install.
+function BallPicker({ balls, current, onClose }) {
+  const d = usePanelDrag()
+  return (
+    <div className="dcfg" ref={d.ref} style={{ ...d.style, width: 280 }} onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>◉ Ball Lock — every egg hatches in this ball<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
+      <div className="ball-grid">
+        {balls.map((b, i) => (
+          <button key={b} className={`dchip2${current === i + 1 ? ' on' : ''}`}
+            onClick={() => { send('augmenter', 'APPLY_AUGMENT', { type: `BALL:${i + 1}` }); onClose() }}>
+            {cap(shortId(b))}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// #34 — EV Primer allocator: a targeted 6-stat spread (each ≤252, total ≤510), applied to every bred egg.
+function EvAllocator({ initial, onClose }) {
+  const d = usePanelDrag()
+  const [ev, setEv] = useState(() => (initial && initial.length === 6 ? [...initial] : [0, 0, 0, 0, 0, 0]))
+  const total = ev.reduce((a, b) => a + b, 0)
+  const setStat = (i, raw) => {
+    const v = Math.max(0, Math.min(252, raw | 0))
+    const others = total - ev[i]
+    const next = [...ev]
+    next[i] = Math.min(v, 510 - others)   // clamp into the remaining budget — the bar can never overflow
+    setEv(next)
+  }
+  return (
+    <div className="dcfg" ref={d.ref} style={{ ...d.style, width: 250 }} onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>EV Primer — spread on every egg<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
+      {STATS.map((s, i) => (
+        <div key={s} className="ev-row">
+          <span style={{ width: 26 }}>{s}</span>
+          <input type="range" min={0} max={252} step={4} value={ev[i]} onChange={(e) => setStat(i, +e.target.value)} />
+          <input type="number" min={0} max={252} value={ev[i]}
+            onFocus={() => send('console', 'INPUT_FOCUS', { v: true })} onBlur={() => send('console', 'INPUT_FOCUS', { v: false })}
+            onChange={(e) => setStat(i, parseInt(e.target.value) || 0)} />
+        </div>
+      ))}
+      <div className="evbar"><div style={{ width: `${(total / 510) * 100}%` }} /></div>
+      <div className="row" style={{ fontSize: 10 }}>
+        <span className={total >= 510 ? 'amb' : 'dim'}>{total}/510 EVs</span>
+        <span style={{ flex: 1 }} />
+        <button className="btn" onClick={() => setEv([0, 0, 0, 0, 0, 0])}>clear</button>
+        <button className="btn go" disabled={total === 0}
+          onClick={() => { send('augmenter', 'APPLY_AUGMENT', { type: `EV:${ev.join(',')}` }); onClose() }}>APPLY</button>
       </div>
     </div>
   )
@@ -1226,6 +1362,11 @@ function PastureConfig({ cfg }) {
         <button className="btn" style={{ color: cfg.linked ? 'var(--green)' : 'var(--muted)', borderColor: cfg.linked ? '#2e5a47' : 'var(--line)' }}
           onClick={() => send('pasture', 'CLAIM', { pos: cfg.pos })}>{cfg.linked ? '🔗 linked' : 'link'}</button>
       </div>
+      {(cfg.health || []).length > 0 && (
+        <div className="hstrip">
+          {cfg.health.map((f) => <span key={f.id} className="hflag" title={f.id}><span>{f.icon}</span>{f.text}</span>)}
+        </div>
+      )}
       <div className="row inset" style={{ padding: 8, marginBottom: 10, borderRadius: 8 }}>
         <span className="dim" style={{ fontSize: 10, letterSpacing: 1 }}>KERNEL</span>
         <span style={{ flex: 1 }} />
@@ -1235,6 +1376,16 @@ function PastureConfig({ cfg }) {
         <button className="btn" style={{ marginLeft: 8 }} onClick={() => send('pasture', 'KERNEL', { pos: cfg.pos })}>
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
       </div>
+      {hasKernel && cfg.kernel && Object.keys(cfg.kernel).length > 0 && (
+        <div className="kload" style={{ marginBottom: 10 }}>
+          <span className="dim" style={{ fontSize: 9, letterSpacing: 1 }}>LOADOUT</span>
+          {cfg.kernel.nature && <span className="kchip">🧬 {cap(cfg.kernel.nature)}</span>}
+          {cfg.kernel.ball && <span className="kchip">◉ {cap(shortId(cfg.kernel.ball))}</span>}
+          {cfg.kernel.ev && <span className="kchip">EV {cfg.kernel.ev}</span>}
+          {cfg.kernel.ha && <span className="kchip">✦ hidden ability</span>}
+          {cfg.kernel.moves && <span className="kchip">📖 egg moves</span>}
+        </div>
+      )}
       <div className="dim" style={{ fontSize: 11, marginBottom: 6 }}>
         Daemon · one tab per breeding line — add two parents, then wire their eggs through filters to BioBank / Data{maxPairs ? '' : ' · slot a Kernel to start'}
       </div>

@@ -51,7 +51,7 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
         NotebookItem.CONSOLE_OPENER = () -> {   // air → tabbed console
             if (NotebookState.pastureConfig != null) NotebookBrowserScreen.curtain();   // coming from a pasture view → curtain the switch
-            NotebookState.pastureConfig = null; NotebookState.pastureGraphJson = ""; NotebookState.pastureConfigLoading = false;
+            NotebookState.pastureConfig = null; NotebookState.pastureGraphJson = ""; NotebookState.pastureExtraJson = ""; NotebookState.pastureConfigLoading = false;
             openConsole();
         };
         NotebookItem.PASTURE_OPENER = (pos) -> {
@@ -65,10 +65,12 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 if (cached != null) {
                     NotebookState.pastureConfig = cached;
                     NotebookState.pastureGraphJson = NotebookState.pastureGraphCache.getOrDefault(key, "");
+                    NotebookState.pastureExtraJson = NotebookState.pastureExtraCache.getOrDefault(key, "");
                     NotebookState.pastureConfigLoading = false;
                 } else {
                     NotebookState.pastureConfig = new NotebookPastureConfigS2C(key, "", "", false, 0, java.util.List.of());
                     NotebookState.pastureGraphJson = "";
+                    NotebookState.pastureExtraJson = "";
                     NotebookState.pastureConfigLoading = true;
                     NotebookBrowserScreen.awaitPasture();
                 }
@@ -125,6 +127,14 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookNotifsS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
                     if (NotebookState.applyNotifs(payload)) NotebookScreen.refreshIfOpen();
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookPastureExtraS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyPastureExtra(payload)) DsBridge.pushNow();
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookAugmenterMetaS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyAugMeta(payload)) DsBridge.pushNow();
                 }));
 
         // notebook/ console — poll the server ~1×/s while the console is open so the status bar + tabs tick live.

@@ -246,6 +246,11 @@ public final class DsBridge {
         }
         m.put("roster", roster);
         m.put("graph", NotebookState.pastureGraphJson);   // the Daemon graph JSON (React parses it) — Phase 1
+        Object extra = jsonChannel(NotebookState.pastureExtraJson);   // #37/#34/#35: health strip + Kernel loadout
+        if (extra instanceof com.google.gson.JsonObject jo) {
+            m.put("health", jo.get("health"));
+            if (jo.has("kernel")) m.put("kernel", jo.get("kernel"));
+        }
         return m;
     }
 
@@ -311,6 +316,7 @@ public final class DsBridge {
     private static Object pasturesData() {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("pastures", NotebookState.pastures);
+        m.put("health", jsonChannel(NotebookState.pasturesHealthJson));   // #37 — {"dim|pos":"flagId,flagId"} badge markers
         return m;
     }
 
@@ -321,6 +327,7 @@ public final class DsBridge {
         m.put("slotsUsed", NotebookState.augSlotsUsed);
         m.put("slotCap", NotebookState.augSlotCap);
         m.put("catalog", NotebookState.augCatalog);
+        m.put("meta", jsonChannel(NotebookState.augMetaJson));   // picker meta (#34/#35): current values + nature/ball catalogs
         return m;
     }
 

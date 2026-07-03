@@ -77,10 +77,14 @@ public final class NotebookState {
 
     // ── Pastures tab ─────────────────────────────────────────────────────────
     public static volatile List<PastureSnapshot> pastures = List.of();
+    /** #37 — {@code {"<dim|pos>":"flagId,flagId"}} badge markers per snapshot (server-built JSON). */
+    public static volatile String pasturesHealthJson = "";
 
     public static boolean applyPastures(NotebookPasturesS2C p) {
-        boolean changed = !pastures.equals(p.pastures());
+        String health = p.healthJson() == null ? "" : p.healthJson();
+        boolean changed = !pastures.equals(p.pastures()) || !pasturesHealthJson.equals(health);
         pastures = p.pastures();
+        pasturesHealthJson = health;
         return changed;
     }
 
@@ -94,6 +98,7 @@ public final class NotebookState {
      *  INSTANTLY and the server refresh lands silently — no loading state for pastures you've seen this session. */
     public static final Map<Long, NotebookPastureConfigS2C> pastureConfigCache = new ConcurrentHashMap<>();
     public static final Map<Long, String> pastureGraphCache = new ConcurrentHashMap<>();
+    public static final Map<Long, String> pastureExtraCache = new ConcurrentHashMap<>();
 
     public static boolean applyPastureConfig(NotebookPastureConfigS2C p) {
         pastureConfigCache.put(p.pos(), p);
@@ -110,6 +115,21 @@ public final class NotebookState {
      *  none. Rides its own S2C ({@link NotebookGraphS2C}) alongside the config; the bridge folds it into the
      *  {@code pastureConfig} channel as {@code graph}. */
     public static volatile String pastureGraphJson = "";
+
+    /** The focused pasture's extras JSON (health strip + Kernel breeding-meta loadout), "" when none.
+     *  Same focus-aware, pos-keyed caching as the config/graph. */
+    public static volatile String pastureExtraJson = "";
+
+    public static boolean applyPastureExtra(com.greenerpastures.notebook.net.NotebookPastureExtraS2C p) {
+        String json = p.json() == null ? "" : p.json();
+        pastureExtraCache.put(p.pos(), json);
+        NotebookPastureConfigS2C cur = pastureConfig;
+        if (cur != null && cur.pos() == p.pos()) {   // focused only — prefetches stay cache-only
+            pastureExtraJson = json;
+            return true;
+        }
+        return false;
+    }
 
     public static boolean applyGraph(NotebookGraphS2C p) {
         String json = p.json() == null ? "" : p.json();
@@ -137,6 +157,17 @@ public final class NotebookState {
         augSlotsUsed = p.slotsUsed();
         augSlotCap = p.slotCap();
         augCatalog = p.catalog();
+        return changed;
+    }
+
+    /** The picker meta JSON (#34/#35) riding beside the augmenter push: current selector values + EV spread
+     *  on the held Kernel, plus the server-authoritative nature/ball catalogs. */
+    public static volatile String augMetaJson = "";
+
+    public static boolean applyAugMeta(com.greenerpastures.notebook.net.NotebookAugmenterMetaS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !augMetaJson.equals(j);
+        augMetaJson = j;
         return changed;
     }
 
@@ -197,10 +228,10 @@ public final class NotebookState {
         hasStorage = false; storage = Map.of(); storageCap = 0L;
         compilerHasDaemon = false; compilerDaemonOn = false; compilerDrain = 0.0;
         compilerCatalog = List.of(); compilerInstalled = Map.of();
-        pastures = List.of();
-        pastureConfig = null; pastureConfigLoading = false; pastureGraphJson = "";
-        pastureConfigCache.clear(); pastureGraphCache.clear();
-        augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of();
+        pastures = List.of(); pasturesHealthJson = "";
+        pastureConfig = null; pastureConfigLoading = false; pastureGraphJson = ""; pastureExtraJson = "";
+        pastureConfigCache.clear(); pastureGraphCache.clear(); pastureExtraCache.clear();
+        augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of(); augMetaJson = "";
         biobankTotal = 0; biobank = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
         dashboardJson = ""; goalsJson = ""; notifsJson = "";

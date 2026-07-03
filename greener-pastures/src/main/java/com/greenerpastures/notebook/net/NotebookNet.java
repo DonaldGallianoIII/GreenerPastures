@@ -23,9 +23,11 @@ import com.greenerpastures.egg.oracle.cull.EggReader;
 import com.greenerpastures.goal.BreedingGoal;
 import com.greenerpastures.goal.GoalProgress;
 import com.greenerpastures.goal.GoalStore;
+import com.greenerpastures.notebook.AugmentArg;
 import com.greenerpastures.notebook.EggLog;
 import com.greenerpastures.notebook.NotebookStorage;
 import com.greenerpastures.notebook.NotebookStore;
+import com.greenerpastures.notebook.PastureHealth;
 import com.greenerpastures.notebook.PastureSnapshot;
 import com.greenerpastures.notebook.PastureSnapshotStore;
 import com.greenerpastures.pasture.breeding.Augments;
@@ -99,6 +101,8 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookDashboardS2C.ID, NotebookDashboardS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookGoalsS2C.ID, NotebookGoalsS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookGoalC2S.ID, NotebookGoalC2S.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookPastureExtraS2C.ID, NotebookPastureExtraS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookAugmenterMetaS2C.ID, NotebookAugmenterMetaS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -413,7 +417,68 @@ public final class NotebookNet {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         List<PastureSnapshot> snaps = PastureSnapshotStore.get(server).snapshotsOf(player.getUuid());
-        ServerPlayNetworking.send(player, new NotebookPasturesS2C(snaps));
+        // #37 — per-snapshot ⚠ badge flags, from registry-side state (works for unloaded chunks; parent/bank
+        // checks need the live block entity and only run for loaded ones).
+        PastureRegistry reg = PastureRegistry.get(server);
+        JsonObject health = new JsonObject();
+        for (PastureSnapshot s : snaps) {
+            PastureData pd = reg.get(s.dim(), BlockPos.fromLong(s.pos()));
+            if (pd == null) continue;
+            String csv = PastureHealth.idsCsv(gatherHealth(server, s.dim(), BlockPos.fromLong(s.pos()), pd));
+            if (!csv.isEmpty()) health.addProperty(s.dim() + "|" + s.pos(), csv);
+        }
+        ServerPlayNetworking.send(player, new NotebookPasturesS2C(snaps, health.toString()));
+    }
+
+    /** Gather one pasture's health flags (#37). {@code dim} + loaded-chunk check pick whether the live
+     *  block entity (parents / bred-species bank caps) participates; registry state always does. */
+    private static List<PastureHealth.Flag> gatherHealth(MinecraftServer server, String dim, BlockPos pos, PastureData pd) {
+        PokemonPastureBlockEntity be = null;
+        for (ServerWorld w : server.getWorlds()) {
+            if (!dim.equals(w.getRegistryKey().getValue().toString())) continue;
+            if (w.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)
+                    && w.getBlockEntity(pos) instanceof PokemonPastureBlockEntity p) be = p;
+            break;
+        }
+        return gatherHealth(server, pd, be);
+    }
+
+    /** Health flags with a (possibly null) live block entity in hand — the pure core does the deciding.
+     *  Species come straight off the tether list (NOT {@code rosterOf} — no per-mon stats JSON on a 1/s poll). */
+    private static List<PastureHealth.Flag> gatherHealth(MinecraftServer server, PastureData pd, PokemonPastureBlockEntity be) {
+        int monCount = -1;
+        List<String> fullSpecies = null;
+        if (be != null) {
+            List<String> species = new ArrayList<>();
+            try {
+                var tethered = new ArrayList<>(be.getTetheredPokemon());
+                monCount = tethered.size();
+                for (var t : tethered) {
+                    try {
+                        var pkm = t.getPokemon();
+                        String sp = pkm == null ? null : pkm.getSpecies().getName();
+                        if (sp != null && !sp.isEmpty() && !species.contains(sp)) species.add(sp);
+                    } catch (Throwable ignored) { }
+                }
+            } catch (Throwable t) { }
+            if (pd.owner != null && !species.isEmpty()) {
+                BioBankData bank = BioBankStore.get(server).get(pd.owner);
+                if (bank != null) {
+                    Map<String, Integer> counts = bank.speciesCounts();
+                    List<String> full = new ArrayList<>();
+                    for (String sp : species) {
+                        for (Map.Entry<String, Integer> c : counts.entrySet()) {
+                            if (c.getKey().equalsIgnoreCase(sp) && c.getValue() >= com.greenerpastures.biobank.BioBank.capacity()) {
+                                full.add(sp);
+                                break;
+                            }
+                        }
+                    }
+                    if (!full.isEmpty()) fullSpecies = full;
+                }
+            }
+        }
+        return PastureHealth.evaluate(pd.owner != null, pd.tier() != null, monCount, pd.eggQueue.isFull(), fullSpecies);
     }
 
     // ── Kernel Augmenter (slot model; GPU/Data cost DEFERRED per §7.5) ──────────────────────────────────
@@ -476,28 +541,104 @@ public final class NotebookNet {
             }
         }
         ServerPlayNetworking.send(player, new NotebookAugmenterS2C(has, tierLabel, used, slotCap, catalog));
+        ServerPlayNetworking.send(player, new NotebookAugmenterMetaS2C(augmenterMetaJson(has ? ref.stack() : null)));
     }
 
-    private static void applyAugment(ServerPlayerEntity player, String typeName) {
+    /** The picker meta (#34/#35) riding beside the augmenter push: the Kernel's current selector values +
+     *  EV spread, and the server-authoritative nature/ball catalogs (the React pickers can never drift). */
+    private static String augmenterMetaJson(ItemStack kernel) {
+        JsonObject root = new JsonObject();
+        JsonObject values = new JsonObject();
+        if (kernel != null) {
+            Augments a = kernel.get(GpComponents.AUGMENTS);
+            int nat = a == null ? 0 : a.level(com.greenerpastures.economy.AugmentFunction.NATURE);
+            int ball = a == null ? 0 : a.level(com.greenerpastures.economy.AugmentFunction.BALL);
+            if (nat > 0) {
+                JsonObject o = new JsonObject();
+                o.addProperty("value", nat);
+                o.addProperty("label", String.valueOf(com.greenerpastures.pasture.breeding.NatureCatalog.byIndex(nat)));
+                values.add("NATURE", o);
+            }
+            if (ball > 0) {
+                JsonObject o = new JsonObject();
+                o.addProperty("value", ball);
+                o.addProperty("label", String.valueOf(com.greenerpastures.pasture.breeding.BallCatalog.byIndex(ball)));
+                values.add("BALL", o);
+            }
+            com.greenerpastures.pasture.breeding.EvSpread ev = kernel.get(GpComponents.EV_SPREAD);
+            if (ev != null && !ev.isEmpty()) {
+                JsonObject o = new JsonObject();
+                JsonArray spread = new JsonArray();
+                for (int v : new int[]{ev.hp(), ev.atk(), ev.def(), ev.spa(), ev.spd(), ev.spe()}) spread.add(v);
+                o.add("spread", spread);
+                values.add("EV", o);
+            }
+        }
+        root.add("values", values);
+        JsonArray natures = new JsonArray();
+        for (String n : com.greenerpastures.pasture.breeding.NatureCatalog.NATURES) natures.add(n);
+        root.add("natures", natures);
+        JsonArray balls = new JsonArray();
+        for (String b : com.greenerpastures.pasture.breeding.BallCatalog.BALLS) balls.add(b);
+        root.add("balls", balls);
+        return root.toString();
+    }
+
+    /** Install an augment from the console. Arg grammar ({@link AugmentArg}): {@code "SHINY"} ·
+     *  {@code "NATURE:7"} / {@code "BALL:12"} (1-based catalog index) · {@code "EV:hp,atk,def,spa,spd,spe"}.
+     *  A parameterized augment that's ALREADY installed may re-pick its value in place (no extra slot). */
+    private static void applyAugment(ServerPlayerEntity player, String rawArg) {
         KernelRef ref = firstKernel(player);
         if (ref == null) return;
-        AugmentType at = augmentType(typeName);
-        if (at == null || !at.appliesTo(ref.stack()) || at.installedOn(ref.stack())) return;   // no-dupe
-        BreedingTier tier = ((BreedingUpgradeItem) ref.stack().getItem()).tier();
-        if (slotsUsed(ref.stack()) + slotCost(at) > tier.slots) return;   // slot gate (GPU/Data cost deferred)
-        ref.writer().accept(at.apply(ref.stack()));
-        GpLog.i("notebook", "augment_apply", "player", player.getUuid().toString(), "type", typeName);
+        AugmentArg arg = AugmentArg.parse(rawArg);
+        AugmentType at = arg == null ? null : augmentType(arg.type());
+        if (at == null || !at.appliesTo(ref.stack())) return;
+        if (at.parameterized() != (arg.index() > 0 || arg.ev() != null)) return;   // param augments need a value; plain ones must not carry one
+
+        boolean installed = at.installedOn(ref.stack());
+        if (installed && !at.parameterized()) return;                              // no-dupe (re-pick is param-only)
+        if (!installed) {                                                          // slot gate for NEW installs (GPU/Data cost deferred §7.5)
+            BreedingTier tier = ((BreedingUpgradeItem) ref.stack().getItem()).tier();
+            if (slotsUsed(ref.stack()) + slotCost(at) > tier.slots) return;
+        }
+
+        String detail = "";
+        switch (at) {
+            case NATURE -> {
+                if (com.greenerpastures.pasture.breeding.NatureCatalog.byIndex(arg.index()) == null) return;   // out of catalog
+                ref.writer().accept(at.apply(ref.stack(), arg.index()));
+                detail = com.greenerpastures.pasture.breeding.NatureCatalog.byIndex(arg.index());
+            }
+            case BALL -> {
+                if (com.greenerpastures.pasture.breeding.BallCatalog.byIndex(arg.index()) == null) return;
+                ref.writer().accept(at.apply(ref.stack(), arg.index()));
+                detail = com.greenerpastures.pasture.breeding.BallCatalog.byIndex(arg.index());
+            }
+            case EV -> {
+                int[] v = arg.ev();
+                com.greenerpastures.pasture.breeding.EvSpread spread =
+                        new com.greenerpastures.pasture.breeding.EvSpread(v[0], v[1], v[2], v[3], v[4], v[5]);   // ctor clamps 252/510
+                if (spread.isEmpty()) return;
+                ItemStack out = ref.stack().copy();
+                out.set(GpComponents.EV_SPREAD, spread);
+                ref.writer().accept(out);
+                detail = spread.hp() + "/" + spread.atk() + "/" + spread.def() + "/" + spread.spa() + "/" + spread.spd() + "/" + spread.spe();
+            }
+            default -> ref.writer().accept(at.apply(ref.stack()));
+        }
+        GpLog.i("notebook", "augment_apply", "player", player.getUuid().toString(), "type", at.name(),
+                "value", detail.isEmpty() ? "-" : detail, "repick", installed);
     }
 
     private static void removeAugment(ServerPlayerEntity player, String typeName) {
         KernelRef ref = firstKernel(player);
         if (ref == null) return;
         AugmentType at = augmentType(typeName);
-        if (at == null || !at.appliesTo(ref.stack())) return;
-        Augments a = ref.stack().get(GpComponents.AUGMENTS);
-        if (a == null || a.level(at.function) <= 0) return;
+        if (at == null || !at.appliesTo(ref.stack()) || !at.installedOn(ref.stack())) return;
         ItemStack out = ref.stack().copy();
-        out.set(GpComponents.AUGMENTS, a.withLevel(at.function, 0));
+        if (at == AugmentType.EV) out.remove(GpComponents.EV_SPREAD);   // the primer's value IS the component
+        Augments a = out.get(GpComponents.AUGMENTS);
+        if (a != null && a.level(at.function) > 0) out.set(GpComponents.AUGMENTS, a.withLevel(at.function, 0));
         ref.writer().accept(out);
         GpLog.i("notebook", "augment_remove", "player", player.getUuid().toString(), "type", typeName);
     }
@@ -542,6 +683,38 @@ public final class NotebookNet {
         ServerPlayNetworking.send(player, new NotebookPastureConfigS2C(
                 pos.asLong(), pd.name, tier == null ? "" : tier.name(), linked, tier == null ? 0 : tier.maxPairs, roster));
         ServerPlayNetworking.send(player, new NotebookGraphS2C(pos.asLong(), pd.graphJson == null ? "" : pd.graphJson));
+        ServerPlayNetworking.send(player, new NotebookPastureExtraS2C(pos.asLong(), pastureExtraJson(server, pd, pasture)));
+    }
+
+    /** The focused pasture's extras blob: health strip (#37) + the slotted Kernel's breeding-meta loadout. */
+    private static String pastureExtraJson(MinecraftServer server, PastureData pd, PokemonPastureBlockEntity pasture) {
+        JsonObject root = new JsonObject();
+        JsonArray health = new JsonArray();
+        for (PastureHealth.Flag f : gatherHealth(server, pd, pasture)) {
+            JsonObject o = new JsonObject();
+            o.addProperty("id", f.id());
+            o.addProperty("icon", f.icon());
+            o.addProperty("text", f.text());
+            health.add(o);
+        }
+        root.add("health", health);
+        ItemStack kernel = pd.upgrades.getStack(0);
+        if (kernel.getItem() instanceof BreedingUpgradeItem) {
+            JsonObject k = new JsonObject();
+            Augments a = kernel.get(GpComponents.AUGMENTS);
+            int nat = a == null ? 0 : a.level(com.greenerpastures.economy.AugmentFunction.NATURE);
+            int ball = a == null ? 0 : a.level(com.greenerpastures.economy.AugmentFunction.BALL);
+            if (nat > 0) k.addProperty("nature", String.valueOf(com.greenerpastures.pasture.breeding.NatureCatalog.byIndex(nat)));
+            if (ball > 0) k.addProperty("ball", String.valueOf(com.greenerpastures.pasture.breeding.BallCatalog.byIndex(ball)));
+            com.greenerpastures.pasture.breeding.EvSpread ev = kernel.get(GpComponents.EV_SPREAD);
+            if (ev != null && !ev.isEmpty()) {
+                k.addProperty("ev", ev.hp() + "/" + ev.atk() + "/" + ev.def() + "/" + ev.spa() + "/" + ev.spd() + "/" + ev.spe());
+            }
+            if (a != null && a.level(com.greenerpastures.economy.AugmentFunction.ABILITY) > 0) k.addProperty("ha", true);
+            if (a != null && a.level(com.greenerpastures.economy.AugmentFunction.EGG_MOVE) > 0) k.addProperty("moves", true);
+            root.add("kernel", k);
+        }
+        return root.toString();
     }
 
     private static void onPastureAction(NotebookPastureActionC2S p, ServerPlayNetworking.Context ctx) {

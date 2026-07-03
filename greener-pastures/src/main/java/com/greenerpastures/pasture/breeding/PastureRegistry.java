@@ -35,6 +35,13 @@ public final class PastureRegistry extends PersistentState {
         return m == null ? null : m.get(pos);
     }
 
+    /** Lookup by the dim-key STRING (a {@code PastureSnapshot.dim}) — the Pastures-tab health pass reads
+     *  registry-side state (owner/Kernel/tray) for pastures whose world/chunk may not be loaded. */
+    public PastureData get(String dimKey, BlockPos pos) {
+        Map<BlockPos, PastureData> m = byDim.get(dimKey);
+        return m == null ? null : m.get(pos);
+    }
+
     public PastureData getOrCreate(World world, BlockPos pos) {
         Map<BlockPos, PastureData> m = byDim.computeIfAbsent(dimKey(world), k -> new HashMap<>());
         PastureData d = m.get(pos);
