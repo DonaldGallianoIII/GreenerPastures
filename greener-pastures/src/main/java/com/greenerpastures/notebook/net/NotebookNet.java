@@ -271,8 +271,10 @@ public final class NotebookNet {
     }
 
     /** Take from Notebook storage into the player's inventory. mode: 0 = one item · 1 = one stack · 2 = all.
-     *  <b>Space-aware</b>: inserts into the inventory first and removes from storage ONLY what actually fit, so a
-     *  full inventory leaves items in the Notebook — nothing is ever dropped in-world or destroyed (Deuce, 2026-07-01). */
+     *  <b>Space-verified + manual placement</b> (Deuce, 2026-07-03): we count the MAIN inventory's real capacity
+     *  for this item and place stacks into slots ourselves — never via {@code insertStack}, whose return other
+     *  mods can mixin-hijack (a backpack "absorbed" 3k ink sacs by reporting fit-into-nowhere). Storage is
+     *  debited only for what we physically placed, so nothing can ever be destroyed. */
     private static void pull(ServerPlayerEntity player, String itemId, int mode) {
         MinecraftServer server = player.getServer();
         if (server == null || itemId == null || itemId.isEmpty()) return;
@@ -281,24 +283,43 @@ public final class NotebookNet {
         NotebookStore store = NotebookStore.get(server);
         long have = store.storageOf(player.getUuid()).count(itemId);
         if (have <= 0) return;
-        int maxStack = new ItemStack(item).getMaxCount();
+        var main = player.getInventory().main;
+        ItemStack probe = new ItemStack(item);
+        int maxStack = probe.getMaxCount();
+
+        long capacity = 0;                                   // real room in MAIN slots only — counted by us
+        for (ItemStack s : main) {
+            if (s.isEmpty()) capacity += maxStack;
+            else if (ItemStack.areItemsAndComponentsEqual(s, probe)) capacity += Math.max(0, s.getMaxCount() - s.getCount());
+        }
         long want = switch (mode) {
             case 0 -> 1L;
             case 1 -> Math.min(maxStack, have);
             default -> have;
         };
-        want = Math.min(want, have);
-        long gave = 0;
-        while (want - gave >= 1) {
-            int n = (int) Math.min(maxStack, want - gave);
-            ItemStack stack = new ItemStack(item, n);
-            player.getInventory().insertStack(stack);
-            gave += n - stack.getCount();       // stack.getCount() = what did NOT fit
-            if (!stack.isEmpty()) break;         // inventory full → stop, leave the rest in storage
+        want = Math.min(Math.min(want, have), capacity);
+        if (want <= 0) {                                     // no room → refuse loudly, storage untouched
+            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full — nothing pulled."), false);
+            GpLog.i("notebook", "pull_full", "player", player.getUuid().toString(), "item", itemId);
+            return;
         }
-        if (gave > 0) store.withdraw(player.getUuid(), itemId, gave);
+        long placed = 0;
+        for (int i = 0; i < main.size() && placed < want; i++) {   // top up matching partials first
+            ItemStack s = main.get(i);
+            if (s.isEmpty() || !ItemStack.areItemsAndComponentsEqual(s, probe)) continue;
+            int add = (int) Math.min(s.getMaxCount() - s.getCount(), want - placed);
+            if (add > 0) { s.increment(add); placed += add; }
+        }
+        for (int i = 0; i < main.size() && placed < want; i++) {   // then fill empty slots
+            if (!main.get(i).isEmpty()) continue;
+            int add = (int) Math.min(maxStack, want - placed);
+            main.set(i, new ItemStack(item, add));
+            placed += add;
+        }
+        player.getInventory().markDirty();
+        if (placed > 0) store.withdraw(player.getUuid(), itemId, placed);
         GpLog.i("notebook", "pull", "player", player.getUuid().toString(),
-                "item", itemId, "n", Long.toString(gave), "mode", Integer.toString(mode));
+                "item", itemId, "n", Long.toString(placed), "capacity", Long.toString(capacity), "mode", Integer.toString(mode));
     }
 
     // ── Compiler (Daemon) ─────────────────────────────────────────────────────────────────────────────
@@ -460,17 +481,23 @@ public final class NotebookNet {
 
     // ── BioBank (per-player; browse-only in 6a) ─────────────────────────────────────────────────────────
 
-    /** Withdraw the egg at {@code flatIndex} (the console's flattened BioBank order) back into the player's inventory. */
+    /** Withdraw the egg at {@code flatIndex} (the console's flattened BioBank order) back into the player's
+     *  inventory — placed into a MAIN slot we picked ourselves (never {@code insertStack}; see {@link #pull}). */
     private static void withdrawEgg(ServerPlayerEntity player, int flatIndex) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        if (player.getInventory().getEmptySlot() < 0) {   // no room — leave the egg in the BioBank (never destroy)
+        var main = player.getInventory().main;
+        int slot = -1;
+        for (int i = 0; i < main.size(); i++) if (main.get(i).isEmpty()) { slot = i; break; }
+        if (slot < 0) {                                   // no room — leave the egg in the BioBank (never destroy)
+            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full — the egg stays in the BioBank."), false);
             GpLog.i("notebook", "biobank_full", "player", player.getUuid().toString());
             return;
         }
         ItemStack egg = BioBankStore.get(server).withdraw(player.getUuid(), flatIndex);
         if (!egg.isEmpty()) {
-            player.getInventory().insertStack(egg);
+            main.set(slot, egg);
+            player.getInventory().markDirty();
             GpLog.i("notebook", "biobank_withdraw", "player", player.getUuid().toString(), "index", Integer.toString(flatIndex));
         }
     }

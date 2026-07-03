@@ -97,6 +97,7 @@ const CSS = `
 .iv-v{ font-size:13px; font-weight:700; font-family:'JetBrains Mono',monospace; line-height:1; }
 .insp-row{ display:flex; justify-content:space-between; font-size:11px; padding:2px 0; color:var(--text); }
 .dcfg-drag{ cursor:move; user-select:none; }
+.cell-full{ opacity:.42; cursor:not-allowed; }
 .sb-bad{ color:var(--red); font-weight:600; }
 .loadsplash{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:52px 0; color:var(--muted); font-size:13px; }
 .spinner{ width:30px; height:30px; border:3px solid var(--line); border-top-color:var(--cyan); border-radius:50%; animation:gpspin .8s linear infinite; }
@@ -461,27 +462,33 @@ function StatRow({ tag, vals, perfect, color }) {
 // ── Harvester / Storage ──────────────────────────────────────────────────────
 function Harvester() {
   const d = useChannel('storage')
+  const inv = useChannel('inventory')
   const items = d?.items || {}
   const list = Object.entries(items).sort((a, b) => b[1] - a[1])
   const total = list.reduce((a, [, n]) => a + n, 0)
+  // Room check (client-side hint; the server re-verifies + refuses): an empty slot, or a same-item partial stack.
+  const slots = inv?.slots || []
+  const canTake = (id) => slots.some((s) => !s || (s.id === id && s.count < 64))
+  const invFull = slots.length > 0 && !slots.some((s) => !s)
   return (
     <div className="pane">
       <div className="row" style={{ marginBottom: 10 }}>
         <span className="h">Storage</span>
         <span className="muted" style={{ fontSize: 11 }}>{list.length} types · {compact(total)} items</span>
         <span style={{ flex: 1 }} />
+        {invFull && <span style={{ color: 'var(--red)', fontSize: 11, marginRight: 8 }}>⚠ inventory full</span>}
         <span className="dim" style={{ fontSize: 11 }}>L: one · ⇧-click: stack · R: all → inventory</span>
       </div>
       {!list.length ? <div style={{ color: 'var(--muted)', fontSize: 12 }}>empty — harvested loot from your linked pastures collects here</div> : (
         <div className="grid">
-          {list.map(([id, n]) => (
-            <div key={id} className="cell" title={`${id} · L: one · ⇧: stack · R: all`}
-              onClick={(ev) => send('storage', shiftHeld(ev) ? 'PULL_STACK' : 'PULL_ONE', { item: id })}
-              onContextMenu={(ev) => { ev.preventDefault(); send('storage', 'PULL_ID', { item: id }) }}>
+          {list.map(([id, n]) => { const ok = canTake(id); return (
+            <div key={id} className={`cell${ok ? '' : ' cell-full'}`} title={ok ? `${id} · L: one · ⇧: stack · R: all` : `${id} · inventory full — make room to pull`}
+              onClick={(ev) => { if (ok) send('storage', shiftHeld(ev) ? 'PULL_STACK' : 'PULL_ONE', { item: id }) }}
+              onContextMenu={(ev) => { ev.preventDefault(); if (ok) send('storage', 'PULL_ID', { item: id }) }}>
               <span className="ct">{compact(n)}</span>
               <span className="nm">{shortId(id)}</span>
             </div>
-          ))}
+          )})}
         </div>
       )}
     </div>
