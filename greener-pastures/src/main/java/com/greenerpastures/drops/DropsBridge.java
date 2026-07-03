@@ -59,19 +59,33 @@ public final class DropsBridge {
      */
     public static Map<String, Integer> harvest(PokemonPastureBlockEntity pasture, Random rng,
                                                double procChance, int yieldBonus) {
+        try {
+            return harvest(new ArrayList<>(pasture.getTetheredPokemon()), rng, procChance, yieldBonus);
+        } catch (Throwable ex) {
+            GreenerPastures.LOG.debug("[harvester] harvest failed", ex);
+            return new LinkedHashMap<>();
+        }
+    }
+
+    /** Roster-list overload: a catch-up rolls MANY sweeps against one immutable roster — snapshot the tether
+     *  list once and reuse it across sweeps instead of re-copying per sweep (perf-audit R3 tick #1). */
+    public static Map<String, Integer> harvest(java.util.List<PokemonPastureBlockEntity.Tethering> roster, Random rng,
+                                               double procChance, int yieldBonus) {
         Map<String, Integer> out = new LinkedHashMap<>();
         try {
-            for (PokemonPastureBlockEntity.Tethering t : new ArrayList<>(pasture.getTetheredPokemon())) {
+            for (PokemonPastureBlockEntity.Tethering t : roster) {
                 if (rng.nextDouble() >= procChance) continue;     // this mon didn't proc a drop this tick
                 Pokemon p = t.getPokemon();
                 if (p == null) continue;
                 Map<String, Integer> rolled = rollEvent(p, rng, yieldBonus);
                 // per-proc audit line: the proc HAPPENED — an empty roll means the species' drop table came up
                 // dry (all low-% entries missed), which drop-rate QA must see distinctly from "no proc".
-                String species;
-                try { species = p.getSpecies().getName(); } catch (Throwable ex) { species = "?"; }
-                com.greenerpastures.core.GpLog.d("harvest", "proc", "species", species,
-                        "items", rolled.isEmpty() ? "dry" : rolled.toString());
+                if (com.greenerpastures.core.GpLog.on(com.greenerpastures.core.GpLog.Level.DEBUG)) {
+                    String species;
+                    try { species = p.getSpecies().getName(); } catch (Throwable ex) { species = "?"; }
+                    com.greenerpastures.core.GpLog.d("harvest", "proc", "species", species,
+                            "items", rolled.isEmpty() ? "dry" : rolled.toString());
+                }
                 rolled.forEach((id, n) -> out.merge(id, n, Integer::sum));
             }
         } catch (Throwable ex) {

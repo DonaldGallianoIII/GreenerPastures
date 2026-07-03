@@ -23,8 +23,12 @@ public final class PastureRegistry extends PersistentState {
     private final Map<String, Map<BlockPos, PastureData>> byDim = new HashMap<>();
 
     /** Cache the dim-key string per world so the per-tick {@link #inWorld}/{@link #get} lookups don't allocate a
-     *  fresh Identifier string every call (perf-audit; identity-keyed, bounded by loaded-world count). */
-    private static final Map<World, String> DIM_KEY = new java.util.concurrent.ConcurrentHashMap<>();
+     *  fresh Identifier string every call (perf-audit; identity-keyed, bounded by loaded-world count).
+     *  WEAK keys (R3 #4): a strong static Map&lt;World,…&gt; pins every ServerWorld ever loaded — in singleplayer the
+     *  integrated server restarts per world visited, so an evening of world-hopping leaked whole world graphs.
+     *  Weak keys let GC reclaim closed worlds; a miss just recomputes one string. */
+    private static final Map<World, String> DIM_KEY =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
     private static String dimKey(World world) {
         return DIM_KEY.computeIfAbsent(world, w -> w.getRegistryKey().getValue().toString());

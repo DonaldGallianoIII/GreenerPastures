@@ -35,10 +35,13 @@ public final class GreenerPasturesClient implements ClientModInitializer {
     /** Ticks since load; gates the notebook live-poll to ~1×/s while the console is open. */
     private static int notebookPollTick;
     private static int warmTick;
+    /** Mod-load state is immutable — resolve ONCE, not 20×/s on the tick path (perf-audit R3 client #3). */
+    private static boolean mcefPresent;
 
     @Override
     public void onInitializeClient() {
         GreenerPastures.LOG.info("Greener Pastures — client init");
+        mcefPresent = net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef");
 
         // egg/ (client UI + container overlays)
         EggOracleClient.init();           // odds calculator, egg culler, pasture finder/check
@@ -59,13 +62,14 @@ public final class GreenerPasturesClient implements ClientModInitializer {
             // interactive) and the server refresh lands silently. Only a first-ever open shows the loading
             // shell + native overlay (lifted the moment React confirms the pasture view painted).
             long key = pos.asLong();
+            String cacheKey = NotebookState.posKey(key);
             NotebookPastureConfigS2C cur = NotebookState.pastureConfig;
             if (cur == null || cur.pos() != key) {
-                NotebookPastureConfigS2C cached = NotebookState.pastureConfigCache.get(key);
+                NotebookPastureConfigS2C cached = NotebookState.pastureConfigCache.get(cacheKey);
                 if (cached != null) {
                     NotebookState.pastureConfig = cached;
-                    NotebookState.pastureGraphJson = NotebookState.pastureGraphCache.getOrDefault(key, "");
-                    NotebookState.pastureExtraJson = NotebookState.pastureExtraCache.getOrDefault(key, "");
+                    NotebookState.pastureGraphJson = NotebookState.pastureGraphCache.getOrDefault(cacheKey, "");
+                    NotebookState.pastureExtraJson = NotebookState.pastureExtraCache.getOrDefault(cacheKey, "");
                     NotebookState.pastureConfigLoading = false;
                 } else {
                     NotebookState.pastureConfig = new NotebookPastureConfigS2C(key, "", "", false, 0, java.util.List.of());
@@ -147,13 +151,12 @@ public final class GreenerPasturesClient implements ClientModInitializer {
 
         // Pre-warm the MCEF console browser in the background once in a world, so the FIRST open shows an
         // already-painted page (no black/loading blip). preload() self-guards: no MCEF / not-ready / already-warm.
-        // Also give Chromium a small background slice budget each tick — MCEF's own pump is 1 slice/frame, which
-        // starves bursts (the 2-3s view swaps); this keeps the kept-alive page current while the console is closed.
+        // While the console is CLOSED the pump runs at a trickle (full rate only during the post-preload
+        // warm-up) — the open-console render() pump + transition burst are untouched (perf-audit R3 S1/#2).
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.getNetworkHandler() == null) return;
-            if (!net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef")) return;
-            NotebookBrowserScreen.pump(4, 1_000_000L);
+            if (!mcefPresent || client.getNetworkHandler() == null) return;
             if (++warmTick % 40 == 0) NotebookBrowserScreen.preload();
+            if (!NotebookBrowserScreen.consoleOpen) NotebookBrowserScreen.backgroundPump(warmTick);
         });
 
         // notebook/ console — live WS bridge for the React UI (dev browser now, MCEF in-game later). Loopback :25599.
@@ -175,7 +178,7 @@ public final class GreenerPasturesClient implements ClientModInitializer {
     /** Open the Notebook console — the MCEF React UI when the {@code mcef} mod is present, else the owo shell. */
     private static void openConsole() {
         MinecraftClient mc = MinecraftClient.getInstance();
-        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef")) {
+        if (mcefPresent) {
             mc.setScreen(new NotebookBrowserScreen());
         } else {
             mc.setScreen(new NotebookScreen());

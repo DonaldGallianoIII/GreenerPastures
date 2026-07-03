@@ -529,6 +529,12 @@ public final class CobbreedingBridge {
 
     /** Snapshot this pasture's tethered mons for the wand GUI (server-side read of Cobblemon data). */
     public static java.util.List<MonEntry> rosterOf(PokemonPastureBlockEntity be, PastureData pd) {
+        return rosterOf(be, pd, true);
+    }
+
+    /** {@code withStats=false} is the cache-prefetch shape (perf-audit R3 F6): species + buckets only, no
+     *  per-mon reflective stats JSON — the parent inspector's data arrives with the focused (full) push. */
+    public static java.util.List<MonEntry> rosterOf(PokemonPastureBlockEntity be, PastureData pd, boolean withStats) {
         java.util.List<MonEntry> out = new java.util.ArrayList<>();
         if (be == null) return out;
         try {
@@ -537,7 +543,7 @@ public final class CobbreedingBridge {
                 String species = "?", stats = "{}";
                 try {
                     Pokemon pkm = t.getPokemon();
-                    if (pkm != null) { species = pkm.getSpecies().getName(); stats = monStats(pkm); }
+                    if (pkm != null) { species = pkm.getSpecies().getName(); if (withStats) stats = monStats(pkm); }
                 } catch (Throwable ex) { }
                 int bucket = pd.pairings.getOrDefault(id, 0);
                 out.add(new MonEntry(id, species, species, bucket, stats));

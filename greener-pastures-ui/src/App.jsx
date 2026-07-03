@@ -4,7 +4,7 @@
    wired to the live data contract (NOTEBOOK_DATA_CONTRACT.md) via the bridge SDK.
    Viewport-sized window; every tab reads its channel; buttons send actions.
    ============================================================ */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
 
 // MCEF forwards key events but NOT mouse-click modifiers, so ev.shiftKey is always false in-game. Track Shift via
@@ -421,11 +421,14 @@ function BioBank() {
   const d = useChannel('biobank')
   const [open, setOpen] = useState(null)
   const [sortKey, setSortKey] = useState('iv')
+  const entries = d?.entries
+  // Memoized: grouping thousands of eggs re-ran on EVERY render (sort clicks, accordion toggles) — R3 #9.
+  const { groups, species } = useMemo(() => {
+    const groups = {}
+    ;(entries || []).forEach((e, i) => (groups[e.species] ||= []).push({ e, i }))
+    return { groups, species: Object.keys(groups) }
+  }, [entries])
   if (!d) return <div className="pane" />   // channel not received yet → blank, not a flash of the empty state
-  const entries = d?.entries || []
-  const groups = {}
-  entries.forEach((e, i) => (groups[e.species] ||= []).push({ e, i }))
-  const species = Object.keys(groups)
   if (!species.length) return <Empty title="BioBank empty" msg="link a pasture — its eggs are pulled in here automatically while it's loaded" />
   return (
     <div className="pane">
@@ -522,9 +525,11 @@ function InboxTab() {
 function Harvester() {
   const d = useChannel('storage')
   const inv = useChannel('inventory')
-  const items = d?.items || {}
-  const list = Object.entries(items).sort((a, b) => b[1] - a[1])
-  const total = list.reduce((a, [, n]) => a + n, 0)
+  const items = d?.items
+  const { list, total } = useMemo(() => {
+    const list = Object.entries(items || {}).sort((a, b) => b[1] - a[1])
+    return { list, total: list.reduce((a, [, n]) => a + n, 0) }
+  }, [items])
   // Room check (client-side hint; the server re-verifies + refuses): an empty slot, or a same-item partial stack.
   const slots = inv?.slots || []
   const canTake = (id) => slots.some((s) => !s || (s.id === id && s.count < 64))
@@ -848,7 +853,7 @@ function TierBars({ byTier }) {
 function Goals() {
   const g = useChannel('goals')
   const bank = useChannel('biobank')
-  const speciesList = [...new Set((bank?.entries || []).map((e) => e.species).filter(Boolean))].sort()
+  const speciesList = useMemo(() => [...new Set((bank?.entries || []).map((e) => e.species).filter(Boolean))].sort(), [bank?.entries])
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ species: '', shiny: 1, minPerfect: 0, minIvTotal: 0, count: 1 })
   const present = g?.present
@@ -1276,7 +1281,7 @@ function DaemonGraph({ cfg }) {
           <div className="daemon-view" style={{ transform: `translate(${view.x}px,${view.y}px) scale(${view.zoom})`, transformOrigin: '0 0' }}>
             <svg className="daemon-wires">
               {(() => { const ms = renderNodes.filter((n) => n.type === 'MON'); if (ms.length !== 2) return null; const a = liveNode(ms[0]), b = liveNode(ms[1]); return <line x1={a.x + NODE_W / 2} y1={a.y + NODE_H / 2} x2={b.x + NODE_W / 2} y2={b.y + NODE_H / 2} className="pairlink" /> })()}
-              {edges.map((e, i) => { const fn = byId(e.from), tn = byId(e.to); if (!fn || !tn) return null; const fp = portByK(fn.type, e.fromPort), tp = portByK(tn.type, e.toPort); if (!fp || !tp) return null; const a = portXY(liveNode(fn), fp), b = portXY(liveNode(tn), tp); return <path key={'e' + i} d={wirePath(a.x, a.y, b.x, b.y)} stroke={fp.kind === 'void' ? 'var(--red)' : 'var(--cyan)'} className="dwire" onClick={(ev) => { ev.stopPropagation(); delEdge(e) }} /> })}
+              {edges.map((e, i) => { const fn = byId(e.from), tn = byId(e.to); if (!fn || !tn) return null; const fp = portByK(fn.type, e.fromPort), tp = portByK(tn.type, e.toPort); if (!fp || !tp) return null; const a = portXY(liveNode(fn), fp), b = portXY(liveNode(tn), tp); return <path key={`${e.from}:${e.fromPort}>${e.to}:${e.toPort}`} d={wirePath(a.x, a.y, b.x, b.y)} stroke={fp.kind === 'void' ? 'var(--red)' : 'var(--cyan)'} className="dwire" onClick={(ev) => { ev.stopPropagation(); delEdge(e) }} /> })}
               {wiring && (() => { const pp = portXY(liveNode(wiring.node), wiring.port); return <path d={wirePath(pp.x, pp.y, wiring.x, wiring.y)} className="dwire live" /> })()}
             </svg>
             {renderNodes.map((raw) => { const n = liveNode(raw); const meta = NODE_META[n.type] || NODE_META.SOURCE; const accent = meta.hue; return (
@@ -1317,7 +1322,7 @@ function EggLogStrip() {
         {entries.length === 0
           ? <span className="dim" style={{ fontSize: 10 }}>no eggs yet — link a Kernel'd pasture and wire a pipeline</span>
           : entries.map((e, i) => (
-            <div key={i} className="egglog-row">
+            <div key={`${entries.length - i}:${e.species}:${e.voided ? 1 : 0}`} className="egglog-row">
               <span style={{ color: e.voided ? 'var(--red)' : 'var(--green)' }}>{e.voided ? '✕' : '✓'}</span>
               <span style={{ color: 'var(--text)', fontWeight: 500 }}>{cap(e.species)}</span>
               <span className="dim">{e.voided ? (e.filter ? `voided · ${e.filter}` : 'voided') : 'kept'}</span>

@@ -20,8 +20,13 @@ import java.util.Map;
 public final class BioBankData {
     private final Map<String, List<ItemStack>> bySpecies = new LinkedHashMap<>();
     private int total = 0;
+    /** Bumped on every mutation — the console's per-second push skips re-flattening an unchanged bank
+     *  entirely (perf-audit R3 F2: the biggest per-viewer cost at hoard scale). Not persisted. */
+    private long rev = 0;
 
     public int total() { return total; }
+
+    public long rev() { return rev; }
 
     /** Bank one egg under its species key. The cap is <b>per unique species</b> (Deuce, 2026-07-01): each species
      *  holds up to {@link BioBank#capacity()} eggs, so many species coexist. Enforced here as the single source
@@ -32,6 +37,7 @@ public final class BioBankData {
         if (bucket.size() >= BioBank.capacity()) return false;
         bucket.add(egg);
         total++;
+        rev++;
         return true;
     }
 
@@ -40,6 +46,18 @@ public final class BioBankData {
         Map<String, Integer> out = new LinkedHashMap<>();
         bySpecies.forEach((s, l) -> out.put(s, l.size()));
         return out;
+    }
+
+    /** Case-insensitive per-species count WITHOUT materializing the whole counts map — the health pass asks
+     *  this once per tethered species per second (perf-audit R3 F4/#2). Roster names are display-cased
+     *  ("Eevee"); bank keys come from the egg reader — compare loosely, never copy. */
+    public int countOfIgnoreCase(String species) {
+        List<ItemStack> exact = bySpecies.get(species);
+        if (exact != null) return exact.size();
+        for (Map.Entry<String, List<ItemStack>> e : bySpecies.entrySet()) {
+            if (e.getKey().equalsIgnoreCase(species)) return e.getValue().size();
+        }
+        return 0;
     }
 
     /** Every stored egg, materialized (for scatter-on-break). */
@@ -65,6 +83,7 @@ public final class BioBankData {
             if (flat < i + eggs.size()) {
                 ItemStack removed = eggs.remove(flat - i);
                 total--;
+                rev++;
                 if (eggs.isEmpty()) it.remove();
                 return removed;
             }

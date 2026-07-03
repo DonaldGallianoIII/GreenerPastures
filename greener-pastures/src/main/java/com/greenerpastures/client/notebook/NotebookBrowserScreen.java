@@ -43,6 +43,21 @@ public class NotebookBrowserScreen extends Screen {
     private static MCEFBrowser browser;   // static → survives screen close: reopening is instant, no reload/blip
     private static long curtainUntil = 0L;   // brief dark cover after a view-switch → hides the kept-alive browser's stale frame
 
+    /** True while the console screen is actually OPEN — the idle-off gate (perf-audit R3 S1): the warm preload
+     *  browser keeps a WS client connected 24/7, so "has a client" must not mean "do per-second work". */
+    public static volatile boolean consoleOpen = false;
+
+    /** Full-rate background pump budget right after preload, so the first paint completes off-screen. */
+    private static volatile int warmTicksLeft = 0;
+
+    /** Background (console-CLOSED) pump: full rate only during the post-preload warm-up, then a trickle —
+     *  Chromium shouldn't stay hot for a page nobody is viewing (R3 client #2). The open-console render()
+     *  pump and the transition burst are untouched (those were tuned by measurement). */
+    public static void backgroundPump(int tick) {
+        if (warmTicksLeft > 0) { warmTicksLeft--; pump(4, 1_000_000L); return; }
+        if (tick % 10 == 0) pump(2, 500_000L);
+    }
+
     /** Start a short transition curtain — call on an air↔pasture / pasture↔pasture switch so the previous view
      *  (still in the kept-alive browser) doesn't flash before the new one paints. */
     public static void curtain() { curtainUntil = System.currentTimeMillis() + 140L; }
@@ -63,11 +78,13 @@ public class NotebookBrowserScreen extends Screen {
      */
     public static void pump(int maxSlices, long budgetNanos) {
         if (!MCEF.isInitialized()) return;
-        var handle = MCEF.getApp().getHandle();
-        long start = System.nanoTime();
-        for (int i = 0; i < maxSlices; i++) {
-            handle.N_DoMessageLoopWork();
-            if (System.nanoTime() - start > budgetNanos) break;
+        try (var span = com.greenerpastures.core.GpProf.begin("mcef.pump")) {
+            var handle = MCEF.getApp().getHandle();
+            long start = System.nanoTime();
+            for (int i = 0; i < maxSlices; i++) {
+                handle.N_DoMessageLoopWork();
+                if (System.nanoTime() - start > budgetNanos) break;
+            }
         }
     }
 
@@ -82,6 +99,7 @@ public class NotebookBrowserScreen extends Screen {
         browser.useBrowserControls(false);
         var win = MinecraftClient.getInstance().getWindow();
         browser.resize(Math.max(1, win.getFramebufferWidth()), Math.max(1, win.getFramebufferHeight()));
+        warmTicksLeft = 300;   // ~15s of full-rate background pumping so the first paint completes off-screen
         GpLog.i("console", "preloaded");
     }
 
@@ -125,7 +143,18 @@ public class NotebookBrowserScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        consoleOpen = true;
         tryCreate();
+        // Fresh data NOW — the idle-off gate means nothing was pushed while the console was closed.
+        if (client != null && client.getNetworkHandler() != null)
+            ClientPlayNetworking.send(new com.greenerpastures.notebook.net.NotebookRequestC2S(0));
+        com.greenerpastures.notebook.bridge.DsBridge.pushNow();
+    }
+
+    @Override
+    public void removed() {
+        consoleOpen = false;   // the browser stays alive (instant reopen); only the idle pipeline stands down
+        super.removed();
     }
 
     private int px(double logical) {

@@ -52,6 +52,7 @@ public final class GreenerPastures implements ModInitializer {
         DaemonCommand.init();   // /gp daemon — compile a Daemon's buff loadout + toggle it on/off (BUG-004, no-UI path)
         BreedCommand.init();    // /gp breed — QA/admin: override breeding cadence (e.g. every 15s) for fast egg testing
         com.greenerpastures.notebook.HarvestCommand.init();   // /gp harvest — QA/admin: override the harvest-sweep cadence for drop-rate testing
+        com.greenerpastures.core.PerfCommand.init();          // /gp perf — the built-in profiler: ms table + flame-graph HTML
 
 
         // pasture/
@@ -86,10 +87,17 @@ public final class GreenerPastures implements ModInitializer {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             com.greenerpastures.notebook.EggLog.clearAll();               // dashboard totals + the void-log feed
             com.greenerpastures.goal.GoalStore.clearAll();                // active hunts + progress
-            NotebookNet.resetSession();                                    // prefetch cooldowns
+            NotebookNet.resetSession();                                    // prefetch cooldowns + push gates
             com.greenerpastures.pasture.breeding.MultiPairBreeder.testIntervalTicks = 0L;   // QA cadence override
             com.greenerpastures.notebook.PastureHarvest.testIntervalTicks = 0L;             // QA harvest override
             com.greenerpastures.notify.Inbox.clearAll();                                     // console Inbox notes
+            com.greenerpastures.core.GpProf.reset();                                          // fresh perf window per world
         });
+
+        // DISCONNECT pruning (perf-audit R3 #5): session maps stay bounded by ONLINE players on a 24/7 server.
+        // EggLog = per-login dashboard stats (safe to drop). Goals + Inbox deliberately SURVIVE relogs — an
+        // active hunt and unread away-notes are the feature; both are small and capped.
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                com.greenerpastures.notebook.EggLog.forget(handler.getPlayer().getUuid()));
     }
 }

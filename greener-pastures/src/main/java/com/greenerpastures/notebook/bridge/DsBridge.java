@@ -51,9 +51,17 @@ public final class DsBridge {
         ClientTickEvents.END_CLIENT_TICK.register(DsBridge::onClientTick);
     }
 
+    /** {@code -Dgreenerpastures.devbridge=true} keeps the pipeline always-on for the external `npm run dev`
+     *  browser workflow (which connects while no in-game console is open). */
+    private static final boolean DEV_ALWAYS_ON = Boolean.getBoolean("greenerpastures.devbridge");
+
     private static void onClientTick(MinecraftClient client) {
         if (server == null || !server.hasClients()) return;
         if (client.getNetworkHandler() == null) return;                  // not in a world
+        // Idle-off (perf-audit R3 S1): the warm PRELOAD browser holds a WS connection for the whole session,
+        // so "has a client" is always true — gate the serialize+poll pipeline on the console actually being
+        // open. Reopening primes instantly (NotebookBrowserScreen.init sends a request + pushNow()).
+        if (!DEV_ALWAYS_ON && !NotebookBrowserScreen.consoleOpen) return;
         tick++;
         if (tick % 20 == 0) ClientPlayNetworking.send(new NotebookRequestC2S(0));   // refresh NotebookState ~1/s
         if (tick % 4 == 0) pushChangedChannels();                        // ~5/s, diffed
@@ -185,6 +193,12 @@ public final class DsBridge {
 
     // ── serialize NotebookState → per-channel JSON, push only what changed ─────────────────────────────────
     private static void pushChangedChannels() {
+        try (var span = com.greenerpastures.core.GpProf.begin("bridge.serialize")) {
+            pushAllChannels();
+        }
+    }
+
+    private static void pushAllChannels() {
         push("status", statusData());
         push("storage", storageData());
         push("compiler", compilerData());

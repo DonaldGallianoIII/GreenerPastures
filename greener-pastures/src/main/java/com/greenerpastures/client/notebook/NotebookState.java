@@ -95,13 +95,28 @@ public final class NotebookState {
     public static volatile boolean pastureConfigLoading = false;
 
     /** Last-known config/graph per pasture (stale-while-revalidate): a reopened pasture renders its cached view
-     *  INSTANTLY and the server refresh lands silently — no loading state for pastures you've seen this session. */
-    public static final Map<Long, NotebookPastureConfigS2C> pastureConfigCache = new ConcurrentHashMap<>();
-    public static final Map<Long, String> pastureGraphCache = new ConcurrentHashMap<>();
-    public static final Map<Long, String> pastureExtraCache = new ConcurrentHashMap<>();
+     *  INSTANTLY and the server refresh lands silently — no loading state for pastures you've seen this session.
+     *  Keyed by {@link #posKey} (dim + pos — position alone collides across dimensions, R3 BUG-1) and LRU-capped
+     *  so a mega-farm session can't grow the client heap unbounded (R3 client #6). */
+    public static final Map<String, NotebookPastureConfigS2C> pastureConfigCache = lru(128);
+    public static final Map<String, String> pastureGraphCache = lru(128);
+    public static final Map<String, String> pastureExtraCache = lru(128);
+
+    private static <V> Map<String, V> lru(int cap) {
+        return java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>(64, 0.75f, true) {
+            @Override protected boolean removeEldestEntry(Map.Entry<String, V> eldest) { return size() > cap; }
+        });
+    }
+
+    /** Cache key for a pasture the LOCAL player is looking at: current dimension + packed pos. All pasture
+     *  pushes are same-dim (focused + prefetch both filter), so the client's world is the right namespace. */
+    public static String posKey(long pos) {
+        var w = net.minecraft.client.MinecraftClient.getInstance().world;
+        return (w == null ? "?" : w.getRegistryKey().getValue().toString()) + "|" + pos;
+    }
 
     public static boolean applyPastureConfig(NotebookPastureConfigS2C p) {
-        pastureConfigCache.put(p.pos(), p);
+        pastureConfigCache.put(posKey(p.pos()), p);
         NotebookPastureConfigS2C cur = pastureConfig;
         if (cur != null && cur.pos() == p.pos()) {   // only the FOCUSED pasture updates the live view —
             pastureConfig = p;                        // a background prefetch must never hijack the open screen
@@ -122,7 +137,7 @@ public final class NotebookState {
 
     public static boolean applyPastureExtra(com.greenerpastures.notebook.net.NotebookPastureExtraS2C p) {
         String json = p.json() == null ? "" : p.json();
-        pastureExtraCache.put(p.pos(), json);
+        pastureExtraCache.put(posKey(p.pos()), json);
         NotebookPastureConfigS2C cur = pastureConfig;
         if (cur != null && cur.pos() == p.pos()) {   // focused only — prefetches stay cache-only
             pastureExtraJson = json;
@@ -133,7 +148,7 @@ public final class NotebookState {
 
     public static boolean applyGraph(NotebookGraphS2C p) {
         String json = p.json() == null ? "" : p.json();
-        pastureGraphCache.put(p.pos(), json);
+        pastureGraphCache.put(posKey(p.pos()), json);
         NotebookPastureConfigS2C cur = pastureConfig;
         if (cur != null && cur.pos() == p.pos()) {   // focused only — prefetches stay cache-only
             pastureGraphJson = json;

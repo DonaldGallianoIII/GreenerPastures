@@ -43,6 +43,12 @@ public final class GpLog {
     /** Calls below this level are dropped cheaply. Mutable knob; a config option can drive it later. */
     public static volatile Level minLevel = Level.DEBUG;
 
+    /** True when {@code level} would actually log — guard hot-LOOP log calls with this so their argument
+     *  strings (toString/format/varargs array) aren't built just to be dropped (perf-audit R3 #5). */
+    public static boolean on(Level level) {
+        return level.ordinal() >= minLevel.ordinal();
+    }
+
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
     private static final int KEEP_ARCHIVES = 10;

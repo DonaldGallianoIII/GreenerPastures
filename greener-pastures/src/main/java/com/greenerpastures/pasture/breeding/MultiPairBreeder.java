@@ -73,6 +73,7 @@ public final class MultiPairBreeder {
         long now = world.getTime();
         boolean dirty = false;
         java.util.List<BlockPos> orphans = null;
+        try (var scan = com.greenerpastures.core.GpProf.begin("breeder.scan")) {
         for (Map.Entry<BlockPos, PastureData> entry : pastures.entrySet()) {
             BlockPos pos = entry.getKey();
             try {
@@ -122,9 +123,13 @@ public final class MultiPairBreeder {
                     }
                     pd.lastBreedTick = now;
 
+                    // Build the pair list ONCE for all broods — the roster/pairings can't change mid-catch-up
+                    // (the chunk was unloaded), and a 12h catch-up is up to ~288 broods (perf-audit R3 tick #8).
+                    java.util.List<java.util.List<PokemonPastureBlockEntity.Tethering>> pairs = buildPairs(pasture, tier, pd);
+                    String mode = pd.pairings.isEmpty() ? "auto" : "buckets";
                     int productiveBroods = 0;
-                    for (int b = 0; b < broods; b++) {
-                        int got = breedPairs(world, pos, pasture, tier, pd, now, res.effective());
+                    for (int b = 0; b < broods && !pairs.isEmpty(); b++) {
+                        int got = breedPairs(world, pos, tier, pd, now, res.effective(), pairs, mode);
                         if (got == 0 && laid == 0 && b > 2) break;   // sterile pasture — don't grind 288 no-op broods
                         if (got > 0) productiveBroods++;
                         laid += got;
@@ -155,6 +160,7 @@ public final class MultiPairBreeder {
                 GpLog.w("breeder", "pasture_skip", "pos", pos.toShortString(), "err", String.valueOf(t));
             }
         }
+        }
         if (orphans != null) {
             for (BlockPos op : orphans) {
                 PastureData opd = reg.get(world, op);
@@ -177,22 +183,27 @@ public final class MultiPairBreeder {
         return Math.max(3000L, Math.round(baseInterval / factor));   // ~2.5 min floor
     }
 
-    /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue.
-     *  {@code eff} is the resolved effective augments (base × any fed breeding Tether) from onWorldTick — it
-     *  shapes each egg's shiny proc, IV floor and EV floor. */
-    private static int breedPairs(ServerWorld world, BlockPos pos, PokemonPastureBlockEntity pasture,
-                                  BreedingTier tier, PastureData pd, long now, EffectiveAugments eff) {
-        // snapshot — getTetheredPokemon() hands back Cobblemon's LIVE backing list; iterating it directly
-        // while Cobblemon mutates it (tether / release / checkPokemon) risks a CME (re-audit M1)
+    /** Snapshot the roster + resolve the configured pairs — hoisted out of the brood loop so a catch-up
+     *  builds them once, not per brood. snapshot: getTetheredPokemon() hands back Cobblemon's LIVE backing
+     *  list; iterating it directly while Cobblemon mutates it (tether / release / checkPokemon) risks a CME
+     *  (re-audit M1). */
+    private static List<List<PokemonPastureBlockEntity.Tethering>> buildPairs(
+            PokemonPastureBlockEntity pasture, BreedingTier tier, PastureData pd) {
         List<PokemonPastureBlockEntity.Tethering> live = pasture.getTetheredPokemon();
-        if (live == null || live.size() < 2) return 0;
+        if (live == null || live.size() < 2) return List.of();
         List<PokemonPastureBlockEntity.Tethering> tethered = new ArrayList<>(live);
-
-        List<List<PokemonPastureBlockEntity.Tethering>> pairs = pd.pairings.isEmpty()
+        return pd.pairings.isEmpty()
                 ? adjacencyPairs(tethered, tier.maxPairs)
                 : bucketPairs(tethered, pd, tier.maxPairs);
+    }
 
-        String mode = pd.pairings.isEmpty() ? "auto" : "buckets";
+    /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue.
+     *  {@code eff} is the resolved effective augments (base × any fed breeding Tether) from onWorldTick — it
+     *  shapes each egg's shiny proc, IV floor and EV floor. {@code pairs} comes prebuilt from
+     *  {@link #buildPairs} (reused across catch-up broods). */
+    private static int breedPairs(ServerWorld world, BlockPos pos, BreedingTier tier, PastureData pd, long now,
+                                  EffectiveAugments eff,
+                                  List<List<PokemonPastureBlockEntity.Tethering>> pairs, String mode) {
         int laid = 0;
         for (int i = 0; i < pairs.size(); i++) {
             EggShape shape = new EggShape(

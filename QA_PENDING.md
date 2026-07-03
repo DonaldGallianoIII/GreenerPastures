@@ -112,3 +112,25 @@ Deuce reviewed the board and **approved these as verified** (the detailed rows a
 | Q47 | **Slot-capacity gate** | On a low-tier Kernel, fill every slot → remaining PICK…/APPLY buttons disable with *no free slots*. (Note: APPLY had a latent dead-button bug — the UI gated on a GPU cost the server never sent; fixed, so the whole tab is live now.) | ☐ |
 | Q48 | **Kernel LOADOUT chips** | Pasture view with the augmented Kernel slotted → a `LOADOUT` chip row under KERNEL: `🧬 Adamant · ◉ Master Ball · EV 0/252/0/0/6/252 · ✦ hidden ability · 📖 egg moves`. | ☐ |
 | Q49 | **Inbox observability** | Catch-up → Inbox note → log shows `inbox note_push`; ✕ one → `note_dismiss id:N`; clear-all → `note_dismiss id:all n:K`. | ☐ |
+
+---
+
+## ⚡ Perf pass R3 — 2026-07-03 · jar `08a14db9` (NOT deployed yet — awaiting quit-confirm)
+
+> **Everything below is behavior-preserving** — drop rates, catch-up counts, egg semantics byte-identical.
+> 263 unit tests green (incl. the new GpProf suite). What changed: idle-off (no console work while it's closed),
+> server-side change gating (identical payloads never re-sent), tick/save hoists, leak fixes, + the **built-in
+> profiler** (`/gp perf`). Log level note: per-proc `harvest proc` lines now skip entirely when the log level
+> is raised above DEBUG (default unchanged — you still see them).
+
+| # | Change | How to verify | Status |
+|---|--------|---------------|--------|
+| Q50 | **Nothing regressed** (the big one) | Normal session: console opens instantly (incl. first-open after preload), pasture views swap seamlessly, breeding/harvest/catch-up all behave exactly as yesterday; no new red lines in the log. | ☐ |
+| Q51 | **Idle-off** | Play 5 min WITHOUT opening the console → `gp-logs` shows NO `status_push` spam and no per-second push traffic; open the console → data is fresh within a tick (init sends a request + primes the bridge). Dev-browser workflow needs `-Dgreenerpastures.devbridge=true` now. | ☐ |
+| Q52 | **Change gate** | Console open on a quiet tab → log shows `status_push` only when Data/GPU actually change (was every second). Pull an item / bank an egg → the matching tab updates within ~1s as before. | ☐ |
+| Q53 | **`/gp perf`** | After a few minutes of play: `/gp perf` → chat table (breeder.scan / harvest.scan / net.push_batch / mcef.pump / bridge.serialize with counts + avg/max ms). `/gp perf flame` → writes `gp-logs/perf-flame.html`; open in a browser → nested flame graph, hover shows ms/counts. `/gp perf reset` starts a fresh window. | ☐ |
+| Q54 | **Catch-up still exact + fast** | Nether hop 3+ min → return: `sweeps:N` exact + broods same-second (as Q-verified before), and with a BIG gap the return tick doesn't hitch (roster/pairs now hoisted out of the loops). | ☐ |
+| Q55 | **Cross-dim cache keys** | Open a pasture in the overworld, then one at the SAME coords in the nether (if you have one) → each shows its own config, no bleed-through. | ☐ |
+
+**For the mod listing (marketing):** screenshot `/gp perf flame` output + the table — "ships with its own
+flame-graph profiler" is the optimization-as-a-feature story, and the numbers to quote are in PERF_AUDIT.md R3.

@@ -20,14 +20,25 @@ public final class NotebookStore extends PersistentState {
 
     private final Map<UUID, NotebookStorage> stores = new HashMap<>();
 
+    // Per-player encoded-NBT cache (perf-audit R3 #3/#7): the harvest deposits every minute pin this store
+    // dirty, and PersistentState re-encodes EVERYTHING on each autosave — so reuse last save's compound for
+    // every player whose warehouse didn't change. rev bumps on mutation; the on-disk format is unchanged.
+    private final Map<UUID, Long> revs = new HashMap<>();
+    private final Map<UUID, NbtCompound> encoded = new HashMap<>();
+    private final Map<UUID, Long> encodedRev = new HashMap<>();
+
+    private void bump(UUID player) {
+        revs.merge(player, 1L, Long::sum);
+    }
+
     public NotebookStorage storageOf(UUID player) {
-        return stores.computeIfAbsent(player, u -> { markDirty(); return new NotebookStorage(); });
+        return stores.computeIfAbsent(player, u -> { markDirty(); bump(u); return new NotebookStorage(); });
     }
 
     /** Deposit into a player's warehouse; returns the amount actually stored (respects the cap). */
     public long deposit(UUID player, String item, long n) {
         long stored = storageOf(player).add(item, n);
-        if (stored > 0) markDirty();
+        if (stored > 0) { markDirty(); bump(player); }
         return stored;
     }
 
@@ -36,7 +47,7 @@ public final class NotebookStore extends PersistentState {
         NotebookStorage s = stores.get(player);
         if (s == null) return 0;
         long taken = s.withdraw(item, n);
-        if (taken > 0) markDirty();
+        if (taken > 0) { markDirty(); bump(player); }
         return taken;
     }
 
@@ -44,11 +55,17 @@ public final class NotebookStore extends PersistentState {
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         NbtCompound players = new NbtCompound();
         stores.forEach((u, s) -> {
-            NbtCompound items = new NbtCompound();
-            s.snapshot().forEach((k, v) -> items.putLong(k, v));
-            NbtCompound entry = new NbtCompound();
-            entry.putLong("cap", s.capacity());
-            entry.put("items", items);
+            long rev = revs.getOrDefault(u, 0L);
+            NbtCompound entry = encoded.get(u);
+            if (entry == null || encodedRev.getOrDefault(u, -1L) != rev) {
+                NbtCompound items = new NbtCompound();
+                s.snapshot().forEach((k, v) -> items.putLong(k, v));
+                entry = new NbtCompound();
+                entry.putLong("cap", s.capacity());
+                entry.put("items", items);
+                encoded.put(u, entry);
+                encodedRev.put(u, rev);
+            }
             players.put(u.toString(), entry);
         });
         nbt.put("players", players);

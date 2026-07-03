@@ -26,6 +26,12 @@ public final class BioBankStore extends PersistentState {
 
     private final Map<UUID, BioBankData> banks = new HashMap<>();
 
+    // Per-player encoded-NBT cache (perf-audit R3 #7): eggs deposit continuously, so this store is dirty on
+    // ~every autosave — but only the DEPOSITING player's bank changed. Reuse last save's compound for every
+    // bank whose rev didn't move; the on-disk format is unchanged. writeNbt runs on the server thread.
+    private final Map<UUID, NbtCompound> encoded = new HashMap<>();
+    private final Map<UUID, Long> encodedRev = new HashMap<>();
+
     /** The player's bank, or null if they've never banked anything. */
     public BioBankData get(UUID player) {
         return banks.get(player);
@@ -55,7 +61,15 @@ public final class BioBankStore extends PersistentState {
     @Override
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         NbtCompound map = new NbtCompound();
-        banks.forEach((u, v) -> map.put(u.toString(), v.writeNbt(new NbtCompound(), lookup)));
+        banks.forEach((u, v) -> {
+            NbtCompound c = encoded.get(u);
+            if (c == null || encodedRev.getOrDefault(u, -1L) != v.rev()) {
+                c = v.writeNbt(new NbtCompound(), lookup);
+                encoded.put(u, c);
+                encodedRev.put(u, v.rev());
+            }
+            map.put(u.toString(), c);
+        });
         nbt.put("banks", map);
         return nbt;
     }

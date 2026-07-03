@@ -35,7 +35,7 @@ public final class EggIngest {
     private static final long VOID_DATA_PER_EGG = 10L;
 
     public static boolean ingest(ServerWorld world, UUID owner, ItemStack egg, PastureData pd, BlockPos pos, UUID monId) {
-        try {
+        try (var span = com.greenerpastures.core.GpProf.begin("egg.ingest")) {
             MinecraftServer server = world.getServer();
             String species = EggReader.species(egg);
             EggCard card = EggReader.card(egg);

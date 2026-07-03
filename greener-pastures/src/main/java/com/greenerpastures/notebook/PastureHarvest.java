@@ -69,7 +69,9 @@ public final class PastureHarvest {
         if (pastures.isEmpty()) return;
         NotebookStore store = NotebookStore.get(server);
         DataStore data = DataStore.get(server);
+        boolean dirty = false;   // one registry markDirty per scan, not per pasture (perf-audit R3 tick #2)
 
+        try (var scan = com.greenerpastures.core.GpProf.begin("harvest.scan")) {
         for (Map.Entry<BlockPos, PastureData> e : pastures.entrySet()) {
             PastureData pd = e.getValue();
             if (pd.owner == null) continue;                 // only linked/owned pastures collect into a Notebook
@@ -77,7 +79,7 @@ public final class PastureHarvest {
             if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;   // don't force-load idle chunks (perf-audit — mirrors the breeder)
             if (pd.lastHarvestTick > 0 && world.getTime() - pd.lastHarvestTick < interval) continue;  // this pasture isn't due yet
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity pasture)) continue;
-            try {
+            try (var sweepSpan = com.greenerpastures.core.GpProf.begin("harvest.pasture")) {
                 // tether-amplified drop plan — the Kernel's base drop mods × any FED drop tether, on this clock
                 long balance = data.balanceOf(pd.owner);
                 TetherRuntime.Resolution res = TetherRuntime.resolveFor(
@@ -96,12 +98,16 @@ public final class PastureHarvest {
                     sweeps = (int) Math.max(1, gap / interval);
                 }
                 pd.lastHarvestTick = now;
-                reg.markDirty();
+                dirty = true;
 
+                // Snapshot the roster ONCE for all sweeps — it can't change mid-catch-up (the chunk was
+                // unloaded), and a 12h catch-up is up to 720 sweeps in this one tick (perf-audit R3 tick #1).
+                java.util.List<PokemonPastureBlockEntity.Tethering> roster =
+                        new java.util.ArrayList<>(pasture.getTetheredPokemon());
                 Map<String, Integer> harvested = new java.util.LinkedHashMap<>();
                 int productive = 0;
                 for (int i = 0; i < sweeps; i++) {
-                    Map<String, Integer> one = DropsBridge.harvest(pasture, RNG, proc, yield);
+                    Map<String, Integer> one = DropsBridge.harvest(roster, RNG, proc, yield);
                     if (!one.isEmpty()) productive++;
                     one.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
                 }
@@ -109,7 +115,7 @@ public final class PastureHarvest {
                 for (Map.Entry<String, Integer> d : harvested.entrySet()) {
                     stored += store.deposit(pd.owner, d.getKey(), d.getValue());
                 }
-                int mons = pasture.getTetheredPokemon().size();
+                int mons = roster.size();
                 if (mons > 0) {
                     // the rate-watching line: EVERY sweep, even a dry one — proc% + yield in effect, mons swept,
                     // what landed. Together with DropsBridge's per-proc lines this is the full drop audit trail.
@@ -133,5 +139,7 @@ public final class PastureHarvest {
                 GpLog.w("notebook_harvest", "skip", "pos", pos.toShortString(), "err", String.valueOf(t));
             }
         }
+        }
+        if (dirty) reg.markDirty();
     }
 }

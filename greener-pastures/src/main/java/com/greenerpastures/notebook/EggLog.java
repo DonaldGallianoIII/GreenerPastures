@@ -27,6 +27,13 @@ public final class EggLog {
     private static final Map<UUID, Map<String, Integer>> BY_TIER = new HashMap<>();
     private static final Map<UUID, Map<Long, Integer>> SPARK = new HashMap<>(); // eggs per world-minute bucket
 
+    /** Drop one player's session stats — DISCONNECT pruning so a 24/7 server's maps stay bounded by the
+     *  ONLINE player count, not everyone who ever joined (perf-audit R3 #5). Dashboard stats are per-login. */
+    public static synchronized void forget(UUID owner) {
+        BY_PLAYER.remove(owner); COUNTS.remove(owner); TOTALS.remove(owner);
+        BY_TIER.remove(owner); SPARK.remove(owner);
+    }
+
     public static synchronized void record(UUID owner, String species, boolean voided, String filter) {
         if (owner == null) return;
         Deque<Entry> d = BY_PLAYER.computeIfAbsent(owner, k -> new ArrayDeque<>());

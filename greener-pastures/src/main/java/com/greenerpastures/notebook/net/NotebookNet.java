@@ -79,8 +79,32 @@ public final class NotebookNet {
     /** Per-player last prefetch-sweep time (ms) — the console poll re-warms the client cache at most 1×/min. */
     private static final Map<UUID, Long> lastPrefetch = new HashMap<>();
 
+    /** Per-player, per-channel LAST payload actually sent — the server-side change gate (perf-audit R3 S2).
+     *  The console poll rebuilds every channel each second; this drops identical payloads BEFORE the packet
+     *  layer, so unchanged data pays no encode, no zlib, no client decode + deep-equals. Records compare
+     *  structurally, so equality is exact (no hash-collision staleness). Server thread only. */
+    private static final Map<UUID, Map<String, Object>> lastPush = new HashMap<>();
+
+    /** True (and remembers {@code payload}) when it differs from the last one sent on {@code channel}. */
+    private static boolean changed(ServerPlayerEntity player, String channel, Object payload) {
+        Map<String, Object> m = lastPush.computeIfAbsent(player.getUuid(), u -> new HashMap<>());
+        Object prev = m.put(channel, payload);
+        return prev == null || !prev.equals(payload);
+    }
+
+    /** Send {@code payload} only if it differs from the last send on {@code channel} (see {@link #lastPush}). */
+    private static void sendGated(ServerPlayerEntity player, String channel, net.minecraft.network.packet.CustomPayload payload) {
+        if (changed(player, channel, payload)) ServerPlayNetworking.send(player, payload);
+    }
+
+    /** Player left — drop their gate/prefetch state (unbounded-per-player maps on 24/7 servers, R3 #5/F11). */
+    public static void onDisconnect(UUID player) {
+        lastPush.remove(player);
+        lastPrefetch.remove(player);
+    }
+
     /** Reset per-server-session state — called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -113,6 +137,9 @@ public final class NotebookNet {
         // instantly from cache (stale-while-revalidate) instead of showing a loading state.
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 server.execute(() -> prefetchConfigs(handler.player)));
+        // Departed players must not accumulate gate/prefetch state forever on a 24/7 server (R3 #5/F11).
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                onDisconnect(handler.getPlayer().getUuid()));
     }
 
     /** Push every known (snapshotted) pasture's config + graph for {@code player} — pre-warms the client cache.
@@ -129,7 +156,7 @@ public final class NotebookNet {
             BlockPos pos = BlockPos.fromLong(s.pos());
             if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) continue;
-            pushPastureConfig(player, pos);
+            pushPastureConfig(player, pos, false);   // prefetch shape: no snapshot capture, no per-mon stats (R3 F6)
             if (++sent >= 16) break;
         }
         if (sent > 0) GpLog.d("notebook", "prefetch", "player", player.getUuid().toString(), "n", Integer.toString(sent));
@@ -139,21 +166,23 @@ public final class NotebookNet {
         ServerPlayerEntity player = ctx.player();
         if (player.getServer() == null) return;
         player.getServer().execute(() -> {
-            pushStatus(player);
-            pushStorage(player);
-            pushCompiler(player);
-            pushPastures(player);
-            pushAugmenter(player);
-            pushBiobank(player);
-            pushEggLog(player);
-            pushDashboard(player);
-            pushGoals(player);
-            pushNotifs(player);
-            long nowMs = System.currentTimeMillis();
-            Long last = lastPrefetch.get(player.getUuid());
-            if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
-                lastPrefetch.put(player.getUuid(), nowMs);
-                prefetchConfigs(player);
+            try (var span = com.greenerpastures.core.GpProf.begin("net.push_batch")) {
+                pushStatus(player);
+                pushStorage(player);
+                pushCompiler(player);
+                pushPastures(player);
+                pushAugmenter(player);
+                pushBiobank(player);
+                pushEggLog(player);
+                pushDashboard(player);
+                pushGoals(player);
+                pushNotifs(player);
+                long nowMs = System.currentTimeMillis();
+                Long last = lastPrefetch.get(player.getUuid());
+                if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
+                    lastPrefetch.put(player.getUuid(), nowMs);
+                    prefetchConfigs(player);
+                }
             }
         });
     }
@@ -162,7 +191,7 @@ public final class NotebookNet {
     public static void pushEggLog(ServerPlayerEntity player) {
         List<NotebookEggLogS2C.Entry> out = new ArrayList<>();
         for (EggLog.Entry e : EggLog.recent(player.getUuid())) out.add(new NotebookEggLogS2C.Entry(e.species(), e.voided(), e.filter()));
-        ServerPlayNetworking.send(player, new NotebookEggLogS2C(EggLog.kept(player.getUuid()), EggLog.voided(player.getUuid()), out));
+        sendGated(player, "egglog", new NotebookEggLogS2C(EggLog.kept(player.getUuid()), EggLog.voided(player.getUuid()), out));
     }
 
     /** Send the viewing player's Inbox (dismissible notifications — catch-up pings etc.) for the Inbox tab. */
@@ -178,7 +207,7 @@ public final class NotebookNet {
         }
         JsonObject root = new JsonObject();
         root.add("notes", notes);
-        ServerPlayNetworking.send(player, new NotebookNotifsS2C(GSON.toJson(root)));
+        sendGated(player, "notifs", new NotebookNotifsS2C(GSON.toJson(root)));
     }
 
     /** Send the viewing player's live breeding analytics (eggs/shiny/kept/voided/Data/by-tier/spark) for the Dashboard. */
@@ -198,7 +227,7 @@ public final class NotebookNet {
         JsonObject methods = new JsonObject();
         CobbreedingBridge.shinyMethods().forEach((k, v) -> methods.addProperty(k, v));
         o.add("shinyMethods", methods);   // {always, crystal, masuda} multipliers → the shiny-breeding indicator
-        ServerPlayNetworking.send(player, new NotebookDashboardS2C(GSON.toJson(o)));
+        sendGated(player, "dashboard", new NotebookDashboardS2C(GSON.toJson(o)));
     }
 
     /** Send the viewing player's active breeding goal + live progress for the Dashboard's Goal panel. */
@@ -206,7 +235,7 @@ public final class NotebookNet {
         UUID id = player.getUuid();
         BreedingGoal goal = GoalStore.goalOf(id);
         JsonObject o = new JsonObject();
-        if (goal == null) { o.addProperty("present", false); ServerPlayNetworking.send(player, new NotebookGoalsS2C(GSON.toJson(o))); return; }
+        if (goal == null) { o.addProperty("present", false); sendGated(player, "goals", new NotebookGoalsS2C(GSON.toJson(o))); return; }
         GoalProgress pr = GoalStore.progressOf(id);
         o.addProperty("present", true);
         o.addProperty("species", goal.species() == null ? "" : goal.species());
@@ -220,7 +249,7 @@ public final class NotebookNet {
         o.addProperty("bestIvTotal", pr.bestIvTotal());
         o.addProperty("remaining", pr.remaining(goal));
         o.addProperty("reached", pr.reached(goal));
-        ServerPlayNetworking.send(player, new NotebookGoalsS2C(GSON.toJson(o)));
+        sendGated(player, "goals", new NotebookGoalsS2C(GSON.toJson(o)));
     }
 
     /** Set or clear the player's breeding goal from the console's Goal panel. */
@@ -284,7 +313,9 @@ public final class NotebookNet {
         long data = DataStore.get(server).balanceOf(player.getUuid());
         int gpu = countGpu(player);
         boolean daemonOn = anyDaemonOn(player);
-        ServerPlayNetworking.send(player, new NotebookStatusS2C(data, gpu, daemonOn));
+        NotebookStatusS2C p = new NotebookStatusS2C(data, gpu, daemonOn);
+        if (!changed(player, "status", p)) return;   // unchanged → no packet, no status_push log spam
+        ServerPlayNetworking.send(player, p);
         GpLog.d("notebook", "status_push", "player", player.getUuid().toString(),
                 "data", Long.toString(data), "gpu", Integer.toString(gpu), "daemonOn", Boolean.toString(daemonOn));
     }
@@ -294,7 +325,7 @@ public final class NotebookNet {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         NotebookStorage st = NotebookStore.get(server).storageOf(player.getUuid());
-        ServerPlayNetworking.send(player, new NotebookStorageS2C(st.snapshot(), st.capacity()));
+        sendGated(player, "storage", new NotebookStorageS2C(st.snapshot(), st.capacity()));
     }
 
     /** Take from Notebook storage into the player's inventory. mode: 0 = one item · 1 = one stack · 2 = all.
@@ -378,7 +409,7 @@ public final class NotebookNet {
             for (Map.Entry<BuffId, Integer> e : levels.entrySet()) installed.put(e.getKey().id, e.getValue());
             drain = BuffResolver.resolveLoadout(cfg, levels, supported).dataPerSec();
         }
-        ServerPlayNetworking.send(player, new NotebookCompilerS2C(has, on, drain, catalog, installed));
+        sendGated(player, "compiler", new NotebookCompilerS2C(has, on, drain, catalog, installed));
     }
 
     private static void setBuff(ServerPlayerEntity player, String buffId, int tier) {
@@ -420,25 +451,29 @@ public final class NotebookNet {
         // #37 — per-snapshot ⚠ badge flags, from registry-side state (works for unloaded chunks; parent/bank
         // checks need the live block entity and only run for loaded ones).
         PastureRegistry reg = PastureRegistry.get(server);
+        Map<String, ServerWorld> dims = new HashMap<>();   // dim string → world, resolved ONCE per push (R3 F4)
+        for (ServerWorld w : server.getWorlds()) dims.put(w.getRegistryKey().getValue().toString(), w);
         JsonObject health = new JsonObject();
-        for (PastureSnapshot s : snaps) {
-            PastureData pd = reg.get(s.dim(), BlockPos.fromLong(s.pos()));
-            if (pd == null) continue;
-            String csv = PastureHealth.idsCsv(gatherHealth(server, s.dim(), BlockPos.fromLong(s.pos()), pd));
-            if (!csv.isEmpty()) health.addProperty(s.dim() + "|" + s.pos(), csv);
+        try (var span = com.greenerpastures.core.GpProf.begin("net.health_pass")) {
+            for (PastureSnapshot s : snaps) {
+                BlockPos pos = BlockPos.fromLong(s.pos());
+                PastureData pd = reg.get(s.dim(), pos);
+                if (pd == null) continue;
+                String csv = PastureHealth.idsCsv(gatherHealth(server, dims.get(s.dim()), pos, pd));
+                if (!csv.isEmpty()) health.addProperty(s.dim() + "|" + s.pos(), csv);
+            }
         }
-        ServerPlayNetworking.send(player, new NotebookPasturesS2C(snaps, health.toString()));
+        sendGated(player, "pastures", new NotebookPasturesS2C(snaps, health.toString()));
     }
 
-    /** Gather one pasture's health flags (#37). {@code dim} + loaded-chunk check pick whether the live
-     *  block entity (parents / bred-species bank caps) participates; registry state always does. */
-    private static List<PastureHealth.Flag> gatherHealth(MinecraftServer server, String dim, BlockPos pos, PastureData pd) {
+    /** Gather one pasture's health flags (#37). The (pre-resolved) world + loaded-chunk check pick whether the
+     *  live block entity (parents / bred-species bank caps) participates; registry state always does. */
+    private static List<PastureHealth.Flag> gatherHealth(MinecraftServer server, ServerWorld world, BlockPos pos, PastureData pd) {
         PokemonPastureBlockEntity be = null;
-        for (ServerWorld w : server.getWorlds()) {
-            if (!dim.equals(w.getRegistryKey().getValue().toString())) continue;
-            if (w.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)
-                    && w.getBlockEntity(pos) instanceof PokemonPastureBlockEntity p) be = p;
-            break;
+        if (world != null
+                && world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)
+                && world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity p) {
+            be = p;
         }
         return gatherHealth(server, pd, be);
     }
@@ -464,15 +499,9 @@ public final class NotebookNet {
             if (pd.owner != null && !species.isEmpty()) {
                 BioBankData bank = BioBankStore.get(server).get(pd.owner);
                 if (bank != null) {
-                    Map<String, Integer> counts = bank.speciesCounts();
                     List<String> full = new ArrayList<>();
-                    for (String sp : species) {
-                        for (Map.Entry<String, Integer> c : counts.entrySet()) {
-                            if (c.getKey().equalsIgnoreCase(sp) && c.getValue() >= com.greenerpastures.biobank.BioBank.capacity()) {
-                                full.add(sp);
-                                break;
-                            }
-                        }
+                    for (String sp : species) {   // no speciesCounts() map copy per pasture per second (R3 #2)
+                        if (bank.countOfIgnoreCase(sp) >= com.greenerpastures.biobank.BioBank.capacity()) full.add(sp);
                     }
                     if (!full.isEmpty()) fullSpecies = full;
                 }
@@ -540,8 +569,8 @@ public final class NotebookNet {
                         at.installedOn(ref.stack())));
             }
         }
-        ServerPlayNetworking.send(player, new NotebookAugmenterS2C(has, tierLabel, used, slotCap, catalog));
-        ServerPlayNetworking.send(player, new NotebookAugmenterMetaS2C(augmenterMetaJson(has ? ref.stack() : null)));
+        sendGated(player, "augmenter", new NotebookAugmenterS2C(has, tierLabel, used, slotCap, catalog));
+        sendGated(player, "augmeta", new NotebookAugmenterMetaS2C(augmenterMetaJson(has ? ref.stack() : null)));
     }
 
     /** The picker meta (#34/#35) riding beside the augmenter push: the Kernel's current selector values +
@@ -575,13 +604,31 @@ public final class NotebookNet {
             }
         }
         root.add("values", values);
-        JsonArray natures = new JsonArray();
-        for (String n : com.greenerpastures.pasture.breeding.NatureCatalog.NATURES) natures.add(n);
-        root.add("natures", natures);
-        JsonArray balls = new JsonArray();
-        for (String b : com.greenerpastures.pasture.breeding.BallCatalog.BALLS) balls.add(b);
-        root.add("balls", balls);
+        root.add("natures", naturesJson());
+        root.add("balls", ballsJson());
         return root.toString();
+    }
+
+    // The nature/ball catalogs are compile-time constants — build their JSON ONCE instead of 57 elements per
+    // push per second (perf-audit R3 F3). Never mutated after creation, so sharing the instance is safe.
+    private static JsonArray naturesJsonCache, ballsJsonCache;
+
+    private static JsonArray naturesJson() {
+        if (naturesJsonCache == null) {
+            JsonArray a = new JsonArray();
+            for (String n : com.greenerpastures.pasture.breeding.NatureCatalog.NATURES) a.add(n);
+            naturesJsonCache = a;
+        }
+        return naturesJsonCache;
+    }
+
+    private static JsonArray ballsJson() {
+        if (ballsJsonCache == null) {
+            JsonArray a = new JsonArray();
+            for (String b : com.greenerpastures.pasture.breeding.BallCatalog.BALLS) a.add(b);
+            ballsJsonCache = a;
+        }
+        return ballsJsonCache;
     }
 
     /** Install an augment from the console. Arg grammar ({@link AugmentArg}): {@code "SHINY"} ·
@@ -670,20 +717,30 @@ public final class NotebookNet {
 
     /** Build + push the focused pasture's full editable config (name · tier · link · maxPairs · roster). */
     public static void pushPastureConfig(ServerPlayerEntity player, BlockPos pos) {
+        pushPastureConfig(player, pos, true);
+    }
+
+    /** {@code full=false} is the PREFETCH shape (R3 F6): cache-warming only — skip the snapshot re-capture and
+     *  the per-mon reflective stats JSON (parent-inspector data). A real focus round-trips {@code full=true}
+     *  moments later and silently upgrades the cache (stale-while-revalidate already handles it). */
+    public static void pushPastureConfig(ServerPlayerEntity player, BlockPos pos, boolean full) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         ServerWorld world = player.getServerWorld();
         if (world == null || !(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity pasture)) return;
-        PastureData pd = PastureRegistry.get(server).getOrCreate(world, pos);
-        // Refresh this pasture's Pastures-tab snapshot too, so a rename / edit shows up there (Deuce, 2026-07-01).
-        PastureSnapshotStore.get(server).capture(player.getUuid(), world, pos, pd, pasture);
-        BreedingTier tier = pd.tier();
-        boolean linked = pd.owner != null && pd.owner.equals(player.getUuid());
-        List<MonEntry> roster = CobbreedingBridge.rosterOf(pasture, pd);
-        ServerPlayNetworking.send(player, new NotebookPastureConfigS2C(
-                pos.asLong(), pd.name, tier == null ? "" : tier.name(), linked, tier == null ? 0 : tier.maxPairs, roster));
-        ServerPlayNetworking.send(player, new NotebookGraphS2C(pos.asLong(), pd.graphJson == null ? "" : pd.graphJson));
-        ServerPlayNetworking.send(player, new NotebookPastureExtraS2C(pos.asLong(), pastureExtraJson(server, pd, pasture)));
+        try (var span = com.greenerpastures.core.GpProf.begin(full ? "net.pasture_config" : "net.pasture_prefetch")) {
+            PastureData pd = PastureRegistry.get(server).getOrCreate(world, pos);
+            // Refresh this pasture's Pastures-tab snapshot too, so a rename / edit shows up there (Deuce, 2026-07-01).
+            if (full) PastureSnapshotStore.get(server).capture(player.getUuid(), world, pos, pd, pasture);
+            BreedingTier tier = pd.tier();
+            boolean linked = pd.owner != null && pd.owner.equals(player.getUuid());
+            List<MonEntry> roster = CobbreedingBridge.rosterOf(pasture, pd, full);
+            long key = pos.asLong();
+            sendGated(player, "cfg:" + key, new NotebookPastureConfigS2C(
+                    key, pd.name, tier == null ? "" : tier.name(), linked, tier == null ? 0 : tier.maxPairs, roster));
+            sendGated(player, "graph:" + key, new NotebookGraphS2C(key, pd.graphJson == null ? "" : pd.graphJson));
+            sendGated(player, "extra:" + key, new NotebookPastureExtraS2C(key, pastureExtraJson(server, pd, pasture)));
+        }
     }
 
     /** The focused pasture's extras blob: health strip (#37) + the slotted Kernel's breeding-meta loadout. */
@@ -835,16 +892,21 @@ public final class NotebookNet {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         BioBankData bank = BioBankStore.get(server).get(player.getUuid());
+        // Rev gate BEFORE assembly: flattening a hoard-scale bank (thousands of eggs → cards + entries) every
+        // second was the single biggest per-viewer cost (R3 F1/F2). Unchanged bank → nothing at all happens.
+        if (!changed(player, "biobank_rev", bank == null ? -1L : bank.rev())) return;
         List<NotebookBioBankS2C.Entry> entries = new ArrayList<>();
-        if (bank != null) {
-            for (String species : bank.speciesCounts().keySet()) {
-                for (ItemStack egg : bank.entries(species)) {
-                    EggCard c = EggReader.card(egg);
-                    if (c != null) {
-                        entries.add(new NotebookBioBankS2C.Entry(species, c.shiny(), c.ivs(), c.evs(),
-                                c.nature(), c.gender(), c.ability()));
-                    } else {
-                        entries.add(new NotebookBioBankS2C.Entry(species, false, new int[6], new int[6], "", "", ""));
+        try (var span = com.greenerpastures.core.GpProf.begin("net.biobank_flatten")) {
+            if (bank != null) {
+                for (String species : bank.speciesCounts().keySet()) {
+                    for (ItemStack egg : bank.entries(species)) {
+                        EggCard c = EggReader.card(egg);
+                        if (c != null) {
+                            entries.add(new NotebookBioBankS2C.Entry(species, c.shiny(), c.ivs(), c.evs(),
+                                    c.nature(), c.gender(), c.ability()));
+                        } else {
+                            entries.add(new NotebookBioBankS2C.Entry(species, false, new int[6], new int[6], "", "", ""));
+                        }
                     }
                 }
             }
