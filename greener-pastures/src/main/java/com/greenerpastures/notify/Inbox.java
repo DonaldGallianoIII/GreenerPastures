@@ -28,8 +28,10 @@ public final class Inbox {
     public static synchronized void push(UUID player, String icon, String text) {
         if (player == null || text == null || text.isEmpty()) return;
         Deque<Note> d = NOTES.computeIfAbsent(player, k -> new ArrayDeque<>());
-        d.addFirst(new Note(IDS.getAndIncrement(), icon == null ? "" : icon, text, System.currentTimeMillis()));
+        long id = IDS.getAndIncrement();
+        d.addFirst(new Note(id, icon == null ? "" : icon, text, System.currentTimeMillis()));
         while (d.size() > CAP) d.removeLast();
+        com.greenerpastures.core.GpLog.i("inbox", "note_push", "player", player, "id", id, "text", text);
     }
 
     public static synchronized List<Note> notesOf(UUID player) {
@@ -39,11 +41,16 @@ public final class Inbox {
 
     public static synchronized void dismiss(UUID player, long id) {
         Deque<Note> d = NOTES.get(player);
-        if (d != null) d.removeIf(n -> n.id() == id);
+        if (d != null && d.removeIf(n -> n.id() == id)) {
+            com.greenerpastures.core.GpLog.d("inbox", "note_dismiss", "player", player, "id", id);
+        }
     }
 
     public static synchronized void dismissAll(UUID player) {
-        NOTES.remove(player);
+        Deque<Note> d = NOTES.remove(player);
+        if (d != null && !d.isEmpty()) {
+            com.greenerpastures.core.GpLog.d("inbox", "note_dismiss", "player", player, "id", "all", "n", d.size());
+        }
     }
 
     /** SERVER_STARTED hygiene — a new world (same JVM in singleplayer) starts with empty inboxes. */
