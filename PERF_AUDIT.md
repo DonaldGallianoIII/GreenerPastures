@@ -99,3 +99,55 @@ A true flame graph needs a profiled JVM — do it on the live dev instance (dev 
 - **`spark` mod (recommended):** drop `spark-fabric` (1.21.1) into `mods/`. Flame graph: `/spark profiler start --alloc --thread "Render thread"` while dragging a Daemon wire (catches the per-frame garbage), or `--thread "Server thread"` during an autosave (catches the NBT re-encode) → auto-stops, prints a browser URL. Heap: `/spark heapsummary` before/after farming 1000+ eggs and diff (watch `ItemStack`/`NbtCompound`/`byte[]` + the queue maps). `/spark health` for GC pauses.
 - **async-profiler:** `-agentpath:.../libasyncProfiler.so=start,event=alloc,flamegraph,file=gp.html` on the dev JVM, or `asprof -e alloc -d 60 -f gp.html <pid>`. Heap: `jcmd <pid> GC.class_histogram`.
 - **JMH on this box (headless):** the pure cores are MC-free — `@Benchmark` `DaemonController.buildModel()` / `DashboardStats.summarize` / `EggQueue` with `-prof gc` to measure **bytes/op** and prove a caching fix drops allocation to ~0 before deploying.
+
+---
+
+# 🔍 Perf Audit Round 3 — 2026-07-03 (4 parallel Opus agents: tick paths · networking · client/MCEF · data/persistence)
+
+Read-only audit; nothing changed yet. Findings deduped + adjudicated (one agent claimed the server BioBank path skips the
+EggReader cache — wrong, the N1 LRU covers it, but banks >4096 eggs will thrash it). Health-key long→double precision
+was flagged and DISPROVEN by direct computation for coordinates out to ±100k (packed BlockPos longs round-trip exactly).
+
+## The three structural stories
+
+**S1 · The console pipeline never idles.** The warm preload browser connects to the WS bridge ~2s into any world and
+stays connected, so `hasClients()` is true forever → DsBridge rebuilds + GSON-serializes all 12 channels ~5×/s and
+polls the server 1×/s **even with the console closed** — which triggers story S2 server-side, plus deep-equals in every
+`NotebookState.apply*`, plus 80 CEF pump slices/s keeping Chromium hot 24/7. Fix: gate the pipeline + poll + steady-state
+pump on console-actually-open (keep the dev-browser path via a preload tag; keep pushNow()/burst on transitions).
+
+**S2 · The server has zero change detection.** `onRequest` rebuilds and re-sends ~13 channels every second per viewer:
+BioBank flattens EVERY banked egg into a 20–40KB packet (10k-egg bank = 10k Entry allocs/s), pastures re-runs the health
+pass (speciesCounts() map copy per pasture + getWorlds() scan per snapshot), augmenter meta rebuilds the immutable
+25-nature/32-ball catalogs, dashboard/goals re-JSON — all usually discarded by downstream diffs after paying encode,
+zlib, decode, and deep-equals. Fix: per-player-per-channel `pushIfChanged` (hash the serialized form, skip the send);
+static-ify the catalog JSON; `BioBankData.countOf(species)` instead of speciesCounts() copies; dim→world map per push.
+
+**S3 · markDirty amplification + the catch-up stall.** Harvest calls `reg.markDirty()` per due pasture (~always dirty)
+→ every autosave re-encodes ALL pastures incl. full egg queues; BioBank/Notebook stores ditto per deposit. And the
+catch-up loop runs up to 720 sweeps in ONE tick, each re-copying the roster + rolling drops — several pastures reloading
+at once = a real tick spike. Fix: hoist markDirty out of the loop (breeder already does), hoist the roster copy out of
+the sweep loop, optionally spread sweeps over a few ticks; later: cached per-entry NbtCompounds for the 3 big stores.
+
+## Recommended batches
+
+**Batch 1 — high impact, low risk (~1 session):**
+1. Idle-off (S1): console-open gate for DsBridge serialize+poll; throttle closed-state pump (e.g. 1 slice/10 ticks after first paint); hoist `isModLoaded` to a static.
+2. `pushIfChanged` server gate (S2) across all channels.
+3. Harvest `markDirty` hoist + catch-up roster-copy hoist (S3).
+4. Static augmenter catalog JSON (rebuild only `values{}`).
+5. `DIM_KEY` lifecycle: synchronized WeakHashMap or SERVER_STOPPED clear (real SP leak: pins whole ServerWorld graphs across world switches).
+6. DISCONNECT pruning for lastPrefetch/EggLog/GoalStore (Inbox stays — offline notes are the feature; TTL later).
+7. Health-pass polish: countOf(), world-map hoist, skip when pasture unchanged.
+
+**Batch 2 — medium:** cached per-entry NBT for PastureRegistry/BioBankStore/NotebookStore; lightweight prefetch (skip
+monStats + snapshot capture, dedupe double rosterOf); DsBridge 1×/s cadence + per-channel dirty bits fed by apply*
+booleans; client pasture caches → dim|pos keys + LRU cap; GpLog isEnabled() guard for per-proc lines; EggIngest single
+decode; batch EggLog per brood.
+
+**Batch 3 — cleanup:** React list keys (index→stable ids), useMemo on derived lists + DaemonGraph drag path (rAF
+coalesce), bucketPairs hoist in catch-up, Analytics row-build off-thread + Notifier.observe cost check, BioBank
+bulk-withdraw API (removeAt is O(n) per egg), coalesce post-action double pushes.
+
+**Explicitly verified clean:** GpLog off-thread writer, EggQueue in-place encode, breeder CME guards, PastureKeeper off
+the tick path, MCEF texture path (no per-frame upload), no JS timers/rAF loops in the React app.
