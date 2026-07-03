@@ -17,12 +17,14 @@ import java.util.List;
  * handled entirely through the Pasture Wand GUI.
  */
 public class BreedingUpgradeItem extends Item {
-    /** The per-tier base drop-rate INCREMENT, in centipercent ({@code 25} = +0.25%/tier): a Kernel's base drop
-     *  rate is {@code BASE_DROP_RATE × tier-level} (copper +0.25% … greener +1.50% — see
+    /** The per-tier base drop-rate INCREMENT, in centipercent ({@code 50} = +0.50%/tier): a Kernel's base drop
+     *  rate is {@code BASE_DROP_RATE × tier-level} (copper +0.50% … greener +3.00% — see
      *  {@link BreedingTier#baseDropRateCentipercent()}). Added to the Harvester's per-mon proc; a base augment,
      *  so a Drop Rate tether amplifies it. Set as the item's default {@code augments} component in
-     *  {@code BetterPasture.registerItems}. */
-    public static final int BASE_DROP_RATE = 25;
+     *  {@code BetterPasture.registerItems}. Doubled from 25 (Deuce, 2026-07-03 — drop-rate QA pass).
+     *  <b>NB:</b> a Kernel the Augmenter has touched carries an explicit component with the OLD value baked in —
+     *  use a freshly crafted Kernel to see the new base. */
+    public static final int BASE_DROP_RATE = 50;
 
     private final BreedingTier tier;
 

@@ -37,6 +37,12 @@ public final class PastureHarvest {
 
     private static final int INTERVAL = 1200;        // one harvest sweep per IRL minute (mirrors the block)
     private static final double BASE_PROC = 0.03;    // 3% per tethered mon per minute (mirrors the block)
+
+    /** QA/testing override ({@code /gp harvest interval <seconds>}): when &gt; 0, the sweep runs on this fixed tick
+     *  interval instead of the 1-min clock — for watching drop rates live. In-memory + volatile (reset on server
+     *  start), so a fast test rate can never ship in a world save. NB: proc chances are PER SWEEP, so a faster
+     *  sweep means proportionally more rolls per minute — great for testing, silly for balance. */
+    public static volatile long testIntervalTicks = 0L;
     private static final Set<AugmentFunction> DROP_FUNCTIONS =
             EnumSet.of(AugmentFunction.DROP_RATE, AugmentFunction.DROP_YIELD);
 
@@ -47,7 +53,8 @@ public final class PastureHarvest {
     }
 
     private static void onWorldTick(ServerWorld world) {
-        if (world.getTime() % INTERVAL != 0L) return;
+        long interval = testIntervalTicks > 0 ? testIntervalTicks : INTERVAL;
+        if (world.getTime() % interval != 0L) return;
         if (!CobbreedingBridge.isAvailable()) return;
         MinecraftServer server = world.getServer();
         PastureRegistry reg = PastureRegistry.get(server);
@@ -75,14 +82,19 @@ public final class PastureHarvest {
                 for (Map.Entry<String, Integer> d : harvested.entrySet()) {
                     stored += store.deposit(pd.owner, d.getKey(), d.getValue());
                 }
-                if (stored > 0) {
-                    if (res.drain() > 0) {                   // drain drop-tethers ONCE if the amplification produced output
-                        data.tryDebit(pd.owner, res.drain());
-                        GpLog.d("tether", "drain", "pos", pos.toShortString(),
-                                "data", res.drain(), "owner", pd.owner.toString(), "src", "notebook_harvest");
-                    }
-                    GpLog.d("notebook_harvest", "collect", "pos", pos.toShortString(),
-                            "owner", pd.owner.toString(), "mons", pasture.getTetheredPokemon().size(), "items", stored);
+                int mons = pasture.getTetheredPokemon().size();
+                if (mons > 0) {
+                    // the rate-watching line: EVERY sweep, even a dry one — proc% + yield in effect, mons swept,
+                    // what landed. Together with DropsBridge's per-proc lines this is the full drop audit trail.
+                    GpLog.d("notebook_harvest", "sweep", "pos", pos.toShortString(),
+                            "mons", mons, "proc_pct", String.format("%.2f", proc * 100.0),
+                            "yield", yield, "stored", stored,
+                            "items", harvested.isEmpty() ? "-" : harvested.toString());
+                }
+                if (stored > 0 && res.drain() > 0) {         // drain drop-tethers ONCE if the amplification produced output
+                    data.tryDebit(pd.owner, res.drain());
+                    GpLog.d("tether", "drain", "pos", pos.toShortString(),
+                            "data", res.drain(), "owner", pd.owner.toString(), "src", "notebook_harvest");
                 }
             } catch (Throwable t) {
                 // a Cobblemon API edge must never crash the world tick (mirrors the breeder/Renderer/Harvester guards)

@@ -23,7 +23,7 @@ public enum AugmentType {
     SHINY     ("shiny-boost",      "1.0", AugmentFunction.SHINY,      30),   // % chance of one bounded reroll
     SPEED     ("speed-boost",      "1.0", AugmentFunction.SPEED,       1),   // level I → faster breeding cadence
     ENRICHMENT("enrichment-boost", "1.0", AugmentFunction.ENRICHMENT, 20),   // +20% → 1.20× render value
-    DROP_RATE ("droprate-boost",   "1.0", AugmentFunction.DROP_RATE, 100),   // centipercent: 1.00% (base is 0.25%)
+    DROP_RATE ("droprate-boost",   "2.0", AugmentFunction.DROP_RATE, 200),   // centipercent: 2.00% (base is 0.50%/tier) — doubled 2026-07-03
     DROP_YIELD("dropyield-boost",  "1.0", AugmentFunction.DROP_YIELD,  1),   // +1 to the amount-budget ceiling
     IV_FLOOR  ("ivfloor-boost",    "1.0", AugmentFunction.IV_FLOOR,    3),   // guarantee 3 perfect (31) IVs
     EV        ("ev-boost",         "1.0", AugmentFunction.EV,         20);   // +20 EVs on every permanent stat

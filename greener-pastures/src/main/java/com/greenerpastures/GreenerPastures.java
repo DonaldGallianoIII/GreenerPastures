@@ -51,6 +51,7 @@ public final class GreenerPastures implements ModInitializer {
         DataCommand.init();     // /gp data — QA/admin: grant/set Data balance so the Daemon can be "fed" for buff tests
         DaemonCommand.init();   // /gp daemon — compile a Daemon's buff loadout + toggle it on/off (BUG-004, no-UI path)
         BreedCommand.init();    // /gp breed — QA/admin: override breeding cadence (e.g. every 15s) for fast egg testing
+        com.greenerpastures.notebook.HarvestCommand.init();   // /gp harvest — QA/admin: override the harvest-sweep cadence for drop-rate testing
 
 
         // pasture/
@@ -83,6 +84,7 @@ public final class GreenerPastures implements ModInitializer {
             com.greenerpastures.goal.GoalStore.clearAll();                // active hunts + progress
             NotebookNet.resetSession();                                    // prefetch cooldowns
             com.greenerpastures.pasture.breeding.MultiPairBreeder.testIntervalTicks = 0L;   // QA cadence override
+            com.greenerpastures.notebook.PastureHarvest.testIntervalTicks = 0L;             // QA harvest override
         });
     }
 }

@@ -36,13 +36,13 @@ class BreedingTierTest {
     }
 
     @Test
-    void baseDropRateScalesPerTier() {   // BUG-001: every tier used to share a flat +0.25% (25)
-        assertEquals(25,  BreedingTier.COPPER.baseDropRateCentipercent(),    "copper +0.25%");
-        assertEquals(50,  BreedingTier.IRON.baseDropRateCentipercent(),      "iron +0.50%");
-        assertEquals(75,  BreedingTier.GOLD.baseDropRateCentipercent(),      "gold +0.75%");
-        assertEquals(100, BreedingTier.DIAMOND.baseDropRateCentipercent(),   "diamond +1.00%");
-        assertEquals(125, BreedingTier.NETHERITE.baseDropRateCentipercent(), "netherite +1.25%");
-        assertEquals(150, BreedingTier.GREENER.baseDropRateCentipercent(),   "greener +1.50%");
+    void baseDropRateScalesPerTier() {   // BUG-001: every tier used to share a flat rate; doubled 2026-07-03 (Deuce)
+        assertEquals(50,  BreedingTier.COPPER.baseDropRateCentipercent(),    "copper +0.50%");
+        assertEquals(100, BreedingTier.IRON.baseDropRateCentipercent(),      "iron +1.00%");
+        assertEquals(150, BreedingTier.GOLD.baseDropRateCentipercent(),      "gold +1.50%");
+        assertEquals(200, BreedingTier.DIAMOND.baseDropRateCentipercent(),   "diamond +2.00%");
+        assertEquals(250, BreedingTier.NETHERITE.baseDropRateCentipercent(), "netherite +2.50%");
+        assertEquals(300, BreedingTier.GREENER.baseDropRateCentipercent(),   "greener +3.00%");
     }
 
     @Test
