@@ -89,3 +89,26 @@ Deuce reviewed the board and **approved these as verified** (the detailed rows a
 **⏳ HELD — not signed off (revisit after the web-dev UI pass):**
 - **Q31–Q34 breeding-meta locks** (Nature / Ball / Hidden Ability / Egg Moves) — code + logs fire (`breeding nature_lock` etc.), but visually confirming a hatchling carries the locked trait needs the **inspection UI** (node-graph per-mon nature/ability/moves view, **BUG-005**).
 - **Q35–Q37 Notifications + Goal** (shiny-egg ping · Data-milestone ping · `/gp goal` tracker) — not tested yet; Deuce wants the **visual rework first**.
+
+---
+
+## 🆕 QA batch — 2026-07-03 · jar `f1769a7f` (deployed ✅)
+
+> **What shipped:** #37 pasture health strip · #34 EV allocator · #35 nature/ball pickers (+ Ability/Egg-Move
+> toggles in the Augmenter catalog) · Inbox `note_push`/`note_dismiss` log lines. Pure cores are unit-tested
+> (14 new tests green: health matrix + picker-arg grammar) — the rows below are the MC/UI halves.
+> **No GPU is burned by the Augmenter yet** (economy pass still deferred) — installs are slot-gated only.
+
+| # | Change | How to verify | Status |
+|---|--------|---------------|--------|
+| Q39 | **Health strip — pasture view** | Notebook-open a pasture that's **unlinked + Kernel-less** → amber chips: `🔗 Not linked…` + `🧬 No Kernel…`. Click **link** → 🔗 chip clears live. Slot a Kernel → 🧬 clears; with **0–1 mons** tethered a `👥 Fewer than 2 parents` chip shows, gone at 2+. | ☐ |
+| Q40 | **Health badges — Pastures tab** | Pastures tab: unhealthy pastures show **⚠N** on their list row (hover = the reasons); select one → the flags spell out in the detail pane. An **unloaded** pasture (e.g. the nether one while you're in the overworld) still badges link/Kernel/tray state — parent/bank checks silently skip (never guess an unloaded roster). | ☐ |
+| Q41 | **BioBank-full flag** | Long-soak or force it: `/gp breed interval 15` on a Greener pasture full of Eevee×Ditto pairs → 256 banked Eevee in ~10 min → pasture view + Pastures tab grow `🏦 BioBank full for Eevee`; eggs start falling back to the tray (`egg_ingest full` in the log). | ☐ |
+| Q42 | **Nature Lock picker** | Augmenter tab, Kernel in inventory → **Nature Lock → PICK…** → 25-nature grid with stat hints → pick **Adamant** → row chip shows `Adamant`; `/gp augment list` shows `Nature = 4 (adamant)`; slot the Kernel + breed → log shows `breeding nature_lock` and the egg card reads Adamant. | ☐ |
+| Q43 | **Ball Lock picker** | Same flow → pick **Master Ball** (`/gp augment list` → `Poké Ball = 4 (…master_ball)`); bred hatchlings come out in it. | ☐ |
+| Q44 | **EV Primer allocator** | **EV Primer → PICK…** → sliders; try to exceed the budget → clamps at **510** (bar caps); set `0/252/0/0/6/252` → APPLY → chip `0/252/0/0/6/252`; `/gp augment list` shows the spread; bred egg cards carry those EVs. | ☐ |
+| Q45 | **Ability Splice + Egg-Move Tutor rows** | Plain APPLY/REMOVE rows (no picker). APPLY both → `/gp augment list` shows `Hidden Ability = 1`, `Egg Moves = 1` → hatchlings get HA + egg moves (the Q31–Q34 backend, now UI-installable). | ☐ |
+| Q46 | **Re-pick in place** | With Nature Lock installed → **EDIT** → pick Jolly → chip updates, **slots used unchanged**, log `augment_apply … repick:true`. REMOVE on EV Primer → chip gone + spread stripped (`/gp augment list`). | ☐ |
+| Q47 | **Slot-capacity gate** | On a low-tier Kernel, fill every slot → remaining PICK…/APPLY buttons disable with *no free slots*. (Note: APPLY had a latent dead-button bug — the UI gated on a GPU cost the server never sent; fixed, so the whole tab is live now.) | ☐ |
+| Q48 | **Kernel LOADOUT chips** | Pasture view with the augmented Kernel slotted → a `LOADOUT` chip row under KERNEL: `🧬 Adamant · ◉ Master Ball · EV 0/252/0/0/6/252 · ✦ hidden ability · 📖 egg moves`. | ☐ |
+| Q49 | **Inbox observability** | Catch-up → Inbox note → log shows `inbox note_push`; ✕ one → `note_dismiss id:N`; clear-all → `note_dismiss id:all n:K`. | ☐ |

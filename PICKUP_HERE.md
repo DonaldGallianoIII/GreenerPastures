@@ -1,12 +1,13 @@
-# 🎯 PICKUP — mid-session handoff (2026-07-03, Deuce compacted while testing)
+# 🎯 PICKUP — session handoff (2026-07-03, evening)
 
-> **LIVE STATE:** jar **`7c3a46ef`** (commit `1425ee6`) deployed; **Deuce is IN GAME testing it right now.**
-> His test loop: nether hop 3-5 min unpaused → portal back to the west pastures → BOTH catch-up pings should fire
-> within ~1s of each other → open Notebook → **Inbox tab** (badge) → dismiss a note (✕) + clear-all → chat stays silent.
-> When he says **"check"**: read the log — expect a `sweep` line with `sweeps:N>1` AND `brood` lines at ~the same
-> second (the lineup fix), then confirm notes appeared/dismissed. **NEVER deploy while he's in game** (WSL `cp`
-> through Windows' lock corrupts the RUNNING jar → ZipException hours later; see [[mod-deploy-workflow]]). Deploy
-> only when he explicitly confirms quit-to-desktop.
+> **LIVE STATE:** jar **`f1769a7f`** (commit `0ce211f`) deployed; Deuce is OUT of game, next launch tests the
+> **2026-07-03 QA batch in `QA_PENDING.md` (Q39–Q49)**: health strip + Pastures-tab ⚠ badges (#37), EV allocator
+> (#34), nature/ball pickers + Ability/Egg-Move rows (#35), Kernel LOADOUT chips, Inbox log lines.
+> ✅ Catch-up + Inbox (#38) is FIELD-VERIFIED and closed: 10.4-min nether trip → `sweeps:10` exact on both west
+> pastures + broods in the same 16ms window; notes landed in the Inbox; chat silent. CSV/HTML export is DROPPED
+> (Deuce: freaks out casual players) — DashboardExport stays dormant, no download button ever.
+> **NEVER deploy while he's in game** (WSL `cp` through Windows' lock corrupts the RUNNING jar → ZipException
+> hours later; see [[mod-deploy-workflow]]). Deploy only when he explicitly confirms quit-to-desktop.
 
 ## His world (for log-reading)
 - World `New Worlddasdasdadsa`, spawn `-400,-336`. Pastures: **spawn farm** `-394,69,-290` (16 Tentacool/Cruel/Frillish, Greener 6.00%), `-400,69,-288` (2 Eevee, Netherite 5.50%), `-398,69,-288` (2 Drilbur, Copper 3.50%); **west** `-902,69,-297` (6 mons, Greener) + `-923,63,-453` (2 mons, Diamond 5.00%); **nether** `-165,68,-19`.
@@ -31,12 +32,16 @@
 - Commit trailer: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>` + `Claude-Session: https://claude.ai/code/session_017Dq3vi9HWWc9bYUDAaUSYs`.
 - Jar decompile workflow (Cobblemon/MCEF internals): python zipfile extract + `~/cfr.jar`.
 
-## Open board (after his test verdict)
-- **#37 Pasture health strip** — not-linked ⚠ + BioBank-full-for-species + queue-full/breeding-paused + no-Kernel/no-parents, in the config view + Pastures-tab markers (needs a small health payload server→client).
-- **#34 EV allocator UI + #35 nature/ball picker** — the last feature gaps (backend honors EvSpread + nature/ball locks; no UI to set them). Recommended before release.
-- **#6 tail** — CSV/HTML export button (DashboardExport exists server-side).
-- **#7 release track** (+ #18 awareness book) — strip/gate QA commands, perf/log-level pass, icon/screenshots/listing, Modrinth/CF. "Features first, then release" agreed.
-- Deferred: native-inventory viewport scaling; egg-catch-up ping when BioBank caps mid-catch-up (health strip covers it).
+## Open board
+- **QA the 2026-07-03 batch (Q39–Q49)** — that's the immediate next step when he launches.
+- **#7 release track** (+ #18 awareness book) — strip/gate QA commands, perf/log-level pass, icon/screenshots/listing, Modrinth/CF. "Features first, then release" agreed — the feature board is now EMPTY except release.
+- Deferred: native-inventory viewport scaling; Augmenter GPU/Data cost pass (installs are slot-gated only, §7.5).
+
+## How #34/#35/#37 are built (for debugging)
+- **Pure cores** (unit-tested): `notebook/PastureHealth.evaluate(linked, hasKernel, monCount(-1=unknown), queueFull, fullSpecies)` → flags; `notebook/AugmentArg.parse("TYPE" | "TYPE:idx" | "EV:6csv")` → null on malformed.
+- **Transport** (tuple-6 dodges): `NotebookPastureExtraS2C(pos, json{health,kernel})` rides with every pushPastureConfig (pos-keyed focus-aware client cache, like config/graph); `NotebookAugmenterMetaS2C(json{values,natures,balls})` rides with pushAugmenter; `NotebookPasturesS2C` grew `healthJson` ({"dim|pos":"id,id"}).
+- **AugmentType** gained NATURE/BALL (parameterized selectors — level = catalog index), ABILITY, EGG_MOVES; **EV is now the parameterized EV Primer** (installedOn = EV_SPREAD component present; the v1 +20-blanket value was dead code at the breeder and is retired). Re-pick in place = no new slot; `applyAugment` validates catalog ranges server-side.
+- **React**: `NaturePicker`/`BallPicker`/`EvAllocator` are draggable `dcfg` pop-ups in the Augmenter tab (PICK…/EDIT buttons); catalogs come from the SERVER meta (never hardcode ids — only the NATURE_FX display hints are client-side). Fixed a latent dead-APPLY bug (`gpu >= a.gpuCost` with gpuCost never sent → always disabled; now `?? 0`).
 
 ## Deuce's operating style (respect it)
 Tight replies; he tests everything personally; deploy ONLY on explicit "I'm out/quit" confirmation; batch-QA; observability-first (every feature ships JSONL logging via GpLog — check logs before theorizing); no pay-to-win surfaces ever; he steers priorities — offer the board, let him pick.
