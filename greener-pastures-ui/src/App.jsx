@@ -983,7 +983,16 @@ function DaemonGraph({ cfg }) {
   }
 
   // node + edge mutations on the active line
-  const addNode = (type) => { const r = boxRef.current.getBoundingClientRect(); const c = toGraph(r.left + r.width / 2, r.top + r.height / 2); const id = 'n' + Date.now().toString(36) + Math.floor(Math.random() * 1000); updateActive((t) => { t.nodes = [...t.nodes, { id, type, x: Math.round(c.x - NODE_W / 2), y: Math.round(c.y - NODE_H / 2), config: defaultConfig(type) }]; return t }); setSel(id) }
+  const addNode = (type) => {
+    const r = boxRef.current.getBoundingClientRect()
+    const c = toGraph(r.left + r.width / 2, r.top + r.height / 2)
+    let x = Math.round(c.x - NODE_W / 2), y = Math.round(c.y - NODE_H / 2)
+    // cascade to the first free spot — stacking new nodes dead-center made each add look like it REPLACED the last
+    for (let guard = 0; guard < 60 && nodes.some((n) => Math.abs(n.x - x) < NODE_W * 0.6 && Math.abs(n.y - y) < NODE_H * 0.9); guard++) { x += 34; y += 40 }
+    const id = 'n' + Date.now().toString(36) + Math.floor(Math.random() * 1000)
+    updateActive((t) => { t.nodes = [...t.nodes, { id, type, x, y, config: defaultConfig(type) }]; return t })
+    setSel(id)
+  }
   const delNode = (id) => { const node = nodes.find((n) => n.id === id); updateActive((t) => { t.nodes = t.nodes.filter((n) => n.id !== id); t.edges = t.edges.filter((e) => e.from !== id && e.to !== id); return t }, !!(node && node.type === 'MON')); if (sel === id) setSel(null) }
   const setConfig = (id, key, val) => updateActive((t) => { t.nodes = t.nodes.map((n) => n.id === id ? { ...n, config: { ...(n.config || {}), [key]: val } } : n); return t })
   const setNodePos = (n, x, y) => updateActive((t) => { t.nodes = t.nodes.map((z) => z.id === n.id ? { ...z, x, y } : z); return t })
