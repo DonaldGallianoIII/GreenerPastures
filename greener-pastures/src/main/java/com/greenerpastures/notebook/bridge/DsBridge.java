@@ -111,6 +111,7 @@ public final class DsBridge {
             case "APPLY_AUGMENT"  -> new NotebookActionC2S(NotebookActionC2S.APPLY_AUGMENT, str(p, "type", ""), 0);
             case "REMOVE_AUGMENT" -> new NotebookActionC2S(NotebookActionC2S.REMOVE_AUGMENT, str(p, "type", ""), 0);
             case "WITHDRAW"       -> new NotebookActionC2S(NotebookActionC2S.WITHDRAW, "", (int) num(p, "index", 0));
+            case "DISMISS_NOTE"   -> new NotebookActionC2S(NotebookActionC2S.DISMISS_NOTE, str(p, "id", "all"), 0);
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }
@@ -195,6 +196,7 @@ public final class DsBridge {
         push("eggLog", eggLogData());
         push("dashboard", jsonChannel(NotebookState.dashboardJson));
         push("goals", jsonChannel(NotebookState.goalsJson));
+        push("notifications", jsonChannel(NotebookState.notifsJson));
     }
 
     /** Pass a server-built JSON blob (dashboard / goals) straight through as a channel object (React parses it). */

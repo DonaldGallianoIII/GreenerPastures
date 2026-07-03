@@ -122,6 +122,10 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 context.client().execute(() -> {
                     if (NotebookState.applyGoals(payload)) NotebookScreen.refreshIfOpen();
                 }));
+        ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookNotifsS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyNotifs(payload)) NotebookScreen.refreshIfOpen();
+                }));
 
         // notebook/ console — poll the server ~1×/s while the console is open so the status bar + tabs tick live.
         // Change-detection in NotebookState means an unchanged push does NOT repaint (no flicker / scroll-reset).

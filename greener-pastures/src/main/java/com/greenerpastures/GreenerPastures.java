@@ -89,6 +89,7 @@ public final class GreenerPastures implements ModInitializer {
             NotebookNet.resetSession();                                    // prefetch cooldowns
             com.greenerpastures.pasture.breeding.MultiPairBreeder.testIntervalTicks = 0L;   // QA cadence override
             com.greenerpastures.notebook.PastureHarvest.testIntervalTicks = 0L;             // QA harvest override
+            com.greenerpastures.notify.Inbox.clearAll();                                     // console Inbox notes
         });
     }
 }

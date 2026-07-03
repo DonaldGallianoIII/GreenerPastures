@@ -131,11 +131,10 @@ public final class MultiPairBreeder {
                     }
                     pd.nextBreedTick = now + interval;
 
-                    if (broods > 1 && laid > 0 && pd.owner != null) {        // the away-brood ping (offline progress visible)
-                        var op = server.getPlayerManager().getPlayer(pd.owner);
-                        if (op != null) op.sendMessage(net.minecraft.text.Text.literal(
-                                "§a[Greener Pastures]§r 🥚 " + (pd.name.isEmpty() ? pos.toShortString() : pd.name)
-                                + " caught up " + broods + " broods while away → " + laid + " eggs."), false);
+                    if (broods > 1 && laid > 0 && pd.owner != null) {        // the away-brood note → the console's Inbox
+                        com.greenerpastures.notify.Inbox.push(pd.owner, "🥚",
+                                (pd.name.isEmpty() ? pos.toShortString() : pd.name)
+                                + " caught up " + broods + " broods while away → " + laid + " eggs");
                     }
                     if (laid > 0 && res.drain() > 0 && pd.owner != null) {   // tethers earned their burn — per productive brood
                         DataStore.get(server).tryDebit(pd.owner, res.drain() * Math.max(1, productiveBroods));

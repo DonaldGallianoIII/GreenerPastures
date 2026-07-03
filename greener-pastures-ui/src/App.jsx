@@ -98,6 +98,12 @@ const CSS = `
 .insp-row{ display:flex; justify-content:space-between; font-size:11px; padding:2px 0; color:var(--text); }
 .dcfg-drag{ cursor:move; user-select:none; }
 .cell-full{ opacity:.42; cursor:not-allowed; }
+.tab-badge{ display:inline-block; margin-left:5px; background:var(--cyan); color:#04222b; border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; vertical-align:1px; }
+.note{ display:flex; align-items:center; gap:8px; background:var(--inset); border:1px solid var(--line); border-radius:8px; padding:7px 10px; }
+.note-ic{ font-size:14px; flex:none; }
+.note-tx{ font-size:12px; color:var(--text); flex:1; }
+.note-x{ color:var(--dim); cursor:pointer; font-size:10px; flex:none; padding:2px 4px; }
+.note-x:hover{ color:var(--red); }
 .sb-bad{ color:var(--red); font-weight:600; }
 .loadsplash{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:52px 0; color:var(--muted); font-size:13px; }
 .spinner{ width:30px; height:30px; border:3px solid var(--line); border-top-color:var(--cyan); border-radius:50%; animation:gpspin .8s linear infinite; }
@@ -238,6 +244,7 @@ const TABS = [
   { id: 'compiler',  label: 'Compiler',  path: 'gp://daemon/compiler' },
   { id: 'augmenter', label: 'Augmenter', path: 'gp://kernel/augmenter' },
   { id: 'dashboard', label: 'Dashboard', path: 'gp://dashboard' },
+  { id: 'inbox',     label: 'Inbox',     path: 'gp://inbox' },
 ]
 const STAT_NAMES = ['HP', 'At', 'Df', 'SA', 'SD', 'Sp']
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s)
@@ -251,6 +258,8 @@ export default function App() {
   const active = TABS.find((t) => t.id === tab)
   const pcfg = useChannel('pastureConfig')      // set when a pasture is right-clicked with the Notebook
   const focused = pcfg?.present
+  const notifs = useChannel('notifications')
+  const noteCount = notifs?.notes?.length || 0
   // Viewport scaling: uniformly zoom the fixed-design stage to fill the MC window (viewport-ui-principle),
   // so the console holds the same proportion at any window size instead of being a fixed-px panel in black.
   useEffect(() => {
@@ -282,7 +291,9 @@ export default function App() {
         ) : (<>
         <div className="gp-tabs">
           {TABS.map((t) => (
-            <button key={t.id} className={`gp-tab${tab === t.id ? ' on' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>
+            <button key={t.id} className={`gp-tab${tab === t.id ? ' on' : ''}`} onClick={() => setTab(t.id)}>
+              {t.label}{t.id === 'inbox' && noteCount > 0 && <span className="tab-badge">{noteCount}</span>}
+            </button>
           ))}
         </div>
         <div className="gp-cmd"><span>{active.path}</span><span className="gp-caret" /></div>
@@ -293,6 +304,7 @@ export default function App() {
           {tab === 'compiler' && <Compiler />}
           {tab === 'augmenter' && <Augmenter />}
           {tab === 'dashboard' && <Dashboard />}
+          {tab === 'inbox' && <InboxTab />}
         </div>
         </>)}
         <StatusBar />
@@ -455,6 +467,38 @@ function StatRow({ tag, vals, perfect, color }) {
       {vals.map((v, i) => (
         <span key={i} className="mono" style={{ fontSize: 10, color: v >= perfect ? color : v === 0 ? 'var(--dim)' : 'var(--text)' }}>{STAT_NAMES[i]} {v}</span>
       ))}
+    </div>
+  )
+}
+
+// ── Inbox — dismissible notifications (catch-up pings etc.; nothing stacks in chat) ──
+function InboxTab() {
+  const d = useChannel('notifications')
+  const notes = d?.notes || []
+  const ago = (t) => {
+    const s = Math.max(0, (Date.now() - t) / 1000)
+    return s < 60 ? `${Math.floor(s)}s ago` : s < 3600 ? `${Math.floor(s / 60)}m ago` : `${Math.floor(s / 3600)}h ago`
+  }
+  return (
+    <div className="pane">
+      <div className="row" style={{ marginBottom: 10 }}>
+        <span className="h">Inbox</span>
+        <span className="muted" style={{ fontSize: 11 }}>{notes.length} notification{notes.length === 1 ? '' : 's'}</span>
+        <span style={{ flex: 1 }} />
+        {notes.length > 0 && <button className="btn" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => send('storage', 'DISMISS_NOTE', { id: 'all' })}>clear all</button>}
+      </div>
+      {!notes.length ? <div className="muted" style={{ fontSize: 12 }}>all caught up — away-progress and pasture events land here.</div> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {notes.map((n) => (
+            <div key={n.id} className="note">
+              <span className="note-ic">{n.icon}</span>
+              <span className="note-tx">{n.text}</span>
+              <span className="dim mono" style={{ fontSize: 9, flex: 'none' }}>{ago(n.t)}</span>
+              <span className="note-x" title="dismiss" onClick={() => send('storage', 'DISMISS_NOTE', { id: String(n.id) })}>✕</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

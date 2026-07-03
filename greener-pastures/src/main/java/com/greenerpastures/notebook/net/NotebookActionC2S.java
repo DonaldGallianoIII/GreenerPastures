@@ -22,6 +22,7 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int REMOVE_AUGMENT = 5;  // Augmenter: arg = AugmentType name
     public static final int WITHDRAW = 6;        // BioBank: amount = flat egg index → materialize into inventory
     public static final int PULL_STACK = 7;      // Storage: arg = item id → take up to one stack (space-aware)
+    public static final int DISMISS_NOTE = 8;    // Inbox: arg = note id, or "all"
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

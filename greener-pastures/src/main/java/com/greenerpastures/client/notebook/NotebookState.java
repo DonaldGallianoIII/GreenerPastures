@@ -164,9 +164,17 @@ public final class NotebookState {
         return changed;
     }
 
-    // ── Dashboard + Goals (JSON blobs, parsed in React) ──────────────────────
+    // ── Dashboard + Goals + Inbox (JSON blobs, parsed in React) ─────────────
     public static volatile String dashboardJson = "";
     public static volatile String goalsJson = "";
+    public static volatile String notifsJson = "";
+
+    public static boolean applyNotifs(com.greenerpastures.notebook.net.NotebookNotifsS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !notifsJson.equals(j);
+        notifsJson = j;
+        return changed;
+    }
 
     public static boolean applyDashboard(NotebookDashboardS2C p) {
         String j = p.json() == null ? "" : p.json();
@@ -195,6 +203,6 @@ public final class NotebookState {
         augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of();
         biobankTotal = 0; biobank = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
-        dashboardJson = ""; goalsJson = "";
+        dashboardJson = ""; goalsJson = ""; notifsJson = "";
     }
 }

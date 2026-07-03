@@ -57,8 +57,11 @@ public final class PastureHarvest {
     }
 
     private static void onWorldTick(ServerWorld world) {
+        // Per-PASTURE scheduling (scan every second, sweep each pasture when ITS interval is due) — instead of a
+        // global modulo — so a reloading chunk's catch-up fires within a second of arrival, lined up with the
+        // breeder's instant catch-up (Deuce, 2026-07-03), not up to a minute later on the boundary tick.
+        if (world.getTime() % 20L != 0L) return;
         long interval = testIntervalTicks > 0 ? testIntervalTicks : INTERVAL;
-        if (world.getTime() % interval != 0L) return;
         if (!CobbreedingBridge.isAvailable()) return;
         MinecraftServer server = world.getServer();
         PastureRegistry reg = PastureRegistry.get(server);
@@ -72,6 +75,7 @@ public final class PastureHarvest {
             if (pd.owner == null) continue;                 // only linked/owned pastures collect into a Notebook
             BlockPos pos = e.getKey();
             if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;   // don't force-load idle chunks (perf-audit — mirrors the breeder)
+            if (pd.lastHarvestTick > 0 && world.getTime() - pd.lastHarvestTick < interval) continue;  // this pasture isn't due yet
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity pasture)) continue;
             try {
                 // tether-amplified drop plan — the Kernel's base drop mods × any FED drop tether, on this clock
@@ -114,11 +118,10 @@ public final class PastureHarvest {
                             "yield", yield, "sweeps", sweeps, "stored", stored,
                             "items", harvested.isEmpty() ? "-" : harvested.toString());
                 }
-                if (sweeps > 1 && stored > 0) {              // the away-deposit ping — offline progress made visible
-                    var owner = server.getPlayerManager().getPlayer(pd.owner);
-                    if (owner != null) owner.sendMessage(net.minecraft.text.Text.literal(
-                            "§a[Greener Pastures]§r ⛏ " + (pd.name.isEmpty() ? pos.toShortString() : pd.name)
-                            + " caught up " + sweeps + " sweeps while away → +" + stored + " items in your Notebook."), false);
+                if (sweeps > 1 && stored > 0) {              // the away-deposit note → the console's Inbox (not chat)
+                    com.greenerpastures.notify.Inbox.push(pd.owner, "⛏",
+                            (pd.name.isEmpty() ? pos.toShortString() : pd.name)
+                            + " caught up " + sweeps + " sweeps while away → +" + stored + " items");
                 }
                 if (stored > 0 && res.drain() > 0) {         // drain drop-tethers per PRODUCTIVE sweep (catch-up pays like live play)
                     data.tryDebit(pd.owner, res.drain() * Math.max(1, productive));

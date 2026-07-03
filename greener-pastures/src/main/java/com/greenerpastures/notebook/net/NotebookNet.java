@@ -95,6 +95,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookGraphS2C.ID, NotebookGraphS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookGraphSaveC2S.ID, NotebookGraphSaveC2S.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookEggLogS2C.ID, NotebookEggLogS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookNotifsS2C.ID, NotebookNotifsS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookDashboardS2C.ID, NotebookDashboardS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookGoalsS2C.ID, NotebookGoalsS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookGoalC2S.ID, NotebookGoalC2S.CODEC);
@@ -143,6 +144,7 @@ public final class NotebookNet {
             pushEggLog(player);
             pushDashboard(player);
             pushGoals(player);
+            pushNotifs(player);
             long nowMs = System.currentTimeMillis();
             Long last = lastPrefetch.get(player.getUuid());
             if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -157,6 +159,22 @@ public final class NotebookNet {
         List<NotebookEggLogS2C.Entry> out = new ArrayList<>();
         for (EggLog.Entry e : EggLog.recent(player.getUuid())) out.add(new NotebookEggLogS2C.Entry(e.species(), e.voided(), e.filter()));
         ServerPlayNetworking.send(player, new NotebookEggLogS2C(EggLog.kept(player.getUuid()), EggLog.voided(player.getUuid()), out));
+    }
+
+    /** Send the viewing player's Inbox (dismissible notifications — catch-up pings etc.) for the Inbox tab. */
+    public static void pushNotifs(ServerPlayerEntity player) {
+        JsonArray notes = new JsonArray();
+        for (com.greenerpastures.notify.Inbox.Note n : com.greenerpastures.notify.Inbox.notesOf(player.getUuid())) {
+            JsonObject o = new JsonObject();
+            o.addProperty("id", n.id());
+            o.addProperty("icon", n.icon());
+            o.addProperty("text", n.text());
+            o.addProperty("t", n.atMs());
+            notes.add(o);
+        }
+        JsonObject root = new JsonObject();
+        root.add("notes", notes);
+        ServerPlayNetworking.send(player, new NotebookNotifsS2C(GSON.toJson(root)));
     }
 
     /** Send the viewing player's live breeding analytics (eggs/shiny/kept/voided/Data/by-tier/spark) for the Dashboard. */
@@ -244,6 +262,11 @@ public final class NotebookNet {
                 case NotebookActionC2S.APPLY_AUGMENT -> { applyAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player); }
+                case NotebookActionC2S.DISMISS_NOTE -> {
+                    if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
+                    else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
+                    pushNotifs(player);
+                }
                 default -> { }
             }
             pushStatus(player);
