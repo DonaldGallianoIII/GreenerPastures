@@ -517,6 +517,7 @@ public final class NotebookNet {
                     PastureClaim.Result r = PastureClaim.toggle(pd.owner, player.getUuid());
                     if (r.changed()) {
                         pd.owner = r.owner();
+                        pd.lastHarvestTick = world.getTime();   // anchor offline-progress at claim — never backfill the unowned past
                         reg.markDirty();
                         player.sendMessage(Text.literal(r.outcome() == PastureClaim.Outcome.CLAIMED
                                 ? "§a[Greener Pastures]§r Linked — this pasture's drops, eggs & outputs collect into your Notebook (you pay its tether cost)."

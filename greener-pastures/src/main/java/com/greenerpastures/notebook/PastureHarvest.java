@@ -43,6 +43,10 @@ public final class PastureHarvest {
      *  start), so a fast test rate can never ship in a world save. NB: proc chances are PER SWEEP, so a faster
      *  sweep means proportionally more rolls per minute — great for testing, silly for balance. */
     public static volatile long testIntervalTicks = 0L;
+
+    /** Offline-progress ceiling: how far back a catch-up may reach, in ticks (12h of world time). Keeps a
+     *  months-old save from rolling millions of sweeps, and bounds the idle yield like any respectable idle game. */
+    private static final long MAX_CATCHUP_TICKS = 12L * 60L * 60L * 20L;
     private static final Set<AugmentFunction> DROP_FUNCTIONS =
             EnumSet.of(AugmentFunction.DROP_RATE, AugmentFunction.DROP_YIELD);
 
@@ -77,7 +81,26 @@ public final class PastureHarvest {
                 double proc = BASE_PROC + res.effective().dropRateFraction();
                 int yield = res.effective().dropYieldBonus();
 
-                Map<String, Integer> harvested = DropsBridge.harvest(pasture, RNG, proc, yield);
+                // OFFLINE CATCH-UP: sweeps this pasture missed while its chunk was unloaded (the loop above skips
+                // unloaded chunks, so lastHarvestTick freezes). The roster physically can't change while unloaded,
+                // so rolling the missed sweeps NOW with the current mons/Kernel is exact — capped at 12h so an
+                // ancient save doesn't roll millions. sweeps=1 is the normal loaded-chunk case.
+                long now = world.getTime();
+                int sweeps = 1;
+                if (pd.lastHarvestTick > 0 && now > pd.lastHarvestTick) {
+                    long gap = Math.min(now - pd.lastHarvestTick, MAX_CATCHUP_TICKS);
+                    sweeps = (int) Math.max(1, gap / interval);
+                }
+                pd.lastHarvestTick = now;
+                reg.markDirty();
+
+                Map<String, Integer> harvested = new java.util.LinkedHashMap<>();
+                int productive = 0;
+                for (int i = 0; i < sweeps; i++) {
+                    Map<String, Integer> one = DropsBridge.harvest(pasture, RNG, proc, yield);
+                    if (!one.isEmpty()) productive++;
+                    one.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
+                }
                 long stored = 0;
                 for (Map.Entry<String, Integer> d : harvested.entrySet()) {
                     stored += store.deposit(pd.owner, d.getKey(), d.getValue());
@@ -88,13 +111,19 @@ public final class PastureHarvest {
                     // what landed. Together with DropsBridge's per-proc lines this is the full drop audit trail.
                     GpLog.d("notebook_harvest", "sweep", "pos", pos.toShortString(),
                             "mons", mons, "proc_pct", String.format("%.2f", proc * 100.0),
-                            "yield", yield, "stored", stored,
+                            "yield", yield, "sweeps", sweeps, "stored", stored,
                             "items", harvested.isEmpty() ? "-" : harvested.toString());
                 }
-                if (stored > 0 && res.drain() > 0) {         // drain drop-tethers ONCE if the amplification produced output
-                    data.tryDebit(pd.owner, res.drain());
+                if (sweeps > 1 && stored > 0) {              // the away-deposit ping — offline progress made visible
+                    var owner = server.getPlayerManager().getPlayer(pd.owner);
+                    if (owner != null) owner.sendMessage(net.minecraft.text.Text.literal(
+                            "§a[Greener Pastures]§r ⛏ " + (pd.name.isEmpty() ? pos.toShortString() : pd.name)
+                            + " caught up " + sweeps + " sweeps while away → +" + stored + " items in your Notebook."), false);
+                }
+                if (stored > 0 && res.drain() > 0) {         // drain drop-tethers per PRODUCTIVE sweep (catch-up pays like live play)
+                    data.tryDebit(pd.owner, res.drain() * Math.max(1, productive));
                     GpLog.d("tether", "drain", "pos", pos.toShortString(),
-                            "data", res.drain(), "owner", pd.owner.toString(), "src", "notebook_harvest");
+                            "data", res.drain() * Math.max(1, productive), "owner", pd.owner.toString(), "src", "notebook_harvest");
                 }
             } catch (Throwable t) {
                 // a Cobblemon API edge must never crash the world tick (mirrors the breeder/Renderer/Harvester guards)

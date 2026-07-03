@@ -51,6 +51,12 @@ public class PastureData {
      *  their data still ticks (breeding + loot keep running) but no PokemonEntity exists. Persisted. */
     public boolean suppressed;
 
+    /** World-time (ticks) of the last harvest sweep that actually ran for this pasture — the offline-progress
+     *  anchor: when its chunk reloads, the sweep computes the missed interval count from this and rolls a
+     *  CATCH-UP deposit ("drops keep accumulating while the chunk is unloaded" — Deuce, 2026-07-03). Persisted;
+     *  0 = never swept (no backfill). */
+    public long lastHarvestTick;
+
     /** The installed Pasture Upgrade tier (slot 0), or null if none — drives pairs + slot count. */
     public BreedingTier tier() {
         ItemStack s = upgrades.getStack(0);
@@ -107,6 +113,7 @@ public class PastureData {
         if (owner != null) nbt.putUuid("owner", owner);
         if (suppressed) nbt.putBoolean("suppressed", true);
         if (graphJson != null && !graphJson.isEmpty()) nbt.putString("graphJson", graphJson);
+        if (lastHarvestTick > 0) nbt.putLong("lastHarvest", lastHarvestTick);
         return nbt;
     }
 
@@ -131,6 +138,7 @@ public class PastureData {
         if (nbt.containsUuid("owner")) d.owner = nbt.getUuid("owner");
         d.suppressed = nbt.getBoolean("suppressed");
         d.graphJson = nbt.getString("graphJson");
+        d.lastHarvestTick = nbt.getLong("lastHarvest");
         return d;
     }
 }
