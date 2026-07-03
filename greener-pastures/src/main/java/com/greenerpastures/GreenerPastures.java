@@ -76,6 +76,10 @@ public final class GreenerPastures implements ModInitializer {
         // notebook/ — console sync layer (C2S request → S2C status; per-tab payloads land with each tab)
         NotebookNet.init();
 
+        // notebook/ — the online gate for catch-up progress: stamp logouts, shift pasture anchors past offline
+        // gaps on join (away-in-other-chunks time counts; offline time doesn't — Deuce, 2026-07-03).
+        com.greenerpastures.notebook.OfflineProgress.init();
+
         // Session hygiene: statics survive across worlds in singleplayer (one JVM, integrated server restarts),
         // so wipe every per-session store on server start — a fresh world must never show the last world's stats
         // (Deuce hit exactly this: a brand-new world inheriting the old world's dashboard/goal numbers).

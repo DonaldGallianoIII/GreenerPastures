@@ -46,6 +46,9 @@ public final class MultiPairBreeder {
      *  baked into a world save. */
     public static volatile long testIntervalTicks = 0L;
 
+    /** Catch-up ceiling for missed broods (12h of world time) — mirrors PastureHarvest's drop catch-up. */
+    private static final long MAX_CATCHUP_TICKS = 12L * 60L * 60L * 20L;
+
     /** The augment functions the breeder actually applies to the egg — and therefore the only tethers it pays
      *  burn for: Shiny (proc), Speed (cadence), IV Floor (perfect IVs) and EV (EV head-start). Drop Rate/Yield
      *  belong to the Harvester, Enrichment to the Renderer: each consumer drains its own set on its own clock
@@ -102,17 +105,42 @@ public final class MultiPairBreeder {
                     TetherRuntime.Resolution res = TetherRuntime.resolveFor(
                             pd.baseAugmentLevels(), pd.slottedTethers(), balance, BREEDING_FUNCTIONS);
 
-                    laid = breedPairs(world, pos, pasture, tier, pd, now, res.effective());
                     long interval = testIntervalTicks > 0
                             ? testIntervalTicks   // QA override (/gp breed interval N) — fixed rate, floor bypassed
                             : speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
                                     res.effective().speedLevel());
+
+                    // CATCH-UP: broods missed while this chunk was unloaded (the loop skips unloaded chunks, so
+                    // lastBreedTick froze). Rolled now with the current pairs/Kernel — every egg still walks the
+                    // full pipeline (shiny proc, Daemon graph, BioBank/void log, goals). Capped at 12h; offline
+                    // gaps are gated out by OfflineProgress (online away-time counts, offline doesn't). broods=1
+                    // is the normal loaded-chunk case.
+                    int broods = 1;
+                    if (pd.lastBreedTick > 0 && now > pd.lastBreedTick) {
+                        long gap = Math.min(now - pd.lastBreedTick, MAX_CATCHUP_TICKS);
+                        broods = (int) Math.max(1, gap / Math.max(1L, interval));
+                    }
+                    pd.lastBreedTick = now;
+
+                    int productiveBroods = 0;
+                    for (int b = 0; b < broods; b++) {
+                        int got = breedPairs(world, pos, pasture, tier, pd, now, res.effective());
+                        if (got == 0 && laid == 0 && b > 2) break;   // sterile pasture — don't grind 288 no-op broods
+                        if (got > 0) productiveBroods++;
+                        laid += got;
+                    }
                     pd.nextBreedTick = now + interval;
 
-                    if (laid > 0 && res.drain() > 0 && pd.owner != null) {   // tethers earned their burn this cycle
-                        DataStore.get(server).tryDebit(pd.owner, res.drain());
+                    if (broods > 1 && laid > 0 && pd.owner != null) {        // the away-brood ping (offline progress visible)
+                        var op = server.getPlayerManager().getPlayer(pd.owner);
+                        if (op != null) op.sendMessage(net.minecraft.text.Text.literal(
+                                "§a[Greener Pastures]§r 🥚 " + (pd.name.isEmpty() ? pos.toShortString() : pd.name)
+                                + " caught up " + broods + " broods while away → " + laid + " eggs."), false);
+                    }
+                    if (laid > 0 && res.drain() > 0 && pd.owner != null) {   // tethers earned their burn — per productive brood
+                        DataStore.get(server).tryDebit(pd.owner, res.drain() * Math.max(1, productiveBroods));
                         GpLog.d("tether", "drain", "pos", pos.toShortString(),
-                                "data", res.drain(), "owner", pd.owner.toString());
+                                "data", res.drain() * Math.max(1, productiveBroods), "owner", pd.owner.toString());
                     }
                     moved += drainQueueToTray(pos, pd);                      // top the tray straight up
                 }

@@ -54,8 +54,13 @@ public class PastureData {
     /** World-time (ticks) of the last harvest sweep that actually ran for this pasture — the offline-progress
      *  anchor: when its chunk reloads, the sweep computes the missed interval count from this and rolls a
      *  CATCH-UP deposit ("drops keep accumulating while the chunk is unloaded" — Deuce, 2026-07-03). Persisted;
-     *  0 = never swept (no backfill). */
+     *  0 = never swept (no backfill). {@link com.greenerpastures.notebook.OfflineProgress} shifts it past
+     *  offline gaps on servers (online away-time counts, offline time doesn't). */
     public long lastHarvestTick;
+
+    /** World-time (ticks) of the last brood that actually ran — the breeding catch-up anchor (same semantics
+     *  as {@link #lastHarvestTick}: unloaded-chunk gaps are rolled on reload, offline gaps are gated). Persisted. */
+    public long lastBreedTick;
 
     /** The installed Pasture Upgrade tier (slot 0), or null if none — drives pairs + slot count. */
     public BreedingTier tier() {
@@ -114,6 +119,7 @@ public class PastureData {
         if (suppressed) nbt.putBoolean("suppressed", true);
         if (graphJson != null && !graphJson.isEmpty()) nbt.putString("graphJson", graphJson);
         if (lastHarvestTick > 0) nbt.putLong("lastHarvest", lastHarvestTick);
+        if (lastBreedTick > 0) nbt.putLong("lastBreed", lastBreedTick);
         return nbt;
     }
 
@@ -139,6 +145,7 @@ public class PastureData {
         d.suppressed = nbt.getBoolean("suppressed");
         d.graphJson = nbt.getString("graphJson");
         d.lastHarvestTick = nbt.getLong("lastHarvest");
+        d.lastBreedTick = nbt.getLong("lastBreed");
         return d;
     }
 }
