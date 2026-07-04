@@ -165,3 +165,20 @@ flame-graph profiler" is the optimization-as-a-feature story, and the numbers to
 | Q65 | **Type-drops** | Fill a linked pasture with Ice- or Fire-types → within a few sweeps ice/blaze rods appear in Harvester storage (log `harvest sweep` items). Fire-types are now your blaze-rod farm (no vanilla mobs!). Use `/gp harvest interval 5` to watch live. | ☐ |
 | Q66 | **Gacha rituals** | Compose a pasture per a ritual in `config/greenerpastures/rituals.json` (defaults: e.g. Nether Forge) → each sweep banks a pull; hits log `ritual hit` + items deposit; **pity persists across relog** (check `pulls` DEBUG lines, pity climbing). | ☐ |
 | Q67 | **Ultra Compressed Snack** | Cook 2-3 differently-seasoned poke snacks, put them all in a crafting grid → ONE gold-named "Ultra Compressed Snack" (lore: ×N snacks · M bait effects). Place it on a tower → spawner honors ALL merged seasonings (duplicates stack additively — stronger lure). | ☐ |
+
+---
+
+## 🗡 Rituals v2 — hidden recipes (same night, jar `b8246aac`, NOT deployed)
+
+> Rituals are now **hidden-achievement style**: compositions are secret until you first assemble one in a
+> linked pasture — that moment it's LEARNED forever (per player), pops an Inbox note + a one-time chat line,
+> and its full recipe renders in the new **Rituals tab**. Ritual rewards land in the tab's own **spoils pool**,
+> never in Harvester storage. First hand-designed ritual ships: **Feast of the Blade**.
+
+| # | Change | How to verify | Status |
+|---|--------|---------------|--------|
+| Q68 | **Hidden teaser** | Open Notebook → Rituals tab: mysterious empty state + "🔒 1 hidden ritual undiscovered". No recipe visible anywhere. | ☐ |
+| Q69 | **Discovery pop** | In a linked pasture assemble **Kartana ×1 + Xerneas ×1 + Meowth ×8** (`/pokemon spawn` + tether, or `/spawnpokemon`). Next sweep (≤1 min, or `/gp harvest interval 5`): chat shows §6✦ Ritual discovered✦, Inbox gets the 🗡 note, tab now shows the full recipe card (8× Meowth · 1× Xerneas · 1× Kartana → 1× Enchanted Golden Apple). Log: `ritual discovered`. | ☐ |
+| Q70 | **The gacha itself** | Leave it running at `/gp harvest interval 5`: `ritual pulls` DEBUG lines show banked/pity climbing; ~2%/pull, soft pity 60, hard pity 120 → an apple within ~10 min at 5s sweeps. Hit → Inbox 🗡 note + apple appears in **Ritual spoils**, NOT in Storage. Lifetime hits count on the card. | ☐ |
+| Q71 | **Exactness** | Remove one Meowth (7 left) → pulls stop banking (composition broken); re-add → resumes with pity INTACT (persisted per pasture; also survives relog). Extra mons beyond the recipe don't break it (minimums). | ☐ |
+| Q72 | **Spoils pull + config regen** | Pull the apple from the tab (L/⇧/R semantics, inventory-full refusal same as Storage). Also: old `config/greenerpastures/rituals.json` gets auto-regenerated (log: `pre-v2 config detected`) — placeholder rituals (nether_forge etc.) are GONE; type-drops unchanged. | ☐ |

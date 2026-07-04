@@ -260,6 +260,7 @@ const TABS = [
   { id: 'augmenter', label: 'Augmenter', path: 'gp://kernel/augmenter' },
   { id: 'dashboard', label: 'Dashboard', path: 'gp://dashboard' },
   { id: 'inbox',     label: 'Inbox',     path: 'gp://inbox' },
+  { id: 'rituals',   label: 'Rituals',   path: 'gp://rituals' },
   { id: 'guide',     label: 'Guide',     path: 'gp://guide' },
 ]
 const STAT_NAMES = ['HP', 'At', 'Df', 'SA', 'SD', 'Sp']
@@ -323,6 +324,7 @@ export default function App() {
           {tab === 'augmenter' && <Augmenter />}
           {tab === 'dashboard' && <Dashboard />}
           {tab === 'inbox' && <InboxTab />}
+          {tab === 'rituals' && <RitualsTab />}
           {tab === 'guide' && <GuideTab />}
         </div>
         </>)}
@@ -1439,6 +1441,73 @@ function PastureConfig({ cfg }) {
   )
 }
 const pairHue = (b) => `hsl(${(b * 67) % 360} 70% 62%)`
+// ── Rituals (v2): HIDDEN recipes — compositions are secret until you first assemble one ──
+function RitualsTab() {
+  const d = useChannel('rituals')
+  const inv = useChannel('inventory')
+  const learned = d?.learned || []
+  const hidden = d?.hidden ?? 0
+  const loot = d?.loot || {}
+  const lootList = Object.entries(loot).sort((a, b) => b[1] - a[1])
+  const slots = inv?.slots || []
+  const canTake = (id) => slots.some((s) => !s || (s.id === id && s.count < 64))
+  const recipeChips = (r) => {
+    const chips = []
+    Object.entries(r.species || {}).forEach(([sp, n]) => chips.push(`${n}× ${cap(sp)}`))
+    Object.entries(r.types || {}).forEach(([t, n]) => chips.push(`${n}× ${cap(t)}-type`))
+    if (r.minDistinct > 0) chips.push(`${r.minDistinct}+ distinct types`)
+    ;(r.signature || []).forEach((sp) => chips.push(`⭑ ${cap(sp)}`))
+    return chips
+  }
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="row" style={{ marginBottom: 8 }}>
+        <span className="h">Rituals</span>
+        <span style={{ flex: 1 }} />
+        {hidden > 0 && <span className="dim mono" style={{ fontSize: 10 }}>🔒 {hidden} hidden ritual{hidden === 1 ? '' : 's'} undiscovered</span>}
+      </div>
+      {learned.length === 0 ? (
+        <div className="inset" style={{ padding: 14, borderRadius: 8, marginBottom: 10 }}>
+          <div className="amb" style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>᛭ Nothing recorded yet</div>
+          <div className="dim" style={{ fontSize: 11, lineHeight: 1.5 }}>
+            Certain gatherings of Pokémon resonate. Assemble the right ones — the right species, the right numbers —
+            inside a single linked pasture, and its ritual will reveal itself here… along with what it yields.
+          </div>
+        </div>
+      ) : learned.map((r) => (
+        <div key={r.id} className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8 }}>
+          <div className="row">
+            <span className="amb" style={{ fontWeight: 700, fontSize: 12 }}>🗡 {r.name}</span>
+            <span style={{ flex: 1 }} />
+            <span className="dim mono" style={{ fontSize: 10 }}>{r.hits} hit{r.hits === 1 ? '' : 's'} lifetime</span>
+          </div>
+          <div className="row" style={{ gap: 4, flexWrap: 'wrap', margin: '6px 0' }}>
+            {recipeChips(r).map((c) => <span key={c} className="kchip">{c}</span>)}
+            <span className="dim" style={{ fontSize: 10 }}>— in one pasture →</span>
+            <span className="kchip" style={{ color: 'var(--amber)' }}>{r.qty}× {cap(shortId(r.output))}</span>
+          </div>
+        </div>
+      ))}
+      <div className="row" style={{ margin: '10px 0 6px' }}>
+        <span className="h">Ritual spoils</span>
+        <span className="dim" style={{ fontSize: 10, marginLeft: 8 }}>rewards land HERE, not in Storage · L: one · ⇧: stack · R: all</span>
+      </div>
+      {!lootList.length ? <div className="dim" style={{ fontSize: 11 }}>nothing claimed by the rituals yet</div> : (
+        <div className="grid">
+          {lootList.map(([id, n]) => { const ok = canTake(id); return (
+            <div key={id} className={`cell${ok ? '' : ' cell-full'}`} title={ok ? `${id} · L: one · ⇧: stack · R: all` : `${id} · inventory full`}
+              onClick={(ev) => { if (ok) send('storage', 'RITUAL_PULL', { item: id, mode: shiftHeld(ev) ? 1 : 0 }) }}
+              onContextMenu={(ev) => { ev.preventDefault(); if (ok) send('storage', 'RITUAL_PULL', { item: id, mode: 2 }) }}>
+              <span className="ct">{compact(n)}</span>
+              <span className="nm">{shortId(id)}</span>
+            </div>
+          )})}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const GUIDE = [
   ['🌱 The Loop', `Tether parents in a pasture → slot a KERNEL → it breeds your configured pairs on a real clock →
 every egg flows into your NOTEBOOK as data. Keepers land in the BioBank; the rest render into Data. Data feeds

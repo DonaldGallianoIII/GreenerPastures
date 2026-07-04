@@ -9,11 +9,17 @@ import java.util.Map;
  * the listed species must be in the pasture. Any field may be empty/zero (= no constraint). Pure + tested.
  */
 public record Requirement(Map<String, Integer> typeMinCounts, int minDistinctTypes,
-                          List<String> signatureSpeciesAnyOf) {
+                          List<String> signatureSpeciesAnyOf, Map<String, Integer> speciesMinCounts) {
+
+    /** Compat shape without species counts — the exact-headcount gate ("8 Meowth") arrived with Rituals v2. */
+    public Requirement(Map<String, Integer> typeMinCounts, int minDistinctTypes, List<String> signatureSpeciesAnyOf) {
+        this(typeMinCounts, minDistinctTypes, signatureSpeciesAnyOf, Map.of());
+    }
 
     public Requirement {
         typeMinCounts = typeMinCounts == null ? Map.of() : Map.copyOf(typeMinCounts);
         signatureSpeciesAnyOf = signatureSpeciesAnyOf == null ? List.of() : List.copyOf(signatureSpeciesAnyOf);
+        speciesMinCounts = speciesMinCounts == null ? Map.of() : Map.copyOf(speciesMinCounts);
         minDistinctTypes = Math.max(0, minDistinctTypes);
     }
 
@@ -22,6 +28,9 @@ public record Requirement(Map<String, Integer> typeMinCounts, int minDistinctTyp
         if (c.distinctTypes() < minDistinctTypes) return false;
         for (Map.Entry<String, Integer> e : typeMinCounts.entrySet()) {
             if (c.countOfType(e.getKey()) < e.getValue()) return false;
+        }
+        for (Map.Entry<String, Integer> e : speciesMinCounts.entrySet()) {
+            if (c.countOfSpecies(e.getKey()) < e.getValue()) return false;
         }
         if (!signatureSpeciesAnyOf.isEmpty()) {
             boolean any = false;

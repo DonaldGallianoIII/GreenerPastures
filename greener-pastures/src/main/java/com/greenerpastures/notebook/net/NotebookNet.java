@@ -127,6 +127,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playC2S().register(NotebookGoalC2S.ID, NotebookGoalC2S.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookPastureExtraS2C.ID, NotebookPastureExtraS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookAugmenterMetaS2C.ID, NotebookAugmenterMetaS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookRitualsS2C.ID, NotebookRitualsS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -177,6 +178,7 @@ public final class NotebookNet {
                 pushDashboard(player);
                 pushGoals(player);
                 pushNotifs(player);
+                pushRituals(player);
                 long nowMs = System.currentTimeMillis();
                 Long last = lastPrefetch.get(player.getUuid());
                 if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -296,6 +298,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player); }
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
+                case NotebookActionC2S.RITUAL_PULL -> { ritualPull(player, p.arg(), p.amount()); pushRituals(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1002,6 +1005,93 @@ public final class NotebookNet {
         }
         inv.markDirty();
         GpLog.i("disk", "write", "player", player.getUuid().toString(), "denom", denomId, "value", Long.toString(disk.value));
+    }
+
+    /** Send the Rituals tab (v2): the player's LEARNED hidden recipes (full reveal), the still-hidden
+     *  count (Steam-style teaser), and the dedicated ritual loot pool. */
+    public static void pushRituals(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        com.greenerpastures.ritual.RitualLedger ledger = com.greenerpastures.ritual.RitualLedger.get(server);
+        com.greenerpastures.ritual.RitualBook book = com.greenerpastures.ritual.RitualSystem.config().activeRituals();
+        java.util.Set<String> learned = ledger.learnedOf(player.getUuid());
+        JsonObject root = new JsonObject();
+        JsonArray arr = new JsonArray();
+        int hidden = 0;
+        for (com.greenerpastures.ritual.Ritual r : book.rituals()) {
+            if (!r.enabled()) continue;
+            if (!learned.contains(r.id())) { hidden++; continue; }
+            JsonObject o = new JsonObject();
+            o.addProperty("id", r.id());
+            o.addProperty("name", r.name());
+            JsonObject species = new JsonObject();
+            r.requirement().speciesMinCounts().forEach(species::addProperty);
+            o.add("species", species);
+            JsonObject types = new JsonObject();
+            r.requirement().typeMinCounts().forEach(types::addProperty);
+            o.add("types", types);
+            o.addProperty("minDistinct", r.requirement().minDistinctTypes());
+            JsonArray sig = new JsonArray();
+            r.requirement().signatureSpeciesAnyOf().forEach(sig::add);
+            o.add("signature", sig);
+            o.addProperty("output", r.outputItem());
+            o.addProperty("qty", r.outputQty());
+            o.addProperty("hits", ledger.hitsOf(player.getUuid(), r.id()));
+            arr.add(o);
+        }
+        root.add("learned", arr);
+        root.addProperty("hidden", hidden);
+        JsonObject loot = new JsonObject();
+        ledger.lootOf(player.getUuid()).forEach(loot::addProperty);
+        root.add("loot", loot);
+        sendGated(player, "rituals", new NotebookRitualsS2C(GSON.toJson(root)));
+    }
+
+    /** Take ritual loot into the inventory — same manual capacity+placement contract as {@link #pull}
+     *  (never trust insertStack, refuse loudly, the pool is only debited by what actually landed). */
+    private static void ritualPull(ServerPlayerEntity player, String itemId, int mode) {
+        MinecraftServer server = player.getServer();
+        if (server == null || itemId == null || itemId.isEmpty()) return;
+        Item item = Registries.ITEM.get(Identifier.of(itemId));
+        if (item == Items.AIR) return;
+        com.greenerpastures.ritual.RitualLedger ledger = com.greenerpastures.ritual.RitualLedger.get(server);
+        long have = ledger.lootOf(player.getUuid()).getOrDefault(itemId, 0L);
+        if (have <= 0) return;
+        var main = player.getInventory().main;
+        ItemStack probe = new ItemStack(item);
+        int maxStack = probe.getMaxCount();
+        long capacity = 0;
+        for (ItemStack s : main) {
+            if (s.isEmpty()) capacity += maxStack;
+            else if (ItemStack.areItemsAndComponentsEqual(s, probe)) capacity += Math.max(0, s.getMaxCount() - s.getCount());
+        }
+        long want = switch (mode) {
+            case 0 -> 1L;
+            case 1 -> Math.min(maxStack, have);
+            default -> have;
+        };
+        want = Math.min(Math.min(want, have), capacity);
+        if (want <= 0) {
+            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full — nothing pulled."), false);
+            GpLog.i("ritual", "pull_full", "player", player.getUuid().toString(), "item", itemId);
+            return;
+        }
+        long placed = 0;
+        for (int i = 0; i < main.size() && placed < want; i++) {
+            ItemStack s = main.get(i);
+            if (s.isEmpty() || !ItemStack.areItemsAndComponentsEqual(s, probe)) continue;
+            int add = (int) Math.min(s.getMaxCount() - s.getCount(), want - placed);
+            if (add > 0) { s.increment(add); placed += add; }
+        }
+        for (int i = 0; i < main.size() && placed < want; i++) {
+            if (!main.get(i).isEmpty()) continue;
+            int add = (int) Math.min(maxStack, want - placed);
+            main.set(i, new ItemStack(item, add));
+            placed += add;
+        }
+        player.getInventory().markDirty();
+        if (placed > 0) ledger.takeLoot(player.getUuid(), itemId, placed);
+        GpLog.i("ritual", "pull", "player", player.getUuid().toString(), "item", itemId, "n", Long.toString(placed));
     }
 
     private static int countGpu(ServerPlayerEntity player) {

@@ -30,6 +30,7 @@ public final class CompositionReader {
         List<Set<String>> perMon = new ArrayList<>();
         Map<String, Integer> typeCounts = new HashMap<>();   // mons-per-type (a dual-type mon counts for both)
         Set<String> species = new HashSet<>();
+        Map<String, Integer> speciesCounts = new HashMap<>();   // exact headcount per species (Rituals v2 gates)
         try {
             for (PokemonPastureBlockEntity.Tethering t : new ArrayList<>(pasture.getTetheredPokemon())) {
                 Pokemon p;
@@ -49,7 +50,11 @@ public final class CompositionReader {
                 for (String ty : types) typeCounts.merge(ty, 1, Integer::sum);
                 try {
                     String sp = p.getSpecies().getName();
-                    if (sp != null && !sp.isBlank()) species.add(sp.toLowerCase(Locale.ROOT));
+                    if (sp != null && !sp.isBlank()) {
+                        String key = sp.toLowerCase(Locale.ROOT);
+                        species.add(key);
+                        speciesCounts.merge(key, 1, Integer::sum);
+                    }
                 } catch (Throwable ignored) {
                     // species unreadable → skip (rituals that need a signature species just won't fire)
                 }
@@ -57,6 +62,6 @@ public final class CompositionReader {
         } catch (Throwable t) {
             // a Cobblemon API edge must never crash the harvest — return whatever we gathered
         }
-        return new PastureMons(perMon, new Composition(typeCounts, species));
+        return new PastureMons(perMon, new Composition(typeCounts, species, speciesCounts));
     }
 }

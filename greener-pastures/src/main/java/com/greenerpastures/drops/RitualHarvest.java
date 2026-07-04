@@ -34,9 +34,15 @@ public final class RitualHarvest {
     /**
      * Roll {@code sweeps} worth of type-drops + ritual pulls for one pasture. The composition is read once
      * by the caller (it can't change while a chunk is unloaded, so it's exact across a catch-up).
-     * Returns {@code item id → count} to merge into the sweep's deposit; mutates {@code pd.ritualState}.
+     *
+     * <p>Returns the TYPE-DROPS ({@code item id → count}) for the normal Harvester deposit. GACHA ritual
+     * outputs deliberately do NOT flow through the return — they land in the owner's {@link RitualLedger}
+     * loot pool (the Rituals tab is the reward chest, Deuce's v2 spec), and a first-ever satisfied
+     * composition LEARNS the ritual: the hidden recipe reveals, with an Inbox note + a once-ever chat pop.
      */
-    public static Map<String, Integer> roll(CompositionReader.PastureMons mons, PastureData pd, Random rng, int sweeps) {
+    public static Map<String, Integer> roll(net.minecraft.server.MinecraftServer server, java.util.UUID owner,
+                                            String pastureName, CompositionReader.PastureMons mons,
+                                            PastureData pd, Random rng, int sweeps) {
         Map<String, Integer> out = new LinkedHashMap<>();
         RitualConfig cfg = RitualSystem.config();
         if (!cfg.enabled() || mons == null || sweeps <= 0) return out;
@@ -57,9 +63,24 @@ public final class RitualHarvest {
             }
         }
 
-        // Tier 2 — gacha rituals: bank one pull per sweep while the composition holds, then auto-roll with pity.
+        // Tier 2 — gacha rituals (HIDDEN recipes): bank one pull per sweep while the composition holds,
+        // auto-roll with pity, and pay hits into the owner's RITUAL loot pool (never Harvester storage).
+        com.greenerpastures.ritual.RitualLedger ledger =
+                server == null ? null : com.greenerpastures.ritual.RitualLedger.get(server);
         Composition comp = mons.aggregate();
         for (Ritual r : cfg.activeRituals().active(comp)) {
+            if (ledger != null && owner != null && ledger.learn(owner, r.id())) {
+                // First-ever assembly — the hidden-achievement pop. Once per player per ritual, forever.
+                com.greenerpastures.notify.Inbox.push(owner, "🗡",
+                        "RITUAL DISCOVERED — " + r.name() + " · the recipe is recorded in your Rituals tab");
+                var online = server.getPlayerManager().getPlayer(owner);
+                if (online != null) {
+                    online.sendMessage(net.minecraft.text.Text.literal(
+                            "§6✦ Ritual discovered: §e" + r.name() + "§6 ✦§r — its recipe is now in your Notebook."), false);
+                }
+                GpLog.i("ritual", "discovered", "ritual", r.id(), "owner", owner.toString(),
+                        "pasture", pastureName == null ? "?" : pastureName);
+            }
             int[] st = pd.ritualState.computeIfAbsent(r.id(), k -> new int[]{0, 0});
             Gacha.PullState state = new Gacha.PullState(st[0], st[1]).bank(sweeps);
             int hits = 0;
@@ -71,7 +92,12 @@ public final class RitualHarvest {
             st[0] = state.bankedPulls();
             st[1] = state.pity();
             if (hits > 0) {
-                out.merge(r.outputItem(), r.outputQty() * hits, Integer::sum);
+                if (ledger != null && owner != null) {
+                    ledger.addLoot(owner, r.outputItem(), r.outputQty() * hits);
+                    ledger.addHits(owner, r.id(), hits);
+                    com.greenerpastures.notify.Inbox.push(owner, "🗡",
+                            r.name() + " granted " + (r.outputQty() * hits) + "× " + r.outputItem().replace("minecraft:", ""));
+                }
                 GpLog.i("ritual", "hit", "ritual", r.id(), "hits", hits,
                         "item", r.outputItem(), "qty", r.outputQty() * hits, "pity", st[1]);
             } else if (GpLog.on(GpLog.Level.DEBUG)) {

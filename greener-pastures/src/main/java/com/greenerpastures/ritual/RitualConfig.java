@@ -96,29 +96,17 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
         ));
     }
 
+    /** Rituals v2 — Deuce's HAND-DESIGNED hidden recipes (compositions are secret in-game until a player
+     *  first assembles one; see RitualLedger). The launch book ships exactly one; more land here per design. */
     private static RitualBook defaultRituals() {
         return new RitualBook(true, List.of(
-                ritual("nether_forge", "Nether Forge",
-                        req(Map.of("fire", 1, "dark", 1, "ghost", 1), 0, List.of()),
-                        "minecraft:netherite_scrap", 1, 5.0, 30, 0),
-                ritual("forbidden_orchard", "Forbidden Orchard",
-                        req(Map.of(), 5, List.of()),
-                        "minecraft:enchanted_golden_apple", 1, 3.0, 40, 25),
-                ritual("last_stand", "Last Stand",
-                        req(Map.of("fairy", 1, "ghost", 1), 0, List.of("sableye")),
-                        "minecraft:totem_of_undying", 1, 4.0, 35, 0),
-                ritual("endless_sky", "Endless Sky",
-                        req(Map.of("flying", 1, "dragon", 1, "ghost", 1), 0, List.of()),
-                        "minecraft:elytra", 1, 2.0, 50, 30),
-                ritual("tide_caller", "Tide Caller",
-                        req(Map.of("water", 1, "ice", 1), 0, List.of("kyogre", "suicune", "lugia")),
-                        "minecraft:trident", 1, 5.0, 30, 0),
-                ritual("soul_convergence", "Soul Convergence",
-                        req(Map.of("ghost", 3, "dark", 1), 0, List.of("darkrai", "giratina")),
-                        "minecraft:nether_star", 1, 1.5, 60, 40),
-                ritual("dragons_hoard", "Dragon's Hoard",
-                        req(Map.of("dragon", 2, "flying", 1), 0, List.of("rayquaza", "dialga", "palkia")),
-                        "minecraft:dragon_egg", 1, 1.0, 80, 50)
+                // #1 — "Feast of the Blade": Kartana (the living katana) + Xerneas (the life-giver) + 8 Meowth
+                // (the hoard) in ONE pasture → a chance per sweep at an enchanted golden apple. The ONLY
+                // e-gapple source in the mod, deliberately locked behind two legendaries + a full retinue.
+                ritual("feast_of_the_blade", "Feast of the Blade",
+                        new Requirement(Map.of(), 0, List.of(),
+                                Map.of("kartana", 1, "xerneas", 1, "meowth", 8)),
+                        "minecraft:enchanted_golden_apple", 1, 2.0, 120, 60)
         ));
     }
 

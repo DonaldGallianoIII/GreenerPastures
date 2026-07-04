@@ -210,6 +210,16 @@ public final class NotebookState {
         return changed;
     }
 
+    // ── Rituals tab (JSON blob, parsed in React) ─────────────────────────────
+    public static volatile String ritualsJson = "";
+
+    public static boolean applyRituals(com.greenerpastures.notebook.net.NotebookRitualsS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !ritualsJson.equals(j);
+        ritualsJson = j;
+        return changed;
+    }
+
     // ── Nav (one-shot "open this tab" requests, e.g. the Field Guide item) ──
     public static volatile String navTab = "";
     public static volatile int navSeq = 0;
@@ -259,7 +269,7 @@ public final class NotebookState {
         augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of(); augMetaJson = "";
         biobankTotal = 0; biobank = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
-        dashboardJson = ""; goalsJson = ""; notifsJson = "";
+        dashboardJson = ""; goalsJson = ""; notifsJson = ""; ritualsJson = "";
         navTab = ""; navSeq = 0;
     }
 }

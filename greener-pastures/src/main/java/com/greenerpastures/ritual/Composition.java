@@ -12,8 +12,14 @@ import java.util.Set;
  * lowercased so config and runtime compare cleanly. Built by the (MC-side) composition reader from Cobblemon
  * types; consumed by {@link Requirement} (rituals) and {@link TypeDropTable} (type-drops). Pure + tested.
  */
-public record Composition(Map<String, Integer> typeCounts, Set<String> species) {
+public record Composition(Map<String, Integer> typeCounts, Set<String> species, Map<String, Integer> speciesCounts) {
     public static final Composition EMPTY = new Composition(Map.of(), Set.of());
+
+    /** Compat shape (typeCounts + species set) — species COUNTS default empty; count-gated rituals
+     *  (e.g. "8 Meowth") need the 3-arg form the composition reader builds. */
+    public Composition(Map<String, Integer> typeCounts, Set<String> species) {
+        this(typeCounts, species, Map.of());
+    }
 
     public Composition {
         Map<String, Integer> t = new HashMap<>();
@@ -26,8 +32,20 @@ public record Composition(Map<String, Integer> typeCounts, Set<String> species) 
         if (species != null) {
             for (String sp : species) if (sp != null && !sp.isBlank()) s.add(sp.toLowerCase(Locale.ROOT));
         }
+        Map<String, Integer> sc = new HashMap<>();
+        if (speciesCounts != null) {
+            speciesCounts.forEach((k, v) -> {
+                if (k != null && v != null && v > 0) sc.put(k.toLowerCase(Locale.ROOT), v);
+            });
+        }
         typeCounts = Map.copyOf(t);
         species = Set.copyOf(s);
+        speciesCounts = Map.copyOf(sc);
+    }
+
+    /** How many tethered mons ARE this species (0 if absent) — the count-gate rituals check. */
+    public int countOfSpecies(String s) {
+        return s == null ? 0 : speciesCounts.getOrDefault(s.toLowerCase(Locale.ROOT), 0);
     }
 
     public int countOfType(String type) {

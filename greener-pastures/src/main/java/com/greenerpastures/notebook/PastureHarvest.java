@@ -110,11 +110,13 @@ public final class PastureHarvest {
                     if (!one.isEmpty()) productive++;
                     one.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
                 }
-                // Rituals on the network tick (3b): type-drops per mon + composition-gated gacha pulls with
-                // persistent pity — banked exactly once per sweep, so catch-up pays the missed pulls too.
-                Map<String, Integer> ritual = com.greenerpastures.drops.RitualHarvest.roll(
+                // Rituals on the network tick (v2): TYPE-DROPS merge into the normal deposit; GACHA ritual
+                // hits pay into the owner's Rituals-tab loot pool inside roll() (hidden-recipe discovery +
+                // pity persist per pasture; catch-up banks the missed pulls too).
+                Map<String, Integer> typeDrops = com.greenerpastures.drops.RitualHarvest.roll(
+                        server, pd.owner, pd.name.isEmpty() ? pos.toShortString() : pd.name,
                         com.greenerpastures.drops.CompositionReader.read(pasture), pd, RNG, sweeps);
-                ritual.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
+                typeDrops.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
                 long stored = 0;
                 for (Map.Entry<String, Integer> d : harvested.entrySet()) {
                     stored += store.deposit(pd.owner, d.getKey(), d.getValue());

@@ -121,6 +121,7 @@ public final class DsBridge {
             case "WITHDRAW"       -> new NotebookActionC2S(NotebookActionC2S.WITHDRAW, "", (int) num(p, "index", 0));
             case "DISMISS_NOTE"   -> new NotebookActionC2S(NotebookActionC2S.DISMISS_NOTE, str(p, "id", "all"), 0);
             case "WRITE_DISK"     -> new NotebookActionC2S(NotebookActionC2S.WRITE_DISK, str(p, "denom", ""), 0);
+            case "RITUAL_PULL"    -> new NotebookActionC2S(NotebookActionC2S.RITUAL_PULL, str(p, "item", ""), (int) num(p, "mode", 0));
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }
@@ -212,6 +213,7 @@ public final class DsBridge {
         push("dashboard", jsonChannel(NotebookState.dashboardJson));
         push("goals", jsonChannel(NotebookState.goalsJson));
         push("notifications", jsonChannel(NotebookState.notifsJson));
+        push("rituals", jsonChannel(NotebookState.ritualsJson));
         push("nav", navData());
     }
 
