@@ -152,3 +152,16 @@ flame-graph profiler" is the optimization-as-a-feature story, and the numbers to
 | Q59 | **Field Guide** | New world / first join → a Field Guide lands in your inventory (once ever, logged `first_join_gift`); right-click → console opens ON the Guide tab; content reads right (typos = tell me); Guide tab also reachable from the tab bar. | ☐ |
 | Q60 | **Creative tab** | Creative inventory → "Greener Pastures" tab (Notebook icon) with every mod item; Notebook + Guide also still in Tools. | ☐ |
 | Q61 | **Listing collateral** | `glow LISTING.md` — read the store description; screenshot list marked 📸 is the shot plan for this QA session. CHANGELOG.md drafted. | ☐ |
+
+---
+
+## 🧪 Content batch — 2026-07-03 night · rituals, disks, recipes, snacks (NOT deployed)
+
+| # | Change | How to verify | Status |
+|---|--------|---------------|--------|
+| Q62 | **Crafting recipes (12)** | Recipe book / craft by hand: notebook (copper+book+redstone+amethyst) · field guide (book+2 paper) · blank disk (2 iron nugget+quartz+redstone+paper) · **GPU eats a kilobyte disk** (2 quartz+2 redstone+2 copper+disk) · soul tether (3 amethyst+echo shard+string) · daemon (echo+2 amethyst+GPU+**megabyte disk**) · copper kernel (8 copper+redstone block) → upgrade ladder +4 iron → +4 gold → +4 diamond → +1 netherite ingot → +4 emerald **blocks** = Greener. NB: upgrading crafts a FRESH kernel — augment after upgrading, not before. | ☐ |
+| Q63 | **Data disks — write** | Dashboard → 💾 Disks card: buttons grey without a blank/balance; write a kilobyte (needs 1,024 Data + a blank) → blank converts, balance drops, log `disk write`. | ☐ |
+| Q64 | **Data disks — read** | Right-click the written disk → +1,024 Data, you get the **blank back**; tooltips show values. Rocket disk = 67,108,864 (the flex). | ☐ |
+| Q65 | **Type-drops** | Fill a linked pasture with Ice- or Fire-types → within a few sweeps ice/blaze rods appear in Harvester storage (log `harvest sweep` items). Fire-types are now your blaze-rod farm (no vanilla mobs!). Use `/gp harvest interval 5` to watch live. | ☐ |
+| Q66 | **Gacha rituals** | Compose a pasture per a ritual in `config/greenerpastures/rituals.json` (defaults: e.g. Nether Forge) → each sweep banks a pull; hits log `ritual hit` + items deposit; **pity persists across relog** (check `pulls` DEBUG lines, pity climbing). | ☐ |
+| Q67 | **Ultra Compressed Snack** | Cook 2-3 differently-seasoned poke snacks, put them all in a crafting grid → ONE gold-named "Ultra Compressed Snack" (lore: ×N snacks · M bait effects). Place it on a tower → spawner honors ALL merged seasonings (duplicates stack additively — stronger lure). | ☐ |
