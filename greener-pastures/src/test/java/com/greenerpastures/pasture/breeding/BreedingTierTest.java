@@ -42,9 +42,9 @@ class BreedingTierTest {
         assertEquals(150, BreedingTier.GOLD.baseDropRateCentipercent(),      "gold +1.50%");
         assertEquals(200, BreedingTier.DIAMOND.baseDropRateCentipercent(),   "diamond +2.00%");
         assertEquals(250, BreedingTier.NETHERITE.baseDropRateCentipercent(), "netherite +2.50%");
-        // Greener breaks the line at ×2 (Deuce 2026-07-04: "double drops from where it currently is") —
+        // Greener jumps off the line (Deuce 2026-07-04: doubled, then tuned down 1% the same day) —
         // the top kernel is a JUMP, priced like one (8 netherite/emerald blocks).
-        assertEquals(600, BreedingTier.GREENER.baseDropRateCentipercent(),   "greener +6.00%");
+        assertEquals(500, BreedingTier.GREENER.baseDropRateCentipercent(),   "greener +5.00%");
     }
 
     @Test
@@ -54,7 +54,7 @@ class BreedingTierTest {
         assertEquals(1.3, BreedingTier.GOLD.baseSpeedFactor(),      1e-9, "gold ×1.3");
         assertEquals(1.4, BreedingTier.DIAMOND.baseSpeedFactor(),   1e-9, "diamond ×1.4");
         assertEquals(1.5, BreedingTier.NETHERITE.baseSpeedFactor(), 1e-9, "netherite ×1.5");
-        assertEquals(2.2, BreedingTier.GREENER.baseSpeedFactor(),   1e-9, "greener ×2.2 (double its line bonus)");
+        assertEquals(1.6, BreedingTier.GREENER.baseSpeedFactor(),   1e-9, "greener ×1.6 (jump halved 2026-07-04)");
         BreedingTier prev = null;
         for (BreedingTier t : BreedingTier.values()) {
             if (prev != null) assertTrue(t.baseSpeedFactor() > prev.baseSpeedFactor(), "speed must climb per tier");
