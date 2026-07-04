@@ -164,7 +164,7 @@ flame-graph profiler" is the optimization-as-a-feature story, and the numbers to
 | Q64 | **Data disks — read** | Right-click the written disk → +1,024 Data, you get the **blank back**; tooltips show values. Rocket disk = 67,108,864 (the flex). | ☐ |
 | Q65 | **Type-drops** | Fill a linked pasture with Ice- or Fire-types → within a few sweeps ice/blaze rods appear in Harvester storage (log `harvest sweep` items). Fire-types are now your blaze-rod farm (no vanilla mobs!). Use `/gp harvest interval 5` to watch live. | ☐ |
 | Q66 | **Gacha rituals** | Compose a pasture per a ritual in `config/greenerpastures/rituals.json` (defaults: e.g. Nether Forge) → each sweep banks a pull; hits log `ritual hit` + items deposit; **pity persists across relog** (check `pulls` DEBUG lines, pity climbing). | ☐ |
-| Q67 | **Ultra Compressed Snack (dedup rev 2026-07-04)** | Cook 2-3 DIFFERENTLY-seasoned snacks → grid → gold "Ultra Compressed Snack", lore `×N snacks · M/9 unique effects`. **Compression deduplicates**: 9 identical shiny-seasoned snacks → ONE shiny effect + "26 deduplicated" in the lore (the 27× stack exploit is closed); breadth caps at 9 distinct effects; flavours take the max, not the sum. Tower honors the union. | ☐ |
+| Q67 | **Ultra Compressed Snack (double-additive rev 2026-07-04)** | **Deuce's canonical test**: craft snacks [chilan+ega+starf] + [3 starf] + [3 starf] + [3 chilan] → grid → lore reads `×4 snacks · 3 effects · 11 stacks · 1 compressed away` = **4 chilan, 6 starf, 1 ega** (starf capped at 6 = double a pot cook). 9 identical shiny snacks → 6 shiny stacks max (27× exploit closed at 6×). Breadth still caps at 9 distinct effects; flavours sum but cap at 2× the strongest input. | ☐ |
 
 ---
 
