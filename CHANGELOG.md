@@ -19,6 +19,11 @@
   away-time only — offline gaps are gated out). Kernel drop rates doubled and statistically verified.
 - Dedicated **creative tab** with every mod item.
 
+### Design decisions (locked for release)
+- Multi-pair breeding has a hard **2.5-minute floor** per brood regardless of kernel tier × Speed augment ×
+  tether stacking (server protection; signed off 2026-07-04). Kernel perk ladder final: pairs 2→8,
+  egg speed ×1.1→×1.6, drop +0.5%→+5.0% (Greener jumps drops+pairs, not cadence).
+
 ### Changed
 - **Idle cost ≈ 0**: the console pipeline (serialize + poll + Chromium pump) fully stands down while the
   Notebook is closed; the server never re-sends unchanged console data (per-player change gates); saves

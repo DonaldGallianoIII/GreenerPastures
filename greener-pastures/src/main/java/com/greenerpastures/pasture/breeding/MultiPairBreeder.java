@@ -181,7 +181,10 @@ public final class MultiPairBreeder {
             case 3 -> 3.0;
             default -> 1.0;
         };
-        return Math.max(3000L, Math.round(baseInterval / (factor * Math.max(1.0, tierFactor))));   // ~2.5 min floor
+        // 2.5-min floor SIGNED OFF for release (Deuce 2026-07-04): at the ~10-min default base it only
+        // shaves the very top of the Greener+Speed III stack; servers configuring faster bases are
+        // deliberately clamped. Revisit only if a future tier/augment pushes total factor past ~4.
+        return Math.max(3000L, Math.round(baseInterval / (factor * Math.max(1.0, tierFactor))));
     }
 
     /** Snapshot the roster + resolve the configured pairs — hoisted out of the brood loop so a catch-up
