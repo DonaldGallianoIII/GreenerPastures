@@ -1,23 +1,22 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
-  "ingredients": [
-    {
-      "item": "greenerpastures:breeding_upgrade_netherite"
-    },
-    {
-      "item": "minecraft:emerald_block"
-    },
-    {
-      "item": "minecraft:emerald_block"
-    },
-    {
-      "item": "minecraft:emerald_block"
-    },
-    {
-      "item": "minecraft:emerald_block"
-    }
+  "pattern": [
+    "NEN",
+    "EKE",
+    "NEN"
   ],
+  "key": {
+    "N": {
+      "item": "minecraft:netherite_block"
+    },
+    "E": {
+      "item": "minecraft:emerald_block"
+    },
+    "K": {
+      "item": "greenerpastures:breeding_upgrade_netherite"
+    }
+  },
   "result": {
     "id": "greenerpastures:breeding_upgrade_greener",
     "count": 1

@@ -42,7 +42,9 @@ class BreedingTierTest {
         assertEquals(150, BreedingTier.GOLD.baseDropRateCentipercent(),      "gold +1.50%");
         assertEquals(200, BreedingTier.DIAMOND.baseDropRateCentipercent(),   "diamond +2.00%");
         assertEquals(250, BreedingTier.NETHERITE.baseDropRateCentipercent(), "netherite +2.50%");
-        assertEquals(300, BreedingTier.GREENER.baseDropRateCentipercent(),   "greener +3.00%");
+        // Greener breaks the line at ×2 (Deuce 2026-07-04: "double drops from where it currently is") —
+        // the top kernel is a JUMP, priced like one (8 netherite/emerald blocks).
+        assertEquals(600, BreedingTier.GREENER.baseDropRateCentipercent(),   "greener +6.00%");
     }
 
     @Test

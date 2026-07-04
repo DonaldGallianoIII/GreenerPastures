@@ -35,11 +35,13 @@ public enum BreedingTier {
         return name().toLowerCase(Locale.ROOT);
     }
 
-    /** Per-tier base drop-rate perk, in centipercent — SCALES with the tier: copper +0.25%, iron +0.50%, gold
-     *  +0.75%, diamond +1.00%, netherite +1.25%, greener +1.50%. (BUG-001 fix: every tier previously shared one
-     *  flat +0.25%.) The unit is {@link BreedingUpgradeItem#BASE_DROP_RATE}, a compile-time constant that inlines,
-     *  so this enum stays MC-free and headless-testable. */
+    /** Per-tier base drop-rate perk, in centipercent — SCALES with the tier: copper +0.50% … netherite +2.50%,
+     *  and GREENER breaks the line at ×2 (+6.00%, Deuce 2026-07-04: "double drops from where it currently is")
+     *  — the top kernel is a jump, not a step, matching its 8-netherite/emerald-block recipe. The unit is
+     *  {@link BreedingUpgradeItem#BASE_DROP_RATE}, a compile-time constant that inlines, so this enum stays
+     *  MC-free and headless-testable. */
     public int baseDropRateCentipercent() {
-        return BreedingUpgradeItem.BASE_DROP_RATE * (ordinal() + 1);
+        int base = BreedingUpgradeItem.BASE_DROP_RATE * (ordinal() + 1);
+        return this == GREENER ? base * 2 : base;
     }
 }

@@ -1,23 +1,19 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
-  "ingredients": [
-    {
-      "item": "greenerpastures:breeding_upgrade_iron"
-    },
-    {
-      "item": "minecraft:gold_ingot"
-    },
-    {
-      "item": "minecraft:gold_ingot"
-    },
-    {
-      "item": "minecraft:gold_ingot"
-    },
-    {
-      "item": "minecraft:gold_ingot"
-    }
+  "pattern": [
+    "ggg",
+    "gKg",
+    "ggg"
   ],
+  "key": {
+    "g": {
+      "item": "minecraft:gold_block"
+    },
+    "K": {
+      "item": "greenerpastures:breeding_upgrade_iron"
+    }
+  },
   "result": {
     "id": "greenerpastures:breeding_upgrade_gold",
     "count": 1
