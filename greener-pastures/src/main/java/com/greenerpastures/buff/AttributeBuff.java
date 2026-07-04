@@ -25,7 +25,11 @@ package com.greenerpastures.buff;
 public enum AttributeBuff {
     RESPIRATION    (BuffId.RESPIRATION,     Op.ADD_VALUE,            1.0),
     SWIFT_SNEAK    (BuffId.SWIFT_SNEAK,     Op.ADD_MULTIPLIED_TOTAL, 0.15),
-    FEATHER_FALLING(BuffId.FEATHER_FALLING, Op.ADD_MULTIPLIED_TOTAL, -0.15);
+    FEATHER_FALLING(BuffId.FEATHER_FALLING, Op.ADD_MULTIPLIED_TOTAL, -0.15),
+    /** Tool break-speed multiplier ("Mining Damage" — Deuce): ×(1 + tier/3) → I +33% · II +67% · III +100%.
+     *  Sized so III + our Haste III + an Efficiency V netherite pick crosses deepslate's instamine threshold
+     *  (35 × 1.6 × 2 = 112 ≥ 90) — each piece alone deliberately does NOT. Affects blocks only, PvP-neutral. */
+    MINING_DAMAGE  (BuffId.MINING_DAMAGE,   Op.ADD_MULTIPLIED_TOTAL, 1.0 / 3.0);
 
     /** The three vanilla attribute operations, mirrored MC-free (maps 1:1 to {@code EntityAttributeModifier.Operation}). */
     public enum Op { ADD_VALUE, ADD_MULTIPLIED_BASE, ADD_MULTIPLIED_TOTAL }

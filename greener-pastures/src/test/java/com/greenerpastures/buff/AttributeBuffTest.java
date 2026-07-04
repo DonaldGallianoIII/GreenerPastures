@@ -42,14 +42,27 @@ class AttributeBuffTest {
     }
 
     @Test
-    void everyAttributeBuffIsANonCombatNonGatheringEnchant() {
+    void everyAttributeBuffStaysPvpNeutral() {
         for (AttributeBuff a : AttributeBuff.values()) {
             assertNotNull(a.buff, "buff link");
+            if (a == AttributeBuff.MINING_DAMAGE) continue;   // the sanctioned gathering exception, asserted below
             assertSame(BuffCategory.ENCHANT, a.buff.category, a.buff.id + " must be an ENCHANT buff");
-            // attribute modifiers can't be individually capped like Fortune, so we only deliver QOL/movement here —
-            // never a gathering economy lever.
+            // Legacy rule for the enchant-riders: QOL/movement only — never a gathering economy lever.
             assertFalse(a.buff.gathering, a.buff.id + " must not be a gathering buff");
         }
+    }
+
+    @Test
+    void miningDamageIsTheSanctionedGatheringException() {
+        // Deuce (2026-07-03): "something that isn't haste… buffs the actual damage a tool does" — a straight
+        // block-break-speed multiplier. Gathering-flagged ON PURPOSE (economy lever, admins cap it per-buff in
+        // buffs.json like Fortune); block-speed only, so still PvP-neutral.
+        AttributeBuff md = AttributeBuff.MINING_DAMAGE;
+        assertSame(BuffCategory.HOOK, md.buff.category);
+        assertTrue(md.buff.gathering, "mining damage is an economy lever — must be gathering-flagged");
+        assertSame(AttributeBuff.Op.ADD_MULTIPLIED_TOTAL, md.operation);
+        assertEquals(1.0 / 3.0, md.value(1), 1e-9, "tier I = +33%");
+        assertEquals(1.0, md.value(3), 1e-9, "tier III = +100% (×2 break speed)");
     }
 
     @Test

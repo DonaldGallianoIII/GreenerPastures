@@ -35,6 +35,10 @@ public enum BuffId {
     SATURATION     ("saturation",      "Saturation",      BuffCategory.EFFECT,  "minecraft:saturation",      0, false),
 
     // ── HOOK buffs: mod-implemented mechanics (no vanilla registry entry) ──
+    /** NOT Haste (Deuce, 2026-07-03): a straight multiplier on tool break SPEED via the
+     *  {@code player.block_break_speed} attribute — Haste III + Eff V still can't instamine deepslate;
+     *  Mining Damage III (+100%) stacked on them can. Gathering-flagged (economy-impacting). */
+    MINING_DAMAGE  ("mining_damage",   "Mining Damage",   BuffCategory.HOOK,    null,                        0, true),
     AUTO_SMELT     ("auto_smelt",      "Auto-Smelt",      BuffCategory.HOOK,    null,                        0, true),
     VEIN_MINE      ("vein_mine",       "Vein Miner",      BuffCategory.HOOK,    null,                        0, true),
     MAGNET         ("magnet",          "Item Magnet",     BuffCategory.HOOK,    null,                        0, false),

@@ -40,6 +40,7 @@ public final class DaemonAttributeBuffs {
         ATTRS.put(AttributeBuff.RESPIRATION,     EntityAttributes.GENERIC_OXYGEN_BONUS);
         ATTRS.put(AttributeBuff.SWIFT_SNEAK,     EntityAttributes.PLAYER_SNEAKING_SPEED);
         ATTRS.put(AttributeBuff.FEATHER_FALLING, EntityAttributes.GENERIC_FALL_DAMAGE_MULTIPLIER);
+        ATTRS.put(AttributeBuff.MINING_DAMAGE,   EntityAttributes.PLAYER_BLOCK_BREAK_SPEED);
     }
 
     /** The buffs this adapter delivers — folded into {@code DaemonBuffs.SUPPORTED} so they're billed only here. */

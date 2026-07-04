@@ -42,7 +42,7 @@ public record BuffConfig(boolean enabled, Map<String, BuffSetting> buffs) {
         try {
             if (Files.exists(file)) {
                 BuffConfig c = GsonHolder.GSON.fromJson(Files.readString(file), BuffConfig.class);
-                if (c != null) return c;
+                if (c != null) return mergeNewBuffs(c, file);
                 GpLog.w("buff", "config_empty", "file", file.toString());
             }
         } catch (Throwable t) {
@@ -70,6 +70,22 @@ public record BuffConfig(boolean enabled, Map<String, BuffSetting> buffs) {
             m.put(b.id, new BuffSetting(true, BuffSetting.TIER_CEILING, defaultCostPerSec(b)));
         }
         return new BuffConfig(true, m);
+    }
+
+    /** A buff added to the CATALOG after an admin's file was written must still appear (with its default
+     *  setting) — merge + persist, preserving every admin-tuned entry untouched. */
+    private static BuffConfig mergeNewBuffs(BuffConfig c, Path file) {
+        Map<String, BuffSetting> merged = null;
+        for (BuffId b : BuffId.values()) {
+            if (c.buffs().containsKey(b.id)) continue;
+            if (merged == null) merged = new LinkedHashMap<>(c.buffs());
+            merged.put(b.id, new BuffSetting(true, BuffSetting.TIER_CEILING, defaultCostPerSec(b)));
+            GpLog.i("buff", "config_merged_new", "buff", b.id);
+        }
+        if (merged == null) return c;
+        BuffConfig out = new BuffConfig(c.enabled(), merged);
+        try { Files.writeString(file, GsonHolder.GSON.toJson(out)); } catch (Throwable ignored) { }
+        return out;
     }
 
     /** Data/sec/tier defaults: gathering (economy-impacting) buffs cost more than pure QOL ones. */
