@@ -48,6 +48,21 @@ class BreedingTierTest {
     }
 
     @Test
+    void baseSpeedFactorScalesPerTierWithTheGreenerJump() {   // Deuce 2026-07-04: kernels carry egg speed like drops
+        assertEquals(1.1, BreedingTier.COPPER.baseSpeedFactor(),    1e-9, "copper ×1.1");
+        assertEquals(1.2, BreedingTier.IRON.baseSpeedFactor(),      1e-9, "iron ×1.2");
+        assertEquals(1.3, BreedingTier.GOLD.baseSpeedFactor(),      1e-9, "gold ×1.3");
+        assertEquals(1.4, BreedingTier.DIAMOND.baseSpeedFactor(),   1e-9, "diamond ×1.4");
+        assertEquals(1.5, BreedingTier.NETHERITE.baseSpeedFactor(), 1e-9, "netherite ×1.5");
+        assertEquals(2.2, BreedingTier.GREENER.baseSpeedFactor(),   1e-9, "greener ×2.2 (double its line bonus)");
+        BreedingTier prev = null;
+        for (BreedingTier t : BreedingTier.values()) {
+            if (prev != null) assertTrue(t.baseSpeedFactor() > prev.baseSpeedFactor(), "speed must climb per tier");
+            prev = t;
+        }
+    }
+
+    @Test
     void baseDropRateStrictlyIncreasesPerTier() {   // BUG-001 regression guard
         BreedingTier[] v = BreedingTier.values();
         for (int i = 1; i < v.length; i++) {

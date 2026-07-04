@@ -44,4 +44,13 @@ public enum BreedingTier {
         int base = BreedingUpgradeItem.BASE_DROP_RATE * (ordinal() + 1);
         return this == GREENER ? base * 2 : base;
     }
+
+    /** Per-tier EGG-SPEED perk (Deuce 2026-07-04: "base kernels carry a faster egg laying speed… like the
+     *  drops"): the breeding interval divides by this. +10% per tier, and GREENER doubles its line bonus —
+     *  copper ×1.1 … netherite ×1.5, greener ×2.2. STACKS with the Speed augment (×1.5/×2/×3); the breeder's
+     *  ~2.5-min floor still backstops the server. MC-free, headless-tested. */
+    public double baseSpeedFactor() {
+        double bonus = 0.10 * (ordinal() + 1);
+        return 1.0 + (this == GREENER ? bonus * 2 : bonus);
+    }
 }

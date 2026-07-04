@@ -109,7 +109,7 @@ public final class MultiPairBreeder {
                     long interval = testIntervalTicks > 0
                             ? testIntervalTicks   // QA override (/gp breed interval N) — fixed rate, floor bypassed
                             : speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
-                                    res.effective().speedLevel());
+                                    res.effective().speedLevel(), tier.baseSpeedFactor());
 
                     // CATCH-UP: broods missed while this chunk was unloaded (the loop skips unloaded chunks, so
                     // lastBreedTick froze). Rolled now with the current pairs/Kernel — every egg still walks the
@@ -171,16 +171,17 @@ public final class MultiPairBreeder {
         if (dirty) reg.markDirty();
     }
 
-    /** Speed augment → faster cadence: ×1.5/×2/×3 by effective level, floored so breeding never runs
-     *  absurdly fast (magnitudes are config-tunable; the floor protects the server). */
-    private static long speedAdjustedInterval(long baseInterval, int speedLevel) {
+    /** Faster cadence = Speed augment (×1.5/×2/×3 by effective level) × the KERNEL's own tier perk
+     *  ({@link BreedingTier#baseSpeedFactor()} — every kernel breeds faster, greener much faster), floored
+     *  so breeding never runs absurdly fast (the floor protects the server). */
+    private static long speedAdjustedInterval(long baseInterval, int speedLevel, double tierFactor) {
         double factor = switch (Math.max(0, Math.min(3, speedLevel))) {
             case 1 -> 1.5;
             case 2 -> 2.0;
             case 3 -> 3.0;
             default -> 1.0;
         };
-        return Math.max(3000L, Math.round(baseInterval / factor));   // ~2.5 min floor
+        return Math.max(3000L, Math.round(baseInterval / (factor * Math.max(1.0, tierFactor))));   // ~2.5 min floor
     }
 
     /** Snapshot the roster + resolve the configured pairs — hoisted out of the brood loop so a catch-up
