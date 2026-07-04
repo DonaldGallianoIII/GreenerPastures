@@ -134,3 +134,21 @@ Deuce reviewed the board and **approved these as verified** (the detailed rows a
 
 **For the mod listing (marketing):** screenshot `/gp perf flame` output + the table — "ships with its own
 flame-graph profiler" is the optimization-as-a-feature story, and the numbers to quote are in PERF_AUDIT.md R3.
+
+---
+
+## 🚀 Release batch — 2026-07-03 evening · jar `c19c74b6` (NOT deployed — awaiting quit-confirm)
+
+> ⚠️ **BEFORE YOU LAUNCH: add `-Dgreenerpastures.qa=true` to the instance's JVM args** (CurseForge →
+> instance settings → Additional Java Arguments). Without it this build hides `/gp breed|harvest|data|daemon|augment`
+> AND drops the log to INFO (release defaults). One flag restores both for the test instance.
+> `/gp goal` + `/gp perf` always ship.
+
+| # | Change | How to verify | Status |
+|---|--------|---------------|--------|
+| Q56 | **QA flag** | Launch WITHOUT the flag once: QA commands gone from tab-complete, log quiet (INFO), everything else works — that's what players get. Add the flag → commands + DEBUG log return (`session_start` shows `minLevel:DEBUG` + a QA MODE warn line). | ☐ |
+| Q57 | **GPU costs — Augmenter** | With 0 GPU: every install button disabled/red; server also refuses (chat: *Not enough GPU*). Grab GPUs → install Shiny (2 ◈) and Speed (1 ◈) → GPU count drops; **EDIT re-pick costs nothing**; REMOVE refunds nothing. `/gp augment` (QA) still bypasses for testing. | ☐ |
+| Q58 | **GPU costs — Compiler** | Buff + tier now consumes 2 ◈ per step (chat refusal when short); tier − is free, no refund. Costs show as ◈2 in the rows (was blank). | ☐ |
+| Q59 | **Field Guide** | New world / first join → a Field Guide lands in your inventory (once ever, logged `first_join_gift`); right-click → console opens ON the Guide tab; content reads right (typos = tell me); Guide tab also reachable from the tab bar. | ☐ |
+| Q60 | **Creative tab** | Creative inventory → "Greener Pastures" tab (Notebook icon) with every mod item; Notebook + Guide also still in Tools. | ☐ |
+| Q61 | **Listing collateral** | `glow LISTING.md` — read the store description; screenshot list marked 📸 is the shot plan for this QA session. CHANGELOG.md drafted. | ☐ |

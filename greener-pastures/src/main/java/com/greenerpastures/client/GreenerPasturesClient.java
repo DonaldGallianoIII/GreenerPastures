@@ -57,6 +57,13 @@ public final class GreenerPasturesClient implements ClientModInitializer {
             NotebookState.pastureConfig = null; NotebookState.pastureGraphJson = ""; NotebookState.pastureExtraJson = ""; NotebookState.pastureConfigLoading = false;
             openConsole();
         };
+        com.greenerpastures.core.FieldGuideItem.OPENER = () -> {   // Field Guide → console on the Guide tab
+            if (NotebookState.pastureConfig != null) NotebookBrowserScreen.curtain();
+            NotebookState.pastureConfig = null; NotebookState.pastureGraphJson = ""; NotebookState.pastureExtraJson = ""; NotebookState.pastureConfigLoading = false;
+            NotebookState.navigate("guide");
+            openConsole();
+            DsBridge.pushNow();
+        };
         NotebookItem.PASTURE_OPENER = (pos) -> {
             // Stale-while-revalidate: a pasture seen this session renders its cached config INSTANTLY (fully
             // interactive) and the server refresh lands silently. Only a first-ever open shows the loading

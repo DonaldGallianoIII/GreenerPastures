@@ -40,8 +40,14 @@ public final class GpLog {
 
     public enum Level { TRACE, DEBUG, INFO, WARN, ERROR }
 
-    /** Calls below this level are dropped cheaply. Mutable knob; a config option can drive it later. */
-    public static volatile Level minLevel = Level.DEBUG;
+    /** True when the one dev/QA switch is on ({@code -Dgreenerpastures.qa=true} or env {@code GP_QA=true}):
+     *  enables the QA commands AND defaults the log to DEBUG — one flag for a test instance. */
+    public static final boolean QA_MODE =
+            Boolean.getBoolean("greenerpastures.qa") || "true".equalsIgnoreCase(System.getenv("GP_QA"));
+
+    /** Calls below this level are dropped cheaply. RELEASE default is INFO (players shouldn't pay for our
+     *  per-sweep DEBUG trail); QA mode or {@code -Dgp.log.level} restores DEBUG. */
+    public static volatile Level minLevel = QA_MODE ? Level.DEBUG : Level.INFO;
 
     /** True when {@code level} would actually log — guard hot-LOOP log calls with this so their argument
      *  strings (toString/format/varargs array) aren't built just to be dropped (perf-audit R3 #5). */

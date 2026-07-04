@@ -46,13 +46,19 @@ public final class GreenerPastures implements ModInitializer {
         // analytics/ — open the local event log before any emitter runs
         Analytics.init();
         NotifySystem.init();    // player notifications observe the analytics event stream
-        GoalCommand.init();     // /gp goal — set + track a breeding hunt (track-only, non-destructive)
-        AugmentCommand.init();  // /gp augment — no-UI install path: set augment levels on a held Kernel
-        DataCommand.init();     // /gp data — QA/admin: grant/set Data balance so the Daemon can be "fed" for buff tests
-        DaemonCommand.init();   // /gp daemon — compile a Daemon's buff loadout + toggle it on/off (BUG-004, no-UI path)
-        BreedCommand.init();    // /gp breed — QA/admin: override breeding cadence (e.g. every 15s) for fast egg testing
-        com.greenerpastures.notebook.HarvestCommand.init();   // /gp harvest — QA/admin: override the harvest-sweep cadence for drop-rate testing
-        com.greenerpastures.core.PerfCommand.init();          // /gp perf — the built-in profiler: ms table + flame-graph HTML
+        GoalCommand.init();     // /gp goal — set + track a breeding hunt (track-only, non-destructive; ships)
+        com.greenerpastures.core.PerfCommand.init();          // /gp perf — the built-in profiler (ships; it's a feature)
+        if (GpLog.QA_MODE) {
+            // Dev/QA-only commands — they bypass the GPU economy and rewrite cadences/balances, so a public
+            // build must not carry them hot. One switch turns them (and DEBUG logging) back on for a test
+            // instance: -Dgreenerpastures.qa=true (or env GP_QA=true).
+            AugmentCommand.init();  // /gp augment — no-UI install path: set augment levels on a held Kernel
+            DataCommand.init();     // /gp data — grant/set Data balance
+            DaemonCommand.init();   // /gp daemon — compile a Daemon loadout without the console
+            BreedCommand.init();    // /gp breed — override breeding cadence
+            com.greenerpastures.notebook.HarvestCommand.init();   // /gp harvest — override the harvest-sweep cadence
+            LOG.warn("Greener Pastures QA MODE — QA commands registered + DEBUG logging (do not ship a server like this)");
+        }
 
 
         // pasture/
@@ -80,6 +86,9 @@ public final class GreenerPastures implements ModInitializer {
         // notebook/ — the online gate for catch-up progress: stamp logouts, shift pasture anchors past offline
         // gaps on join (away-in-other-chunks time counts; offline time doesn't — Deuce, 2026-07-03).
         com.greenerpastures.notebook.OfflineProgress.init();
+
+        // core/ — the ship-with Field Guide: every player gets one on first join (#18).
+        com.greenerpastures.core.FirstJoinGift.init();
 
         // Session hygiene: statics survive across worlds in singleplayer (one JVM, integrated server restarts),
         // so wipe every per-session store on server start — a fresh world must never show the last world's stats

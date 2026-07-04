@@ -21,5 +21,7 @@
   "item.greenerpastures.data_disk_megabyte": "Megabyte Data Disk",
   "item.greenerpastures.data_disk_gigabyte": "Gigabyte Data Disk",
   "item.greenerpastures.data_disk_terabyte": "Terabyte Data Disk",
-  "item.greenerpastures.data_disk_rocket": "Forbidden Data Disk"
+  "item.greenerpastures.data_disk_rocket": "Forbidden Data Disk",
+  "item.greenerpastures.field_guide": "Field Guide — A Data Science Mod",
+  "itemGroup.greenerpastures": "Greener Pastures"
 }

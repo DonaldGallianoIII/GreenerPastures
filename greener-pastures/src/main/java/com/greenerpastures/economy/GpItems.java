@@ -20,6 +20,7 @@ public final class GpItems {
 
     public static Item GPU;
     public static Item NOTEBOOK;
+    public static Item FIELD_GUIDE;
     public static Item DISK_BLANK, DISK_BYTE, DISK_KILOBYTE, DISK_MEGABYTE, DISK_GIGABYTE, DISK_TERABYTE, DISK_ROCKET;
 
     private static Item item(String id, Item.Settings settings) {
@@ -30,6 +31,8 @@ public final class GpItems {
         GPU           = item("gpu", new Item.Settings());
         NOTEBOOK      = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "notebook"),
                 new NotebookItem(new Item.Settings().maxCount(1)));
+        FIELD_GUIDE   = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "field_guide"),
+                new com.greenerpastures.core.FieldGuideItem(new Item.Settings().maxCount(1)));
         DISK_BLANK    = item("data_disk_blank", new Item.Settings());
         DISK_BYTE     = item("data_disk_byte", new Item.Settings());
         DISK_KILOBYTE = item("data_disk_kilobyte", new Item.Settings());
@@ -38,16 +41,21 @@ public final class GpItems {
         DISK_TERABYTE = item("data_disk_terabyte", new Item.Settings());
         DISK_ROCKET   = item("data_disk_rocket", new Item.Settings());
 
+        // One dedicated creative tab for the whole mod (release polish): auto-collects every item registered
+        // under our namespace — entries resolve LAZILY (on tab open), so registration order doesn't matter.
+        Registry.register(Registries.ITEM_GROUP, Identifier.of(GreenerPastures.MOD_ID, "all"),
+                net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup.builder()
+                        .icon(() -> new net.minecraft.item.ItemStack(NOTEBOOK))
+                        .displayName(net.minecraft.text.Text.translatable("itemGroup.greenerpastures"))
+                        .entries((ctx, e) -> Registries.ITEM.getIds().stream()
+                                .filter(id -> id.getNamespace().equals(GreenerPastures.MOD_ID))
+                                .sorted()
+                                .forEach(id -> e.add(Registries.ITEM.get(id))))
+                        .build());
+        // Keep the Notebook + Guide discoverable in vanilla Tools too (players look there first).
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(e -> {
             e.add(NOTEBOOK);
-            e.add(GPU);
-            e.add(DISK_BLANK);
-            e.add(DISK_BYTE);
-            e.add(DISK_KILOBYTE);
-            e.add(DISK_MEGABYTE);
-            e.add(DISK_GIGABYTE);
-            e.add(DISK_TERABYTE);
-            e.add(DISK_ROCKET);
+            e.add(FIELD_GUIDE);
         });
     }
 }

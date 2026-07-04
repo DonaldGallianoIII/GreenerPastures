@@ -260,6 +260,7 @@ const TABS = [
   { id: 'augmenter', label: 'Augmenter', path: 'gp://kernel/augmenter' },
   { id: 'dashboard', label: 'Dashboard', path: 'gp://dashboard' },
   { id: 'inbox',     label: 'Inbox',     path: 'gp://inbox' },
+  { id: 'guide',     label: 'Guide',     path: 'gp://guide' },
 ]
 const STAT_NAMES = ['HP', 'At', 'Df', 'SA', 'SD', 'Sp']
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s)
@@ -275,6 +276,8 @@ export default function App() {
   const focused = pcfg?.present
   const notifs = useChannel('notifications')
   const noteCount = notifs?.notes?.length || 0
+  const nav = useChannel('nav')          // one-shot tab requests (the Field Guide item opens gp://guide)
+  useEffect(() => { if (nav?.tab && TABS.some((t) => t.id === nav.tab)) setTab(nav.tab) }, [nav?.n])
   // Viewport scaling: uniformly zoom the fixed-design stage to fill the MC window (viewport-ui-principle),
   // so the console holds the same proportion at any window size instead of being a fixed-px panel in black.
   useEffect(() => {
@@ -320,6 +323,7 @@ export default function App() {
           {tab === 'augmenter' && <Augmenter />}
           {tab === 'dashboard' && <Dashboard />}
           {tab === 'inbox' && <InboxTab />}
+          {tab === 'guide' && <GuideTab />}
         </div>
         </>)}
         <StatusBar />
@@ -632,14 +636,15 @@ function Compiler() {
         <span className="h">Effect · −/+ tier · ◈ = GPU per tier</span>
         {(d.catalog || []).map((b) => {
           const tier = installed[b.id] || 0
+          const gcost = b.gpuCost ?? 0
           return (
             <div key={b.id} className={`brow${tier > 0 ? ' on' : ''}`}>
               <span style={{ color: tier > 0 ? 'var(--text)' : 'var(--muted)', flex: 1 }}>{b.label}</span>
               <span className="dim mono" style={{ fontSize: 9 }}>{b.category}</span>
-              <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= b.gpuCost ? 'var(--cyan)' : 'var(--red)' }} title="GPU to add one tier">◈{b.gpuCost}</span>
+              <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= gcost ? 'var(--cyan)' : 'var(--red)' }} title="GPU to add one tier">◈{gcost}</span>
               <button className="step" disabled={tier <= 0} onClick={() => send('compiler', 'SET_BUFF', { buff: b.id, tier: tier - 1 })}>−</button>
               <span className="mono" style={{ fontSize: 11, color: tier > 0 ? 'var(--green)' : 'var(--muted)', width: 36, textAlign: 'center' }}>L{tier}/{b.cap}</span>
-              <button className="step" disabled={tier >= b.cap || gpu < b.gpuCost} title={gpu < b.gpuCost ? 'not enough GPU' : ''} onClick={() => send('compiler', 'SET_BUFF', { buff: b.id, tier: tier + 1 })}>+</button>
+              <button className="step" disabled={tier >= b.cap || gpu < gcost} title={gpu < gcost ? 'not enough GPU' : ''} onClick={() => send('compiler', 'SET_BUFF', { buff: b.id, tier: tier + 1 })}>+</button>
               <span className="amb mono" style={{ fontSize: 10, width: 44, textAlign: 'right' }}>{(tier * b.costPerTier).toFixed(2)}/s</span>
             </div>
           )
@@ -1400,4 +1405,49 @@ function PastureConfig({ cfg }) {
   )
 }
 const pairHue = (b) => `hsl(${(b * 67) % 360} 70% 62%)`
+const GUIDE = [
+  ['🌱 The Loop', `Tether parents in a pasture → slot a KERNEL → it breeds your configured pairs on a real clock →
+every egg flows into your NOTEBOOK as data. Keepers land in the BioBank; the rest render into Data. Data feeds
+your Daemon's buffs and your Soul Tethers, which make the next generation faster and shinier. That's the loop —
+everything else in this mod is a lever on it.`],
+  ['📓 Getting started', `1 · Craft a Notebook and right-click a pasture with it, then press LINK — an unlinked
+pasture collects nothing (watch the amber warnings).  2 · Slot a Kernel (Copper → Greener: more pairs, more
+augment slots).  3 · Open Threads and put two parents on a line (♂+♀, or a Ditto).  4 · Wire the line through
+filters into the BioBank or Data.  5 · Walk away — drops and eggs keep accruing while the chunk is loaded, and
+catch up the moment you return (12h cap, online time only).`],
+  ['🧬 Kernels & the Augmenter', `Hold a Kernel near the Augmenter tab. Installs cost GPU (quality 2 ◈ ·
+throughput 1 ◈) plus a slot; picking a different nature/ball/EV spread later is FREE — the augment is yours.
+Nature Lock and Ball Lock force every egg; the EV Primer applies a full 510-budget spread; IV Floor guarantees
+perfect stats; Ability Splice forces the hidden ability. Soul Tethers amplify installed augments — for rent,
+paid in Data.`],
+  ['👾 The Daemon & Data', `Eggs your graph declines don't vanish — they RENDER into Data, credited to you.
+The Daemon spends it: compile buffs onto it (2 ◈ per tier) and switch it on — it drains Data per second while
+granting its loadout. Starved Daemon = buffs sleep, base augments keep working. Nothing is ever destroyed
+silently: shiny or unreadable eggs are ALWAYS kept, and the void log shows every render.`],
+  ['🏦 BioBank & the Graph', `The BioBank holds 256 eggs per species as data — sort by IVs, shininess, stats.
+The node graph (per breeding line) decides each egg's fate: IV/EV/nature/shiny filters → keep or render.
+Withdrawing checks your inventory first; the bank never deletes.`],
+  ['⛏ Harvest & Rituals', `Linked pastures trickle each mon's own Cobblemon drop table on a one-minute clock —
+no combat needed. Type-drops and gacha rituals (composition-gated, with pity) make a Cobblemon-only world fully
+farmable. Rates are baked into the mod ON PURPOSE: no server config can zero your drops and sell them back.`],
+  ['🔬 The fine print', `All analytics are local — your data never leaves your machine. The mod profiles itself:
+/gp perf prints live ms timings, /gp perf flame renders a flame graph. MIT licensed. Bred with Cobbreeding;
+rendered with MCEF. — A Data Science Mod`],
+]
+
+function GuideTab() {
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="h" style={{ marginBottom: 4 }}>Field Guide</div>
+      <div className="dim" style={{ fontSize: 11, marginBottom: 10 }}>everything the Notebook does, in one page — right-click the Field Guide item to come back here</div>
+      {GUIDE.map(([title, body]) => (
+        <div key={title} className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8 }}>
+          <div className="grn" style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{title}</div>
+          <div style={{ fontSize: 11, lineHeight: 1.55, color: 'var(--text)', whiteSpace: 'pre-line' }}>{body}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function Empty({ title, msg }) { return <div className="empty"><div><b>{title}</b><span className="muted">{msg}</span></div></div> }

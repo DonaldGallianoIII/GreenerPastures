@@ -20,13 +20,14 @@ import java.util.Map;
 public record NotebookCompilerS2C(boolean hasDaemon, boolean daemonOn, double drainPerSec,
                                   List<Buff> catalog, Map<String, Integer> installed) implements CustomPayload {
 
-    public record Buff(String id, String label, String category, int cap, double costPerTier) {
+    public record Buff(String id, String label, String category, int cap, double costPerTier, int gpuCost) {
         public static final PacketCodec<RegistryByteBuf, Buff> CODEC = PacketCodec.tuple(
                 PacketCodecs.STRING, Buff::id,
                 PacketCodecs.STRING, Buff::label,
                 PacketCodecs.STRING, Buff::category,
                 PacketCodecs.VAR_INT, Buff::cap,
                 PacketCodecs.DOUBLE, Buff::costPerTier,
+                PacketCodecs.VAR_INT, Buff::gpuCost,
                 Buff::new);
     }
 

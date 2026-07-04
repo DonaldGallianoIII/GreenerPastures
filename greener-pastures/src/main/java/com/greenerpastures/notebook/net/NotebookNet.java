@@ -396,7 +396,7 @@ public final class NotebookNet {
         for (BuffId b : supported) {
             BuffSetting s = cfg.settingOf(b);
             int cap = s.enabled() ? Math.min(s.maxTier(), 3) : 0;
-            catalog.add(new NotebookCompilerS2C.Buff(b.id, b.label, b.category.name(), cap, s.costPerSec()));
+            catalog.add(new NotebookCompilerS2C.Buff(b.id, b.label, b.category.name(), cap, s.costPerSec(), GPU_PER_BUFF_TIER));
         }
         catalog.sort(Comparator.comparing(NotebookCompilerS2C.Buff::category)
                 .thenComparing(NotebookCompilerS2C.Buff::label));
@@ -420,10 +420,20 @@ public final class NotebookNet {
         BuffSetting s = BuffSystem.config().settingOf(b);
         int cap = s.enabled() ? Math.min(s.maxTier(), 3) : 0;
         int clamped = Math.max(0, Math.min(cap, tier));
+        int cur = DaemonItem.loadoutOf(daemon).toLevels().getOrDefault(b, 0);
+        int gpuSpent = 0;
+        if (clamped > cur) {                                   // tiering UP costs GPU; down is free, never refunded
+            gpuSpent = (clamped - cur) * GPU_PER_BUFF_TIER;
+            if (!consumeGpu(player, gpuSpent)) {
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough GPU — need "
+                        + gpuSpent + ", you have " + countGpu(player) + "."), false);
+                return;
+            }
+        }
         DaemonLoadout loadout = DaemonItem.loadoutOf(daemon).withLevel(b, clamped);
         daemon.set(DarkEconomy.DAEMON_LOADOUT, loadout);
         GpLog.i("notebook", "compile_set", "player", player.getUuid().toString(),
-                "buff", buffId, "tier", Integer.toString(clamped));
+                "buff", buffId, "tier", Integer.toString(clamped), "gpu", Integer.toString(gpuSpent));
     }
 
     private static void toggleDaemon(ServerPlayerEntity player) {
@@ -533,7 +543,39 @@ public final class NotebookNet {
     }
 
     private static int slotCost(AugmentType at) {
-        return 1;   // uniform 1 slot per augment for v1 (per-augment costs arrive with the economy pass)
+        return 1;   // uniform 1 slot per augment for v1
+    }
+
+    // ── GPU economy (§7.5 — now LIVE): baked constants, deliberately NO config (anti-p2w, same rule as
+    // drop rates). Quality augments (shiny/IV/EV/breeding-meta) cost more than throughput ones; a Daemon
+    // buff tier is a flat install fee on top of its ongoing Data drain. Re-picking a parameterized augment's
+    // VALUE stays free (the augment was already bought); removal never refunds.
+    private static final int GPU_QUALITY = 2;
+    private static final int GPU_THROUGHPUT = 1;
+    private static final int GPU_PER_BUFF_TIER = 2;
+
+    private static int gpuCost(AugmentType at) {
+        return at.function.cls == com.greenerpastures.economy.TetherClass.QUALITY ? GPU_QUALITY : GPU_THROUGHPUT;
+    }
+
+    /** Consume {@code n} GPUs from the player's main+offhand (manual decrement — never trust insertStack-style
+     *  seams; mirrors pull()). Returns false (and consumes nothing) if they hold fewer than {@code n}. */
+    private static boolean consumeGpu(ServerPlayerEntity player, int n) {
+        if (n <= 0) return true;
+        if (countGpu(player) < n) return false;
+        PlayerInventory inv = player.getInventory();
+        int left = n;
+        for (var list : java.util.List.of(inv.main, inv.offHand)) {
+            for (int i = 0; i < list.size() && left > 0; i++) {
+                ItemStack st = list.get(i);
+                if (!st.isOf(GpItems.GPU)) continue;
+                int take = Math.min(left, st.getCount());
+                st.decrement(take);
+                left -= take;
+            }
+        }
+        inv.markDirty();
+        return left == 0;
     }
 
     private static int slotsUsed(ItemStack kernel) {
@@ -566,7 +608,7 @@ public final class NotebookNet {
             used = slotsUsed(ref.stack());
             for (AugmentType at : AugmentType.values()) {
                 catalog.add(new NotebookAugmenterS2C.Aug(at.name(), at.effectSummary(), slotCost(at),
-                        at.installedOn(ref.stack())));
+                        at.installedOn(ref.stack()), gpuCost(at)));
             }
         }
         sendGated(player, "augmenter", new NotebookAugmenterS2C(has, tierLabel, used, slotCap, catalog));
@@ -644,9 +686,15 @@ public final class NotebookNet {
 
         boolean installed = at.installedOn(ref.stack());
         if (installed && !at.parameterized()) return;                              // no-dupe (re-pick is param-only)
-        if (!installed) {                                                          // slot gate for NEW installs (GPU/Data cost deferred §7.5)
+        if (!installed) {                                                          // NEW install: slot gate + GPU fee (§7.5 live)
             BreedingTier tier = ((BreedingUpgradeItem) ref.stack().getItem()).tier();
             if (slotsUsed(ref.stack()) + slotCost(at) > tier.slots) return;
+            int fee = gpuCost(at);
+            if (!consumeGpu(player, fee)) {
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough GPU — "
+                        + at.effectSummary() + " costs " + fee + ", you have " + countGpu(player) + "."), false);
+                return;
+            }
         }
 
         String detail = "";

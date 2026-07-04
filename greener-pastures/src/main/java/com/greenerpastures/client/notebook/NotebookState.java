@@ -210,6 +210,16 @@ public final class NotebookState {
         return changed;
     }
 
+    // ── Nav (one-shot "open this tab" requests, e.g. the Field Guide item) ──
+    public static volatile String navTab = "";
+    public static volatile int navSeq = 0;
+
+    /** Ask the React app to switch to {@code tab} on its next frame (seq-bumped so repeats re-fire). */
+    public static void navigate(String tab) {
+        navTab = tab;
+        navSeq++;
+    }
+
     // ── Dashboard + Goals + Inbox (JSON blobs, parsed in React) ─────────────
     public static volatile String dashboardJson = "";
     public static volatile String goalsJson = "";
@@ -250,5 +260,6 @@ public final class NotebookState {
         biobankTotal = 0; biobank = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
         dashboardJson = ""; goalsJson = ""; notifsJson = "";
+        navTab = ""; navSeq = 0;
     }
 }

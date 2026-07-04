@@ -211,6 +211,16 @@ public final class DsBridge {
         push("dashboard", jsonChannel(NotebookState.dashboardJson));
         push("goals", jsonChannel(NotebookState.goalsJson));
         push("notifications", jsonChannel(NotebookState.notifsJson));
+        push("nav", navData());
+    }
+
+    /** One-shot tab-navigation requests (Field Guide item → Guide tab); n bumps so the same tab re-fires. */
+    private static Object navData() {
+        if (NotebookState.navSeq == 0) return null;
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("tab", NotebookState.navTab);
+        m.put("n", NotebookState.navSeq);
+        return m;
     }
 
     /** Pass a server-built JSON blob (dashboard / goals) straight through as a channel object (React parses it). */
