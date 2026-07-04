@@ -24,7 +24,7 @@ class RitualConfigTest {
         assertTrue(c.rituals().enabled());
         assertFalse(c.rituals().rituals().isEmpty(), "ships a ritual roster");
         for (Ritual r : c.rituals().rituals()) {
-            assertTrue(r.outputItem().startsWith("minecraft:"), r.id() + " output should be a real item id");
+            assertTrue(r.outputItem().contains(":"), r.id() + " output should be a namespaced item id");
             assertTrue(r.hardPity() >= 1, r.id() + " needs a hard pity");
             assertTrue(r.baseChancePercent() >= 0 && r.baseChancePercent() <= 100, r.id() + " chance in range");
         }

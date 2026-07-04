@@ -686,6 +686,9 @@ function Augmenter() {
   if (!d.hasKernel) return <Empty title="No Kernel in your inventory" msg="hold a Kernel (a Pasture Upgrade) to augment it" />
   const meta = d.meta || {}
   const values = meta.values || {}
+  const corrupted = !!meta.corrupted
+  const inv = useChannel('inventory')
+  const orbCount = (inv?.slots || []).reduce((a, s) => a + (s?.id === 'greenerpastures:data_disk_rocket' ? s.count : 0), 0)
   const valueChip = (t) => {
     if (t === 'NATURE') return values.NATURE ? cap(values.NATURE.label) : null
     if (t === 'BALL') return values.BALL ? cap(shortId(values.BALL.label)) : null
@@ -696,15 +699,21 @@ function Augmenter() {
     <div className="trip" style={{ position: 'relative' }}>
       <div className="tcol inset" style={{ width: 150 }}>
         <span className="h">Kernel</span>
-        <span className="grn" style={{ fontWeight: 600 }}>{d.tier}</span>
+        <span className="grn" style={{ fontWeight: 600 }}>{d.tier}{corrupted && <span style={{ color: '#a06bd4' }}> ⛧</span>}</span>
+        {corrupted && <span style={{ color: '#a06bd4', fontSize: 10 }}>corrupted — beyond modification{meta.corruptPairs ? ` · +${meta.corruptPairs} pair` : ''}</span>}
         <span className="muted">slots {d.slotsUsed}/{d.slotCap}</span>
         <div className="row" style={{ gap: 4 }}>
           {Array.from({ length: d.slotCap }).map((_, i) => <span key={i} className={`pip${i < d.slotsUsed ? ' on' : ''}`} />)}
         </div>
         <span className="cyn" style={{ marginTop: 6 }}>◈ {gpu} GPU</span>
+        {orbCount > 0 && !corrupted && (
+          <button className="btn" style={{ marginTop: 8, color: '#a06bd4', borderColor: '#5a3c74' }}
+            title={`consume 1 Illicit Data Disk (you have ${orbCount}) — bless, twist, or brick this Kernel. PERMANENT.`}
+            onClick={() => send('augmenter', 'CORRUPT_KERNEL', {})}>⛧ CORRUPT</button>
+        )}
       </div>
       <div className="tcol inset" style={{ flex: 1 }}>
-        <span className="h">Augments · ◈ = GPU cost</span>
+        <span className="h">Augments · ◈ = GPU cost{corrupted ? ' · ⛧ locked' : ''}</span>
         {(d.catalog || []).map((a) => {
           const gcost = a.gpuCost ?? 0   // GPU economy deferred server-side — treat "not sent" as free
           const canApply = d.slotsUsed + a.slotCost <= d.slotCap && gpu >= gcost
@@ -716,10 +725,10 @@ function Augmenter() {
               {chip && <span className="augval" title="current setting">{chip}</span>}
               <span className="dim mono" style={{ fontSize: 10 }}>{a.slotCost} slot{a.slotCost !== 1 ? 's' : ''}</span>
               {gcost > 0 && <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= gcost ? 'var(--cyan)' : 'var(--red)' }} title="GPU cost">◈{gcost}</span>}
-              {a.applied && param && <button className="btn" onClick={() => setPicker(a.type)}>EDIT</button>}
+              {a.applied && param && !corrupted && <button className="btn" onClick={() => setPicker(a.type)}>EDIT</button>}
               {a.applied
-                ? <button className="btn warn" title="frees the slot" onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
-                : <button className="btn go" disabled={!canApply} title={gpu < gcost ? 'not enough GPU' : (d.slotsUsed + a.slotCost > d.slotCap ? 'no free slots' : '')}
+                ? <button className="btn warn" disabled={corrupted} title={corrupted ? '⛧ corrupted — beyond modification' : 'frees the slot'} onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
+                : <button className="btn go" disabled={!canApply || corrupted} title={corrupted ? '⛧ corrupted — beyond modification' : gpu < gcost ? 'not enough GPU' : (d.slotsUsed + a.slotCost > d.slotCap ? 'no free slots' : '')}
                     onClick={() => param ? setPicker(a.type) : send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>{param ? 'PICK…' : 'APPLY'}</button>}
             </div>
           )
@@ -805,9 +814,9 @@ function EvAllocator({ initial, onClose }) {
 }
 
 // ── Disks (§5c): write your Data balance onto blank media — the Notebook is the drive ──
-const DENOMS = [
+const DENOMS = [   // the rocket disk is NOT here — it's the corruption orb (Black Market ritual), not currency
   ['data_disk_byte', 'byte', 8], ['data_disk_kilobyte', 'kB', 1024], ['data_disk_megabyte', 'MB', 16384],
-  ['data_disk_gigabyte', 'GB', 262144], ['data_disk_terabyte', 'TB', 4194304], ['data_disk_rocket', '🚀', 67108864],
+  ['data_disk_gigabyte', 'GB', 262144], ['data_disk_terabyte', 'TB', 4194304],
 ]
 function DisksCard() {
   const status = useChannel('status')

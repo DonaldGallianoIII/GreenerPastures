@@ -34,6 +34,8 @@ public final class EggIngest {
     /** Data credited per egg the graph renders (voids) — a modest per-egg trickle; the dark-economy income. */
     private static final long VOID_DATA_PER_EGG = 10L;
 
+    private static final java.util.Random BREADCRUMB = new java.util.Random();
+
     public static boolean ingest(ServerWorld world, UUID owner, ItemStack egg, PastureData pd, BlockPos pos, UUID monId) {
         try (var span = com.greenerpastures.core.GpProf.begin("egg.ingest")) {
             MinecraftServer server = world.getServer();
@@ -54,6 +56,15 @@ public final class EggIngest {
                         "filter", filter, "data", Long.toString(value));
                 EggLog.record(owner, species, true, filter);   // player-facing void feed
                 EggLog.addData(owner, value);                  // dashboard "Data earned"
+                // The breadcrumb (1/2000 renders): the void stream coughs up ILLICIT data — the disk lands in
+                // the ritual spoils pool with a whisper, pointing players at the hidden Black Market ritual.
+                if (BREADCRUMB.nextInt(2000) == 0) {
+                    com.greenerpastures.ritual.RitualLedger.get(server).addLoot(owner,
+                            "greenerpastures:data_disk_rocket", 1);
+                    com.greenerpastures.notify.Inbox.push(owner, "\u26e7",
+                            "Something ILLICIT surfaced in the void stream \u2014 check your Ritual spoils\u2026");
+                    GpLog.i("egg_ingest", "illicit_breadcrumb", "owner", owner.toString());
+                }
                 return true;   // rendered to Data → egg consumed; the breeder must NOT tray-fallback
             }
             boolean added = BioBankStore.get(server).deposit(owner, species, egg);

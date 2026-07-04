@@ -299,6 +299,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player); }
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
                 case NotebookActionC2S.RITUAL_PULL -> { ritualPull(player, p.arg(), p.amount()); pushRituals(player); }
+                case NotebookActionC2S.CORRUPT_KERNEL -> { corruptKernel(player); pushAugmenter(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -625,6 +626,9 @@ public final class NotebookNet {
         JsonObject root = new JsonObject();
         JsonObject values = new JsonObject();
         if (kernel != null) {
+            root.addProperty("corrupted", Boolean.TRUE.equals(kernel.get(GpComponents.CORRUPTED)));
+            Integer cp = kernel.get(GpComponents.CORRUPT_PAIRS);
+            if (cp != null && cp > 0) root.addProperty("corruptPairs", cp);
             Augments a = kernel.get(GpComponents.AUGMENTS);
             int nat = a == null ? 0 : a.level(com.greenerpastures.economy.AugmentFunction.NATURE);
             int ball = a == null ? 0 : a.level(com.greenerpastures.economy.AugmentFunction.BALL);
@@ -686,6 +690,10 @@ public final class NotebookNet {
         AugmentArg arg = AugmentArg.parse(rawArg);
         AugmentType at = arg == null ? null : augmentType(arg.type());
         if (at == null || !at.appliesTo(ref.stack())) return;
+        if (Boolean.TRUE.equals(ref.stack().get(GpComponents.CORRUPTED))) {
+            player.sendMessage(Text.literal("§5⛧§r This Kernel is §8corrupted§r — it is beyond modification."), false);
+            return;
+        }
         if (at.parameterized() != (arg.index() > 0 || arg.ev() != null)) return;   // param augments need a value; plain ones must not carry one
 
         boolean installed = at.installedOn(ref.stack());
@@ -734,6 +742,10 @@ public final class NotebookNet {
         if (ref == null) return;
         AugmentType at = augmentType(typeName);
         if (at == null || !at.appliesTo(ref.stack()) || !at.installedOn(ref.stack())) return;
+        if (Boolean.TRUE.equals(ref.stack().get(GpComponents.CORRUPTED))) {
+            player.sendMessage(Text.literal("§5⛧§r This Kernel is §8corrupted§r — it is beyond modification."), false);
+            return;
+        }
         ItemStack out = ref.stack().copy();
         if (at == AugmentType.EV) out.remove(GpComponents.EV_SPREAD);   // the primer's value IS the component
         Augments a = out.get(GpComponents.AUGMENTS);
@@ -789,7 +801,7 @@ public final class NotebookNet {
             List<MonEntry> roster = CobbreedingBridge.rosterOf(pasture, pd, full);
             long key = pos.asLong();
             sendGated(player, "cfg:" + key, new NotebookPastureConfigS2C(
-                    key, pd.name, tier == null ? "" : tier.name(), linked, tier == null ? 0 : tier.maxPairs, roster));
+                    key, pd.name, tier == null ? "" : tier.name(), linked, pd.maxPairs(), roster));
             sendGated(player, "graph:" + key, new NotebookGraphS2C(key, pd.graphJson == null ? "" : pd.graphJson));
             sendGated(player, "extra:" + key, new NotebookPastureExtraS2C(key, pastureExtraJson(server, pd, pasture)));
         }
@@ -1093,6 +1105,83 @@ public final class NotebookNet {
         if (placed > 0) ledger.takeLoot(player.getUuid(), itemId, placed);
         GpLog.i("ritual", "pull", "player", player.getUuid().toString(), "item", itemId, "n", Long.toString(placed));
     }
+
+    /** The Vaal roll (Deuce 2026-07-04): consume ONE Illicit Data Disk, corrupt the first held Kernel with
+     *  {@link com.greenerpastures.pasture.breeding.compiler.KernelCorruption}'s baked table. Irreversible. */
+    private static void corruptKernel(ServerPlayerEntity player) {
+        KernelRef ref = firstKernel(player);
+        if (ref == null) return;
+        if (Boolean.TRUE.equals(ref.stack().get(GpComponents.CORRUPTED))) {
+            player.sendMessage(Text.literal("§5⛧§r Already corrupted — the disk finds nothing left to take."), false);
+            return;
+        }
+        // consume exactly one Illicit Data Disk from main+offhand
+        var inv = player.getInventory();
+        boolean paid = false;
+        for (var list : java.util.List.of(inv.main, inv.offHand)) {
+            for (int i = 0; i < list.size() && !paid; i++) {
+                if (list.get(i).isOf(GpItems.DISK_ROCKET)) { list.get(i).decrement(1); paid = true; }
+            }
+        }
+        if (!paid) {
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r You need an Illicit Data Disk to corrupt."), false);
+            return;
+        }
+        inv.markDirty();
+
+        var roll = com.greenerpastures.pasture.breeding.compiler.KernelCorruption.roll(CORRUPT_RNG);
+        ItemStack out = ref.stack().copy();
+        String detail = "";
+        switch (roll.outcome()) {
+            case BLESSED -> {
+                // a random plain augment force-installed, IGNORING slot capacity (the beyond-cap gift)
+                AugmentType[] pool = {AugmentType.SHINY, AugmentType.SPEED, AugmentType.ENRICHMENT,
+                        AugmentType.DROP_RATE, AugmentType.DROP_YIELD, AugmentType.IV_FLOOR,
+                        AugmentType.ABILITY, AugmentType.EGG_MOVES};
+                AugmentType gift = pool[CORRUPT_RNG.nextInt(pool.length)];
+                out = gift.apply(out);
+                detail = gift.effectSummary() + " §7(installed beyond capacity)§r";
+            }
+            case WILD -> {
+                if (roll.variant() == 0) {
+                    Augments a = out.get(GpComponents.AUGMENTS);
+                    int cur = a == null ? 0 : a.level(com.greenerpastures.economy.AugmentFunction.DROP_RATE);
+                    int doubled = Math.max(1, cur) * 2;
+                    out.set(GpComponents.AUGMENTS, (a == null ? Augments.NONE : a)
+                            .withLevel(com.greenerpastures.economy.AugmentFunction.DROP_RATE, doubled));
+                    detail = "its drop-rate mod DOUBLED (" + String.format("%.2f", doubled / 100.0) + "%)";
+                } else {
+                    Integer bonus = out.get(GpComponents.CORRUPT_PAIRS);
+                    out.set(GpComponents.CORRUPT_PAIRS, (bonus == null ? 0 : bonus) + 1);
+                    detail = "+1 breeding pair — beyond its tier";
+                }
+            }
+            case NOTHING -> detail = "";
+            case BRICKED -> {
+                if (roll.variant() == 0) {
+                    out.set(GpComponents.AUGMENTS, Augments.NONE);
+                    out.remove(GpComponents.EV_SPREAD);
+                    out.remove(GpComponents.CORRUPT_PAIRS);
+                    detail = "every augment wiped";
+                } else {
+                    BreedingTier tier = ((BreedingUpgradeItem) out.getItem()).tier();
+                    BreedingTier lower = tier.ordinal() == 0 ? tier : BreedingTier.values()[tier.ordinal() - 1];
+                    out = new ItemStack(com.greenerpastures.pasture.breeding.BetterPasture.ITEMS.get(lower));
+                    detail = "the Kernel DEGRADED to " + lower.name();
+                }
+            }
+        }
+        out.set(GpComponents.CORRUPTED, Boolean.TRUE);
+        ref.writer().accept(out);
+        String line = com.greenerpastures.pasture.breeding.compiler.KernelCorruption.reveal(roll, detail);
+        player.sendMessage(Text.literal(line), false);
+        com.greenerpastures.notify.Inbox.push(player.getUuid(), "⛧",
+                "Corruption: " + roll.outcome() + (detail.isEmpty() ? "" : " — " + detail.replaceAll("§.", "")));
+        GpLog.i("corrupt", "kernel", "player", player.getUuid().toString(),
+                "outcome", roll.outcome().name(), "variant", roll.variant(), "detail", detail.replaceAll("§.", ""));
+    }
+
+    private static final java.util.Random CORRUPT_RNG = new java.util.Random();
 
     private static int countGpu(ServerPlayerEntity player) {
         PlayerInventory inv = player.getInventory();

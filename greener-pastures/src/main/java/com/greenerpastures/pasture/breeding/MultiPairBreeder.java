@@ -196,9 +196,10 @@ public final class MultiPairBreeder {
         List<PokemonPastureBlockEntity.Tethering> live = pasture.getTetheredPokemon();
         if (live == null || live.size() < 2) return List.of();
         List<PokemonPastureBlockEntity.Tethering> tethered = new ArrayList<>(live);
+        int cap = pd.maxPairs();   // tier pairs + any WILD-corruption bonus
         return pd.pairings.isEmpty()
-                ? adjacencyPairs(tethered, tier.maxPairs)
-                : bucketPairs(tethered, pd, tier.maxPairs);
+                ? adjacencyPairs(tethered, cap)
+                : bucketPairs(tethered, pd, cap);
     }
 
     /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue.

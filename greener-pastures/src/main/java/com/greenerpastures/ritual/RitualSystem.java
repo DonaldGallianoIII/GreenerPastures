@@ -33,6 +33,21 @@ public final class RitualSystem {
                 GreenerPastures.LOG.warn("[rituals] pre-v2 config detected — regenerating the hand-designed ritual book");
                 config = RitualConfig.defaults();
                 config.save(configPath());
+            } else {
+                // Newly-designed rituals must reach existing files without clobbering admin edits: merge any
+                // DEFAULT ritual whose id is missing from the loaded book, preserving everything else.
+                java.util.List<Ritual> merged = null;
+                for (Ritual def : RitualConfig.defaults().rituals().rituals()) {
+                    if (config.rituals().byId(def.id()) != null) continue;
+                    if (merged == null) merged = new java.util.ArrayList<>(config.rituals().rituals());
+                    merged.add(def);
+                    GreenerPastures.LOG.info("[rituals] merged new hand-designed ritual '{}'", def.id());
+                }
+                if (merged != null) {
+                    config = new RitualConfig(config.enabled(), config.autoPull(), config.rarityFactor(),
+                            config.typeDrops(), new RitualBook(config.rituals().enabled(), merged));
+                    config.save(configPath());
+                }
             }
         } catch (Throwable t) {
             config = RitualConfig.defaults();

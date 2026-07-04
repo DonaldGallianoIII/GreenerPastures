@@ -66,6 +66,15 @@ public class PastureData {
      *  the retired Harvester block used to hold). Persisted so pity survives restarts — pity is a PROMISE. */
     public final Map<String, int[]> ritualState = new HashMap<>();
 
+    /** The pair cap the breeder actually uses: the tier's pairs + any WILD-corruption bonus on the Kernel
+     *  ({@code corrupt_pairs} — the 9-pair Greener exists now). 0 with no Kernel. */
+    public int maxPairs() {
+        BreedingTier t = tier();
+        if (t == null) return 0;
+        Integer bonus = upgrades.getStack(0).get(GpComponents.CORRUPT_PAIRS);
+        return t.maxPairs + (bonus == null ? 0 : Math.max(0, bonus));
+    }
+
     /** The installed Pasture Upgrade tier (slot 0), or null if none — drives pairs + slot count. */
     public BreedingTier tier() {
         ItemStack s = upgrades.getStack(0);

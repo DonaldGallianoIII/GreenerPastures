@@ -106,7 +106,13 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
                 ritual("feast_of_the_blade", "Feast of the Blade",
                         new Requirement(Map.of(), 0, List.of(),
                                 Map.of("kartana", 1, "xerneas", 1, "meowth", 8)),
-                        "minecraft:enchanted_golden_apple", 1, 2.0, 120, 60)
+                        "minecraft:enchanted_golden_apple", 1, 2.0, 120, 60),
+                // #2 — "Black Market": the classic Team Rocket lineup fences ILLICIT data. Sole farmable
+                // source of the corruption orb (the Renderer breadcrumb at 1/2000 is the discovery hint).
+                ritual("black_market", "Black Market",
+                        new Requirement(Map.of(), 0, List.of(),
+                                Map.of("koffing", 4, "ekans", 4, "meowth", 1)),
+                        "greenerpastures:data_disk_rocket", 1, 2.5, 100, 50)
         ));
     }
 

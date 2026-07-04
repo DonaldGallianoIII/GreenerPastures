@@ -32,6 +32,25 @@ public final class GpComponents {
                     .packetCodec(EvSpread.PACKET_CODEC)
                     .build());
 
+    /** {@code greenerpastures:corrupted} — the Illicit Data Disk's permanent mark (Vaal-orb style): a
+     *  corrupted Kernel still WORKS but the Augmenter refuses it forever. */
+    public static final ComponentType<Boolean> CORRUPTED = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(GreenerPastures.MOD_ID, "corrupted"),
+            ComponentType.<Boolean>builder()
+                    .codec(com.mojang.serialization.Codec.BOOL)
+                    .packetCodec(net.minecraft.network.codec.PacketCodecs.BOOL)
+                    .build());
+
+    /** {@code greenerpastures:corrupt_pairs} — the WILD corruption's +N breeding pairs (a 9-pair Greener). */
+    public static final ComponentType<Integer> CORRUPT_PAIRS = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(GreenerPastures.MOD_ID, "corrupt_pairs"),
+            ComponentType.<Integer>builder()
+                    .codec(com.mojang.serialization.Codec.INT)
+                    .packetCodec(net.minecraft.network.codec.PacketCodecs.VAR_INT)
+                    .build());
+
     /** Force class-load so the static registration above runs. Call once from module init. */
     public static void init() {}
 }

@@ -46,7 +46,8 @@ public final class GpItems {
         DISK_MEGABYTE = disk("data_disk_megabyte", 16_384L);
         DISK_GIGABYTE = disk("data_disk_gigabyte", 262_144L);
         DISK_TERABYTE = disk("data_disk_terabyte", 4_194_304L);
-        DISK_ROCKET   = disk("data_disk_rocket", 67_108_864L);
+        DISK_ROCKET   = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "data_disk_rocket"),
+                new IllicitDiskItem(new Item.Settings().maxCount(16)));   // NOT a denomination — the corruption orb (Team Rocket contraband)
 
         // One dedicated creative tab for the whole mod (release polish): auto-collects every item registered
         // under our namespace — entries resolve LAZILY (on tab open), so registration order doesn't matter.
