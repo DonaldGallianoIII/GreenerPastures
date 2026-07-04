@@ -1,51 +1,76 @@
-# 🎯 PICKUP — session handoff (2026-07-03, late)
+# 🎯 PICKUP — QA SESSION LIVE (2026-07-04)
 
-> **LIVE STATE:** deployed jar is **`f1769a7f`** (features batch). Three newer batches are built + committed
-> but **NOT deployed**; the current deployable is **`b8246aac`** (commit `115c296` — it contains everything:
-> perf R3 + release/GPU-economy/guide + recipes/disks/rituals/snack). Deploy ONLY on his explicit
-> quit-to-desktop confirm.
-> ⚠️ **His instance MUST add `-Dgreenerpastures.qa=true` to JVM args before testing** (QA commands +
-> DEBUG logging are now gated behind it — release builds ship clean). It's the first line of the QA section.
-> **Pending QA: Q39–Q72** (five stacked batches: features / perf+profiler / release+GPU-economy+guide /
-> content: recipes + data disks + rituals-3b + Ultra Compressed Snack). Deuce's verdict: NOT close to release
-> yet — LISTING.md is a draft only. Remaining roadmap he named: recipes ✓, rituals ✓, pokesnacks ✓ (the
-> Ultra Compressed Snack — N snacks crafted into one merged-seasoning mega-bait), data disks ✓ — all now
-> built, all pending his QA.
-> **NEVER deploy while he's in game** (WSL `cp` corrupts the RUNNING jar; see [[mod-deploy-workflow]]).
+> **LIVE STATE: jar `60f95467` IS DEPLOYED** to the CurseForge instance and **Deuce is QA-testing it with me
+> right now** — six stacked dev batches, first launch of all of them. Follow the logs, verify each Q-row as he
+> works, fix reds immediately (build green → deploy ONLY on his explicit quit-to-desktop confirm — WSL `cp`
+> over a RUNNING jar corrupts it hours later, see [[mod-deploy-workflow]]).
+>
+> ⚠️ **FIRST CHECK: his instance JVM args must include `-Dgreenerpastures.qa=true`** (CurseForge → instance →
+> Additional Java Arguments). Without it: no `/gp breed|harvest|data|daemon|augment`, log at INFO (his tail
+> workflow breaks). With it: those commands + DEBUG logging. `session_start` in gp-logs shows `minLevel`.
+> `/gp goal` + `/gp perf` exist either way.
 
-## His world (for log-reading)
-- World `New Worlddasdasdadsa`, spawn `-400,-336`. Pastures: **spawn farm** `-394,69,-290` (16 Tentacool/Cruel/Frillish, Greener 6.00%), `-400,69,-288` (2 Eevee, Netherite 5.50%), `-398,69,-288` (2 Drilbur, Copper 3.50%); **west** `-902,69,-297` (6 mons, Greener) + `-923,63,-453` (2 mons, Diamond 5.00%); **nether** `-165,68,-19`.
-- `renderDistance:36` → chunks stay loaded within **576 blocks** — the **nether hop** is the reliable unload lever for catch-up tests.
-- Logs: `/mnt/c/Users/deuce/curseforge/minecraft/Instances/Greener Pastures Test/gp-logs/latest.log` (JSONL). Key events: `sweep` (`sweeps:N`, `proc_pct`, `stored`, `items`), `proc` (species + items or `dry`), `pull`/`pull_full` (`n`≤`capacity`), `brood`, `client_connect`, `prefetch`, `gap_applied`.
+## The QA queue — Q39–Q77 in `QA_PENDING.md` (`glow QA_PENDING.md`)
+- **Q39–Q49 features**: pasture health strip + ⚠ tab badges · EV allocator + nature/ball pickers (Augmenter
+  PICK…/EDIT) · Kernel LOADOUT chips · Inbox tab + note logging.
+- **Q50–Q55 perf**: NOTHING REGRESSED (Q50, run it first) · idle-off (no console traffic while closed;
+  `-Dgreenerpastures.devbridge=true` restores the dev-browser) · change-gated pushes (status_push only on real
+  change) · `/gp perf` table + `/gp perf flame` → `gp-logs/perf-flame.html` (screenshot for the listing!) ·
+  catch-up still exact · cross-dim cache keys.
+- **Q56–Q61 release**: QA flag behavior · **GPU costs now REAL** (Augmenter: quality 2◈/throughput 1◈;
+  Compiler: 2◈/buff-tier; re-pick free, no refunds, chat refusals) · Field Guide (first-join gift + Guide tab
+  via nav) · creative tab · LISTING.md shot plan.
+- **Q62–Q67 content**: **13 recipes** (kernel BLOCK ladder: 8 copper blocks+redstone block → kernel-in-8-blocks
+  upgrades → netherite = 4 diamond blocks corners + 4 netherite ingots cardinals → GREENER = 4 netherite blocks
+  corners + 4 emerald blocks cardinals; GPU eats a kilobyte disk; daemon eats a megabyte disk) · **data disks**
+  (Dashboard 💾 write card, right-click read returns the blank; ladder 8/1k/16k/262k/4.2M — rocket is NOT
+  currency) · **type-drops live** (fire-types = blaze rods!) · **Ultra Compressed Snack, double-additive**:
+  Deuce's canonical test [chilan+ega+starf]+[3 starf]+[3 starf]+[3 chilan] → lore `×4 snacks · 3 effects · 11
+  stacks · 1 compressed away` = 4 chilan + 6 starf + 1 ega.
+- **Q68–Q72 rituals v2**: HIDDEN recipes (tab teases "2 hidden") · **Feast of the Blade** = Kartana + Xerneas +
+  8 Meowth → e-gapples (2%/pull, soft 60, hard 120) · discovery pop (once-ever chat + Inbox + tab reveal) ·
+  pity persists per pasture · spoils pool is separate from Harvester storage (RITUAL_PULL, capacity-safe) ·
+  pre-v2 rituals.json auto-regenerates; missing default rituals auto-merge.
+- **Q73 kernel perks**: egg speed ×1.1→×1.6 by tier (stacks with Speed augment; 2.5-min floor FINAL, signed
+  off) · Greener drop +5.00% (sweep log shows proc_pct 8.00).
+- **Q74–Q76 corruption**: Illicit Data Disk = PoE Vaal orb via Augmenter ⛧ CORRUPT (30 blessed / 25 wild
+  [drop×2 or +1 pair] / 25 nothing / 20 bricked [wipe or tier−1]; corrupted = locked forever) · **Black
+  Market ritual** = Koffing ×4 + Ekans ×4 + Meowth → the disk (2.5%, soft 50, hard 100) · Renderer breadcrumb
+  1/2000 voids → disk into ritual spoils + Inbox whisper.
+- **Q77 snack shiny math (decompile-verified, no code)**: merged shiny value = Σ(starf 4 each, ega 9 each),
+  P(shiny/spawn) ≈ (value+1)/8193. Canonical snack = 33 → ~1/241. Max legal (6 starf + 6 ega) = 78 → ~1/104.
+  E-gapples only come from Feast → the two systems chain.
 
-## Shipped TODAY (all in 7c3a46ef, mostly field-verified)
-1. **Drop-rate QA kit** — doubled kernel rates (`BASE_DROP_RATE` 25→**50** centipercent/tier → copper +0.50%…greener +3.00%; droprate-boost augment 100→**200**; `BreedingTierTest` updated). `/gp harvest interval <s>|default` (op-2, reset on server start). Audit logging: per-pasture `sweep` line every sweep + per-proc `proc` line (`dry` = table missed). **Statistically verified live**: 3 kernels within ±1σ over 65 min (570e/558o · 41e/47o · 65e/58o). Drilbur "100% dirt" has `quantityRange 0-1` → ~50% dry (confirmed 0.49 dirt/proc); Tentacool 1-3 can't dry (0/489). Cobblemon's multi-draw gives low-% entries extra tries when the amount budget is big (Drop Yield quietly boosts rares).
-2. **Balance anchor (memory: [[drop-rate-balance-anchor]])** — full-dex sim (1,025 species, decompiled `DropTable.getDrops` algorithm; plain-int amount = N..N fixed). Worst 16-mon farms: 199 raw iron/hr (Steelix), **14.4 diamonds/hr (Sableye)** — sane vs vanilla. **No species drops e-gapples/netherite/totems.** **Deuce's standing rule: NO drop-rate config ever** (admins would zero it + sell paid ranks). Baked constants only.
-3. **Catch-up system (task #38 done)** — `PastureData.lastHarvestTick` + `lastBreedTick` (NBT). Chunk reloads roll missed sweeps/broods (12h cap; eggs run the FULL pipeline: shiny proc → Daemon graph → BioBank/void log → goals; sterile-pasture early-out; tether drain × productive). **Online gate**: `notebook/OfflineProgress` (PersistentState) stamps logout world-time, join shifts owned pastures' anchors past the offline gap (credits exactly online-away time; clamps if chunk stayed loaded). Claim anchors both clocks. **Verified: 13-min trip → `sweeps:13` exact + 4 broods, clean reset to sweeps:1.**
-4. **Instant harvest catch-up** — harvest now schedules **per pasture** (20-tick scan, sweep when that pasture's interval is due) instead of a global minute-modulo → drop catch-up fires ~instantly on reload, lined up with eggs. (This changed sweep cadence semantics: per-pasture clocks, same rate.)
-5. **Pull safety** — `pull()` counts MAIN-inventory capacity itself and **places stacks into slots manually** (`insertStack` is mixin-hijackable — ~3,072 ink sacs vanished pre-fix, cause unproven but the class of bug is closed). Zero capacity → chat refusal + `pull_full` log (**verified live**: soft_sand refusal at 17:01, then n=6/cap=128 after making room). `withdrawEgg` same. UI: Harvester cells grey out (`cell-full`) + "⚠ inventory full" banner.
-6. **Inbox (new)** — `notify/Inbox` (per-player, cap 50, session-scoped, collects while owner offline) + `NotebookNotifsS2C` + `notifications` bridge channel + `DISMISS_NOTE` action (id or "all") + React **Inbox tab** (unread badge, icon+text+time-ago, per-note ✕, clear-all). Catch-up pings live THERE now — **no more chat messages**.
-7. **Session hygiene** (fixed his new-world-shows-old-stats bug) — SERVER_STARTED clears EggLog/GoalStore/prefetch cooldowns/QA overrides/Inbox; client DISCONNECT clears NotebookState + pasture caches + re-baselines DsBridge.
-8. **Seamless console** (earlier today) — root cause of 2-3s view swaps: MCEF pumps `N_DoMessageLoopWork()` **once per frame** → starved Chromium. `NotebookBrowserScreen.pump(slices,budget)`: 10/2.5ms per frame open, 4/1ms per tick background, 48/8ms burst during transitions. + pasture-config **prefetch** (join + 1×/min poll, cap 16, focus-aware appliers so background pushes never hijack the open view) + stale-while-revalidate cache → basically every open instant. Native "loading pasture…" overlay = rare fallback (lifts on React `PASTURE_READY`).
-9. **Graph/UX batch** — parent inspector (IVs/nature/gender/shiny/OT; right-click chips or click nodes), gender ♂/♀/⚲ on chips, pair validation (♂+♀ or exactly one Ditto), Masuda/Crystal badge (vs server `getShinyMethod()`), draggable pop-ups (`usePanelDrag`), wheel-zoom no longer scrolls the pane (native non-passive listener; **TDZ lesson**: deps `[doc.active]` not `[active]` — a mid-component const in a hook dep = ReferenceError = black screen), palette nodes cascade (no more stacking), **pair-as-one** (wiring one parent auto-wires the other; dashed gold pair link).
-10. **Dashboard live + Goals** — real session stats (EggLog counters) + 🎯 hunts (dex-validated species + autocomplete from BioBank). **Threads** = named breeding-line tabs (earlier).
+## Today's LOCKED tuning (don't relitigate)
+- Kernel table FINAL: pairs 2/3/4/5/6/8 · egg speed ×1.1/×1.2/×1.3/×1.4/×1.5/×1.6 · drop +0.5/1.0/1.5/2.0/2.5/**5.0**%.
+- 2.5-min breeder floor FINAL (noted in code + CHANGELOG "Design decisions").
+- GPU: quality augment 2◈ · throughput 1◈ · buff tier 2◈. Disk ladder + GPU-eats-kilobyte + daemon-eats-megabyte.
+- Ultra snack: double-additive (≤6 copies per seasoning = 2 pot-cooks, ≤9 distinct, flavours ≤2× strongest input).
+- Corruption table 30/25/25/20, baked. No config for ANY rate (anti-p2w, standing rule).
+- Escape valve known+accepted: ladder-upgrading a corrupted kernel crafts a clean higher tier (loses corruption perks).
+- Mining Damage buff (block_break_speed +33/67/100%): III + Haste III + Eff V = instant deepslate; gathering-priced.
 
-## Environment (don't re-derive)
-- **UI build:** `cd greener-pastures-ui && npm run build` (single-file → jar resources). **Java:** `JAVA_HOME=/home/donaldgalliano/jdks/jdk-21.0.11+10 greener-pastures/gradlew -p greener-pastures build` (sandbox off). **Read the REAL gradle output** — a grep pipe's exit 0 is NOT gradle's (bit us again today: committed+deployed on a red build; the jar happened to be fine, test-only failure, amended after).
-- **Deploy (only on confirmed quit):** `cp` jar → `/mnt/c/Users/deuce/curseforge/minecraft/Instances/Greener Pastures Test/mods/greenerpastures-0.1.0.jar` + md5 + `zipfile.testzip()`.
-- Commit trailer: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>` + `Claude-Session: https://claude.ai/code/session_017Dq3vi9HWWc9bYUDAaUSYs`.
-- Jar decompile workflow (Cobblemon/MCEF internals): python zipfile extract + `~/cfr.jar`.
+## Open levers (Deuce owes numbers; don't build until he picks)
+- **Data onboarding trio**: (a) Daemon recipe megabyte→kilobyte disk? (b) egg render value 10→20-25? (c) starter Data?
+- **Crystal multiplier**: HIS `config/cobbreeding/main.json` (currently 1.0 = off; 2.0 makes the ladder rung real).
+  NB his cobbreeding min/maxBreedingTimeInTicks=600 is a TESTING value; real default ~9-12 min.
+- Publish tail (#7): icon art, QA screenshots per LISTING.md 📸 plan, version → 1.0.0-beta.1, Modrinth/CF.
 
-## Open board
-- **QA the 2026-07-03 batch (Q39–Q49)** — that's the immediate next step when he launches.
-- **#7 release track** (+ #18 awareness book) — strip/gate QA commands, perf/log-level pass, icon/screenshots/listing, Modrinth/CF. "Features first, then release" agreed — the feature board is now EMPTY except release.
-- Deferred: native-inventory viewport scaling; Augmenter GPU/Data cost pass (installs are slot-gated only, §7.5).
+## His world + environment (don't re-derive)
+- World `New Worlddasdasdadsa`, spawn `-400,-336`; pastures: spawn farm `-394,69,-290` / `-400,69,-288` /
+  `-398,69,-288`, west `-902,69,-297` + `-923,63,-453`, nether `-165,68,-19`. renderDistance 36 (576-block
+  load radius) — nether hop = reliable chunk unload for catch-up tests.
+- Logs: `/mnt/c/Users/deuce/curseforge/minecraft/Instances/Greener Pastures Test/gp-logs/latest.log` (JSONL).
+  Hot events: sweep/proc/brood/ritual hit·pulls·discovered/corrupt kernel/disk write·read/augment_apply(gpu)/
+  compile_set(gpu)/pull·pull_full/first_join_gift/illicit_breadcrumb/gap_applied/note_push·dismiss.
+- Build: `cd greener-pastures-ui && npm run build` then `JAVA_HOME=/home/donaldgalliano/jdks/jdk-21.0.11+10
+  greener-pastures/gradlew -p greener-pastures build` (sandbox off; READ REAL GRADLE OUTPUT — grep pipes have
+  eaten failures twice). 270 tests green at deploy. Deploy = cp to instance mods + md5 + testzip.
+- Cobblemon internals: decompile via python zipfile + `~/cfr.jar` (snack/seasoning/shiny findings all verified
+  against Cobblemon-fabric-1.7.3+1.21.1.jar this way).
 
-## How #34/#35/#37 are built (for debugging)
-- **Pure cores** (unit-tested): `notebook/PastureHealth.evaluate(linked, hasKernel, monCount(-1=unknown), queueFull, fullSpecies)` → flags; `notebook/AugmentArg.parse("TYPE" | "TYPE:idx" | "EV:6csv")` → null on malformed.
-- **Transport** (tuple-6 dodges): `NotebookPastureExtraS2C(pos, json{health,kernel})` rides with every pushPastureConfig (pos-keyed focus-aware client cache, like config/graph); `NotebookAugmenterMetaS2C(json{values,natures,balls})` rides with pushAugmenter; `NotebookPasturesS2C` grew `healthJson` ({"dim|pos":"id,id"}).
-- **AugmentType** gained NATURE/BALL (parameterized selectors — level = catalog index), ABILITY, EGG_MOVES; **EV is now the parameterized EV Primer** (installedOn = EV_SPREAD component present; the v1 +20-blanket value was dead code at the breeder and is retired). Re-pick in place = no new slot; `applyAugment` validates catalog ranges server-side.
-- **React**: `NaturePicker`/`BallPicker`/`EvAllocator` are draggable `dcfg` pop-ups in the Augmenter tab (PICK…/EDIT buttons); catalogs come from the SERVER meta (never hardcode ids — only the NATURE_FX display hints are client-side). Fixed a latent dead-APPLY bug (`gpu >= a.gpuCost` with gpuCost never sent → always disabled; now `?? 0`).
-
-## Deuce's operating style (respect it)
-Tight replies; he tests everything personally; deploy ONLY on explicit "I'm out/quit" confirmation; batch-QA; observability-first (every feature ships JSONL logging via GpLog — check logs before theorizing); no pay-to-win surfaces ever; he steers priorities — offer the board, let him pick.
+## Deuce's operating style
+Tight replies; he tests personally, steers priorities, tunes balance by feel (give him tables + worked
+examples); deploy ONLY on explicit out-of-game confirm; observability-first (logs before theories); no
+pay-to-win surfaces EVER; hidden content stays hidden (no recipe hints in UI); he loves loop-closures between
+systems (Feast e-gapples → snack seasonings was a hit).
