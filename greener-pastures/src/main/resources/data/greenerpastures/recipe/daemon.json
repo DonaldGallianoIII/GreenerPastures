@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " e ",
+    "aga",
+    " m "
+  ],
+  "key": {
+    "e": {
+      "item": "minecraft:echo_shard"
+    },
+    "a": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "g": {
+      "item": "greenerpastures:gpu"
+    },
+    "m": {
+      "item": "greenerpastures:data_disk_megabyte"
+    }
+  },
+  "result": {
+    "id": "greenerpastures:daemon",
+    "count": 1
+  }
+}

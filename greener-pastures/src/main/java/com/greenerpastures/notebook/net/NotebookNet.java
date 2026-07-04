@@ -295,6 +295,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.APPLY_AUGMENT -> { applyAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player); }
+                case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -960,6 +961,47 @@ public final class NotebookNet {
             }
         }
         ServerPlayNetworking.send(player, new NotebookBioBankS2C(entries.size(), entries));
+    }
+
+    /** Write Data onto blank media (§5c — the Notebook is the drive): consume 1 blank + debit the
+     *  denomination's value → hand back the written disk. Refuses BEFORE debiting; never destroys media. */
+    private static void writeDisk(ServerPlayerEntity player, String denomId) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        Item denomItem = Registries.ITEM.get(Identifier.tryParse(denomId == null ? "" : denomId));
+        if (!(denomItem instanceof com.greenerpastures.economy.DataDiskItem disk) || disk.value <= 0) return;
+        var inv = player.getInventory();
+        int blankSlot = -1;
+        for (int i = 0; i < inv.main.size(); i++) {
+            if (inv.main.get(i).isOf(GpItems.DISK_BLANK)) { blankSlot = i; break; }
+        }
+        if (blankSlot < 0) {
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r No blank disk to write onto."), false);
+            return;
+        }
+        DataStore data = DataStore.get(server);
+        if (data.balanceOf(player.getUuid()) < disk.value) {
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough Data — that disk holds "
+                    + String.format("%,d", disk.value) + "."), false);
+            return;
+        }
+        ItemStack blank = inv.main.get(blankSlot);
+        if (blank.getCount() == 1) {
+            if (!data.tryDebit(player.getUuid(), disk.value)) return;
+            inv.main.set(blankSlot, new ItemStack(denomItem));           // media swaps in place — always room
+        } else {
+            int empty = -1;
+            for (int i = 0; i < inv.main.size(); i++) if (inv.main.get(i).isEmpty()) { empty = i; break; }
+            if (empty < 0) {
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Inventory full — make room for the written disk."), false);
+                return;
+            }
+            if (!data.tryDebit(player.getUuid(), disk.value)) return;
+            blank.decrement(1);
+            inv.main.set(empty, new ItemStack(denomItem));
+        }
+        inv.markDirty();
+        GpLog.i("disk", "write", "player", player.getUuid().toString(), "denom", denomId, "value", Long.toString(disk.value));
     }
 
     private static int countGpu(ServerPlayerEntity player) {

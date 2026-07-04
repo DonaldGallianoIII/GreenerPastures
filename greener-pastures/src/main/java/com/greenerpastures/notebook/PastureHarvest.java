@@ -27,10 +27,9 @@ import java.util.Set;
  * exactly as the block did. Reuses {@link DropsBridge} for the faithful Cobblemon roll, so behaviour is
  * unchanged — only the trigger (owned-pasture sweep, not block adjacency) and the sink (Notebook, not a chest).
  *
- * <p>No double-charge: the Harvester block stands down for owned pastures (it logs {@code owned_uses_notebook}),
- * so a tether is billed on exactly one clock. <b>Staple drops only for now</b> — the config-driven ritual /
- * type-drop pass is pending re-wire onto this tick (ritual pull-state must move from the block to
- * {@link PastureData}); tracked as Phase 3b in {@code NOTEBOOK_BUILD_PLAN.md}.
+ * <p>No double-charge: a tether is billed on exactly one clock. The config-driven custom-drop layers run on
+ * this tick too ({@code RitualHarvest} — 3b done): type-drops per typed mon + composition-gated gacha rituals
+ * with per-pasture persistent pity ({@link PastureData#ritualState}).
  */
 public final class PastureHarvest {
     private PastureHarvest() {}
@@ -111,6 +110,11 @@ public final class PastureHarvest {
                     if (!one.isEmpty()) productive++;
                     one.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
                 }
+                // Rituals on the network tick (3b): type-drops per mon + composition-gated gacha pulls with
+                // persistent pity — banked exactly once per sweep, so catch-up pays the missed pulls too.
+                Map<String, Integer> ritual = com.greenerpastures.drops.RitualHarvest.roll(
+                        com.greenerpastures.drops.CompositionReader.read(pasture), pd, RNG, sweeps);
+                ritual.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
                 long stored = 0;
                 for (Map.Entry<String, Integer> d : harvested.entrySet()) {
                     stored += store.deposit(pd.owner, d.getKey(), d.getValue());

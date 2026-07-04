@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "qrq",
+    "cdc",
+    "qrq"
+  ],
+  "key": {
+    "q": {
+      "item": "minecraft:quartz"
+    },
+    "r": {
+      "item": "minecraft:redstone"
+    },
+    "c": {
+      "item": "minecraft:copper_ingot"
+    },
+    "d": {
+      "item": "greenerpastures:data_disk_kilobyte"
+    }
+  },
+  "result": {
+    "id": "greenerpastures:gpu",
+    "count": 1
+  }
+}

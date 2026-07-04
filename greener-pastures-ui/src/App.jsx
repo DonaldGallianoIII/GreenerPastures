@@ -802,6 +802,39 @@ function EvAllocator({ initial, onClose }) {
   )
 }
 
+// ── Disks (§5c): write your Data balance onto blank media — the Notebook is the drive ──
+const DENOMS = [
+  ['data_disk_byte', 'byte', 8], ['data_disk_kilobyte', 'kB', 1024], ['data_disk_megabyte', 'MB', 16384],
+  ['data_disk_gigabyte', 'GB', 262144], ['data_disk_terabyte', 'TB', 4194304], ['data_disk_rocket', '🚀', 67108864],
+]
+function DisksCard() {
+  const status = useChannel('status')
+  const inv = useChannel('inventory')
+  const data = status?.data ?? 0
+  const blanks = (inv?.slots || []).reduce((a, s) => a + (s?.id === 'greenerpastures:data_disk_blank' ? s.count : 0), 0)
+  return (
+    <div className="inset" style={{ padding: 10, borderRadius: 8, marginTop: 10 }}>
+      <div className="row" style={{ marginBottom: 6 }}>
+        <span className="h">Data disks</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim mono" style={{ fontSize: 10 }}>{blanks} blank{blanks === 1 ? '' : 's'} · right-click a written disk to read it back</span>
+      </div>
+      <div className="row" style={{ gap: 5, flexWrap: 'wrap' }}>
+        {DENOMS.map(([id, label, v]) => {
+          const ok = blanks > 0 && data >= v
+          return (
+            <button key={id} className="btn" disabled={!ok}
+              title={blanks === 0 ? 'craft a blank disk first' : data < v ? `needs ${v.toLocaleString()} Data` : `write ${v.toLocaleString()} Data onto a blank`}
+              onClick={() => send('storage', 'WRITE_DISK', { denom: `greenerpastures:${id}` })}>
+              💾 {label} · {compact(v)}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Dashboard (live analytics — real breeding data over the `dashboard` channel) ──
 function Dashboard() {
   const d = useChannel('dashboard')
@@ -815,6 +848,7 @@ function Dashboard() {
         <span className="dim" style={{ fontSize: 11 }}>live · this session</span>
       </div>
       <Goals />
+      <DisksCard />
       <div className="statrow">
         <Stat label="eggs" value={laid} />
         <Stat label="shiny" value={shiny} sub={`${shinyRate.toFixed(2)}%`} color="var(--pair)" />

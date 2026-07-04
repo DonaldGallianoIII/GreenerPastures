@@ -27,19 +27,26 @@ public final class GpItems {
         return Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, id), new Item(settings));
     }
 
+    private static Item disk(String id, long value) {
+        return Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, id),
+                new DataDiskItem(value, new Item.Settings()));
+    }
+
     public static void init() {
         GPU           = item("gpu", new Item.Settings());
         NOTEBOOK      = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "notebook"),
                 new NotebookItem(new Item.Settings().maxCount(1)));
         FIELD_GUIDE   = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "field_guide"),
                 new com.greenerpastures.core.FieldGuideItem(new Item.Settings().maxCount(1)));
-        DISK_BLANK    = item("data_disk_blank", new Item.Settings());
-        DISK_BYTE     = item("data_disk_byte", new Item.Settings());
-        DISK_KILOBYTE = item("data_disk_kilobyte", new Item.Settings());
-        DISK_MEGABYTE = item("data_disk_megabyte", new Item.Settings());
-        DISK_GIGABYTE = item("data_disk_gigabyte", new Item.Settings());
-        DISK_TERABYTE = item("data_disk_terabyte", new Item.Settings());
-        DISK_ROCKET   = item("data_disk_rocket", new Item.Settings());
+        // Data disks (§5c — Data's physical form): a binary denomination ladder, baked (no config, anti-p2w).
+        // The Notebook's Dashboard WRITES a blank into a denomination; right-click READS it back to balance.
+        DISK_BLANK    = disk("data_disk_blank", 0L);
+        DISK_BYTE     = disk("data_disk_byte", 8L);
+        DISK_KILOBYTE = disk("data_disk_kilobyte", 1_024L);
+        DISK_MEGABYTE = disk("data_disk_megabyte", 16_384L);
+        DISK_GIGABYTE = disk("data_disk_gigabyte", 262_144L);
+        DISK_TERABYTE = disk("data_disk_terabyte", 4_194_304L);
+        DISK_ROCKET   = disk("data_disk_rocket", 67_108_864L);
 
         // One dedicated creative tab for the whole mod (release polish): auto-collects every item registered
         // under our namespace — entries resolve LAZILY (on tab open), so registration order doesn't matter.
