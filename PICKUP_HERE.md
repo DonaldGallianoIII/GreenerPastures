@@ -1,13 +1,13 @@
-# 🎯 PICKUP — session handoff (2026-07-03, evening)
+# 🎯 PICKUP — session handoff (2026-07-03, late)
 
-> **LIVE STATE:** jar **`f1769a7f`** (commit `0ce211f`) deployed; Deuce is OUT of game, next launch tests the
-> **2026-07-03 QA batch in `QA_PENDING.md` (Q39–Q49)**: health strip + Pastures-tab ⚠ badges (#37), EV allocator
-> (#34), nature/ball pickers + Ability/Egg-Move rows (#35), Kernel LOADOUT chips, Inbox log lines.
-> ✅ Catch-up + Inbox (#38) is FIELD-VERIFIED and closed: 10.4-min nether trip → `sweeps:10` exact on both west
-> pastures + broods in the same 16ms window; notes landed in the Inbox; chat silent. CSV/HTML export is DROPPED
-> (Deuce: freaks out casual players) — DashboardExport stays dormant, no download button ever.
-> **NEVER deploy while he's in game** (WSL `cp` through Windows' lock corrupts the RUNNING jar → ZipException
-> hours later; see [[mod-deploy-workflow]]). Deploy only when he explicitly confirms quit-to-desktop.
+> **LIVE STATE:** deployed jar is **`f1769a7f`** (features batch); jars **`08a14db9`** (perf R3) and
+> **`c19c74b6`** (release batch, commit `05d7a6d`) are built + committed but **NOT deployed** — Deuce was
+> couch-steering ("remote control work"), batching code with **deferred QA**. Next deploy = `c19c74b6`
+> (it contains everything), ONLY on his explicit quit-to-desktop confirm.
+> ⚠️ **His instance MUST add `-Dgreenerpastures.qa=true` to JVM args before testing** (QA commands +
+> DEBUG logging are now gated behind it — release builds ship clean). It's the first line of the QA section.
+> **Pending QA: Q39–Q61** (three stacked batches: features / perf+profiler / release+GPU-economy+guide).
+> **NEVER deploy while he's in game** (WSL `cp` corrupts the RUNNING jar; see [[mod-deploy-workflow]]).
 
 ## His world (for log-reading)
 - World `New Worlddasdasdadsa`, spawn `-400,-336`. Pastures: **spawn farm** `-394,69,-290` (16 Tentacool/Cruel/Frillish, Greener 6.00%), `-400,69,-288` (2 Eevee, Netherite 5.50%), `-398,69,-288` (2 Drilbur, Copper 3.50%); **west** `-902,69,-297` (6 mons, Greener) + `-923,63,-453` (2 mons, Diamond 5.00%); **nether** `-165,68,-19`.
