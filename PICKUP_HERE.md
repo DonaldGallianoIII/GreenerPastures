@@ -1,12 +1,12 @@
 # 🎯 PICKUP — session handoff (2026-07-03, late)
 
 > **LIVE STATE:** deployed jar is **`f1769a7f`** (features batch). Three newer batches are built + committed
-> but **NOT deployed**; the current deployable is **`0a25f906`** (commit `00cbb50` — it contains everything:
+> but **NOT deployed**; the current deployable is **`b8246aac`** (commit `115c296` — it contains everything:
 > perf R3 + release/GPU-economy/guide + recipes/disks/rituals/snack). Deploy ONLY on his explicit
 > quit-to-desktop confirm.
 > ⚠️ **His instance MUST add `-Dgreenerpastures.qa=true` to JVM args before testing** (QA commands +
 > DEBUG logging are now gated behind it — release builds ship clean). It's the first line of the QA section.
-> **Pending QA: Q39–Q67** (four stacked batches: features / perf+profiler / release+GPU-economy+guide /
+> **Pending QA: Q39–Q72** (five stacked batches: features / perf+profiler / release+GPU-economy+guide /
 > content: recipes + data disks + rituals-3b + Ultra Compressed Snack). Deuce's verdict: NOT close to release
 > yet — LISTING.md is a draft only. Remaining roadmap he named: recipes ✓, rituals ✓, pokesnacks ✓ (the
 > Ultra Compressed Snack — N snacks crafted into one merged-seasoning mega-bait), data disks ✓ — all now
