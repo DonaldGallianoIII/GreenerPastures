@@ -29,16 +29,23 @@ import java.util.Map;
 
 /**
  * The <b>Ultra Compressed Snack</b> (Deuce, 2026-07-03): put poke snacks in a crafting grid → ONE snack
- * carrying <b>every seasoning from every input</b>. Cobblemon's cooking pot caps a snack at 3 seasonings
- * (3 input slots) — but its bait data is an unbounded {@code cobblemon:bait_effects} identifier list that the
- * spawner reads by full iteration, with duplicate entries stacking <i>additively</i> (decompile-verified,
- * Cobblemon 1.7.3). Compression is therefore real power: 9 snacks → one mega-bait the pot could never cook.
+ * carrying the seasonings of all of them. Cobblemon's cooking pot caps a snack at 3 seasonings (3 input
+ * slots); the Ultra's value is BREADTH beyond that — up to {@link #MAX_EFFECTS} DISTINCT effects in one
+ * snack, which the pot could never cook.
+ *
+ * <p><b>Compression deduplicates</b> (Deuce, 2026-07-04): Cobblemon's spawner stacks duplicate bait-effect
+ * entries additively (decompile-verified, 1.7.3), so naive merging let 9 shiny-seasoned snacks stack 27
+ * shiny effects — out of control. The merge therefore keeps each effect ONCE (first-seen grid order),
+ * caps the list at {@link #MAX_EFFECTS}, and takes the per-flavour MAX rather than the sum. On-brand:
+ * it's a Data Science mod — compressed data is deduplicated data.
  *
  * <p>The output stays a genuine {@code cobblemon:poke_snack} (the spawn logic is component-driven, not
- * identity-driven), so towers treat it as a normal snack — just with the merged effect list, summed flavours,
- * a custom name, and a lore line recording the compression count.
+ * identity-driven), so towers treat it as a normal snack.
  */
 public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
+    /** Hard cap on DISTINCT bait effects an Ultra can carry — 3 pot-cooked snacks' worth of breadth. */
+    public static final int MAX_EFFECTS = 9;
+
     public static final RecipeSerializer<UltraCompressedSnackRecipe> SERIALIZER =
             new SpecialRecipeSerializer<>(UltraCompressedSnackRecipe::new);
 
@@ -66,28 +73,37 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
 
     @Override
     public ItemStack craft(CraftingRecipeInput input, RegistryWrapper.WrapperLookup lookup) {
-        List<Identifier> mergedBait = new ArrayList<>();
+        java.util.LinkedHashSet<Identifier> mergedBait = new java.util.LinkedHashSet<>();   // DEDUP, first-seen order
         Map<Flavour, Integer> mergedFlavours = new EnumMap<>(Flavour.class);
         int snacks = 0;
+        int dropped = 0;
         for (int i = 0; i < input.getSize(); i++) {
             ItemStack s = input.getStackInSlot(i);
             if (!s.isOf(CobblemonItems.POKE_SNACK)) continue;
             snacks++;
             BaitEffectsComponent bait = s.get(CobblemonItemComponents.BAIT_EFFECTS);
-            if (bait != null) mergedBait.addAll(bait.getEffects());   // duplicates KEPT — they stack additively
+            if (bait != null) {
+                for (Identifier id : bait.getEffects()) {
+                    if (mergedBait.contains(id)) { dropped++; continue; }              // duplicate — compression dedupes
+                    if (mergedBait.size() >= MAX_EFFECTS) { dropped++; continue; }     // over the breadth cap
+                    mergedBait.add(id);
+                }
+            }
             FlavourComponent fl = s.get(CobblemonItemComponents.FLAVOUR);
-            if (fl != null) fl.getFlavours().forEach((k, v) -> mergedFlavours.merge(k, v, Integer::sum));
+            if (fl != null) fl.getFlavours().forEach((k, v) -> mergedFlavours.merge(k, v, Math::max));   // MAX, not sum
         }
         if (snacks == 0) return ItemStack.EMPTY;
 
         ItemStack out = new ItemStack(CobblemonItems.POKE_SNACK);
-        if (!mergedBait.isEmpty()) out.set(CobblemonItemComponents.BAIT_EFFECTS, new BaitEffectsComponent(mergedBait));
+        if (!mergedBait.isEmpty()) out.set(CobblemonItemComponents.BAIT_EFFECTS,
+                new BaitEffectsComponent(new ArrayList<>(mergedBait)));
         if (!mergedFlavours.isEmpty()) out.set(CobblemonItemComponents.FLAVOUR, new FlavourComponent(mergedFlavours));
         out.set(DataComponentTypes.CUSTOM_NAME,
                 Text.translatable("item.greenerpastures.ultra_compressed_snack")
                         .formatted(Formatting.GOLD).styled(st -> st.withItalic(false)));
         out.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                Text.literal("×" + snacks + " snacks compressed · " + mergedBait.size() + " bait effects")
+                Text.literal("×" + snacks + " snacks · " + mergedBait.size() + "/" + MAX_EFFECTS
+                                + " unique effects" + (dropped > 0 ? " · " + dropped + " deduplicated" : ""))
                         .formatted(Formatting.DARK_AQUA))));
         return out;
     }
