@@ -655,9 +655,9 @@ function Compiler() {
   const gpu = status?.gpu ?? 0
   const runtime = d.drainPerSec > 0 ? Math.floor((status?.data ?? 0) / d.drainPerSec) : null
   return (
-    <div>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
     <TargetCards items={meta?.daemons} kind="Daemon" action="SET_DAEMON_TARGET" />
-    <div className="trip">
+    <div className="trip" style={{ flex: 1, minHeight: 0, height: 'auto' }}>
       <div className="tcol inset" style={{ width: 130 }}>
         <span className="h">Daemon</span>
         <span style={{ color: d.daemonOn ? 'var(--green)' : 'var(--muted)' }}>{d.daemonOn ? '● running' : '○ idle'}</span>
@@ -728,9 +728,9 @@ function Augmenter() {
     return null
   }
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
     <TargetCards items={meta.kernels} kind="Kernel" action="SET_KERNEL_TARGET" />
-    <div className="trip">
+    <div className="trip" style={{ flex: 1, minHeight: 0, height: 'auto' }}>
       <div className="tcol inset" style={{ width: 150 }}>
         <span className="h">Kernel</span>
         <span className="grn" style={{ fontWeight: 600 }}>{d.tier}{corrupted && <span style={{ color: '#a06bd4' }}> ⛧</span>}</span>
