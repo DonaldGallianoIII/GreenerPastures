@@ -475,7 +475,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     private Component augRow(NotebookAugmenterS2C.Aug a) {
-        boolean applied = a.applied();
+        boolean applied = a.appliedLevel() > 0;   // leveled payload (2026-07-05); the owo fallback just shows on/off
         FlowLayout row = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
         row.verticalAlignment(VerticalAlignment.CENTER);
         row.gap(4);

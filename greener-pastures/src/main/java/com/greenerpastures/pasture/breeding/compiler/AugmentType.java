@@ -75,13 +75,60 @@ public enum AugmentType {
      *  Selectors count as installed at ANY picked value; the EV primer counts by its EV_SPREAD component
      *  (v1's blanket level ≥20 no longer marks it — the breeder only reads the spread). */
     public boolean installedOn(ItemStack kernel) {
+        return installedLevelOn(kernel) > 0;
+    }
+
+    /** Installed level on this Kernel: 0 = none · 1 · 2 (the 1.5× tier, Deuce 2026-07-05). DROP_RATE is
+     *  measured ABOVE the Kernel's born-with base so a bare Greener (base 5.00%) neither reads as installed
+     *  nor eats phantom slots (latent pre-leveling bug, fixed here). */
+    public int installedLevelOn(ItemStack kernel) {
         if (this == EV) {
             EvSpread s = kernel.get(GpComponents.EV_SPREAD);
-            return s != null && !s.isEmpty();
+            return s != null && !s.isEmpty() ? 1 : 0;
         }
         Augments a = kernel.get(GpComponents.AUGMENTS);
-        if (a == null) return false;
-        return function.selector ? a.level(function) > 0 : a.level(function) >= value;
+        if (a == null) return 0;
+        int stored = a.level(function);
+        if (function.selector) return stored > 0 ? 1 : 0;
+        return levelOf(stored - baseOf(kernel), value, valueAt(2), maxLevel());
+    }
+
+    /** The Kernel's born-with magnitude for this function (only DROP_RATE has one). */
+    private int baseOf(ItemStack kernel) {
+        if (this != DROP_RATE) return 0;
+        return kernel.getItem() instanceof BreedingUpgradeItem bu ? bu.tier().baseDropRateCentipercent() : 0;
+    }
+
+    /** PURE level math (headless-tested): effective magnitude → 0/1/2 against the two tier values. */
+    public static int levelOf(int effectiveMagnitude, int v1, int v2, int maxLevel) {
+        if (maxLevel > 1 && effectiveMagnitude >= v2) return 2;
+        return effectiveMagnitude >= v1 ? 1 : 0;
+    }
+
+    /** Level-II magnitude: 1.5× level I (Deuce 2026-07-05). Speed/Hatch use their native level curves;
+     *  IV Floor rounds DOWN (4, not 5) so perfection stays a chase. */
+    public int valueAt(int level) {
+        if (level <= 1) return value;
+        return switch (this) {
+            case SPEED, HATCH -> 2;                     // native curves: ×2 cadence · ×0.25 hatch time
+            case IV_FLOOR     -> 4;                     // 4.5 floored
+            default           -> (int) Math.round(value * 1.5);   // shiny 45 · drop_rate +3.00% · yield 2 · enrichment 30
+        };
+    }
+
+    /** Two levels for magnitude augments; selectors/binaries/EV stay single-level (nothing to 1.5×). */
+    public int maxLevel() {
+        return parameterized() || this == ABILITY || this == EGG_MOVES ? 1 : 2;
+    }
+
+    /** PURE slot math (headless-tested): level II occupies THREE slots total — not even possible on Copper. */
+    public static int slotsForLevel(int level) {
+        return level >= 2 ? 3 : level == 1 ? 1 : 0;
+    }
+
+    /** What THIS kernel's install of this augment writes as the stored level (DROP_RATE rides its base). */
+    public int storedValueFor(ItemStack kernel, int level) {
+        return baseOf(kernel) + valueAt(level);
     }
 
     /** A copy of the Kernel with this augment's function set to {@code value} (replace-in-place, one per function). */

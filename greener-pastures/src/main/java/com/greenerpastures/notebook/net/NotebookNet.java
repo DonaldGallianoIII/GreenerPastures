@@ -789,7 +789,7 @@ public final class NotebookNet {
 
     private static int slotsUsed(ItemStack kernel) {
         int n = 0;
-        for (AugmentType at : AugmentType.values()) if (at.installedOn(kernel)) n += slotCost(at);
+        for (AugmentType at : AugmentType.values()) n += AugmentType.slotsForLevel(at.installedLevelOn(kernel));
         return n;
     }
 
@@ -816,8 +816,10 @@ public final class NotebookNet {
             slotCap = tier.slots;
             used = slotsUsed(ref.stack());
             for (AugmentType at : AugmentType.values()) {
-                catalog.add(new NotebookAugmenterS2C.Aug(at.name(), at.effectSummary(), slotCost(at),
-                        at.installedOn(ref.stack()), gpuCost(at)));
+                int lvl = at.installedLevelOn(ref.stack());
+                int nextSlots = AugmentType.slotsForLevel(Math.min(at.maxLevel(), lvl + 1));   // what the NEXT action occupies
+                catalog.add(new NotebookAugmenterS2C.Aug(at.name(), at.effectSummary(), nextSlots,
+                        lvl, gpuCost(at), at.maxLevel()));
             }
         }
         sendGated(player, "augmenter", new NotebookAugmenterS2C(has, tierLabel, used, slotCap, catalog));
@@ -943,11 +945,20 @@ public final class NotebookNet {
         }
         if (at.parameterized() != (arg.index() > 0 || arg.ev() != null)) return;   // param augments need a value; plain ones must not carry one
 
-        boolean installed = at.installedOn(ref.stack());
-        if (installed && !at.parameterized()) return;                              // no-dupe (re-pick is param-only)
-        if (!installed) {                                                          // NEW install: slot gate + GPU fee (§7.5 live)
+        int curLevel = at.installedLevelOn(ref.stack());
+        boolean installed = curLevel > 0;
+        boolean upgrade = installed && !at.parameterized() && curLevel < at.maxLevel();   // I → II (Deuce: 1.5×, 3 slots total)
+        if (installed && !at.parameterized() && !upgrade) return;                  // maxed non-param → no-dupe
+        if (!installed || upgrade) {                                               // install OR upgrade: slot gate + GPU fee
             BreedingTier tier = ((BreedingUpgradeItem) ref.stack().getItem()).tier();
-            if (slotsUsed(ref.stack()) + slotCost(at) > tier.slots) return;
+            int targetLevel = installed ? curLevel + 1 : 1;
+            int slotsAfter = slotsUsed(ref.stack()) - AugmentType.slotsForLevel(curLevel)
+                    + AugmentType.slotsForLevel(targetLevel);
+            if (slotsAfter > tier.slots) {
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r No room — level " + targetLevel
+                        + " needs " + AugmentType.slotsForLevel(targetLevel) + " slots total on this Kernel."), false);
+                return;
+            }
             int fee = gpuCost(at);
             if (!consumeGpu(player, fee)) {
                 player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough GPU — "
@@ -978,10 +989,14 @@ public final class NotebookNet {
                 ref.writer().accept(out);
                 detail = spread.hp() + "/" + spread.atk() + "/" + spread.def() + "/" + spread.spa() + "/" + spread.spd() + "/" + spread.spe();
             }
-            default -> ref.writer().accept(at.apply(ref.stack()));
+            default -> {
+                int targetLevel = upgrade ? curLevel + 1 : 1;
+                ref.writer().accept(at.apply(ref.stack(), at.storedValueFor(ref.stack(), targetLevel)));
+                if (upgrade) detail = "level " + targetLevel;
+            }
         }
         GpLog.i("notebook", "augment_apply", "player", player.getUuid().toString(), "type", at.name(),
-                "value", detail.isEmpty() ? "-" : detail, "repick", installed);
+                "value", detail.isEmpty() ? "-" : detail, "repick", installed && !upgrade, "upgrade", upgrade);
     }
 
     private static void removeAugment(ServerPlayerEntity player, String typeName) {
@@ -1422,7 +1437,7 @@ public final class NotebookNet {
                         AugmentType.DROP_RATE, AugmentType.DROP_YIELD, AugmentType.IV_FLOOR,
                         AugmentType.ABILITY, AugmentType.EGG_MOVES};
                 AugmentType gift = pool[CORRUPT_RNG.nextInt(pool.length)];
-                out = gift.apply(out);
+                out = gift.apply(out, gift.storedValueFor(out, 1));   // base-aware — a Greener's drop-rate base must never be downgraded by the gift
                 detail = gift.effectSummary() + " §7(installed beyond capacity)§r";
             }
             case WILD -> {

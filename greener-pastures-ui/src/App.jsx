@@ -744,19 +744,28 @@ function Augmenter() {
         <span className="h">Augments · ◈ = GPU cost{corrupted ? ' · ⛧ locked' : ''}</span>
         {(d.catalog || []).map((a) => {
           const gcost = a.gpuCost ?? 0   // GPU economy deferred server-side — treat "not sent" as free
-          const canApply = d.slotsUsed + a.slotCost <= d.slotCap && gpu >= gcost
+          const lvl = a.appliedLevel ?? (a.applied ? 1 : 0)   // 6-field payload (appliedLevel); tolerate old shape
           const param = PARAM_TYPES.includes(a.type)
           const chip = param ? valueChip(a.type) : null
+          const curSlots = lvl >= 2 ? 3 : lvl === 1 ? 1 : 0
+          const slotDelta = (a.slotCost ?? 1) - curSlots           // slotCost = TOTAL slots of the next action
+          const canDo = d.slotsUsed + slotDelta <= d.slotCap && gpu >= gcost
+          const canUpgrade = lvl === 1 && (a.maxLevel ?? 1) > 1 && !param
           return (
-            <div key={a.type} className={`brow${a.applied ? ' on' : ''}`}>
-              <span style={{ color: a.applied ? 'var(--text)' : 'var(--muted)', flex: 1 }}>{a.label}</span>
+            <div key={a.type} className={`brow${lvl > 0 ? ' on' : ''}`}>
+              <span style={{ color: lvl > 0 ? 'var(--text)' : 'var(--muted)', flex: 1 }}>
+                {a.label}{lvl >= 2 && <span className="cyn mono" style={{ fontSize: 10 }} title="level II — 1.5× effect · 3 slots"> II</span>}
+              </span>
               {chip && <span className="augval" title="current setting">{chip}</span>}
-              <span className="dim mono" style={{ fontSize: 10 }}>{a.slotCost} slot{a.slotCost !== 1 ? 's' : ''}</span>
+              <span className="dim mono" style={{ fontSize: 10 }} title={lvl === 1 && canUpgrade ? 'level II occupies 3 slots total' : ''}>{a.slotCost} slot{a.slotCost !== 1 ? 's' : ''}</span>
               {gcost > 0 && <span className="mono" style={{ fontSize: 10, width: 30, textAlign: 'right', color: gpu >= gcost ? 'var(--cyan)' : 'var(--red)' }} title="GPU cost">◈{gcost}</span>}
-              {a.applied && param && !corrupted && <button className="btn" onClick={() => setPicker(a.type)}>EDIT</button>}
-              {a.applied
-                ? <button className="btn warn" disabled={corrupted} title={corrupted ? '⛧ corrupted — beyond modification' : 'frees the slot'} onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
-                : <button className="btn go" disabled={!canApply || corrupted} title={corrupted ? '⛧ corrupted — beyond modification' : gpu < gcost ? 'not enough GPU' : (d.slotsUsed + a.slotCost > d.slotCap ? 'no free slots' : '')}
+              {lvl > 0 && param && !corrupted && <button className="btn" onClick={() => setPicker(a.type)}>EDIT</button>}
+              {canUpgrade && !corrupted &&
+                <button className="btn go" disabled={!canDo} title={gpu < gcost ? 'not enough GPU' : d.slotsUsed + slotDelta > d.slotCap ? `level II needs 3 slots total (${slotDelta} more free)` : '1.5× effect · 3 slots total'}
+                  onClick={() => send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>UPGRADE</button>}
+              {lvl > 0
+                ? <button className="btn warn" disabled={corrupted} title={corrupted ? '⛧ corrupted — beyond modification' : 'frees the slots'} onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
+                : <button className="btn go" disabled={!canDo || corrupted} title={corrupted ? '⛧ corrupted — beyond modification' : gpu < gcost ? 'not enough GPU' : (d.slotsUsed + slotDelta > d.slotCap ? 'no free slots' : '')}
                     onClick={() => param ? setPicker(a.type) : send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>{param ? 'PICK…' : 'APPLY'}</button>}
             </div>
           )

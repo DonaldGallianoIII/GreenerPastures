@@ -18,13 +18,16 @@ import java.util.List;
 public record NotebookAugmenterS2C(boolean hasKernel, String tier, int slotsUsed, int slotCap, List<Aug> catalog)
         implements CustomPayload {
 
-    public record Aug(String type, String label, int slotCost, boolean applied, int gpuCost) {
+    /** {@code slotCost} = slots the NEXT action (install or upgrade) would occupy TOTAL; {@code appliedLevel}
+     *  0 = not installed. Exactly six fields — the tuple-codec ceiling. */
+    public record Aug(String type, String label, int slotCost, int appliedLevel, int gpuCost, int maxLevel) {
         public static final PacketCodec<RegistryByteBuf, Aug> CODEC = PacketCodec.tuple(
                 PacketCodecs.STRING, Aug::type,
                 PacketCodecs.STRING, Aug::label,
                 PacketCodecs.VAR_INT, Aug::slotCost,
-                PacketCodecs.BOOL, Aug::applied,
+                PacketCodecs.VAR_INT, Aug::appliedLevel,
                 PacketCodecs.VAR_INT, Aug::gpuCost,
+                PacketCodecs.VAR_INT, Aug::maxLevel,
                 Aug::new);
     }
 
