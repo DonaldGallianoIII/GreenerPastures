@@ -142,7 +142,28 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
         repelSums.forEach((type, mag) -> lore.add(Text.literal(
                 "🚫 ÷" + mag + " " + Character.toUpperCase(type.charAt(0)) + type.substring(1) + " Types")
                 .formatted(Formatting.RED)));
+        double speed = SnackSpeed.throughputFactor(biteValuesOf(merged));   // TRUE speed (Overdrive pt.2) — the Cobblemon tooltip's "Reduce Bite Time" line lies
+        if (speed > 1.005) lore.add(Text.literal(String.format("⚡ spawn speed ×%.1f", speed)).formatted(Formatting.GOLD));
         out.set(DataComponentTypes.LORE, new LoreComponent(lore));
+        return out;
+    }
+
+    /** Every kept copy's bite_time value (per copy — the multiplicative stack SnackSpeed honors). */
+    private static List<Double> biteValuesOf(List<Identifier> merged) {
+        List<Double> out = new ArrayList<>();
+        for (Identifier id : merged) {
+            try {
+                com.cobblemon.mod.common.api.fishing.SpawnBait bait =
+                        com.cobblemon.mod.common.api.fishing.SpawnBaitEffects.getFromIdentifier(id);
+                if (bait == null) continue;
+                for (com.cobblemon.mod.common.api.fishing.SpawnBait.Effect ef : bait.getEffects()) {
+                    if (com.cobblemon.mod.common.api.fishing.SpawnBait.Effects.INSTANCE.getBITE_TIME().equals(ef.getType())) {
+                        out.add(ef.getValue());
+                        break;
+                    }
+                }
+            } catch (Throwable ignored) { }
+        }
         return out;
     }
 

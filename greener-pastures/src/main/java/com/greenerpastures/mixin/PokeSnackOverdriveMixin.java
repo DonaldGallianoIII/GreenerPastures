@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Carries a placed Ultra Compressed Snack's <b>repel payload</b> through the snack block's life
+ * <b>Snack Overdrive</b> — both halves live here. Pt.1: carries a placed snack's <b>repel payload</b> through the block's life
  * (Snack Overdrive pt.1): Cobblemon's {@code initializeFromItemStack} copies only ITS components, so our
  * {@code gp:repel_types} would die on placement without this. We capture it, persist it across chunk
  * reloads, hand it back on {@code toItemStack}, and lazily add ONE {@link GpRepelInfluence} to the snack's
@@ -26,13 +26,61 @@ import java.util.Map;
  * methods are vanilla overrides → remapped names.
  */
 @Mixin(PokeSnackBlockEntity.class)
-public class PokeSnackRepelMixin implements com.greenerpastures.drops.GpRepelHost {
+public class PokeSnackOverdriveMixin implements com.greenerpastures.drops.GpRepelHost {
 
     @Unique private Map<String, Integer> gp$repels = Map.of();
 
     @Override
     public Map<String, Integer> gp$getRepels() {
         return gp$repels;
+    }
+
+    /** Pt.2 spawn-speed credit bank (SnackSpeed): fractional spawns carried between random ticks. */
+    @Unique private double gp$credits = 0.0;
+
+    /** Every bite_time entry, per copy — the values vanilla throws away by picking one at random. */
+    @Unique
+    private static java.util.List<Double> gp$biteValues(PokeSnackBlockEntity be) {
+        java.util.List<Double> out = new java.util.ArrayList<>();
+        try {
+            for (com.cobblemon.mod.common.api.fishing.SpawnBait.Effect e : be.getBaitEffects()) {
+                if (com.cobblemon.mod.common.api.fishing.SpawnBait.Effects.INSTANCE.getBITE_TIME().equals(e.getType())) {
+                    out.add(e.getValue());
+                }
+            }
+        } catch (Throwable ignored) { }
+        return out;
+    }
+
+    /** Pt.2: replace the vanilla countdown (ONE random bite_time entry, hard 2× cap — decompile-verified
+     *  rot) with the credit accumulator: every copy counts multiplicatively, expected value exact, burst-
+     *  capped, credits hold (capped) while nobody's in range. Fail-soft: ANY error before the cancel falls
+     *  straight through to vanilla randomTick. */
+    @Inject(method = "randomTick", at = @At("HEAD"), cancellable = true, remap = false)
+    private void gp$creditedRandomTick(org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+        try {
+            PokeSnackBlockEntity self = (PokeSnackBlockEntity) (Object) this;
+            net.minecraft.world.World world = self.getWorld();
+            if (world == null) return;   // vanilla path
+            double mult = com.greenerpastures.ritual.SnackSpeed.trueMultiplier(gp$biteValues(self));
+            PlayerEntity near = world.getClosestPlayer(
+                    self.getPos().getX(), self.getPos().getY(), self.getPos().getZ(),
+                    com.cobblemon.mod.common.Cobblemon.INSTANCE.getConfig().getMaximumSpawningZoneDistanceFromPlayer(),
+                    false);
+            com.greenerpastures.ritual.SnackSpeed.CreditRoll roll =
+                    com.greenerpastures.ritual.SnackSpeed.onRandomTick(gp$credits, mult, near != null);
+            gp$credits = roll.remaining();
+            for (int i = 0; i < roll.spawns(); i++) self.attemptSpawn(near);
+            self.markDirty();
+            if (roll.spawns() > 0 && com.greenerpastures.core.GpLog.on(com.greenerpastures.core.GpLog.Level.DEBUG)) {
+                com.greenerpastures.core.GpLog.d("snack", "speed_tick", "pos", self.getPos().toShortString(),
+                        "mult", String.format("%.3f", mult), "spawns", roll.spawns(),
+                        "banked", String.format("%.2f", roll.remaining()));
+            }
+            ci.cancel();
+        } catch (Throwable ignored) {
+            // computed nothing → vanilla randomTick proceeds untouched
+        }
     }
 
     @Inject(method = "initializeFromItemStack", at = @At("TAIL"), remap = false)
@@ -67,6 +115,7 @@ public class PokeSnackRepelMixin implements com.greenerpastures.drops.GpRepelHos
 
     @Inject(method = "writeNbt", at = @At("TAIL"))
     private void gp$saveRepels(NbtCompound nbt, RegistryWrapper.WrapperLookup registries, CallbackInfo ci) {
+        if (gp$credits > 0) nbt.putDouble("gp_spawn_credits", gp$credits);
         if (gp$repels.isEmpty()) return;
         NbtCompound r = new NbtCompound();
         gp$repels.forEach(r::putInt);
@@ -75,6 +124,8 @@ public class PokeSnackRepelMixin implements com.greenerpastures.drops.GpRepelHos
 
     @Inject(method = "readNbt", at = @At("TAIL"))
     private void gp$loadRepels(NbtCompound nbt, RegistryWrapper.WrapperLookup registries, CallbackInfo ci) {
+        gp$credits = Math.min(com.greenerpastures.ritual.SnackSpeed.CREDIT_CAP,
+                Math.max(0, nbt.getDouble("gp_spawn_credits")));
         if (!nbt.contains("gp_repel_types")) return;
         NbtCompound r = nbt.getCompound("gp_repel_types");
         Map<String, Integer> m = new HashMap<>();
