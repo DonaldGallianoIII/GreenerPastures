@@ -48,6 +48,16 @@ public final class RitualSystem {
                             config.typeDrops(), new RitualBook(config.rituals().enabled(), merged));
                     config.save(configPath());
                 }
+                // Same contract for type-drops: new defaults (echo/amethyst progression drops) append to an
+                // existing file; admin-tuned rates for entries that already exist are never touched.
+                TypeDropTable mergedDrops = config.typeDrops().mergeMissingDefaults(RitualConfig.defaults().typeDrops());
+                if (mergedDrops != config.typeDrops()) {
+                    int added = mergedDrops.drops().size() - config.typeDrops().drops().size();
+                    GreenerPastures.LOG.info("[rituals] merged {} new default type-drop(s)", added);
+                    config = new RitualConfig(config.enabled(), config.autoPull(), config.rarityFactor(),
+                            mergedDrops, config.rituals());
+                    config.save(configPath());
+                }
             }
         } catch (Throwable t) {
             config = RitualConfig.defaults();

@@ -14,6 +14,25 @@ public record TypeDropTable(boolean enabled, List<TypeDrop> drops) {
         drops = drops == null ? List.of() : List.copyOf(drops);
     }
 
+    /** New DEFAULT drops must reach existing config files without clobbering admin edits (same contract as
+     *  the hand-designed-ritual merge): any default whose (type, item) pair is absent from this table is
+     *  appended; everything the admin wrote — including tuned rates for pairs that DO exist — is preserved.
+     *  Returns {@code this} when nothing was missing. Pure + tested. */
+    public TypeDropTable mergeMissingDefaults(TypeDropTable defaults) {
+        if (defaults == null || defaults.drops.isEmpty()) return this;
+        List<TypeDrop> merged = null;
+        for (TypeDrop def : defaults.drops) {
+            boolean present = false;
+            for (TypeDrop mine : drops) {
+                if (mine.type().equals(def.type()) && mine.item().equals(def.item())) { present = true; break; }
+            }
+            if (present) continue;
+            if (merged == null) merged = new ArrayList<>(drops);
+            merged.add(def);
+        }
+        return merged == null ? this : new TypeDropTable(enabled, merged);
+    }
+
     /** The type-drops whose {@code type} is in {@code presentTypes} (lowercased). Empty when disabled. */
     public List<TypeDrop> forTypes(Set<String> presentTypes) {
         if (!enabled || presentTypes == null) return List.of();

@@ -92,7 +92,15 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
                 td("fairy", "minecraft:lapis_lazuli", 12, 1, 2),
                 td("grass", "minecraft:sugar_cane", 25, 1, 2),
                 td("grass", "minecraft:beetroot", 12, 1, 2),
-                td("poison", "minecraft:nether_wart", 10, 1, 2)
+                td("poison", "minecraft:nether_wart", 10, 1, 2),
+                // Progression drops (Deuce, 2026-07-05): a mobless world has no ancient cities to loot — the
+                // tether/daemon echo shards and the notebook/tether amethyst must be farmable from pastures.
+                // Echo is deliberately the RAREST entry in the table (build a ghost farm, ~29/hr full mono).
+                td("ghost", "minecraft:echo_shard", 3, 1, 1),
+                td("dark", "minecraft:echo_shard", 2, 1, 1),
+                td("fairy", "minecraft:amethyst_shard", 8, 1, 1),
+                td("psychic", "minecraft:amethyst_shard", 5, 1, 1),
+                td("rock", "minecraft:amethyst_shard", 5, 1, 1)
         ));
     }
 

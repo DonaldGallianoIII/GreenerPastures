@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -128,6 +130,35 @@ class RitualConfigTest {
         assertFalse(SpanGate.shouldBank(200L, List.of(100L)));
         assertFalse(SpanGate.shouldBank(300L, List.of(100L)));
         assertFalse(SpanGate.shouldBank(100L, List.of()), "no satisfying partner → no bank");
+    }
+
+    @Test
+    void progressionDropsShipAndMergeIntoExistingTables() {
+        // Echo/amethyst (2026-07-05): the mobless-world progression gate — tether/daemon need echo shards.
+        TypeDropTable defs = RitualConfig.defaults().typeDrops();
+        assertTrue(defs.drops().stream().anyMatch(d -> d.type().equals("ghost") && d.item().equals("minecraft:echo_shard")));
+        assertTrue(defs.drops().stream().anyMatch(d -> d.type().equals("fairy") && d.item().equals("minecraft:amethyst_shard")));
+        // echo is the rarest entry in the whole table — the deliberate balance anchor
+        double echoMax = defs.drops().stream().filter(d -> d.item().equals("minecraft:echo_shard"))
+                .mapToDouble(TypeDrop::chancePercent).max().orElse(99);
+        assertTrue(defs.drops().stream().filter(d -> !d.item().equals("minecraft:echo_shard"))
+                .allMatch(d -> d.chancePercent() >= echoMax), "nothing common may be rarer than echo");
+
+        // merge: an admin file WITHOUT the new entries gains exactly them; tuned existing entries survive
+        TypeDropTable adminFile = new TypeDropTable(true, java.util.List.of(
+                new TypeDrop("fire", "minecraft:blaze_rod", 99.0, 1, 1),      // admin cranked this — must survive
+                new TypeDrop("ghost", "minecraft:echo_shard", 0.5, 1, 1)));   // admin nerfed echo — must survive
+        TypeDropTable merged = adminFile.mergeMissingDefaults(defs);
+        assertEquals(99.0, merged.drops().stream().filter(d -> d.item().equals("minecraft:blaze_rod"))
+                .findFirst().orElseThrow().chancePercent(), 1e-9);
+        assertEquals(0.5, merged.drops().stream().filter(d -> d.type().equals("ghost") && d.item().equals("minecraft:echo_shard"))
+                .findFirst().orElseThrow().chancePercent(), 1e-9, "admin's echo tune wins over the default");
+        assertTrue(merged.drops().stream().anyMatch(d -> d.type().equals("dark") && d.item().equals("minecraft:echo_shard")),
+                "missing defaults appended");
+        assertTrue(merged.drops().size() > adminFile.drops().size());
+
+        // idempotent: merging a complete table returns the SAME instance (no save churn)
+        assertSame(defs, defs.mergeMissingDefaults(defs));
     }
 
     @Test
