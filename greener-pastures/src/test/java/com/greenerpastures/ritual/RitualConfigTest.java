@@ -177,9 +177,10 @@ class RitualConfigTest {
         // apex pacing: nether star + fossils are the slowest things in the book
         assertTrue(book.byId("nether_star").baseChancePercent() <= 0.5);
         assertTrue(book.byId("fossil_communion").pastureSpan() == 2, "fossils span pastures like the Summit");
-        // the pre-batch-2 rituals stay unhinted (fully hidden, untouched per Deuce)
-        assertTrue(book.byId("feast_of_the_blade").hint().isEmpty());
-        assertTrue(book.byId("black_market").hint().isEmpty());
+        // the OG three got their riddles too (Deuce approved A/A/A, 2026-07-05)
+        assertTrue(book.byId("feast_of_the_blade").hint().contains("living blade"));
+        assertTrue(book.byId("black_market").hint().contains("Prepare for trouble"));
+        assertTrue(book.byId("professors_summit").hint().contains("first friend"));
     }
 
     @Test

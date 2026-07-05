@@ -111,23 +111,26 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
                 // #1 — "Feast of the Blade": Kartana (the living katana) + Xerneas (the life-giver) + 8 Meowth
                 // (the hoard) in ONE pasture → a chance per sweep at an enchanted golden apple. The ONLY
                 // e-gapple source in the mod, deliberately locked behind two legendaries + a full retinue.
-                ritual("feast_of_the_blade", "Feast of the Blade",
+                hinted("feast_of_the_blade", "Feast of the Blade",
                         new Requirement(Map.of(), 0, List.of(),
                                 Map.of("kartana", 1, "xerneas", 1, "meowth", 8)),
-                        "minecraft:enchanted_golden_apple", 1, 2.0, 120, 60),
+                        "minecraft:enchanted_golden_apple", 1, 2.0, 120, 60,
+                        "A living blade, a giver of life, and eight greedy mouths at the feast."),
                 // #2 — "Black Market": the classic Team Rocket lineup fences ILLICIT data. Sole farmable
                 // source of the corruption orb (the Renderer breadcrumb at 1/2000 is the discovery hint).
-                ritual("black_market", "Black Market",
+                hinted("black_market", "Black Market",
                         new Requirement(Map.of(), 0, List.of(),
                                 Map.of("koffing", 4, "ekans", 4, "meowth", 1)),
-                        "greenerpastures:data_disk_rocket", 1, 2.5, 100, 50),
+                        "greenerpastures:data_disk_rocket", 1, 2.5, 100, 50,
+                        "Prepare for trouble. Make it double — twice. The cat takes his cut."),
                 // #3 — "Professor's Summit" (Deuce, 2026-07-04): every starter from every generation, at least
                 // once, across the UNION of TWO pastures (27 starters > 16 slots — the span is mechanically
                 // forced, not flavor). Starters are ultra-rare overworld spawns here, so the collection IS the
                 // grind; the payout is the only farmable Rare Candy source.
-                spanRitual("professors_summit", "Professor's Summit",
+                spanHinted("professors_summit", "Professor's Summit",
                         new Requirement(Map.of(), 0, List.of(), ALL_STARTERS),
-                        "cobblemon:rare_candy", 1, 3.0, 80, 40, 2),
+                        "cobblemon:rare_candy", 1, 3.0, 80, 40, 2,
+                        "Every journey's first friend, from every land — and one field cannot hold them all."),
 
                 // ── Batch 2 (Deuce's design session, 2026-07-05) — hinted hidden rituals. Tier grid:
                 // LOW 5%/15/30 (~3/hr) · MID 2.5%/40/80 (~1.5/hr) · HIGH 1.2%/80/160 (~0.7/hr) ·

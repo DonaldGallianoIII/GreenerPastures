@@ -48,6 +48,25 @@ public final class RitualSystem {
                             config.typeDrops(), new RitualBook(config.rituals().enabled(), merged));
                     config.save(configPath());
                 }
+                // Hint backfill (2026-07-05): rituals that predate the hint field sit in existing files with
+                // hint "" — adopt the DEFAULT's riddle for same-id rituals, preserving every admin-tuned
+                // number. An admin who WANTS a ritual hintless can set "hint": " " (non-empty, blank-ish).
+                java.util.List<Ritual> backfilled = null;
+                for (int i = 0; i < config.rituals().rituals().size(); i++) {
+                    Ritual mine = config.rituals().rituals().get(i);
+                    Ritual def = RitualConfig.defaults().rituals().byId(mine.id());
+                    if (def == null || !mine.hint().isEmpty() || def.hint().isEmpty()) continue;
+                    if (backfilled == null) backfilled = new java.util.ArrayList<>(config.rituals().rituals());
+                    backfilled.set(i, new Ritual(mine.id(), mine.name(), mine.enabled(), mine.requirement(),
+                            mine.outputItem(), mine.outputQty(), mine.baseChancePercent(), mine.hardPity(),
+                            mine.softPityStart(), mine.pastureSpan(), def.hint(), mine.outputPool()));
+                    GreenerPastures.LOG.info("[rituals] backfilled hint for '{}'", mine.id());
+                }
+                if (backfilled != null) {
+                    config = new RitualConfig(config.enabled(), config.autoPull(), config.rarityFactor(),
+                            config.typeDrops(), new RitualBook(config.rituals().enabled(), backfilled));
+                    config.save(configPath());
+                }
                 // Same contract for type-drops: new defaults (echo/amethyst progression drops) append to an
                 // existing file; admin-tuned rates for entries that already exist are never touched.
                 TypeDropTable mergedDrops = config.typeDrops().mergeMissingDefaults(RitualConfig.defaults().typeDrops());
