@@ -1,124 +1,112 @@
-# 🎯 PICKUP_HERE — session handoff (rewritten 2026-07-05, post QA-marathon)
+# 🎯 PICKUP_HERE - QA-session handoff (rewritten 2026-07-05 evening, pre-compact)
 
-> **READ THIS WHOLE FILE FIRST** after a /clear. This + the memory dir + repo docs replace all context.
-> Yesterday (07-04) was a monster: full QA day with Deuce live + two feature builds. Commits `81a1a4d`,
-> `0a73bab`, + tonight's overdrive commit. 282 unit tests green.
+> **READ THIS WHOLE FILE FIRST** after a /clear or compaction. Deuce is hopping on his computer to
+> run a QA session RIGHT AFTER this compact - be ready to watch logs and verify rows immediately.
 
 ---
 
 ## 0 · WHAT IS HAPPENING RIGHT NOW
 
-- **Jar `d5a11066` is DEPLOYED** (md5-verified, zip OK) to the instance mods dir — Deuce has NOT booted it
-  yet (he ended QA for the night on `fd4d69d7`). It adds Snack Overdrive pt.2 (spawn-speed credit queue) on
-  top of everything below. First boot = first live test of pt.2.
-- **QA mode is PERMANENT** via `config/greenerpastures/qa.flag` (marker file in the instance). NEVER fight
-  CurseForge's JVM-args UI again — CF rewrites `minecraftinstance.json` from its internal DB at launch and
-  silently discards file edits (burned us 3× on 07-04 before the marker-file switch shipped).
-- **Deuce's parting state**: "stepping away from QA for the night, RC enabled for further coding" — i.e.
-  autonomous dev is green-lit; QA resumes when he says so.
+- **Jar `ceb9fb9a` is DEPLOYED** (md5-verified, zip OK) to
+  `/mnt/c/Users/deuce/curseforge/minecraft/Instances/Greener Pastures Test/mods/greenerpastures-0.1.0.jar`.
+  Deuce has NOT booted it yet. It contains EVERYTHING: two days of features + the full adversarial-review
+  fix set (3 rounds, zero open findings - see REVIEW_FINDINGS.md).
+- **QA mode is automatic** via the `config/greenerpastures/qa.flag` marker file (never touch CurseForge's
+  JVM args - CF rewrites minecraftinstance.json from its internal DB and silently discards edits).
+- **The QA queue is the job**: open rows in QA_PENDING.md (glow it). Watch
+  `/mnt/c/Users/deuce/curseforge/minecraft/Instances/Greener Pastures Test/gp-logs/latest.log` (JSONL;
+  rotates per session - check gp-*.log archives before calling an event missing). When Deuce says
+  "check" - read the log. First line must show `minLevel:DEBUG`.
+- **Working tree clean**, all committed through `7f22f3a`. 305 unit tests green.
 
-## 1 · THE PROJECT (unchanged)
+## 1 · THE PROJECT IN ONE PARAGRAPH
 
-**Greener Pastures — "A Data Science Mod"** (Fabric 1.21.1, Java 21, MIT, id `greenerpastures`): Cobblemon/
-Cobbreeding companion. Notebook = the whole UI (React in-game via MCEF, DsBridge WS :25599). Kernels breed
-multi-pair; eggs → data → BioBank keep or render to Data; Daemon buffs + Soul Tethers burn Data; GPU pays
-installs; disks = physical Data; hidden gacha rituals + type-drops make the mobless world farmable.
-Repo `~/pokemon-prediction`, mod `greener-pastures/`, React `greener-pastures-ui/` (vite singlefile → jar).
+**Greener Pastures - "A Data Science Mod"** (Fabric 1.21.1, Java 21, MIT, id `greenerpastures`):
+Cobblemon/Cobbreeding companion for Deuce (Deuce222XX). The **Notebook** is the whole UI - a React app
+in-game via MCEF (DsBridge WS :25599). Kernels breed up to 8 pairs; eggs route through a node graph to
+BioBank (keep) or render to **Data**; Data feeds Daemon buffs + Soul Tethers; GPU pays installs; disks
+are physical Data; 17 hidden riddle-hinted gacha rituals + type-drops make the mobless world farmable;
+Specimen Disks store mons as data; MissingNo. is the 1M-lifetime capstone. Repo `~/pokemon-prediction`,
+mod `greener-pastures/`, React `greener-pastures-ui/`.
 
-## 2 · WHAT LANDED 2026-07-04/05 (all in the deployed jar)
+## 2 · THE OPEN QA QUEUE (verify from the log wherever possible)
 
-**Features:**
-- **Snack Repel (Overdrive pt.1, Deuce's charged-can design + his sprite)**: glass×6+ingot×2+wart → 2 empty
-  cans · can + 1–6 SAME-species typed berries (any grid) → charged can `🚫 ÷N Xxx Types` (count scales,
-  6-copy cap; `SnackRepelChargeRecipe`) · charged can(s) into the Ultra Snack craft → snack carries
-  `gp:repel_types` (per-type sums, cap 2× strongest can — `SnackRepelMath`). `PokeSnackOverdriveMixin`
-  persists payload on the block + joins `GpRepelInfluence` **at spawner creation** (Cobblenav reads
-  `getSpawner().getInfluences()` — lazy join made the Nav miss it; Deuce caught it Nav-in-hand). Logs:
-  `repel armed` (INFO) + `repel divide` (DEBUG ≤1/5s).
-- **Snack speed credit queue (Overdrive pt.2, tonight, UNTESTED in-game)**: vanilla rot (ONE random
-  bite_time entry, hard 2× cap) replaced via `randomTick` HEAD-cancel: every copy counts multiplicatively
-  (`SnackSpeed`, Π(1-v), ×0.1 fence), fractional credits carry, burst cap 3, credit cap 8 while no player,
-  NBT-persisted, fail-soft to vanilla on any error. Truthful `⚡ spawn speed ×N.N` lore on the ultra craft.
-- **Professor's Summit (first SPANNING ritual)**: all 27 starters ≥1 across the UNION of TWO linked
-  pastures (16-slot pastures make the span mechanically forced) → rare candy 3%/soft 40/hard 80. Engine:
-  `pastureSpan` on Ritual (back-compat clamp), `Composition.union`, player-level pity in RitualLedger
-  (`spanState`), sweep-snapshot pairing (5-min fresh, never guesses unloaded rosters), `SpanGate` banks
-  exactly once per satisfied pair. Auto-merges into his rituals.json on boot.
-- **QoL set**: kernel right-click → rename screen (name → tooltip/target card/pasture KERNEL row) · Kernel/
-  Daemon **target selector cards** in Augmenter/Compiler (per-player slot target, revalidated every use,
-  falls back to first-found) · Rituals tab **per-card spoils tiles** (bottom pool = undiscovered orphans
-  only) · `⟳ N pulls` counters · full-loadout kernel tooltip · timestamped flame graphs · `ev_spread` +
-  `iv_floor` breeding log lines.
+**Older rows still open**: Q39/Q40 (health chips/badges) · Q41 (BioBank-full via `/gp breed interval 15`)
+· Q44 egg-half (`breeding ev_spread` log) · Q46 REMOVE-half · Q48 LOADOUT chips · Q50 umbrella ·
+Q53 chat-table half · Q55 cross-dim · Q58 Compiler ◈ · Q61 📸 screenshots (LISTING.md shot plan, 8 marked)
+· Q62 recipes re-QA (GPU=quartz blocks+redstone blocks+iron blocks+kB disk; blank disk=2 iron+quartz
+block+redstone+paper; copper kernel=4 copper blocks corners+4 quartz blocks+blank disk) · Q65 type-drops
+· Q72 per-card spoils · Q73 kernel egg-speed · Q76 breadcrumb (long-soak) · Q79 friend session (DEFERRED).
 
-**Fixes (all QA-caught live)**: BUG-009 hooks-order black screen (CRITICAL) · BUG-010 IV floor always
-hp/atk/def → shuffled · BUG-011 ghost pairing entries → breeder self-heal · BUG-012 prefetch downgraded the
-focused pasture's roster ("can't breed" false alarms) → stats backfill · BUG-013 kernels stacked ×16, one
-augment payment enchanted all (CRITICAL) → maxCount 1 · BUG-014 slotted-kernel tooltip showed tier defaults
-→ display stack dressed from extras channel. Details in QA_RESULTS.md.
+**New rows**: **Q80** target selector cards · **Q81** kernel rename (right-click air) · **Q82**
+Professor's Summit (27 starters across 2 pastures) · **Q83** Snack Repel (charge can → bake → Nav shows
+÷N; re-place old snacks) · **Q84** spawn-speed queue (plain vs 6-golden-apple snack) · **Q85**
+echo/amethyst drops · **Q86** Specimen Disks · **Q87** Notebook first-join gift · **Q88** Ritual Batch 2
+(locked riddle cards; Elytra any-mix gate; Alolan-gated Ominous Bottle; jukebox pool) · **Q89** egg cake ·
+**Q90** MissingNo (he has ~29 Illicit Disks banked for corruption testing; `/gp data` does NOT move the
+odometer - only rendered eggs) · **Q91** Hatch Haste · **Q92** augment level II (UPGRADE button, 3 slots,
+copper refusal, Greener un-phantomed) · **Q93** review criticals/majors spot-checks (Tier III via
+corruption ⛧III, WILD-on-Greener tier push, pause exploit dead, per-brood billing `starvedMidway`,
+span clique = ONE pulls line, repel survives recompress) · **Q94** UX batch (Guide-first landing,
+auto-wired BioBank sink, pity chips ⏳N/hard, Inventory [E], full-pasture Inbox ⚠, offhand safe,
+"GPU saved" on floored Speed).
 
-**Recipe revs (Deuce's picks)**: GPU = 4 quartz blocks corners + 2 redstone blocks N/S + 2 iron blocks E/W
-+ kilobyte disk center · blank disk = 2 iron ingots + quartz block + redstone + paper · copper kernel =
-4 copper blocks corners + 4 quartz blocks cardinals + blank disk center.
+**BUG verifies**: BUG-013 (kernels never stack), BUG-014 (slotted kernel hover = real tooltip).
 
-## 3 · QA STATE (queue = QA_PENDING.md, `glow` it)
+## 3 · WHAT LANDED TODAY (2026-07-05) - the delta a tester feels
 
-~30 rows closed 07-04 (breeding-meta suite fully hatched-verified, rituals v2 end-to-end incl. discovery/
-pity/exactness/spoils, GPU gates, disks, idle-off/change-gate/catch-up perf, snacks, flame graphs).
-**OPEN**: Q39/Q40/Q41 (health visuals) · Q46-half (REMOVE) · Q48 · Q50 (umbrella) · Q55 · Q58 (Compiler ◈)
-· Q61 (listing 📸) · Q62 re-QA (new recipes) · Q65 · Q72 (per-card spoils) · Q73 · Q74 (corruption — he has
-~29 illicit disks banked!) · Q76 (long-soak) · Q79 (two-player Masuda, PRE-PUBLISH GATE) · Q80 selector ·
-Q81 rename · Q82 summit · Q83 repel (Nav = the verification tool: chances crater ÷N; re-place any snack
-placed pre-fd4d69d7) · Q84 speed queue (plain-vs-golden-apple spawn counting). BUG-013/014 verify post-boot.
-Perf anchor: 0.087% of wall time over a 90-min AFK window; watch item = single breeder.scan max spike
-(76→129ms, once per session, likely first-scan cold).
+Features: echo/amethyst type-drops · Specimen Disks (Specimens tab) · field guide REMOVED (Notebook is
+the first-join gift) · Ritual Batch 2 (14 hinted rituals + GroupCount/form-key/hint/outputPool engine) ·
+OG rituals got riddles (A/A/A) · Pokémon-egg cake (`#c:eggs`) · MissingNo (1M lifetime, rotates 5
+species, unbattleable, untetherable) · Hatch Haste augment · augment level II (1.5×/3 slots) ·
+**Tier III = corruption-only** (BLESSED ladder I→II→III at 2× base; IV floor caps at 5; WILD on Greener
+pushes a tier instead of dead +1 pair) · em-dash purge (1,076) + tripwire test.
 
-## 4 · NUMBERS DELTA (rest unchanged from CHANGELOG/old docs)
+Review fixes (REVIEW_FINDINGS.md has everything): sacred-rule hole closed (unreadable eggs KEPT) ·
+BLESSED never downgrades · MissingNo can't tether/breed · span clique banks once · catch-up billed
+per-brood (starves mid-burst honestly) · pause exploit dead · autoPull=false ignored+warned · repel
+survives recompression · overdrive cancel-first · graph-parse LRU + biobank 5s throttle + repel memo ·
+ghost pastures pruned · Speed-on-floor refuses free · full UX copy pass.
 
-- Repel: charge = berries × per-copy typing value, 6-copy cap (chilan ÷10 … ÷60); snack merge cap 2× strongest
-  can (÷120 ceiling). Snack-spawner scope only. Hard-ban (×0) tier NOT built — Deuce never picked.
-- Speed: interval = 2 random ticks × Π(1-biteValue), fence ×0.1 (=20× throughput max). 6 golden apples
-  (0.25 ea) = ×5.6 throughput — BEATS 6 EGAs (0.1 ea = ×1.88). Random tick ≈ 1/68s per block at default 3.
-- Summit: 27 starters (bulbasaur…quaxly, 3×9 gens), rare candy 1× @3%, soft 40, hard 80, span 2.
-- Cobbreeding config: masuda 4.0 ON, `crystal: 1.0 = OFF` (open lever — 2.0 was the grid assumption; his
-  file, his call). OT self-testing impossible → Q79 friend session.
+## 4 · WORKFLOWS (the QA loop)
 
-## 5 · OPEN LEVERS / BACKLOG (memory: gp-dev-backlog + snack-repellent-idea)
+- **Log watch**: `latest.log` hot events: session_start (minLevel!) · sweep · proc · brood · ritual
+  pulls/hit/discovered (pity in pulls lines) · breeding nature_lock/ball_lock/ability_lock/egg_moves/
+  iv_floor(promoted:)/ev_spread/hatch_haste · disk write/read · augment_apply (upgrade:true) ·
+  corrupt kernel · specimen compress/release · missingno rotate/summon · repel armed/divide ·
+  snack speed_tick · tether drain (starvedMidway) · pairing_pruned · queue_full.
+- **Marking rows**: python re-sub on QA_PENDING.md status cells (see git history for the pattern).
+- **Build** (if fixes needed): `cd greener-pastures-ui && npm run build` (React) then
+  `JAVA_HOME=~/jdks/jdk-21.0.11+10 greener-pastures/gradlew -p greener-pastures build` from repo root
+  (dangerouslyDisableSandbox; read REAL output + test XML counts; 305 green).
+- **Deploy**: ONLY game-closed (watch for ZOMBIE javaw - 8GB javaw lingering after window close = JCEF;
+  taskkill it) → cp → md5 both sides + ziptest. Deuce says when he's out.
+- **Commits**: after verified batches, trailer `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`
+  + Claude-Session link.
 
-1. Data onboarding trio (daemon cost / render value / starter Data) — Deuce owes numbers.
-2. Crystal multiplier (his cobbreeding file) — set 2.0 + restart to light the 💎 chip.
-3. Field-guide removal (decided; open: what first-joiners get — recommended: the Notebook).
-4. Echo shards + amethyst as pasture type-drops (progression gate: tether/daemon need echo in a mobless
-   world) — needs his type mapping + rate sim.
-5. Mon compression → Specimen Disks (the big one, own batch).
-6. Publish tail: icon, LISTING.md 📸 shots, version bump, CHANGELOG, Q79 friend session.
+## 5 · OPEN LEVERS / AFTER QA
 
-## 6 · WORKFLOWS (unchanged, key bits)
+1. **Onboarding numbers** (oldest lever): Daemon 16,384 wall · egg render value 10→20-25? · starter Data.
+2. **Art**: icon 128², LISTING 📸 shots (8, during QA), Specimen Disk sprite (green placeholder in),
+   Deuce's MissingNo-era disk idea.
+3. **CHANGELOG.md** rewrite + version → 1.0.0-beta.1 (LISTING.md + SHOWCASE.md are DONE, rev today).
+4. **Q79 friend session** = pre-publish gate (Masuda ×4 config is ON; crystal 1.0 = OFF, his file).
+5. Accepted-risk leftovers in REVIEW_FINDINGS (1s buff window, mixin pin, Cobblenav replace notice).
 
-Build: `cd greener-pastures-ui && npm run build` (if React touched) → `JAVA_HOME=~/jdks/jdk-21.0.11+10
-greener-pastures/gradlew -p greener-pastures build` from repo root (read REAL output; verify test XML
-counts). Deploy ONLY with the game closed (md5 both sides + ziptest); watch for **zombie javaw** (8GB
-javaw lingering after window close — JCEF; taskkill it, then re-copy). Logs: instance `gp-logs/latest.log`
-(JSONL, rotates per session — check `gp-*.log` archives before calling an event missing!). Decompile:
-python zipfile + `java -jar ~/cfr.jar` (also used on cobblenav-fabric-2.3.3 — its SpawnDataHelper reads the
-snack spawner's influence list, so the Nav IS a valid repel/attract verifier).
+## 6 · TRAPS (all have bitten us)
 
-## 7 · NEW TRAPS LEARNED 07-04 (on top of the old list — jar-over-running-game, gradle greps, tuple-6,
-insertStack, React TDZ, SP statics, preview-lying recipes, test-tuned cobbreeding config)
+Jar-over-running-game corrupts · zombie javaw after window close · CF owns minecraftinstance.json
+(qa.flag marker is the answer) · gradle `| grep` swallows failures (check test XML) · tuple-6 packet cap
+(JSON-string packets or EXACTLY 6) · never insertStack · React hooks above ALL early returns · SP statics
+clear on SERVER_STARTED + DISCONNECT · SpecialCraftingRecipe.craft runs for PREVIEW (deterministic only) ·
+item components are STACK-wide (augmentables = maxCount 1) · client display stacks lie (dress from server
+channel) · influence joins at spawner CREATION (Cobblenav reads it) · log rotates per session ·
+Cobbreeding config is TEST-TUNED (600t breeding) - not defaults · em dashes can hide as — escapes.
 
-- **CurseForge owns minecraftinstance.json** — rewrites it from internal DB at launch. JVM args via file
-  edits NEVER stick. The qa.flag marker file is the answer (GpLog.computeQaMode).
-- **React hooks after early returns** = black screen that survives screen reopens (preloaded MCEF page
-  keeps the dead root). Audit: hooks above ALL conditional returns, always.
-- **Item components are STACK-wide** — anything augmentable must be maxCount(1) (BUG-013).
-- **Client display stacks lie** — a reconstructed ItemStack shows default components; dress it from a
-  server channel (BUG-014 pattern).
-- **Lazy influence joins lose races** — anything reading spawner.getInfluences() (Cobblenav!) sees only
-  what's there at spawner creation. Join in the creation lambda (`spawner_delegate$lambda$0`).
-- **Log rotation**: latest.log is THIS session only; grep gp-*.log before declaring an event unlogged.
+## 7 · DEUCE - tight replies · he tests, you watch logs + fix · offer boards, he picks · real numbers in
+tables · observability-first · no p2w knobs · hidden content stays hidden · loves chained systems ·
+"check" = read the log · 💀 = affectionate.
 
-## 8 · DEUCE (unchanged) — tight replies, he tests personally, offer the board + let him pick, tables with
-real numbers, observability-first (read logs before theorizing), no p2w config knobs, hidden content stays
-hidden, loves chaining systems. When he says "check" — read the log.
-
-## 9 · DOCS: QA_PENDING.md (queue) · QA_RESULTS.md (BUG-001…014) · CHANGELOG.md · LISTING.md ·
-OBSERVABILITY.md · RITUALS.md · specs per feature · memory dir has all standing rules.
+## 8 · DOCS: QA_PENDING.md (queue) · QA_RESULTS.md (BUG-001..014) · REVIEW_FINDINGS.md (adversarial
+ledger, zero open) · SHOWCASE.md (public feature list, current) · LISTING.md (store page, current) ·
+CHANGELOG.md (STALE - needs rewrite) · RITUALS.md · memory dir = standing rules.

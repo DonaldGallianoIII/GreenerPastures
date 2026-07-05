@@ -1,5 +1,5 @@
 # 🌱 Greener Pastures - Feature Showcase
-_Compiled 2026-07-05 from a full 3-agent code survey; current as of jar bafd0029, 296 tests. The share-with-people list._
+_Compiled 2026-07-05 from a full code survey; current as of jar ceb9fb9a, 305 tests, post-adversarial-review. The share-with-people list._
 
 **One item is the whole mod: the Notebook.** Right-click → a real web app (React via MCEF/Chromium) running inside Minecraft. Every player gets one on first join.
 
@@ -19,7 +19,7 @@ _Compiled 2026-07-05 from a full 3-agent code survey; current as of jar bafd0029
 - **Multi-pair breeding** - a Kernel breeds up to **8 pairs in parallel** per pasture
 - **Kernel ladder** (wrap the previous tier in blocks): Copper 2 → Iron 3 → Gold 4 → Diamond 5 → Netherite 6 → **Greener 8** pairs; egg speed ×1.1→×1.6; drops +0.5%→+5%
 - **Visual egg pipelines** - node-graph editor per breeding line: parents → IV/EV/Nature/Shiny filters → BioBank (keep) or Data (render); pan/zoom/wire, Masuda/Crystal badges, mon inspector
-- **12 augments** - Shiny reroll, Speed ×1.5/×2/×3, **Hatch Haste (eggs hatch ×0.5/×0.25/×0.1 - the last un-automated step, automated)**, IV Floor, EV Primer (510-budget allocator), Nature Lock (25), Ball Lock, Hidden Ability, Egg Moves, Enrichment, Drop Rate, Drop Yield; every magnitude augment has a **level II** (1.5× effect, but 3 slots total - a Copper kernel can't even hold one); GPU install costs (quality 2◈ / throughput 1◈), re-pick free
+- **12 augments, 3 tiers** - Shiny reroll, Speed, **Hatch Haste** (the last un-automated step, automated), IV Floor, EV Primer (510-budget allocator), Nature Lock (25), Ball Lock, Hidden Ability, Egg Moves, Enrichment, Drop Rate, Drop Yield. Level II = 1.5× effect but **3 slots total** (a Copper kernel can't even hold one - slot pressure is the governor); **Tier III exists and corruption is its ONLY door** (2× effect, ⛧III badge). GPU install costs (quality 2◈ / throughput 1◈), re-pick free, Speed refuses for free if the floor would eat it
 - **Soul Tethers** - rented +10/20/30% amplifiers burning Data per cycle while the Daemon is fed
 - **Away catch-up** - missed broods roll exactly on return (12h cap) → Inbox report
 - **Kernel rename + target cards** - name rigs; choose which kernel/daemon a tab edits
@@ -30,11 +30,11 @@ _Compiled 2026-07-05 from a full 3-agent code survey; current as of jar bafd0029
 - **Type-drops**: Fire→blaze rods, Ghost/Dark→**echo shards**, Fairy/Psychic/Rock→**amethyst**, Ice→ice, Grass→sugar cane… (admin-editable table)
 
 ## 🎰 Rituals - 17 hidden gacha recipes
-- Secret compositions; first assembly = discovery pop, recipe revealed forever; 1 pull/sweep with soft/hard pity (persists)
+- Secret compositions; first assembly = discovery pop, recipe revealed forever; 1 pull/sweep with soft/hard pity - **visible on every learned card** (⏳ 213/400) and it persists through everything
 - Locked rituals show **riddle cards**: "Say it out loud." (8 Shuckle → Shulker Shells) · "Three heads. Three skulls. The restless dead." (Nether Star) · "Prepare for trouble. Make it double - twice." (Black Market)
 - Highlights: Elytra (Shedinja's husk + 6 any-mix beetles) · Trident (shipwreck-graveyard crew) · Totem (Sableye+Blissey) · jukebox ritual (random disc per hit, 18-disc pool) · Ominous Bottle (true Alolan/Galarian syndicate - form-gated) · Wither supply chain (skulls trickle, Star crawls)
 - **Two-pasture collection quests**: all 27 starters → Rare Candy · all 11 base fossils → Sniffer Egg
-- **Black Market → Illicit Data Disk → ⛧ corruption**: Vaal-roll a Kernel - 30% blessed / 25% wild (9-pair kernel possible) / 25% nothing / 20% bricked; corrupted forever
+- **Black Market → Illicit Data Disk → ⛧ corruption**: Vaal-roll a Kernel - 30% BLESSED (climbs an augment I→II→**III**, past every slot cap - the only path to Tier III) / 25% WILD (drop mod ×2, +1 pair, or on a Greener: pushes an augment past the mortal ceiling) / 25% nothing / 20% bricked; corrupted forever
 - Tiers: LOW ~3 hits/hr · MID ~1.5 · HIGH ~0.7 · APEX multi-hour
 
 ## 💾 Data Economy
@@ -60,8 +60,10 @@ _Compiled 2026-07-05 from a full 3-agent code survey; current as of jar bafd0029
 - The odometer counts only genuinely rendered eggs - no disk tricks, no shortcuts. ~87 hours of maxed 5-pasture uptime per million. Flex accordingly
 
 ## 🛡 Trust & QoL
-- **Sacred rule**: shiny/unreadable eggs NEVER auto-culled
+- **Sacred rule**: shiny/unreadable eggs NEVER auto-culled - even a failed decrypt is kept; full storage pauses production, never discards
 - **Void log**: every rejected egg listed with the filter that rejected it
 - **Breeding goals**: /gp goal or Dashboard - live hunt progress + completion ping
 - Never-lose withdrawals; first-join Notebook gift; Pokémon-egg cake (community request 🎂)
-- /gp perf self-profiling (flame graphs), JSONL observability log, 293 unit tests
+- /gp perf self-profiling (flame graphs), JSONL observability log, 305 unit tests
+- **Adversarially reviewed pre-release**: six independent system audits (edge cases / perf / new-player UX); every finding fixed or consciously accepted (REVIEW_FINDINGS.md)
+- New players land on the **Guide tab** first, new breeding lines come **pre-wired to the BioBank**, and full pastures send an Inbox warning - the sharp edges got sanded
