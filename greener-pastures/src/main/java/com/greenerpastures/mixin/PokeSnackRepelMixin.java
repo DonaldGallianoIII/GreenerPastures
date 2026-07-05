@@ -26,10 +26,14 @@ import java.util.Map;
  * methods are vanilla overrides → remapped names.
  */
 @Mixin(PokeSnackBlockEntity.class)
-public class PokeSnackRepelMixin {
+public class PokeSnackRepelMixin implements com.greenerpastures.drops.GpRepelHost {
 
     @Unique private Map<String, Integer> gp$repels = Map.of();
-    @Unique private boolean gp$influenceAdded = false;
+
+    @Override
+    public Map<String, Integer> gp$getRepels() {
+        return gp$repels;
+    }
 
     @Inject(method = "initializeFromItemStack", at = @At("TAIL"), remap = false)
     private void gp$captureRepels(ItemStack stack, CallbackInfo ci) {
@@ -44,15 +48,20 @@ public class PokeSnackRepelMixin {
         }
     }
 
-    @Inject(method = "attemptSpawn", at = @At("HEAD"), remap = false)
-    private void gp$addInfluenceOnce(PlayerEntity player, CallbackInfo ci) {
-        if (gp$influenceAdded) return;
-        gp$influenceAdded = true;
+    /** Join at SPAWNER CREATION, not first spawn attempt: Cobblenav's snack inspector reads
+     *  {@code getSpawner().getInfluences()} the moment it's created — a lazy join made the Nav (and the
+     *  first spawn attempt) compute WITHOUT the repel (Deuce caught it Nav-in-hand, 2026-07-04). The
+     *  lambda is Cobblemon's synthetic spawner initializer; static target, {@code remap=false}. */
+    @Inject(method = "spawner_delegate$lambda$0", at = @At("RETURN"), remap = false)
+    private static void gp$armAtSpawnerCreation(PokeSnackBlockEntity be,
+            CallbackInfoReturnable<com.cobblemon.mod.common.api.spawning.spawner.FixedAreaSpawner> cir) {
         try {
-            PokeSnackBlockEntity self = (PokeSnackBlockEntity) (Object) this;
-            self.getSpawner().getInfluences().add(new GpRepelInfluence(() -> gp$repels));
+            com.greenerpastures.drops.GpRepelHost host = (com.greenerpastures.drops.GpRepelHost) be;
+            cir.getReturnValue().getInfluences().add(new GpRepelInfluence(host::gp$getRepels));
+            if (!host.gp$getRepels().isEmpty()) com.greenerpastures.core.GpLog.i("repel", "armed",
+                    "pos", be.getPos().toShortString(), "types", host.gp$getRepels().toString());
         } catch (Throwable ignored) {
-            // influence wiring must never break the spawn attempt
+            // influence wiring must never break spawner creation
         }
     }
 

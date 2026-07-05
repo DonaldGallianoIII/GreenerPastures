@@ -23,6 +23,7 @@ import java.util.function.Supplier;
  */
 public final class GpRepelInfluence implements SpawningInfluence {
     private final Supplier<Map<String, Integer>> repels;
+    private volatile long lastLogMs = 0L;   // affectWeight runs per CANDIDATE (hundreds/attempt) — sample, don't spam
 
     public GpRepelInfluence(Supplier<Map<String, Integer>> repels) {
         this.repels = repels;
@@ -47,6 +48,13 @@ public final class GpRepelInfluence implements SpawningInfluence {
                 for (ElementalType formType : form.getTypes()) {
                     if (formType == t) {
                         w /= e.getValue();
+                        long now = System.currentTimeMillis();
+                        if (now - lastLogMs > 5_000L && com.greenerpastures.core.GpLog.on(com.greenerpastures.core.GpLog.Level.DEBUG)) {
+                            lastLogMs = now;
+                            com.greenerpastures.core.GpLog.d("repel", "divide", "species", speciesName,
+                                    "type", e.getKey(), "div", e.getValue(), "before", String.format("%.2f", weight),
+                                    "after", String.format("%.2f", w));
+                        }
                         break;
                     }
                 }
