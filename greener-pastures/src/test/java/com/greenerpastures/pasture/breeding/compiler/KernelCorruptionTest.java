@@ -9,7 +9,7 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the Vaal-roll weight table — the gamble must match its advertised odds. */
+/** Headless tests for the Vaal-roll weight table - the gamble must match its advertised odds. */
 class KernelCorruptionTest {
 
     @Test

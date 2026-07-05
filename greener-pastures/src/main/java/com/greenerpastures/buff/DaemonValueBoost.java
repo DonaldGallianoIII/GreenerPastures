@@ -12,15 +12,15 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import java.util.Map;
 
 /**
- * The entity-scoped Daemon enchant boosts — the value-effect enchants whose 1.21.1 read seam <i>carries the
+ * The entity-scoped Daemon enchant boosts - the value-effect enchants whose 1.21.1 read seam <i>carries the
  * acting entity</i>, so (unlike Fortune, which needs {@link DaemonEnchantBoost}'s thread-local) the boost can be
  * gated directly on "is this a fed-Daemon holder with the buff?" right at the read. Pure read interception (the
- * mixin {@code EnchantmentValueBoostMixin} adds our tier to the value the game reads) — <b>never writes a stack
+ * mixin {@code EnchantmentValueBoostMixin} adds our tier to the value the game reads) - <b>never writes a stack
  * or NBT</b>, so there is no dupe/desync surface, and it only ever fires server-side for a paid holder.
  *
  * <p>Covers <b>Lure</b> ({@code getFishingTimeReduction}), <b>Luck of the Sea</b> ({@code getFishingLuckBonus}),
  * <b>Frost Walker</b> and <b>Looting</b> (both via {@code getEquipmentLevel}). Looting is the one combat-adjacent
- * buff — Deuce opted it in (default-on); it boosts drops from mobs the holder kills. Unbreaking is absent because
+ * buff - Deuce opted it in (default-on); it boosts drops from mobs the holder kills. Unbreaking is absent because
  * its seam ({@code getItemDamage}) carries no entity, so it can't be scoped to a holder cleanly.
  */
 public final class DaemonValueBoost {
@@ -30,7 +30,7 @@ public final class DaemonValueBoost {
     private static final float LURE_SECONDS_PER_TIER = 5.0f;
 
     /** Equipment-level enchants the Daemon boosts (enchant → buff): Frost Walker (movement QOL) and Looting
-     *  (Deuce opted Looting in, default-on — it's the one combat-adjacent buff, boosting drops from mobs the
+     *  (Deuce opted Looting in, default-on - it's the one combat-adjacent buff, boosting drops from mobs the
      *  holder kills via the {@code EnchantedCountIncreaseLootFunction} → {@code getEquipmentLevel(LOOTING, killer)} seam). */
     private static final Map<RegistryKey<Enchantment>, BuffId> EQUIP = Map.of(
             Enchantments.FROST_WALKER, BuffId.FROST_WALKER,
@@ -55,7 +55,7 @@ public final class DaemonValueBoost {
 
     /**
      * +tier to an equipment-level read for a boosted enchant on a fed-Daemon holder (Frost Walker, Looting).
-     * Unlike Fortune, these grant <i>from nothing</i> (no boots / no looting weapon needed) — the Daemon itself is
+     * Unlike Fortune, these grant <i>from nothing</i> (no boots / no looting weapon needed) - the Daemon itself is
      * the source. Only enchants in {@link #EQUIP} are ever touched; every other {@code getEquipmentLevel} query
      * fast-fails the key check and returns unchanged.
      */

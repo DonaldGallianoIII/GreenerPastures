@@ -84,7 +84,7 @@ class TetherRuntimeTest {
                 TetherRuntime.resolveFor(base, tethers, balance, EnumSet.of(AugmentFunction.DROP_RATE));
         assertEquals(6L, drops.drain(), "only the drop-rate tether's burn");
         assertEquals(30.0, drops.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9);
-        assertEquals(5.0, drops.effective().magnitude(AugmentFunction.SHINY), 1e-9, "shiny is the breeder's — not amplified here");
+        assertEquals(5.0, drops.effective().magnitude(AugmentFunction.SHINY), 1e-9, "shiny is the breeder's - not amplified here");
 
         // breeder resolves only SHINY → drains 16, amplifies shiny, leaves drop-rate at base
         TetherRuntime.Resolution breed =

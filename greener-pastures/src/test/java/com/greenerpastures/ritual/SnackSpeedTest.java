@@ -6,7 +6,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Snack Overdrive pt.2 — the credit queue that makes bite-time stacking real. */
+/** Snack Overdrive pt.2 - the credit queue that makes bite-time stacking real. */
 class SnackSpeedTest {
 
     @Test
@@ -25,7 +25,7 @@ class SnackSpeedTest {
     @Test
     void everyCopyCountsMultiplicatively() {
         double sixEga = SnackSpeed.trueMultiplier(List.of(0.1, 0.1, 0.1, 0.1, 0.1, 0.1));
-        assertEquals(Math.pow(0.9, 6), sixEga, 1e-9, "6 EGAs = ×0.9⁶ — stacking finally does something");
+        assertEquals(Math.pow(0.9, 6), sixEga, 1e-9, "6 EGAs = ×0.9⁶ - stacking finally does something");
         double sixGold = SnackSpeed.trueMultiplier(List.of(0.25, 0.25, 0.25, 0.25, 0.25, 0.25));
         assertTrue(sixGold < sixEga, "golden apples (0.25) out-speed EGAs (0.1) per Cobblemon's own data");
         assertEquals(SnackSpeed.MIN_MULTIPLIER,

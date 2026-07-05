@@ -8,7 +8,7 @@ import java.util.UUID;
 
 /**
  * The Daemon's <b>state + interaction</b>, Minecraft-free. The in-game {@code DaemonScreen} and the
- * desktop Design Studio both forward mouse events here and paint {@link #buildModel()} — same code.
+ * desktop Design Studio both forward mouse events here and paint {@link #buildModel()} - same code.
  *
  * <p><b>Interaction (Deuce's spec, 2026-06-28):</b>
  * <ul>
@@ -19,7 +19,7 @@ import java.util.UUID;
  * </ul>
  *
  * <p><b>Viewport-relative:</b> opens auto-fit-to-viewport (≤16 units in a grid, centered/scaled to the
- * screen — resolution independent), then you zoom/pan freely. Text stays crisp at any zoom (handled in
+ * screen - resolution independent), then you zoom/pan freely. Text stays crisp at any zoom (handled in
  * the canvas backends).
  */
 public final class DaemonController {
@@ -126,7 +126,7 @@ public final class DaemonController {
         if (cachedModel != null && !modelDirty && mode == Mode.NONE && flashTicks <= 0) return cachedModel;
         DaemonView.Model m = new DaemonView.Model();
         m.panX = panX; m.panY = panY; m.zoom = zoom;
-        m.title = pastureName.isEmpty() ? "Daemon" : "Daemon — " + pastureName;
+        m.title = pastureName.isEmpty() ? "Daemon" : "Daemon - " + pastureName;
         m.sub = "daemon · " + completePairs() + "/" + nBuckets + " threads · " + Math.round(zoom * 100) + "%";
         m.hint = "drag middle = wire · drag sides = move · right-click = unpair · scroll = zoom";
         m.noUpgrade = nBuckets == 0;
@@ -184,7 +184,7 @@ public final class DaemonController {
         if (a.equals(b)) return;
         assign.remove(a); assign.remove(b);
         int f = freeBucket();
-        if (f == 0) { flash("All " + nBuckets + " threads are full — unpair one first."); return; }
+        if (f == 0) { flash("All " + nBuckets + " threads are full - unpair one first."); return; }
         assign.put(a, f); assign.put(b, f); dirty = true;
     }
     private void unpair(UUID id) {

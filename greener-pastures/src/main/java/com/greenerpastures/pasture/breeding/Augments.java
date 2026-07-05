@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * The data a "Kernel" (slotted Pasture Upgrade) carries as the {@code greenerpastures:augments} data
- * component — the player's compiled base mods, stored as {@code {function id → level/magnitude}}. v1
+ * component - the player's compiled base mods, stored as {@code {function id → level/magnitude}}. v1
  * functions: shiny (proc %), speed, iv_floor, ev, enrichment, drop_rate, drop_yield (see
  * {@link AugmentFunction}). Soul Tethers amplify these ({@code economy.EffectiveAugments}); a Kernel
  * alone runs them free, forever.
@@ -54,7 +54,7 @@ public record Augments(Map<String, Integer> levels) {
         return f == null ? 0 : levels.getOrDefault(f.id, 0);
     }
 
-    /** Copy with {@code f} set to {@code lvl} (≤0 removes it) — replace-in-place, one per function. */
+    /** Copy with {@code f} set to {@code lvl} (≤0 removes it) - replace-in-place, one per function. */
     public Augments withLevel(AugmentFunction f, int lvl) {
         Map<String, Integer> m = new LinkedHashMap<>(levels);
         if (lvl > 0) m.put(f.id, lvl); else m.remove(f.id);

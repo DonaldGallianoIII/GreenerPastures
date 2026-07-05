@@ -102,7 +102,7 @@ public class ShinyEggHighlighterClient {
         }
         EggStats s = EggStats.get();
         s.add(total, shiny);
-        msg(String.format("[ShinyEgg] Counted %d eggs (%d shiny ★). Lifetime: %,d scanned, %,d shiny — %s",
+        msg(String.format("[ShinyEgg] Counted %d eggs (%d shiny ★). Lifetime: %,d scanned, %,d shiny - %s",
                 total, shiny, s.eggsScanned, s.shiniesFound, s.rateString()));
     }
 

@@ -13,13 +13,13 @@ import java.util.Map;
  * The admin-editable config for the whole custom-drop system: a master {@code enabled} toggle, the Tier-1
  * {@link TypeDropTable}, and the Tier-2 {@link RitualBook}. Serialized as JSON so a server admin can re-map
  * which types / species produce which items, change counts / odds / pity, disable individual rituals or
- * type-drops, or switch the whole system off — all without touching code or a rebuild.
+ * type-drops, or switch the whole system off - all without touching code or a rebuild.
  *
- * <p>{@code autoPull} rolls banked ritual pulls automatically (the interim while there's no gacha GUI — so
+ * <p>{@code autoPull} rolls banked ritual pulls automatically (the interim while there's no gacha GUI - so
  * rituals are fully playable now); set it false once the manual-pull screen exists to let pulls bank and be
  * spent by hand. {@code rarityFactor} makes ritual pulls accrue THIS-many-times rarer than a typical staple
  * drop (default 3): per Harvester tick, per mon, the pull-proc = {@code (Harvester base proc + Drop Rate
- * augments/tethers) / rarityFactor}, and Drop Yield adds pulls-per-proc — so the SAME drop augments that speed
+ * augments/tethers) / rarityFactor}, and Drop Yield adds pulls-per-proc - so the SAME drop augments that speed
  * up staple drops also feed the gacha (and a richer/fuller pasture works the ritual faster). {@link #defaults()}
  * ships the RITUALS.md roster. {@link #load} is <b>fail-safe</b>: a missing
  * file is written from defaults; a corrupt file logs and falls back to defaults (it does NOT overwrite the
@@ -75,7 +75,7 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
         }
     }
 
-    // ── built-in defaults (the RITUALS.md roster — tuning, edit via the JSON) ─
+    // ── built-in defaults (the RITUALS.md roster - tuning, edit via the JSON) ─
     public static RitualConfig defaults() {
         return new RitualConfig(true, true, 3.0, defaultTypeDrops(), defaultRituals());
     }
@@ -93,7 +93,7 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
                 td("grass", "minecraft:sugar_cane", 25, 1, 2),
                 td("grass", "minecraft:beetroot", 12, 1, 2),
                 td("poison", "minecraft:nether_wart", 10, 1, 2),
-                // Progression drops (Deuce, 2026-07-05): a mobless world has no ancient cities to loot — the
+                // Progression drops (Deuce, 2026-07-05): a mobless world has no ancient cities to loot - the
                 // tether/daemon echo shards and the notebook/tether amethyst must be farmable from pastures.
                 // Echo is deliberately the RAREST entry in the table (build a ghost farm, ~29/hr full mono).
                 td("ghost", "minecraft:echo_shard", 3, 1, 1),
@@ -104,11 +104,11 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
         ));
     }
 
-    /** Rituals v2 — Deuce's HAND-DESIGNED hidden recipes (compositions are secret in-game until a player
+    /** Rituals v2 - Deuce's HAND-DESIGNED hidden recipes (compositions are secret in-game until a player
      *  first assembles one; see RitualLedger). The launch book ships exactly one; more land here per design. */
     private static RitualBook defaultRituals() {
         return new RitualBook(true, List.of(
-                // #1 — "Feast of the Blade": Kartana (the living katana) + Xerneas (the life-giver) + 8 Meowth
+                // #1 - "Feast of the Blade": Kartana (the living katana) + Xerneas (the life-giver) + 8 Meowth
                 // (the hoard) in ONE pasture → a chance per sweep at an enchanted golden apple. The ONLY
                 // e-gapple source in the mod, deliberately locked behind two legendaries + a full retinue.
                 hinted("feast_of_the_blade", "Feast of the Blade",
@@ -116,23 +116,23 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
                                 Map.of("kartana", 1, "xerneas", 1, "meowth", 8)),
                         "minecraft:enchanted_golden_apple", 1, 2.0, 120, 60,
                         "A living blade, a giver of life, and eight greedy mouths at the feast."),
-                // #2 — "Black Market": the classic Team Rocket lineup fences ILLICIT data. Sole farmable
+                // #2 - "Black Market": the classic Team Rocket lineup fences ILLICIT data. Sole farmable
                 // source of the corruption orb (the Renderer breadcrumb at 1/2000 is the discovery hint).
                 hinted("black_market", "Black Market",
                         new Requirement(Map.of(), 0, List.of(),
                                 Map.of("koffing", 4, "ekans", 4, "meowth", 1)),
                         "greenerpastures:data_disk_rocket", 1, 2.5, 100, 50,
-                        "Prepare for trouble. Make it double — twice. The cat takes his cut."),
-                // #3 — "Professor's Summit" (Deuce, 2026-07-04): every starter from every generation, at least
-                // once, across the UNION of TWO pastures (27 starters > 16 slots — the span is mechanically
+                        "Prepare for trouble. Make it double - twice. The cat takes his cut."),
+                // #3 - "Professor's Summit" (Deuce, 2026-07-04): every starter from every generation, at least
+                // once, across the UNION of TWO pastures (27 starters > 16 slots - the span is mechanically
                 // forced, not flavor). Starters are ultra-rare overworld spawns here, so the collection IS the
                 // grind; the payout is the only farmable Rare Candy source.
                 spanHinted("professors_summit", "Professor's Summit",
                         new Requirement(Map.of(), 0, List.of(), ALL_STARTERS),
                         "cobblemon:rare_candy", 1, 3.0, 80, 40, 2,
-                        "Every journey's first friend, from every land — and one field cannot hold them all."),
+                        "Every journey's first friend, from every land - and one field cannot hold them all."),
 
-                // ── Batch 2 (Deuce's design session, 2026-07-05) — hinted hidden rituals. Tier grid:
+                // ── Batch 2 (Deuce's design session, 2026-07-05) - hinted hidden rituals. Tier grid:
                 // LOW 5%/15/30 (~3/hr) · MID 2.5%/40/80 (~1.5/hr) · HIGH 1.2%/80/160 (~0.7/hr) ·
                 // APEX 0.4-0.5%/150-300 (multi-hour). All at the 1-pull/min sweep cadence.
                 hinted("nether_star", "Nether Star",
@@ -201,7 +201,7 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
             e("omanyte"), e("kabuto"), e("aerodactyl"), e("lileep"), e("anorith"),
             e("cranidos"), e("shieldon"), e("tirtouga"), e("archen"), e("tyrunt"), e("amaura"));
 
-    /** The pasture band's set list — one uniform roll per hit. */
+    /** The pasture band's set list - one uniform roll per hit. */
     private static final List<String> MUSIC_DISCS = List.of(
             "minecraft:music_disc_13", "minecraft:music_disc_cat", "minecraft:music_disc_blocks",
             "minecraft:music_disc_chirp", "minecraft:music_disc_far", "minecraft:music_disc_mall",
@@ -229,7 +229,7 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
         return new Ritual(id, name, true, r, item, qty, pct, hard, soft, span, hint, List.of());
     }
 
-    /** All 27 starters, Gens 1–9, one each — the Professor's Summit roster. */
+    /** All 27 starters, Gens 1–9, one each - the Professor's Summit roster. */
     private static final Map<String, Integer> ALL_STARTERS = Map.ofEntries(
             e("bulbasaur"), e("charmander"), e("squirtle"),          // Kanto
             e("chikorita"), e("cyndaquil"), e("totodile"),           // Johto

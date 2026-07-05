@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  * The roster of {@link Ritual}s (from config). {@code enabled=false} switches the whole ritual tier off in
- * one move. {@link #active(Composition)} returns the enabled rituals a pasture currently satisfies — what the
+ * one move. {@link #active(Composition)} returns the enabled rituals a pasture currently satisfies - what the
  * Harvester banks pulls toward. Pure + tested.
  */
 public record RitualBook(boolean enabled, List<Ritual> rituals) {
@@ -23,7 +23,7 @@ public record RitualBook(boolean enabled, List<Ritual> rituals) {
         return out;
     }
 
-    /** The enabled spanning rituals (pastureSpan > 1) — evaluated against pasture-pair UNIONS, not one composition. */
+    /** The enabled spanning rituals (pastureSpan > 1) - evaluated against pasture-pair UNIONS, not one composition. */
     public List<Ritual> spanning() {
         if (!enabled) return List.of();
         List<Ritual> out = new ArrayList<>();

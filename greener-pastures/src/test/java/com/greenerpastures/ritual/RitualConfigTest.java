@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Headless tests for the config DEFAULTS + master gating. Deliberately never calls {@code load/save} so Gson
- * (lazy in {@link RitualConfig}) is never loaded — the test JVM has no Gson on its runtime classpath. JSON
+ * (lazy in {@link RitualConfig}) is never loaded - the test JVM has no Gson on its runtime classpath. JSON
  * round-trip is verified in-game (QA).
  */
 class RitualConfigTest {
@@ -45,7 +45,7 @@ class RitualConfigTest {
 
     @Test
     void signatureGateStillWorks() {
-        // The signature ("any of these species present") gate — kept for future hand-designed rituals.
+        // The signature ("any of these species present") gate - kept for future hand-designed rituals.
         Ritual r = new Ritual("sig", "Sig", true,
                 new Requirement(Map.of("fairy", 1, "ghost", 1), 0, List.of("sableye")),
                 "minecraft:totem_of_undying", 1, 4.0, 35, 0);
@@ -74,7 +74,7 @@ class RitualConfigTest {
         assertFalse(feast.requirement().satisfiedBy(sevenMeowths), "7 Meowth is not 8");
         assertFalse(feast.requirement().satisfiedBy(noXerneas), "no Xerneas ⇒ no feast");
         assertTrue(feast.requirement().satisfiedBy(exact), "the exact retinue forms the ritual");
-        assertTrue(feast.requirement().satisfiedBy(overfilled), "minimums — extras don't break it");
+        assertTrue(feast.requirement().satisfiedBy(overfilled), "minimums - extras don't break it");
     }
 
     @Test
@@ -92,8 +92,8 @@ class RitualConfigTest {
         for (String sp : List.of("chespin", "fennekin", "froakie", "rowlet", "litten", "popplio",
                 "grookey", "scorbunny", "sobble", "sprigatito", "fuecoco", "quaxly"))
             gen6to9.put(sp, 1);
-        Composition a = new Composition(Map.of(), Set.of(), gen1to5);   // 15 mons — fits a pasture
-        Composition b = new Composition(Map.of(), Set.of(), gen6to9);   // 12 mons — fits a pasture
+        Composition a = new Composition(Map.of(), Set.of(), gen1to5);   // 15 mons - fits a pasture
+        Composition b = new Composition(Map.of(), Set.of(), gen6to9);   // 12 mons - fits a pasture
 
         assertFalse(summit.requirement().satisfiedBy(a), "one pasture alone can never hold 27 starters");
         assertFalse(summit.requirement().satisfiedBy(b));
@@ -122,7 +122,7 @@ class RitualConfigTest {
 
     @Test
     void spanGateBanksExactlyOncePerSatisfiedPair() {
-        // Pair (100, 200) satisfied: 100 banks (has a larger partner), 200 does not — one pull per sweep total.
+        // Pair (100, 200) satisfied: 100 banks (has a larger partner), 200 does not - one pull per sweep total.
         assertTrue(SpanGate.shouldBank(100L, List.of(200L)));
         assertFalse(SpanGate.shouldBank(200L, List.of(100L)));
         // Three-way (100 pairs with 200 AND 300): still exactly one banker (100), one pull per sweep.
@@ -134,11 +134,11 @@ class RitualConfigTest {
 
     @Test
     void progressionDropsShipAndMergeIntoExistingTables() {
-        // Echo/amethyst (2026-07-05): the mobless-world progression gate — tether/daemon need echo shards.
+        // Echo/amethyst (2026-07-05): the mobless-world progression gate - tether/daemon need echo shards.
         TypeDropTable defs = RitualConfig.defaults().typeDrops();
         assertTrue(defs.drops().stream().anyMatch(d -> d.type().equals("ghost") && d.item().equals("minecraft:echo_shard")));
         assertTrue(defs.drops().stream().anyMatch(d -> d.type().equals("fairy") && d.item().equals("minecraft:amethyst_shard")));
-        // echo is the rarest entry in the whole table — the deliberate balance anchor
+        // echo is the rarest entry in the whole table - the deliberate balance anchor
         double echoMax = defs.drops().stream().filter(d -> d.item().equals("minecraft:echo_shard"))
                 .mapToDouble(TypeDrop::chancePercent).max().orElse(99);
         assertTrue(defs.drops().stream().filter(d -> !d.item().equals("minecraft:echo_shard"))
@@ -146,8 +146,8 @@ class RitualConfigTest {
 
         // merge: an admin file WITHOUT the new entries gains exactly them; tuned existing entries survive
         TypeDropTable adminFile = new TypeDropTable(true, java.util.List.of(
-                new TypeDrop("fire", "minecraft:blaze_rod", 99.0, 1, 1),      // admin cranked this — must survive
-                new TypeDrop("ghost", "minecraft:echo_shard", 0.5, 1, 1)));   // admin nerfed echo — must survive
+                new TypeDrop("fire", "minecraft:blaze_rod", 99.0, 1, 1),      // admin cranked this - must survive
+                new TypeDrop("ghost", "minecraft:echo_shard", 0.5, 1, 1)));   // admin nerfed echo - must survive
         TypeDropTable merged = adminFile.mergeMissingDefaults(defs);
         assertEquals(99.0, merged.drops().stream().filter(d -> d.item().equals("minecraft:blaze_rod"))
                 .findFirst().orElseThrow().chancePercent(), 1e-9);
@@ -170,7 +170,7 @@ class RitualConfigTest {
         for (String id : ids) {
             Ritual r = book.byId(id);
             assertNotNull(r, id + " missing");
-            assertFalse(r.hint().isEmpty(), id + " needs a hint — hints ARE the discovery design");
+            assertFalse(r.hint().isEmpty(), id + " needs a hint - hints ARE the discovery design");
         }
         // supply chain: the wither skull trickles faster than the star it feeds
         assertTrue(book.byId("wither_skull").baseChancePercent() > book.byId("nether_star").baseChancePercent());
@@ -226,7 +226,7 @@ class RitualConfigTest {
         Composition c = new Composition(Map.of(), Set.of(), Map.of("Meowth", 8));
         assertTrue(c.countOfSpecies("meowth") == 8 && c.countOfSpecies("MEOWTH") == 8);
         Composition legacy = new Composition(Map.of("fire", 1), Set.of("meowth"));   // 2-arg compat shape
-        assertTrue(legacy.countOfSpecies("meowth") == 0, "legacy shape has no counts — count gates just fail closed");
+        assertTrue(legacy.countOfSpecies("meowth") == 0, "legacy shape has no counts - count gates just fail closed");
         Requirement legacyReq = new Requirement(Map.of("fire", 1), 0, List.of());    // 3-arg compat shape
         assertTrue(legacyReq.satisfiedBy(legacy), "requirements without count gates are unaffected");
     }

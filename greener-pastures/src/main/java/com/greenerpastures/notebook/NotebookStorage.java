@@ -6,19 +6,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The Notebook's <b>digital item storage</b> — the harvested-loot warehouse that replaces chest farms
+ * The Notebook's <b>digital item storage</b> - the harvested-loot warehouse that replaces chest farms
  * (see {@code NOTEBOOK_CONSOLE_SPEC.md} §3). Minecraft-free + unit-tested; the MC layer
  * ({@code NotebookStore}) is a per-player {@link net.minecraft.world.PersistentState} wrapper around this,
  * mirroring {@code DataAccount}/{@code DataStore}.
  *
  * <p>Items are keyed by their registry-id string and counted as {@code long}, saturating at a per-item
- * {@link #capacity} that defaults to the integer limit ({@link #INT_LIMIT}) — "stack to the int limit as
+ * {@link #capacity} that defaults to the integer limit ({@link #INT_LIMIT}) - "stack to the int limit as
  * long as you upgrade enough". Capacity is the stand-in for the upgrade-gated cap (a later economy phase);
  * for now every player is effectively fully upgraded. The {@code >0} invariant holds: a stack that reaches
  * 0 is dropped, so {@link #types()} is exactly the non-empty item ids.
  */
 public final class NotebookStorage {
-    /** The design ceiling — a single item id stacks up to the 32-bit signed limit. */
+    /** The design ceiling - a single item id stacks up to the 32-bit signed limit. */
     public static final long INT_LIMIT = Integer.MAX_VALUE;
 
     private final Map<String, Long> counts = new HashMap<>();
@@ -42,7 +42,7 @@ public final class NotebookStorage {
 
     /**
      * Deposit up to {@code n} of {@code item}, saturating at {@link #capacity}. Returns the amount
-     * actually stored (0 if the stack is already full, or {@code n <= 0}) — the caller keeps any overflow.
+     * actually stored (0 if the stack is already full, or {@code n <= 0}) - the caller keeps any overflow.
      */
     public long add(String item, long n) {
         if (item == null || n <= 0) return 0;

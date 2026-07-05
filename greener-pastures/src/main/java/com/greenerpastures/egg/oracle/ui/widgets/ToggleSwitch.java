@@ -6,7 +6,7 @@ import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
 import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 
-/** A pill toggle switch — green/knob-right when on, gray/knob-left when off. */
+/** A pill toggle switch - green/knob-right when on, gray/knob-left when off. */
 public class ToggleSwitch extends ClickableWidget {
     private boolean on;
 

@@ -7,7 +7,7 @@ import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
 
 /**
- * A per-stat EV allocation (BUG-002) — the targeted EV spread a Kernel applies to every bred egg, replacing the old
+ * A per-stat EV allocation (BUG-002) - the targeted EV spread a Kernel applies to every bred egg, replacing the old
  * "flat +N on all six stats" blanket (nobody wants a blanket EV buff; a chosen spread is the whole point of EVs).
  * Pure data + Cobblemon-legal clamps (each stat 0..252, total ≤510), so it's headless-tested and rides on the Kernel
  * as the {@code greenerpastures:ev_spread} component.
@@ -23,7 +23,7 @@ public record EvSpread(int hp, int atk, int def, int spa, int spd, int spe) {
     public static final EvSpread NONE = new EvSpread(0, 0, 0, 0, 0, 0);
 
     /** Clamp on construction so a stored / synced / command-set spread is ALWAYS legal: each stat ≤252, total ≤510
-     *  (trimmed from the last stat backwards if over budget — preserves earlier per-stat intent). */
+     *  (trimmed from the last stat backwards if over budget - preserves earlier per-stat intent). */
     public EvSpread {
         hp = clamp(hp); atk = clamp(atk); def = clamp(def);
         spa = clamp(spa); spd = clamp(spd); spe = clamp(spe);

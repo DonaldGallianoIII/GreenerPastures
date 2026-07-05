@@ -20,10 +20,10 @@ import net.minecraft.world.World;
 import java.util.List;
 
 /**
- * <b>Specimen Disk</b> (mon compression v1 — Deuce, 2026-07-05): a Pokémon as data, on media. Blank disks
+ * <b>Specimen Disk</b> (mon compression v1 - Deuce, 2026-07-05): a Pokémon as data, on media. Blank disks
  * are charged from the Notebook's Specimens tab (party mon → lossless {@code Pokemon.saveToNBT} payload on
  * {@code gp:specimen}); right-clicking a written disk releases the mon back (party first, PC overflow) and
- * hands back a blank — the same media-survives-the-read contract as data disks. Solves Cobblemon box
+ * hands back a blank - the same media-survives-the-read contract as data disks. Solves Cobblemon box
  * clutter: your farm's keepers live on a shelf, not in the PC. Deferred art: placeholder green disk until
  * Deuce's sprite.
  */
@@ -39,7 +39,7 @@ public class SpecimenDiskItem extends Item {
         if (world.isClient) return TypedActionResult.success(stack, true);
         NbtCompound nbt = stack.get(GpComponents.SPECIMEN);
         if (nbt == null) {
-            user.sendMessage(Text.literal("§7[Greener Pastures]§r Blank media — archive a party mon from the Notebook's Specimens tab."), false);
+            user.sendMessage(Text.literal("§7[Greener Pastures]§r Blank media - archive a party mon from the Notebook's Specimens tab."), false);
             return TypedActionResult.pass(stack);
         }
         if (user instanceof ServerPlayerEntity player && player.getServer() != null) {
@@ -60,8 +60,8 @@ public class SpecimenDiskItem extends Item {
                 GpLog.i("specimen", "release", "player", player.getUuid().toString(),
                         "species", sum == null ? "?" : sum.species());
             } catch (Throwable t) {
-                // NEVER destroy the disk on a failed load — the mon data stays intact on the item
-                player.sendMessage(Text.literal("§c[Greener Pastures]§r The specimen would not decompress — disk kept."), false);
+                // NEVER destroy the disk on a failed load - the mon data stays intact on the item
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r The specimen would not decompress - disk kept."), false);
                 GpLog.w("specimen", "release_fail", "err", String.valueOf(t));
             }
         }
@@ -73,7 +73,7 @@ public class SpecimenDiskItem extends Item {
         super.appendTooltip(stack, context, tooltip, type);
         SpecimenSummary s = stack.get(GpComponents.SPECIMEN_SUMMARY);
         if (s == null) {
-            tooltip.add(Text.literal("blank — a Pokémon, as data, on media").formatted(Formatting.GRAY));
+            tooltip.add(Text.literal("blank - a Pokémon, as data, on media").formatted(Formatting.GRAY));
             tooltip.add(Text.literal("archive from the Notebook's Specimens tab").formatted(Formatting.DARK_GRAY));
             return;
         }

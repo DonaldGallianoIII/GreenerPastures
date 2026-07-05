@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Parses {@code events.jsonl} lines back into {@link EggEvent}s for the Dashboard — Minecraft-free
+ * Parses {@code events.jsonl} lines back into {@link EggEvent}s for the Dashboard - Minecraft-free
  * (uses the project's existing Gson), so the whole read → aggregate → export pipeline is unit-tested.
  * The only adapter on top is the command/GUI that supplies the file's lines + the save path.
  */
@@ -27,7 +27,7 @@ public final class EventReader {
             if (o == null || !EGG_LAID.equals(asString(o, "type"))) return null;
             return new EggEvent(asString(o, "tier"), asString(o, "mode"), asBool(o, "shiny"), asBool(o, "proc_shiny"));
         } catch (JsonSyntaxException | IllegalStateException e) {
-            return null;   // garbage line — skip it
+            return null;   // garbage line - skip it
         }
     }
 

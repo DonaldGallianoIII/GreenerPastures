@@ -5,14 +5,14 @@ import java.util.Map;
 
 /**
  * What a pasture's {@link Composition} must satisfy to activate a ritual: a minimum count per elemental type,
- * a minimum number of DISTINCT types present, and (for the rarest) a signature-species gate — at least ONE of
+ * a minimum number of DISTINCT types present, and (for the rarest) a signature-species gate - at least ONE of
  * the listed species must be in the pasture. Any field may be empty/zero (= no constraint). Pure + tested.
  */
 public record Requirement(Map<String, Integer> typeMinCounts, int minDistinctTypes,
                           List<String> signatureSpeciesAnyOf, Map<String, Integer> speciesMinCounts,
                           List<GroupCount> groupMinCounts) {
 
-    /** "At least {@code min} mons total across ANY of these species" — the Elytra's "6 beetles, any mix
+    /** "At least {@code min} mons total across ANY of these species" - the Elytra's "6 beetles, any mix
      *  of Heracross/Pinsir" gate (Batch 2). Pure data, Gson-friendly. */
     public record GroupCount(List<String> anyOf, int min) {
         public GroupCount {
@@ -21,7 +21,7 @@ public record Requirement(Map<String, Integer> typeMinCounts, int minDistinctTyp
         }
     }
 
-    /** Compat shape without species counts — the exact-headcount gate ("8 Meowth") arrived with Rituals v2. */
+    /** Compat shape without species counts - the exact-headcount gate ("8 Meowth") arrived with Rituals v2. */
     public Requirement(Map<String, Integer> typeMinCounts, int minDistinctTypes, List<String> signatureSpeciesAnyOf) {
         this(typeMinCounts, minDistinctTypes, signatureSpeciesAnyOf, Map.of(), List.of());
     }

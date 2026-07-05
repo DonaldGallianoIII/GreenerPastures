@@ -3,18 +3,18 @@ package com.greenerpastures.pasture.breeding;
 import java.util.Set;
 
 /**
- * Pure breeding-compatibility rules (BUG-006) — decides whether two parents can produce an egg, mirroring
+ * Pure breeding-compatibility rules (BUG-006) - decides whether two parents can produce an egg, mirroring
  * Cobblemon/Cobbreeding's ruleset, so the Daemon graph can validate a wired pair at <i>design time</i> (red wire +
  * a reason tooltip) instead of silently accepting a dead pair that never lays. MC-free + headless-tested; a thin
  * adapter (built with the graph UI) reads egg groups / gender / "is Ditto" off a Cobblemon {@code Pokemon} and maps
  * them onto {@link Parent}.
  *
- * <p>The four rules — all must allow it:
+ * <p>The four rules - all must allow it:
  * <ol>
- *   <li><b>Shared egg group</b> — the parents intersect on ≥1 (non-Undiscovered) egg group;</li>
- *   <li><b>Gender</b> — one ♂ + one ♀ (Ditto bypasses; genderless mons can only go through Ditto);</li>
- *   <li><b>Ditto special case</b> — Ditto breeds with anything <i>except</i> another Ditto (and Undiscovered);</li>
- *   <li><b>Undiscovered exclusion</b> — a mon in the Undiscovered ("No Eggs") group can't breed at all.</li>
+ *   <li><b>Shared egg group</b> - the parents intersect on ≥1 (non-Undiscovered) egg group;</li>
+ *   <li><b>Gender</b> - one ♂ + one ♀ (Ditto bypasses; genderless mons can only go through Ditto);</li>
+ *   <li><b>Ditto special case</b> - Ditto breeds with anything <i>except</i> another Ditto (and Undiscovered);</li>
+ *   <li><b>Undiscovered exclusion</b> - a mon in the Undiscovered ("No Eggs") group can't breed at all.</li>
  * </ol>
  */
 public final class BreedingCompat {

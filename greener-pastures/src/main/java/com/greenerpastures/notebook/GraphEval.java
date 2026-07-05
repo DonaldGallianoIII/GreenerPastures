@@ -15,7 +15,7 @@ import java.util.UUID;
  * a thread the pipeline is entered at whatever a MON {@code eggs} port (or a {@code SOURCE} {@code out} port) wires
  * into, then walked filter → filter (following the {@code pass} / {@code void} output that matches) until a sink.
  *
- * <p><b>SACRED:</b> a shiny or unreadable egg is ALWAYS kept, regardless of the graph — you can cull hard for IVs
+ * <p><b>SACRED:</b> a shiny or unreadable egg is ALWAYS kept, regardless of the graph - you can cull hard for IVs
  * without ever risking a shiny (Deuce's rule). An empty / unwired graph keeps everything (back-compat). A pass
  * output with no wire defaults to KEEP; a void output with no wire defaults to VOID (→ Data).
  */
@@ -29,7 +29,7 @@ public final class GraphEval {
     private static final String[] STATS = {"HP", "Atk", "Def", "SpA", "SpD", "Spe"};
 
     public static Result route(String graphJson, UUID monId, EggCard card) {
-        if (card == null || card.shiny()) return keep(null);            // SACRED — never lose a shiny / unreadable egg
+        if (card == null || card.shiny()) return keep(null);            // SACRED - never lose a shiny / unreadable egg
         if (graphJson == null || graphJson.isEmpty()) return keep(null);
         JsonObject g;
         try { g = GSON.fromJson(graphJson, JsonObject.class); } catch (Exception e) { return keep(null); }

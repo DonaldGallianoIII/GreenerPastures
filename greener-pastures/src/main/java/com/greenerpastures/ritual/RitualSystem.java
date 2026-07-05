@@ -6,7 +6,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.nio.file.Path;
 
 /**
- * Runtime holder for the loaded {@link RitualConfig} — the single point the Harvester reads the custom-drop
+ * Runtime holder for the loaded {@link RitualConfig} - the single point the Harvester reads the custom-drop
  * rules from. {@link #init()} loads (and on first run writes) {@code config/greenerpastures/rituals.json};
  * until then, and if loading ever fails, the built-in {@link RitualConfig#defaults()} are used so the feature
  * is never in a broken state. Hot-reloadable later via {@link #reload()}.
@@ -19,7 +19,7 @@ public final class RitualSystem {
     public static void init() {
         reload();
         RitualConfig c = config;
-        GreenerPastures.LOG.info("[rituals] {} — {} rituals, {} type-drops (auto-pull {})",
+        GreenerPastures.LOG.info("[rituals] {} - {} rituals, {} type-drops (auto-pull {})",
                 c.enabled() ? "enabled" : "disabled",
                 c.rituals().rituals().size(), c.typeDrops().drops().size(), c.autoPull());
     }
@@ -27,10 +27,10 @@ public final class RitualSystem {
     public static void reload() {
         try {
             config = RitualConfig.load(configPath());
-            // Rituals v2 migration: a file from the placeholder era (no hand-designed book) is replaced —
+            // Rituals v2 migration: a file from the placeholder era (no hand-designed book) is replaced -
             // the flagship ritual's presence is the version marker. Admin edits to a v2 file are respected.
             if (config.rituals().byId("feast_of_the_blade") == null) {
-                GreenerPastures.LOG.warn("[rituals] pre-v2 config detected — regenerating the hand-designed ritual book");
+                GreenerPastures.LOG.warn("[rituals] pre-v2 config detected - regenerating the hand-designed ritual book");
                 config = RitualConfig.defaults();
                 config.save(configPath());
             } else {
@@ -49,7 +49,7 @@ public final class RitualSystem {
                     config.save(configPath());
                 }
                 // Hint backfill (2026-07-05): rituals that predate the hint field sit in existing files with
-                // hint "" — adopt the DEFAULT's riddle for same-id rituals, preserving every admin-tuned
+                // hint "" - adopt the DEFAULT's riddle for same-id rituals, preserving every admin-tuned
                 // number. An admin who WANTS a ritual hintless can set "hint": " " (non-empty, blank-ish).
                 java.util.List<Ritual> backfilled = null;
                 for (int i = 0; i < config.rituals().rituals().size(); i++) {

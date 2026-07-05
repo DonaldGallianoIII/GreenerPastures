@@ -22,7 +22,7 @@ import java.util.List;
  *
  * <p>Pairings persist via {@link SavePairingsPayload}; Esc returns to the wand ({@link OpenPasturePayload}).
  * (The augment/filter/collection pipeline shown in the studio is design-preview until its backend
- * exists, so it's not rendered in-game yet — only the real, working units canvas is.)
+ * exists, so it's not rendered in-game yet - only the real, working units canvas is.)
  */
 public class DaemonScreen extends Screen {
     private final BlockPos pos;

@@ -15,14 +15,14 @@ import java.util.Random;
 import java.util.Set;
 
 /**
- * Rituals on the network tick (NOTEBOOK_BUILD_PLAN 3b — the re-wire the block-free consolidation dropped):
+ * Rituals on the network tick (NOTEBOOK_BUILD_PLAN 3b - the re-wire the block-free consolidation dropped):
  * runs the config-driven custom-drop layers over an OWNED pasture's harvest sweep, on the same clock as the
  * staple drops. Two tiers, both pure-core-tested ({@code ritual/}):
  *
  * <ul>
- *   <li><b>Type-drops</b> — every sweep, each tethered mon rolls its matching type entries (an Ice-type
- *       trickles ice, a Fire-type blaze rods — the "no vanilla mobs, farm typed mons instead" economy).</li>
- *   <li><b>Gacha rituals</b> — a pasture whose COMPOSITION satisfies a ritual's requirement banks one pull
+ *   <li><b>Type-drops</b> - every sweep, each tethered mon rolls its matching type entries (an Ice-type
+ *       trickles ice, a Fire-type blaze rods - the "no vanilla mobs, farm typed mons instead" economy).</li>
+ *   <li><b>Gacha rituals</b> - a pasture whose COMPOSITION satisfies a ritual's requirement banks one pull
  *       per sweep; banked pulls roll with soft/hard pity ({@link Gacha}). Pull state (banked + pity) persists
  *       per pasture per ritual on {@link PastureData#ritualState}, so pity survives restarts and catch-up
  *       banks exactly the missed sweeps.</li>
@@ -36,7 +36,7 @@ public final class RitualHarvest {
      * by the caller (it can't change while a chunk is unloaded, so it's exact across a catch-up).
      *
      * <p>Returns the TYPE-DROPS ({@code item id → count}) for the normal Harvester deposit. GACHA ritual
-     * outputs deliberately do NOT flow through the return — they land in the owner's {@link RitualLedger}
+     * outputs deliberately do NOT flow through the return - they land in the owner's {@link RitualLedger}
      * loot pool (the Rituals tab is the reward chest, Deuce's v2 spec), and a first-ever satisfied
      * composition LEARNS the ritual: the hidden recipe reveals, with an Inbox note + a once-ever chat pop.
      */
@@ -47,7 +47,7 @@ public final class RitualHarvest {
         RitualConfig cfg = RitualSystem.config();
         if (!cfg.enabled() || mons == null || sweeps <= 0) return out;
 
-        // Tier 1 — type-drops: per sweep, per mon, per matching type entry.
+        // Tier 1 - type-drops: per sweep, per mon, per matching type entry.
         var table = cfg.activeTypeDrops();
         if (table.enabled() && !table.drops().isEmpty()) {
             for (Set<String> types : mons.perMonTypes()) {
@@ -63,20 +63,20 @@ public final class RitualHarvest {
             }
         }
 
-        // Tier 2 — gacha rituals (HIDDEN recipes): bank one pull per sweep while the composition holds,
+        // Tier 2 - gacha rituals (HIDDEN recipes): bank one pull per sweep while the composition holds,
         // auto-roll with pity, and pay hits into the owner's RITUAL loot pool (never Harvester storage).
         com.greenerpastures.ritual.RitualLedger ledger =
                 server == null ? null : com.greenerpastures.ritual.RitualLedger.get(server);
         Composition comp = mons.aggregate();
         for (Ritual r : cfg.activeRituals().active(comp)) {
             if (ledger != null && owner != null && ledger.learn(owner, r.id())) {
-                // First-ever assembly — the hidden-achievement pop. Once per player per ritual, forever.
+                // First-ever assembly - the hidden-achievement pop. Once per player per ritual, forever.
                 com.greenerpastures.notify.Inbox.push(owner, "🗡",
-                        "RITUAL DISCOVERED — " + r.name() + " · the recipe is recorded in your Rituals tab");
+                        "RITUAL DISCOVERED - " + r.name() + " · the recipe is recorded in your Rituals tab");
                 var online = server.getPlayerManager().getPlayer(owner);
                 if (online != null) {
                     online.sendMessage(net.minecraft.text.Text.literal(
-                            "§6✦ Ritual discovered: §e" + r.name() + "§6 ✦§r — its recipe is now in your Notebook."), false);
+                            "§6✦ Ritual discovered: §e" + r.name() + "§6 ✦§r - its recipe is now in your Notebook."), false);
                 }
                 GpLog.i("ritual", "discovered", "ritual", r.id(), "owner", owner.toString(),
                         "pasture", pastureName == null ? "?" : pastureName);
@@ -108,10 +108,10 @@ public final class RitualHarvest {
             }
         }
 
-        // Tier 3 — SPANNING rituals (v3, Deuce 2026-07-04): the requirement evaluates against the UNION of
+        // Tier 3 - SPANNING rituals (v3, Deuce 2026-07-04): the requirement evaluates against the UNION of
         // this pasture + any OTHER pasture of the same owner (Professor's Summit: 27 starters > 16 slots, so
         // one pasture can never do it alone). Compositions come only from REAL sweeps (a snapshot per swept
-        // pasture, ≤5 min fresh — never guess an unloaded roster); pity/banked live on the PLAYER ledger (a
+        // pasture, ≤5 min fresh - never guess an unloaded roster); pity/banked live on the PLAYER ledger (a
         // pair has no single home pasture); a satisfied pair banks only on the SMALLER pos's sweep so the two
         // pastures never double-bank the same ritual.
         if (owner != null && ledger != null) {
@@ -131,11 +131,11 @@ public final class RitualHarvest {
                 if (partners.isEmpty()) continue;
                 if (ledger.learn(owner, r.id())) {
                     com.greenerpastures.notify.Inbox.push(owner, "🗡",
-                            "RITUAL DISCOVERED — " + r.name() + " · the recipe is recorded in your Rituals tab");
+                            "RITUAL DISCOVERED - " + r.name() + " · the recipe is recorded in your Rituals tab");
                     var online = server.getPlayerManager().getPlayer(owner);
                     if (online != null) {
                         online.sendMessage(net.minecraft.text.Text.literal(
-                                "§6✦ Ritual discovered: §e" + r.name() + "§6 ✦§r — its recipe is now in your Notebook."), false);
+                                "§6✦ Ritual discovered: §e" + r.name() + "§6 ✦§r - its recipe is now in your Notebook."), false);
                     }
                     GpLog.i("ritual", "discovered", "ritual", r.id(), "owner", owner.toString(),
                             "pasture", pastureName == null ? "?" : pastureName);
@@ -170,7 +170,7 @@ public final class RitualHarvest {
         return out;
     }
 
-    /** Pay {@code hits} into the loot pool — each hit rolls the ritual's output INDEPENDENTLY (the Music
+    /** Pay {@code hits} into the loot pool - each hit rolls the ritual's output INDEPENDENTLY (the Music
      *  Disc pool gives a different disc per hit; fixed-output rituals behave exactly as before). Returns the
      *  last item paid, for the Inbox line. */
     private static String payHits(com.greenerpastures.ritual.RitualLedger ledger, java.util.UUID owner,
@@ -184,12 +184,12 @@ public final class RitualHarvest {
     }
 
     /** Owner → (pasture pos → last-swept composition). Snapshots exist ONLY from real sweeps and expire in
-     *  {@link #SNAPSHOT_FRESH_MS} — an unloaded / destroyed / unlinked pasture silently drops out of pairing. */
+     *  {@link #SNAPSHOT_FRESH_MS} - an unloaded / destroyed / unlinked pasture silently drops out of pairing. */
     private static final Map<java.util.UUID, Map<Long, Composition>> snapshots = new java.util.concurrent.ConcurrentHashMap<>();
     private static final Map<java.util.UUID, Map<Long, long[]>> snapshotsTime = new java.util.concurrent.ConcurrentHashMap<>();
     private static final long SNAPSHOT_FRESH_MS = 5 * 60_000L;
 
-    /** SP-statics hygiene: one JVM hosts many worlds — clear on SERVER_STARTED like every session store. */
+    /** SP-statics hygiene: one JVM hosts many worlds - clear on SERVER_STARTED like every session store. */
     public static void resetSession() {
         snapshots.clear();
         snapshotsTime.clear();

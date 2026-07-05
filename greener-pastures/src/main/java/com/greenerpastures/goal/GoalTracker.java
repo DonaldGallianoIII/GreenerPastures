@@ -12,7 +12,7 @@ import net.minecraft.world.World;
 import java.util.UUID;
 
 /**
- * The MC side of the breeding-goal tracker — <b>non-destructive</b> (track-only): each egg a pasture lays is folded
+ * The MC side of the breeding-goal tracker - <b>non-destructive</b> (track-only): each egg a pasture lays is folded
  * into the pasture owner's {@link GoalProgress}, and the moment the goal is first reached the owner gets a ping. No
  * culling, no item changes. Fully wrapped so a tracking hiccup can never break egg-gen.
  */
@@ -35,7 +35,7 @@ public final class GoalTracker {
                 ServerPlayerEntity p = world.getServer().getPlayerManager().getPlayer(owner);
                 if (p != null) {
                     p.sendMessage(Text.literal("🎯 Breeding goal reached: " + goal.describe()
-                            + " — after " + now.checked() + " eggs!"), false);
+                            + " - after " + now.checked() + " eggs!"), false);
                     p.playSoundToPlayer(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 0.8f, 1.2f);
                     GpLog.i("goal", "reached", "owner", owner.toString(), "goal", goal.describe(), "eggs", now.checked());
                 }

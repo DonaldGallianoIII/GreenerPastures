@@ -15,11 +15,11 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * <b>MissingNo.</b> — the capstone cosmetic (Deuce, 2026-07-05): earned once per MILLION lifetime Data
+ * <b>MissingNo.</b> - the capstone cosmetic (Deuce, 2026-07-05): earned once per MILLION lifetime Data
  * rendered, summoned from the Notebook Dashboard. It is a real party Pokémon whose species GLITCHES every
- * ~5 seconds among the classic five (Ditto · Aerodactyl · Gastly · Marowak · Kabutops — the fossils and the
+ * ~5 seconds among the classic five (Ditto · Aerodactyl · Gastly · Marowak · Kabutops - the fossils and the
  * ghost, as the original sprite corruption intended), never landing on the same one twice. Deliberately
- * NOT battleable: any battle whose players carry one is refused ("it distorts the battlefield") — box it
+ * NOT battleable: any battle whose players carry one is refused ("it distorts the battlefield") - box it
  * or Specimen-Disk it to fight. Flag + true identity live in the mon's persistentData, so it survives
  * PC storage, trading, and Specimen Disks; rotation only runs for LOADED party mons (data at rest sleeps).
  */
@@ -33,7 +33,7 @@ public final class Missingno {
     private static int tick = 0;
 
     public static void init() {
-        // The glitch ticker: rotate every loaded flagged party mon. ~1 pass / 5s over online parties — cheap.
+        // The glitch ticker: rotate every loaded flagged party mon. ~1 pass / 5s over online parties - cheap.
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (++tick % ROTATE_TICKS != 0) return;
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
@@ -60,7 +60,7 @@ public final class Missingno {
                         Pokemon mon = party.get(i);
                         if (mon != null && isMissingno(mon)) {
                             event.cancel();
-                            p.sendMessage(Text.literal("§d§kAB§r§5 MissingNo. distorts the battlefield — box it to battle. §d§kAB§r"), false);
+                            p.sendMessage(Text.literal("§d§kAB§r§5 MissingNo. distorts the battlefield - box it to battle. §d§kAB§r"), false);
                             return kotlin.Unit.INSTANCE;
                         }
                     }
@@ -96,7 +96,7 @@ public final class Missingno {
             Species sp = PokemonSpecies.getByName(SPECIES.get(next));
             if (sp == null) return;
             mon.setSpecies(sp);
-            mon.setNickname(Text.literal("MissingNo.").copy());   // re-assert — species swap may reset display
+            mon.setNickname(Text.literal("MissingNo.").copy());   // re-assert - species swap may reset display
             if (GpLog.on(GpLog.Level.DEBUG)) GpLog.d("missingno", "rotate", "to", SPECIES.get(next));
         } catch (Throwable ignored) {
             // the glitch must never crash the server; a stuck sprite is thematically acceptable

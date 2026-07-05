@@ -29,7 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 /**
- * The Notebook console rendered <b>in-game via MCEF</b> (embedded Chromium) — the very same React app that runs
+ * The Notebook console rendered <b>in-game via MCEF</b> (embedded Chromium) - the very same React app that runs
  * in the dev browser, now painted inside Minecraft. Data flows over the WebSocket bridge
  * ({@code ws://127.0.0.1:25599}, {@code DsBridge}) exactly as it does for the browser; MCEF is only the render
  * surface ("two transports, one app"). Render + input mirror CinemaMod's {@code ExampleScreen} (mcef 2.1.6-1.21.1),
@@ -43,14 +43,14 @@ public class NotebookBrowserScreen extends Screen {
     private static MCEFBrowser browser;   // static → survives screen close: reopening is instant, no reload/blip
     private static long curtainUntil = 0L;   // brief dark cover after a view-switch → hides the kept-alive browser's stale frame
 
-    /** True while the console screen is actually OPEN — the idle-off gate (perf-audit R3 S1): the warm preload
+    /** True while the console screen is actually OPEN - the idle-off gate (perf-audit R3 S1): the warm preload
      *  browser keeps a WS client connected 24/7, so "has a client" must not mean "do per-second work". */
     public static volatile boolean consoleOpen = false;
 
     /** Full-rate background pump budget right after preload, so the first paint completes off-screen. */
     private static volatile int warmTicksLeft = 0;
 
-    /** Background (console-CLOSED) pump: full rate only during the post-preload warm-up, then a trickle —
+    /** Background (console-CLOSED) pump: full rate only during the post-preload warm-up, then a trickle -
      *  Chromium shouldn't stay hot for a page nobody is viewing (R3 client #2). The open-console render()
      *  pump and the transition burst are untouched (those were tuned by measurement). */
     public static void backgroundPump(int tick) {
@@ -58,20 +58,20 @@ public class NotebookBrowserScreen extends Screen {
         if (tick % 10 == 0) pump(2, 500_000L);
     }
 
-    /** Start a short transition curtain — call on an air↔pasture / pasture↔pasture switch so the previous view
+    /** Start a short transition curtain - call on an air↔pasture / pasture↔pasture switch so the previous view
      *  (still in the kept-alive browser) doesn't flash before the new one paints. */
     public static void curtain() { curtainUntil = System.currentTimeMillis() + 140L; }
 
     private static long awaitPastureUntil = 0L;   // >0 → cover the browser with a native "loading pasture" overlay
     /** Cover the browser with a native loading overlay when switching to a DIFFERENT pasture, until the React
-     *  pasture view confirms it painted ({@code PASTURE_READY}) or a 5s safety cap — so no stale air-console flashes. */
+     *  pasture view confirms it painted ({@code PASTURE_READY}) or a 5s safety cap - so no stale air-console flashes. */
     public static void awaitPasture() { awaitPastureUntil = System.currentTimeMillis() + 5000L; }
-    /** React signalled the pasture config finished rendering — lift the overlay. */
+    /** React signalled the pasture config finished rendering - lift the overlay. */
     public static void pastureReady() { awaitPastureUntil = 0L; }
 
     /**
      * Give Chromium extra message-loop slices. MCEF pumps {@code N_DoMessageLoopWork()} exactly ONCE per rendered
-     * frame (CefRenderUpdateMixin) — each call runs one small slice of Chromium's work queue, so a burst like a
+     * frame (CefRenderUpdateMixin) - each call runs one small slice of Chromium's work queue, so a burst like a
      * view swap (JS → layout → paint → composite + inter-process hops) needs hundreds of slices and crawled at
      * 2-3s. Pumping a time-boxed batch per frame multiplies throughput ~10×; idle slices return immediately, so
      * this is near-free when there's nothing to do. Render-thread only (same thread MCEF pumps from).
@@ -108,8 +108,8 @@ public class NotebookBrowserScreen extends Screen {
     }
 
     /**
-     * MCEF's {@code mod://} scheme is broken on Fabric — its handler calls {@code getClassLoader().getResourceAsStream}
-     * with a LEADING slash, which is always null — so we extract the bundled single-file console to a temp
+     * MCEF's {@code mod://} scheme is broken on Fabric - its handler calls {@code getClassLoader().getResourceAsStream}
+     * with a LEADING slash, which is always null - so we extract the bundled single-file console to a temp
      * {@code .html} and load it over {@code file://}. Single-file (viteSingleFile) also dodges file://'s ES-module block.
      */
     private static String consoleUrl() {
@@ -133,7 +133,7 @@ public class NotebookBrowserScreen extends Screen {
     private void tryCreate() {
         if (browser == null && MCEF.isInitialized()) {
             String url = consoleUrl();
-            if (url == null) return;   // extraction failed — render() shows the hint text
+            if (url == null) return;   // extraction failed - render() shows the hint text
             browser = MCEF.createBrowser(url, true);   // transparent = overlay-friendly
             browser.useBrowserControls(false);          // let Ctrl/Alt/F-keys reach React, don't let CEF hijack them
         }
@@ -145,7 +145,7 @@ public class NotebookBrowserScreen extends Screen {
         super.init();
         consoleOpen = true;
         tryCreate();
-        // Fresh data NOW — the idle-off gate means nothing was pushed while the console was closed.
+        // Fresh data NOW - the idle-off gate means nothing was pushed while the console was closed.
         if (client != null && client.getNetworkHandler() != null)
             ClientPlayNetworking.send(new com.greenerpastures.notebook.net.NotebookRequestC2S(0));
         com.greenerpastures.notebook.bridge.DsBridge.pushNow();
@@ -175,12 +175,12 @@ public class NotebookBrowserScreen extends Screen {
 
     @Override
     public void close() {
-        // Keep the browser ALIVE (static) so reopening the console is instant and preserves its React state — no
+        // Keep the browser ALIVE (static) so reopening the console is instant and preserves its React state - no
         // black blip and no page reload each time. MCEF frees it on game shutdown. (Deuce, 2026-07-01)
         super.close();
     }
 
-    /** Don't pause the world — the console must show LIVE data (breeding, Data balance) while it's open. */
+    /** Don't pause the world - the console must show LIVE data (breeding, Data balance) while it's open. */
     @Override
     public boolean shouldPause() {
         return false;
@@ -216,7 +216,7 @@ public class NotebookBrowserScreen extends Screen {
         RenderSystem.setShaderTexture(0, 0);
         RenderSystem.enableDepthTest();
 
-        if (awaitPastureUntil > 0L) {   // switching pastures — hide the stale browser with a native loading overlay
+        if (awaitPastureUntil > 0L) {   // switching pastures - hide the stale browser with a native loading overlay
             if (System.currentTimeMillis() > awaitPastureUntil) awaitPastureUntil = 0L;   // safety timeout
             else { drawLoadingOverlay(context); return; }
         }
@@ -234,7 +234,7 @@ public class NotebookBrowserScreen extends Screen {
         context.drawCenteredTextWithShadow(textRenderer, Text.literal("loading pasture" + dots), width / 2, height / 2, 0xFF8AA0B4);
     }
 
-    // ── native MC inventory overlay (real item icons — the browser can't draw MC textures) ───────────────────
+    // ── native MC inventory overlay (real item icons - the browser can't draw MC textures) ───────────────────
 
     private static final int SLOT = 18, INV_PAD = 8, HEADER = 16;
     private static int invX = -1, invY = -1;       // panel top-left (px); -1 = default to bottom-right on first layout
@@ -274,7 +274,7 @@ public class NotebookBrowserScreen extends Screen {
         ctx.fill(invX, invY, invX + pw, invY + ph, 0xE60E131A);
         ctx.drawBorder(invX, invY, pw, ph, 0xFF2A3543);
         ctx.drawText(textRenderer, Text.literal("Inventory"), invX + INV_PAD, invY + 4, 0xFF8593A4, false);
-        ctx.drawText(textRenderer, Text.literal(invCollapsed ? "▢" : "—"), invX + pw - 13, invY + 4, 0xFF8593A4, false);
+        ctx.drawText(textRenderer, Text.literal(invCollapsed ? "▢" : "-"), invX + pw - 13, invY + 4, 0xFF8593A4, false);
         if (invCollapsed) return;
 
         ItemStack hover = null;
@@ -285,7 +285,7 @@ public class NotebookBrowserScreen extends Screen {
             ctx.drawBorder(k[0], k[1], SLOT, SLOT, 0xFF5A8A6A);
             ItemStack kernel = kernelStack(cfg.tier());
             if (!kernel.isEmpty()) ctx.drawItem(kernel, k[0] + 1, k[1] + 1);
-            ctx.drawText(textRenderer, Text.literal(kernel.isEmpty() ? "Kernel — click one" : "Kernel — click to pop"), k[0] + SLOT + 5, k[1] + 5, 0xFF8593A4, false);
+            ctx.drawText(textRenderer, Text.literal(kernel.isEmpty() ? "Kernel - click one" : "Kernel - click to pop"), k[0] + SLOT + 5, k[1] + 5, 0xFF8593A4, false);
             if (!kernel.isEmpty() && inSlot(mouseX, mouseY, k[0], k[1])) hover = kernel;
         }
         var main = client.player.getInventory().main;
@@ -313,7 +313,7 @@ public class NotebookBrowserScreen extends Screen {
         catch (Exception e) { return ItemStack.EMPTY; }
     }
 
-    /** The slot cell is a DISPLAY stack rebuilt from the tier name — by default it'd tooltip as a fresh
+    /** The slot cell is a DISPLAY stack rebuilt from the tier name - by default it'd tooltip as a fresh
      *  kernel ("1 augment installed") while the real slotted item carries 5 (Deuce, 2026-07-04). Dress it
      *  with the extras channel's augment map + corruption so the hover tooltip tells the truth. */
     private static void dressKernelDisplay(ItemStack st) {
@@ -341,11 +341,11 @@ public class NotebookBrowserScreen extends Screen {
             if (k.has("corruptPairs"))
                 st.set(com.greenerpastures.pasture.breeding.GpComponents.CORRUPT_PAIRS, k.get("corruptPairs").getAsInt());
         } catch (Throwable ignored) {
-            // display dressing must never break the overlay — worst case the tooltip shows tier defaults
+            // display dressing must never break the overlay - worst case the tooltip shows tier defaults
         }
     }
 
-    /** Returns true if the click landed inside the panel (consume it — don't pass to the browser). Also starts a
+    /** Returns true if the click landed inside the panel (consume it - don't pass to the browser). Also starts a
      *  drag on the header and toggles collapse. */
     private boolean handleInventoryClick(double mx, double my) {
         if (!invShown) return false;

@@ -3,7 +3,7 @@ package com.greenerpastures.goal;
 import com.greenerpastures.biobank.EggSummary;
 
 /**
- * A breeding target a player is hunting — e.g. "a shiny Gible with ≥4 perfect IVs". Matched against an
+ * A breeding target a player is hunting - e.g. "a shiny Gible with ≥4 perfect IVs". Matched against an
  * {@link EggSummary} (the MC-free egg facts read off an egg). <b>Every criterion is optional</b>: a null / zero
  * field means "don't care", so an empty goal matches everything and the player tightens it as far as they like.
  * Pure data → unit-tested; the MC layer ({@code goal/} command + the egg observer) builds + stores these.

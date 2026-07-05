@@ -31,7 +31,7 @@ public final class EggCuller {
     private static final int SUMMARY_COLOR = 0xFFE7E9F0;
 
     // Per-ItemStack identity cache (stacks have no value equals, so identity is intended). Synchronized
-    // access-order LRU — gradual eviction past CACHE_MAX, no full-clear recompute storm (bug-hunt #7).
+    // access-order LRU - gradual eviction past CACHE_MAX, no full-clear recompute storm (bug-hunt #7).
     private static final int CACHE_MAX = 4096;
     private static final Map<ItemStack, EggInfo> CACHE = Collections.synchronizedMap(
             new LinkedHashMap<ItemStack, EggInfo>(256, 0.75f, true) {

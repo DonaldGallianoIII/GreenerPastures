@@ -21,9 +21,9 @@ import java.util.List;
  * Scopes the Daemon enchant boost to a block's loot resolution. {@code Block.getDroppedStacks(...,Entity,
  * ItemStack)} is the static drop-generator that has the <b>breaker</b> entity + tool and runs the loot
  * functions (where Fortune's level is read). HEAD opens a boost window for a fed-Daemon holder; RETURN closes
- * it — so the boost is live ONLY during this server-side loot roll, never for tooltips/anvils/other entities.
+ * it - so the boost is live ONLY during this server-side loot roll, never for tooltips/anvils/other entities.
  * The level bump is applied by {@link EnchantmentLevelMixin} <i>during</i> generation; auto-smelt rewrites the
- * finished loot list at RETURN — so Fortune fattens the raw count and auto-smelt then converts it.
+ * finished loot list at RETURN - so Fortune fattens the raw count and auto-smelt then converts it.
  */
 @Mixin(Block.class)
 public class BlockDropBoostMixin {
@@ -33,7 +33,7 @@ public class BlockDropBoostMixin {
     private static void gp$beginBoost(BlockState state, ServerWorld world, BlockPos pos, BlockEntity blockEntity,
                                       Entity breaker, ItemStack tool, CallbackInfoReturnable<List<ItemStack>> cir) {
         // begin() clears the ThreadLocal window FIRST, so even if a prior getDroppedStacks threw (skipping its
-        // RETURN close) the stale window is wiped here — the exception path is self-healing (perf-audit).
+        // RETURN close) the stale window is wiped here - the exception path is self-healing (perf-audit).
         if (breaker instanceof ServerPlayerEntity sp) DaemonEnchantBoost.begin(sp);
         else DaemonEnchantBoost.end();
     }

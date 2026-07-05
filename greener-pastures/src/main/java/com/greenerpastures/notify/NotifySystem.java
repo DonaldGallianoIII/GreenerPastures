@@ -6,7 +6,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.nio.file.Path;
 
 /**
- * Runtime holder for the loaded {@link NotifyConfig} — the single point {@link Notifier} reads from. {@link #init()}
+ * Runtime holder for the loaded {@link NotifyConfig} - the single point {@link Notifier} reads from. {@link #init()}
  * loads (and on first run writes) {@code config/greenerpastures/notifications.json}; until then, and if loading
  * ever fails, {@link NotifyConfig#defaults()} are used so notifications are never in a broken state. Mirrors
  * {@code BuffSystem}.
@@ -19,7 +19,7 @@ public final class NotifySystem {
     public static void init() {
         reload();
         NotifyConfig c = config;
-        GreenerPastures.LOG.info("[notify] {} — shiny:{} sound:{} channel:{} target:{}",
+        GreenerPastures.LOG.info("[notify] {} - shiny:{} sound:{} channel:{} target:{}",
                 c.enabled() ? "enabled" : "disabled", c.shiny(), c.sound(), c.channel(), c.target());
     }
 

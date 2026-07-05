@@ -17,11 +17,11 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import java.util.Set;
 
 /**
- * Daemon HOOK buff — potion duration+. While the player holds a fed Daemon with the {@code POTION_DURATION} buff,
+ * Daemon HOOK buff - potion duration+. While the player holds a fed Daemon with the {@code POTION_DURATION} buff,
  * lengthens the duration of incoming <b>utility</b> status effects by +50% per Mk tier (Mk III = +150%).
  *
  * <p>Deliberately an <b>allowlist of non-combat effects only</b> (Night Vision, Water Breathing, Fire Resistance,
- * Conduit Power, Dolphin's Grace, Slow Falling, Luck) — so it's unambiguously PvP-neutral (no Strength/Speed/
+ * Conduit Power, Dolphin's Grace, Slow Falling, Luck) - so it's unambiguously PvP-neutral (no Strength/Speed/
  * Resistance/Regen/Absorption ever extended), honoring the worker-not-fighter rule. Haste/Saturation are omitted
  * because the Daemon grants those directly. Replaces the incoming instance with a longer-duration copy; never
  * touches an ItemStack.

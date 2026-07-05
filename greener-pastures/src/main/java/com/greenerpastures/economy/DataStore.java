@@ -11,10 +11,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * World-saved per-player <b>Data</b> balances — the dark economy's one currency, earned only from
+ * World-saved per-player <b>Data</b> balances - the dark economy's one currency, earned only from
  * rendered (culled) eggs. This is the source of truth; the Daemon item is the player's handle that
  * displays + spends it (player-bound, so the balance survives losing the item). Mirrors
- * {@code BioBankStore} / {@code PastureRegistry} — persisted in the overworld save.
+ * {@code BioBankStore} / {@code PastureRegistry} - persisted in the overworld save.
  *
  * <p>The per-player {@link DataAccount} carries the never-negative / saturating math (unit-tested); this
  * class is just the MC persistence adapter around it.
@@ -23,7 +23,7 @@ public final class DataStore extends PersistentState {
     private static final String ID = "greenerpastures_data";
 
     private final Map<UUID, DataAccount> accounts = new HashMap<>();
-    /** Lifetime Data EARNED from rendering (never decremented; disk reads/QA mints deliberately excluded —
+    /** Lifetime Data EARNED from rendering (never decremented; disk reads/QA mints deliberately excluded -
      *  a write→read cycle must not pump this). Gates MissingNo. summons: one per million, forever. */
     private final Map<UUID, Long> lifetimeEarned = new HashMap<>();
     private final Map<UUID, Integer> missingnoClaimed = new HashMap<>();
@@ -33,7 +33,7 @@ public final class DataStore extends PersistentState {
         return accounts.computeIfAbsent(player, u -> { markDirty(); return new DataAccount(0L); });
     }
 
-    /** Read-only balance — does NOT create an account (returns 0 for an unseen player). */
+    /** Read-only balance - does NOT create an account (returns 0 for an unseen player). */
     public long balanceOf(UUID player) {
         DataAccount a = accounts.get(player);
         return a == null ? 0L : a.balance();
@@ -47,7 +47,7 @@ public final class DataStore extends PersistentState {
     }
 
     /** Credit RENDER income: balance + the lifetime-earned tally (the MissingNo. odometer). Use this for
-     *  egg rendering ONLY — {@link #credit} for neutral flows (disk reads) that must not count. */
+     *  egg rendering ONLY - {@link #credit} for neutral flows (disk reads) that must not count. */
     public void creditEarned(UUID player, long amount) {
         if (amount <= 0) return;
         credit(player, amount);

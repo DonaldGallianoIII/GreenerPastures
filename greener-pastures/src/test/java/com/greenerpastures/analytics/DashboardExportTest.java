@@ -6,7 +6,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the Dashboard CSV / HTML export — pure string generation. */
+/** Headless tests for the Dashboard CSV / HTML export - pure string generation. */
 class DashboardExportTest {
 
     private static DashboardStats sample() {

@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Append-only JSONL writer for analytics events, one per server/save. Rows are queued from the server
- * thread and BOTH serialized (Gson) AND flushed on a dedicated daemon thread — so the tick thread does
+ * thread and BOTH serialized (Gson) AND flushed on a dedicated daemon thread - so the tick thread does
  * no Gson reflection and no disk I/O (perf-audit H3). The queue is <b>bounded</b>: under an event flood
  * or a stalled disk, {@link #append} drops rather than growing without bound (perf-audit M2).
  */
@@ -67,7 +67,7 @@ final class EventLog {
                     }
                     w.flush();
                 } catch (IOException io) {
-                    // a transient disk error (full, handle revoked) must NOT permanently kill logging —
+                    // a transient disk error (full, handle revoked) must NOT permanently kill logging -
                     // close, null the writer, and reopen on the next row so it recovers (bug-hunt #9).
                     // Back off first: poll() returns instantly while the queue has a backlog, so without a
                     // pause a *persistent* outage would spin a core + flood this very log (review follow-up).

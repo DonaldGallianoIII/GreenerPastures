@@ -20,15 +20,15 @@ import java.util.Random;
 import java.util.Set;
 
 /**
- * The <b>block-free harvest</b> — the network tick that replaces the Harvester block (Deuce, 2026-06-30:
+ * The <b>block-free harvest</b> - the network tick that replaces the Harvester block (Deuce, 2026-06-30:
  * "block free now"). Once an IRL minute it sweeps every <b>owned</b> pasture (a player linked it via the
- * pasture screen — see {@code NOTEBOOK_CONSOLE_SPEC.md} §2) and deposits each tethered mon's rolled drops
+ * pasture screen - see {@code NOTEBOOK_CONSOLE_SPEC.md} §2) and deposits each tethered mon's rolled drops
  * STRAIGHT into the owner's Notebook ({@link NotebookStore}), draining the owner's drop-tethers on this clock
  * exactly as the block did. Reuses {@link DropsBridge} for the faithful Cobblemon roll, so behaviour is
- * unchanged — only the trigger (owned-pasture sweep, not block adjacency) and the sink (Notebook, not a chest).
+ * unchanged - only the trigger (owned-pasture sweep, not block adjacency) and the sink (Notebook, not a chest).
  *
  * <p>No double-charge: a tether is billed on exactly one clock. The config-driven custom-drop layers run on
- * this tick too ({@code RitualHarvest} — 3b done): type-drops per typed mon + composition-gated gacha rituals
+ * this tick too ({@code RitualHarvest} - 3b done): type-drops per typed mon + composition-gated gacha rituals
  * with per-pasture persistent pity ({@link PastureData#ritualState}).
  */
 public final class PastureHarvest {
@@ -38,9 +38,9 @@ public final class PastureHarvest {
     private static final double BASE_PROC = 0.03;    // 3% per tethered mon per minute (mirrors the block)
 
     /** QA/testing override ({@code /gp harvest interval <seconds>}): when &gt; 0, the sweep runs on this fixed tick
-     *  interval instead of the 1-min clock — for watching drop rates live. In-memory + volatile (reset on server
+     *  interval instead of the 1-min clock - for watching drop rates live. In-memory + volatile (reset on server
      *  start), so a fast test rate can never ship in a world save. NB: proc chances are PER SWEEP, so a faster
-     *  sweep means proportionally more rolls per minute — great for testing, silly for balance. */
+     *  sweep means proportionally more rolls per minute - great for testing, silly for balance. */
     public static volatile long testIntervalTicks = 0L;
 
     /** Offline-progress ceiling: how far back a catch-up may reach, in ticks (12h of world time). Keeps a
@@ -56,8 +56,8 @@ public final class PastureHarvest {
     }
 
     private static void onWorldTick(ServerWorld world) {
-        // Per-PASTURE scheduling (scan every second, sweep each pasture when ITS interval is due) — instead of a
-        // global modulo — so a reloading chunk's catch-up fires within a second of arrival, lined up with the
+        // Per-PASTURE scheduling (scan every second, sweep each pasture when ITS interval is due) - instead of a
+        // global modulo - so a reloading chunk's catch-up fires within a second of arrival, lined up with the
         // breeder's instant catch-up (Deuce, 2026-07-03), not up to a minute later on the boundary tick.
         if (world.getTime() % 20L != 0L) return;
         long interval = testIntervalTicks > 0 ? testIntervalTicks : INTERVAL;
@@ -75,11 +75,11 @@ public final class PastureHarvest {
             PastureData pd = e.getValue();
             if (pd.owner == null) continue;                 // only linked/owned pastures collect into a Notebook
             BlockPos pos = e.getKey();
-            if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;   // don't force-load idle chunks (perf-audit — mirrors the breeder)
+            if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;   // don't force-load idle chunks (perf-audit - mirrors the breeder)
             if (pd.lastHarvestTick > 0 && world.getTime() - pd.lastHarvestTick < interval) continue;  // this pasture isn't due yet
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity pasture)) continue;
             try (var sweepSpan = com.greenerpastures.core.GpProf.begin("harvest.pasture")) {
-                // tether-amplified drop plan — the Kernel's base drop mods × any FED drop tether, on this clock
+                // tether-amplified drop plan - the Kernel's base drop mods × any FED drop tether, on this clock
                 long balance = data.balanceOf(pd.owner);
                 TetherRuntime.Resolution res = TetherRuntime.resolveFor(
                         pd.baseAugmentLevels(), pd.slottedTethers(), balance, DROP_FUNCTIONS);
@@ -88,7 +88,7 @@ public final class PastureHarvest {
 
                 // OFFLINE CATCH-UP: sweeps this pasture missed while its chunk was unloaded (the loop above skips
                 // unloaded chunks, so lastHarvestTick freezes). The roster physically can't change while unloaded,
-                // so rolling the missed sweeps NOW with the current mons/Kernel is exact — capped at 12h so an
+                // so rolling the missed sweeps NOW with the current mons/Kernel is exact - capped at 12h so an
                 // ancient save doesn't roll millions. sweeps=1 is the normal loaded-chunk case.
                 long now = world.getTime();
                 int sweeps = 1;
@@ -99,7 +99,7 @@ public final class PastureHarvest {
                 pd.lastHarvestTick = now;
                 dirty = true;
 
-                // Snapshot the roster ONCE for all sweeps — it can't change mid-catch-up (the chunk was
+                // Snapshot the roster ONCE for all sweeps - it can't change mid-catch-up (the chunk was
                 // unloaded), and a 12h catch-up is up to 720 sweeps in this one tick (perf-audit R3 tick #1).
                 java.util.List<PokemonPastureBlockEntity.Tethering> roster =
                         new java.util.ArrayList<>(pasture.getTetheredPokemon());
@@ -123,7 +123,7 @@ public final class PastureHarvest {
                 }
                 int mons = roster.size();
                 if (mons > 0) {
-                    // the rate-watching line: EVERY sweep, even a dry one — proc% + yield in effect, mons swept,
+                    // the rate-watching line: EVERY sweep, even a dry one - proc% + yield in effect, mons swept,
                     // what landed. Together with DropsBridge's per-proc lines this is the full drop audit trail.
                     GpLog.d("notebook_harvest", "sweep", "pos", pos.toShortString(),
                             "mons", mons, "proc_pct", String.format("%.2f", proc * 100.0),

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Headless tests for the pure {@link DaemonLoadout} (BUG-004) — install/replace/remove, the ≤0 + entry-count
+ * Headless tests for the pure {@link DaemonLoadout} (BUG-004) - install/replace/remove, the ≤0 + entry-count
  * bounds, and the forward-compat "unknown id survives the wire but drops when typed to {@link BuffId}" contract.
  * Loads {@code DaemonLoadout} (which builds MC codecs at class-init), so it exercises the fabric-loader-junit
  * bootstrap exactly like {@code AugmentsTest}.
@@ -36,7 +36,7 @@ class DaemonLoadoutTest {
     @Test
     void withLevelReplacesInPlace() {
         DaemonLoadout l = DaemonLoadout.NONE.withLevel(BuffId.HASTE, 1).withLevel(BuffId.HASTE, 2);
-        assertEquals(2, l.level(BuffId.HASTE), "one entry per buff — replace, not stack");
+        assertEquals(2, l.level(BuffId.HASTE), "one entry per buff - replace, not stack");
         assertEquals(1, l.toLevels().size());
     }
 

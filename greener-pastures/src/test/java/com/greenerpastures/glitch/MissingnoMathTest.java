@@ -11,7 +11,7 @@ class MissingnoMathTest {
     void onePerMillionForever() {
         assertEquals(0, MissingnoMath.claimable(999_999, 0), "999,999 is not a million");
         assertEquals(1, MissingnoMath.claimable(1_000_000, 0));
-        assertEquals(0, MissingnoMath.claimable(1_000_000, 1), "claimed — wait for the next million");
+        assertEquals(0, MissingnoMath.claimable(1_000_000, 1), "claimed - wait for the next million");
         assertEquals(3, MissingnoMath.claimable(3_500_000, 0), "every million pays, retroactively");
         assertEquals(1, MissingnoMath.claimable(3_500_000, 2));
         assertEquals(0, MissingnoMath.claimable(-5, 0), "garbage in, zero out");
@@ -32,7 +32,7 @@ class MissingnoMathTest {
         int cur = 0;
         for (int i = 0; i < 300; i++) {
             int next = MissingnoMath.pickNext(cur, 5, rng.nextDouble());
-            assertNotEquals(cur, next, "the glitch must visibly glitch — never the same sprite twice");
+            assertNotEquals(cur, next, "the glitch must visibly glitch - never the same sprite twice");
             assertTrue(next >= 0 && next < 5);
             seen.add(next);
             cur = next;

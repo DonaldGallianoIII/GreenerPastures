@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Pure-logic tests for the EV allocation spread (BUG-002) — no Minecraft needed. */
+/** Pure-logic tests for the EV allocation spread (BUG-002) - no Minecraft needed. */
 class EvSpreadTest {
 
     @Test

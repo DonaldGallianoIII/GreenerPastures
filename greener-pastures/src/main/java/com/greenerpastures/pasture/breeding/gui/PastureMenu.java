@@ -33,7 +33,7 @@ public class PastureMenu extends ScreenHandler {
         Registry.register(Registries.SCREEN_HANDLER, Identifier.of(GreenerPastures.MOD_ID, "pasture_menu"), TYPE);
     }
 
-    // GUI layout — matches Deuce's GreenerPastures-Layout.html (wand canvas 200×166, +hotbar row).
+    // GUI layout - matches Deuce's GreenerPastures-Layout.html (wand canvas 200×166, +hotbar row).
     // Upgrade slots are a contiguous 9-wide row at x=8,y=40 (slot 0 = Pasture Upgrade, 1..8 functional).
     private static final int SLOT_Y   = 40;   // upgrade slot row (design upgradeSlots.y)
     private static final int INV_X    = 8;    // design invGrid.x
@@ -45,12 +45,12 @@ public class PastureMenu extends ScreenHandler {
     private final String pastureName;
     private final List<MonEntry> roster;
 
-    /** Client ctor — built from the server payload. */
+    /** Client ctor - built from the server payload. */
     public PastureMenu(int syncId, PlayerInventory inv, PastureOpenData data) {
         this(syncId, inv, new SimpleInventory(1 + MAX_FUNCTIONAL), data.pos(), data.name(), data.roster());
     }
 
-    /** Server ctor — backed by the pasture's real upgrade inventory. */
+    /** Server ctor - backed by the pasture's real upgrade inventory. */
     public PastureMenu(int syncId, PlayerInventory inv, Inventory upgrades, BlockPos pasturePos, String name) {
         this(syncId, inv, upgrades, pasturePos, name, List.of());
     }
@@ -87,11 +87,11 @@ public class PastureMenu extends ScreenHandler {
 
     public List<MonEntry> roster() { return roster; }
 
-    /** This pasture's display name (from the server) — seeds the wand GUI's name field. */
+    /** This pasture's display name (from the server) - seeds the wand GUI's name field. */
     public String pastureName() { return pastureName; }
 
     /**
-     * Breeding pairs the slotted Pasture Upgrade allows — the arrangement board's bucket count.
+     * Breeding pairs the slotted Pasture Upgrade allows - the arrangement board's bucket count.
      * Computed live from the upgrade slot (like {@link #unlockedSlots()}) so it updates the moment a
      * Pasture Upgrade is inserted, no GUI reopen needed.
      */
@@ -108,7 +108,7 @@ public class PastureMenu extends ScreenHandler {
     @Override
     public boolean canUse(PlayerEntity player) { return true; }
 
-    // Operator ownership (who pays the tether cost) is NOT set here — it's an explicit locked-boolean
+    // Operator ownership (who pays the tether cost) is NOT set here - it's an explicit locked-boolean
     // claim via ClaimOperatorPayload / PastureClaim, so passively opening a shared pasture never bills you.
 
     @Override
@@ -131,7 +131,7 @@ public class PastureMenu extends ScreenHandler {
 
     /**
      * Shift-click insert into the upgrade region (slots {@code 0..to}). Unlike vanilla {@code insertItem},
-     * this honors each slot's {@link Slot#getMaxItemCount()} — the upgrade slots cap at 1, so a shift-clicked
+     * this honors each slot's {@link Slot#getMaxItemCount()} - the upgrade slots cap at 1, so a shift-clicked
      * stack of upgrades can't overfill one (bug-hunt #5). Returns whether anything moved.
      */
     private boolean insertIntoUpgrades(ItemStack stack, int to) {

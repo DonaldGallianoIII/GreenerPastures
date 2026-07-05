@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the BioBank "Send to Renderer" preview ledger — pure logic. */
+/** Headless tests for the BioBank "Send to Renderer" preview ledger - pure logic. */
 class RenderLedgerTest {
 
     private static EggSummary egg(String species, boolean shiny, int perfect) {

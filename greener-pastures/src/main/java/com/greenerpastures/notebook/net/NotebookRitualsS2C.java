@@ -8,7 +8,7 @@ import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 /**
- * Server → client: the Rituals tab (Rituals v2) as one JSON blob — the player's LEARNED hidden recipes
+ * Server → client: the Rituals tab (Rituals v2) as one JSON blob - the player's LEARNED hidden recipes
  * (full reveal: species headcounts, type gates, output, lifetime hits), the count of rituals still
  * undiscovered (the Steam-style "N hidden" teaser), and the dedicated ritual loot pool.
  *

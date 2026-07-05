@@ -22,14 +22,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Daemon HOOK buff — vein-miner. When a fed Daemon holder with the {@code VEIN_MINE} buff breaks a <b>veinable</b>
+ * Daemon HOOK buff - vein-miner. When a fed Daemon holder with the {@code VEIN_MINE} buff breaks a <b>veinable</b>
  * block (an ore, or a log), break the connected run of the SAME block in one go, each dropping its proper loot
  * (the Fortune + auto-smelt boosts apply per block, since we route each through {@code Block.getDroppedStacks}
- * with the real tool). The Data rental is the cost — no tool durability is consumed in v1.
+ * with the real tool). The Data rental is the cost - no tool durability is consumed in v1.
  *
  * <p><b>Safeguards (this is the one buff that can chew terrain, so it's deliberately fenced):</b>
  * <ul>
- *   <li>only ores ({@code c:ores}) and logs ({@code #minecraft:logs}) are veinable — never dirt/stone/etc.;</li>
+ *   <li>only ores ({@code c:ores}) and logs ({@code #minecraft:logs}) are veinable - never dirt/stone/etc.;</li>
  *   <li>only the SAME block as the one broken, flood-filled from it, hard-capped at {@link #HARD_CAP};</li>
  *   <li>only for a non-creative/non-spectator {@link ServerPlayerEntity} whose tool {@code isSuitableFor} it;</li>
  *   <li>a re-entrancy guard so the cascade can never recurse (and {@code World.breakBlock} doesn't fire the
@@ -63,7 +63,7 @@ public final class DaemonVeinMine {
         if (tier <= 0) return;
 
         ItemStack tool = sp.getMainHandStack();
-        if (!tool.isSuitableFor(state)) return;          // need the right tool — no bare-hand ore veining
+        if (!tool.isSuitableFor(state)) return;          // need the right tool - no bare-hand ore veining
 
         veinMine(sw, sp, pos, state.getBlock(), tool, Math.min(HARD_CAP, tier * PER_TIER));
     }
@@ -86,8 +86,8 @@ public final class DaemonVeinMine {
 
                 try {
                     BlockEntity be = s.hasBlockEntity() ? world.getBlockEntity(p) : null;
-                    // Route EVERY block through getDroppedStacks with the real tool — the exact path a normal
-                    // break takes — so the whole vein is compliant: the Daemon Fortune boost + auto-smelt (via
+                    // Route EVERY block through getDroppedStacks with the real tool - the exact path a normal
+                    // break takes - so the whole vein is compliant: the Daemon Fortune boost + auto-smelt (via
                     // BlockDropBoostMixin, which fires per call) AND the tool's own enchants (Silk Touch, its
                     // own Fortune, …) all apply to each block, not just the first one the player hit.
                     List<ItemStack> drops = Block.getDroppedStacks(s, world, p, be, player, tool);

@@ -30,22 +30,22 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * PastureKeeper — server-side lag fix for big Cobblemon pasture farms (the <b>"ghost pasture"</b>).
+ * PastureKeeper - server-side lag fix for big Cobblemon pasture farms (the <b>"ghost pasture"</b>).
  *
  * <p>A suppressed pasture's tethered mons <b>never exist as roaming entities</b>, so the farm's entity count stays
- * near zero (which also clears Cobblemon's "too many Pokémon nearby" placement cap) — while the pasture keeps
+ * near zero (which also clears Cobblemon's "too many Pokémon nearby" placement cap) - while the pasture keeps
  * ticking its tethered <i>data</i>, so breeding + loot run exactly as before. The toggle is symmetric (no per-tick
  * work either way):
  * <ol>
  *   <li><b>Block the spawn at the source.</b> {@code PokemonPastureBlockEntityMixin} redirects the single
- *       {@code World.spawnEntity} call inside Cobblemon's {@code tether()} — for a suppressed pasture it records
+ *       {@code World.spawnEntity} call inside Cobblemon's {@code tether()} - for a suppressed pasture it records
  *       the tether data but skips putting an entity in the world. New mons never spawn.</li>
  *   <li><b>Suppress ON → one-time despawn.</b> {@link #despawnTethered} removes the already-spawned roamers
- *       <i>once</i> with {@link Entity.RemovalReason#DISCARDED} (gone for good — never re-saved or reloaded) and
- *       re-asserts each mon's {@code tetheringId}, undoing the recall {@code DISCARDED} would otherwise trigger —
+ *       <i>once</i> with {@link Entity.RemovalReason#DISCARDED} (gone for good - never re-saved or reloaded) and
+ *       re-asserts each mon's {@code tetheringId}, undoing the recall {@code DISCARDED} would otherwise trigger -
  *       so the tether data survives untouched.</li>
  *   <li><b>Suppress OFF → one-time re-materialise (increment 2).</b> {@link #respawnTethered} replays Cobblemon's
- *       own tether-spawn for each tethering that has no live entity — a fresh {@link PokemonEntity} from the stored
+ *       own tether-spawn for each tethering that has no live entity - a fresh {@link PokemonEntity} from the stored
  *       {@code Pokemon}, positioned via the pasture's {@code makeSuitableY}, re-linked to the <i>existing</i>
  *       {@code Tethering} (no new tether). Cobblemon never auto-respawns a missing tethered mon (its
  *       {@code checkPokemon} has no spawn path), so we do it.</li>
@@ -89,7 +89,7 @@ public final class PastureKeeper {
                         .put("suppressed", now)
                         .player(player.getUuid()));
                 player.sendMessage(Text.literal("[Greener Pastures] ghost pasture "
-                        + (now ? "ON — mons stay as data, no roamers (lag fix)" : "OFF — roamers restored")), false);
+                        + (now ? "ON - mons stay as data, no roamers (lag fix)" : "OFF - roamers restored")), false);
             }
             return ActionResult.SUCCESS;   // consume the sneak-click so the pasture GUI doesn't open
         });
@@ -113,7 +113,7 @@ public final class PastureKeeper {
      * One-time: discard the pasture's currently-spawned tethered entities, keeping the tether data intact. Each is
      * removed with {@code DISCARDED} (gone for good, never reloads) and its {@code tetheringId} re-asserted to undo
      * {@code PokemonEntity.remove}'s recall. Found by scanning (entityId-independent, so it also works on mons we
-     * re-materialised). Runs once on toggle — never on a tick.
+     * re-materialised). Runs once on toggle - never on a tick.
      */
     private static void despawnTethered(World world, PokemonPastureBlockEntity pasture) {
         if (!(world instanceof ServerWorld sw)) return;
@@ -122,7 +122,7 @@ public final class PastureKeeper {
             try {
                 PokemonPastureBlockEntity.Tethering teth = e.getTethering();
                 UUID keep = (teth != null) ? teth.getTetheringId() : null;
-                e.remove(Entity.RemovalReason.DISCARDED);     // gone for good — not saved, won't reload
+                e.remove(Entity.RemovalReason.DISCARDED);     // gone for good - not saved, won't reload
                 if (keep != null) e.getPokemon().setTetheringId(keep);   // undo the recall; tether data stays
                 cleared++;
             } catch (Throwable err) {
@@ -134,7 +134,7 @@ public final class PastureKeeper {
 
     /**
      * One-time (increment 2): re-materialise each tethering that has no live entity, replaying Cobblemon's own
-     * tether-spawn — a fresh {@link PokemonEntity} from the stored {@code Pokemon}, positioned by the pasture's
+     * tether-spawn - a fresh {@link PokemonEntity} from the stored {@code Pokemon}, positioned by the pasture's
      * {@code makeSuitableY}, re-linked to the <i>existing</i> {@code Tethering} (we don't create a new one). The
      * direct {@code spawnEntity} here is NOT the redirected one (that's scoped to {@code tether()}), so it always
      * spawns.
@@ -149,7 +149,7 @@ public final class PastureKeeper {
         BlockPos pos = pasture.getPos();
         int spawned = 0;
         for (PokemonPastureBlockEntity.Tethering t : pasture.getTetheredPokemon()) {
-            if (alreadyLive.contains(t.getTetheringId())) continue;   // still has a live entity — leave it
+            if (alreadyLive.contains(t.getTetheringId())) continue;   // still has a live entity - leave it
             try {
                 Pokemon p = t.getPokemon();
                 if (p == null) continue;                          // no stored Pokemon (Cobblemon's checkPokemon releases it)
@@ -157,7 +157,7 @@ public final class PastureKeeper {
                 e.calculateDimensions();
                 e.setPosition(suitableSpawn(sw, pasture, e, spawned));   // ground them around the pasture (null-safe)
                 p.setTetheringId(t.getTetheringId());             // pokemon.tetheringId == tethering.id → checkPokemon keeps it
-                e.setTethering(t);                                // re-link to the EXISTING tethering — not a new tether
+                e.setTethering(t);                                // re-link to the EXISTING tethering - not a new tether
                 sw.spawnEntity(e);
                 spawned++;
             } catch (Throwable err) {
@@ -172,11 +172,11 @@ public final class PastureKeeper {
 
     /**
      * A natural re-materialise position: stand each mon on the ground <b>right next to the pasture</b>, spread around
-     * it in a 4-way ring that steps one block further out every 4 mons — instead of dumping them all a few blocks off
+     * it in a 4-way ring that steps one block further out every 4 mons - instead of dumping them all a few blocks off
      * one side (the first-pass bug Deuce caught). Horizontal offset matches the pasture's Y; the vertical placement
      * reuses Cobblemon's own search ({@code getBoxAt} + {@code makeSuitableY}) to land on the real floor within ±16.
      * {@code makeSuitableY} <b>returns {@code null}</b> when it finds no floor (the original NPE was passing the solid
-     * pasture block and dereffing that null) — we fall back to the adjacent column itself, so it never NPEs.
+     * pasture block and dereffing that null) - we fall back to the adjacent column itself, so it never NPEs.
      * {@code -0.5} on Y puts the feet on the floor (matching Cobblemon's tether spawn exactly).
      */
     private static Vec3d suitableSpawn(ServerWorld world, PokemonPastureBlockEntity pasture, PokemonEntity entity, int index) {

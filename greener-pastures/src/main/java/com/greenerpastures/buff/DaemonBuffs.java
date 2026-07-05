@@ -29,11 +29,11 @@ import java.util.UUID;
 /**
  * The MC adapter that grants the Daemon's "root" buffs to players holding a held + fed Daemon. The data model is
  * the pure {@link BuffResolver}: the held Daemon's level (Mk I/II/III) is the tier, drain is tier-scaled and
- * summed. This is the <b>rented-while-fed</b> contract — each second we debit the resolved Data/sec first; a
+ * summed. This is the <b>rented-while-fed</b> contract - each second we debit the resolved Data/sec first; a
  * player who can't pay simply isn't buffed that second (their effects lapse on their own).
  *
  * <p>The loop runs every tick: once per second it <i>settles</i> (resolve → bill → apply status effects → cache
- * the paid buff set), and every tick it runs the <i>per-tick hooks</i> (the item magnet) from that cached set —
+ * the paid buff set), and every tick it runs the <i>per-tick hooks</i> (the item magnet) from that cached set -
  * so a hook only ever runs for a buff the player paid for this second, but moves smoothly between billings.
  *
  * <p><b>Delivered so far:</b> the {@link BuffCategory#EFFECT} buffs (Haste, Saturation) and the item-magnet
@@ -48,12 +48,12 @@ public final class DaemonBuffs {
     private static final int INTERVAL = 20;
     /** Status effects are refreshed every second; give them slack so they never flicker between applications. */
     private static final int EFFECT_DURATION = INTERVAL * 3;
-    /** The buffs this adapter can currently deliver — drain is billed only for these. Widens as we wire more.
+    /** The buffs this adapter can currently deliver - drain is billed only for these. Widens as we wire more.
      *  FORTUNE/AUTO_SMELT/XP_BOOST/VEIN_MINE + the value-effect enchants (LURE/LUCK_OF_THE_SEA/FROST_WALKER/LOOTING)
      *  are delivered by mixins/events via {@link #paidBuffs}; the EFFECT + MAGNET here; the attribute enchants
      *  (Respiration/Swift Sneak/Feather Falling) by {@link DaemonAttributeBuffs} (folded in via its
      *  {@code DELIVERED} set so the bill can never drift from what's actually applied). LOOTING is the one
-     *  combat-adjacent buff — Deuce opted it in (default-on); every other combat enchant stays absent. Unbreaking
+     *  combat-adjacent buff - Deuce opted it in (default-on); every other combat enchant stays absent. Unbreaking
      *  is the only catalog ENCHANT left undelivered (its seam carries no entity to scope it to a holder). */
     private static final Set<BuffId> SUPPORTED;
     static {
@@ -67,7 +67,7 @@ public final class DaemonBuffs {
 
     /** Fractional Data carried between seconds, so sub-1/sec drains accrue honestly instead of rounding to free. */
     private static final Map<UUID, Double> drainCarry = new HashMap<>();
-    /** The buff set a player actually paid for this second — drives the per-tick hooks between billings. */
+    /** The buff set a player actually paid for this second - drives the per-tick hooks between billings. */
     private static final Map<UUID, ResolvedBuffs> lastPaid = new HashMap<>();
 
     private static int tickAccum;
@@ -122,10 +122,10 @@ public final class DaemonBuffs {
         applyEffects(player, buffs);
         DaemonAttributeBuffs.reconcile(player, buffs);       // attribute enchants: grant/scale/strip to match the bill
         GpLog.t("buff", "tick", "player", id.toString(), "top", buffs.daemonLevel(),
-                "buffs", buffs.tiers().size(), "paid", pay);   // TRACE: 1/sec/holder heartbeat — off unless gp.log.level=TRACE
+                "buffs", buffs.tiers().size(), "paid", pay);   // TRACE: 1/sec/holder heartbeat - off unless gp.log.level=TRACE
     }
 
-    /** Drop a player's buff state — clears the per-tick caches AND strips any attribute modifiers we added. */
+    /** Drop a player's buff state - clears the per-tick caches AND strips any attribute modifiers we added. */
     private static void clear(ServerPlayerEntity player) {
         UUID id = player.getUuid();
         lastPaid.remove(id);
@@ -135,14 +135,14 @@ public final class DaemonBuffs {
 
     /**
      * The buffs a player paid for this second, or {@code null}. Read by the enchant-boost mixins
-     * ({@link DaemonEnchantBoost}) on the server thread — same thread that mutates {@link #lastPaid}, so no
+     * ({@link DaemonEnchantBoost}) on the server thread - same thread that mutates {@link #lastPaid}, so no
      * locking is needed.
      */
     public static ResolvedBuffs paidBuffs(ServerPlayerEntity player) {
         return player == null ? null : lastPaid.get(player.getUuid());
     }
 
-    /** The buffs this adapter can currently deliver — read by {@code /gp daemon} for validation + suggestions. */
+    /** The buffs this adapter can currently deliver - read by {@code /gp daemon} for validation + suggestions. */
     public static Set<BuffId> supported() {
         return Collections.unmodifiableSet(SUPPORTED);
     }
@@ -151,7 +151,7 @@ public final class DaemonBuffs {
      * The loadout of the first <b>ON</b> Daemon anywhere in the player's inventory (hotbar + main + offhand; the
      * armor slots are scanned too but never hold a Daemon), or {@code null}. <b>BUG-004:</b> the Daemon works
      * from the inventory, not just in-hand. A player's inventory is always loaded while they're online, so this
-     * never force-loads a chunk — a Daemon left in a chest in an unloaded chunk simply isn't seen. A Daemon
+     * never force-loads a chunk - a Daemon left in a chest in an unloaded chunk simply isn't seen. A Daemon
      * stacks to 1, but a player could carry two; the first ON one wins (we don't sum loadouts).
      */
     private static DaemonLoadout firstActiveDaemon(PlayerEntity player) {

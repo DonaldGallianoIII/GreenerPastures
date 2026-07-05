@@ -15,13 +15,13 @@ import net.minecraft.world.World;
 import java.util.List;
 
 /**
- * A <b>Data disk</b> — Data's physical form (NOTEBOOK_CONSOLE_SPEC §5c). The Notebook is the drive:
+ * A <b>Data disk</b> - Data's physical form (NOTEBOOK_CONSOLE_SPEC §5c). The Notebook is the drive:
  * the console's Dashboard WRITES your balance onto a blank (choosing a denomination); RIGHT-CLICKING a
- * written disk READS it — its full value credits your balance and the media reverts to a blank (disks
+ * written disk READS it - its full value credits your balance and the media reverts to a blank (disks
  * are reusable floppies, never consumed). This makes Data craftable + tradeable: the GPU recipe eats a
  * kilobyte disk, which is how "a GPU costs Data" is paid at craft time.
  *
- * <p>Denominations are <b>baked constants</b> (binary ladder — it's a Data disk), same anti-p2w rule as
+ * <p>Denominations are <b>baked constants</b> (binary ladder - it's a Data disk), same anti-p2w rule as
  * every other rate in the mod: no config. {@code value == 0} is blank media.
  */
 public class DataDiskItem extends Item {
@@ -37,8 +37,8 @@ public class DataDiskItem extends Item {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         ItemStack stack = user.getStackInHand(hand);
         if (world.isClient) return TypedActionResult.success(stack, true);
-        if (value <= 0) {   // blank — point at the drive
-            user.sendMessage(Text.literal("§7[Greener Pastures]§r Blank media — write Data onto it from the Notebook's Dashboard."), false);
+        if (value <= 0) {   // blank - point at the drive
+            user.sendMessage(Text.literal("§7[Greener Pastures]§r Blank media - write Data onto it from the Notebook's Dashboard."), false);
             return TypedActionResult.pass(stack);
         }
         if (user instanceof ServerPlayerEntity player && player.getServer() != null) {

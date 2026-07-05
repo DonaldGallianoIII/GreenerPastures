@@ -9,8 +9,8 @@ import net.minecraft.util.Identifier;
 
 /**
  * Server → client: the focused pasture's <b>extras</b> that don't fit {@link NotebookPastureConfigS2C}'s
- * maxed tuple — as one JSON blob (the established tuple-6 dodge): the health strip (#37) + the slotted
- * Kernel's breeding-meta loadout (nature/ball/EV/ability/egg-moves — #34/#35 display). Rides with every
+ * maxed tuple - as one JSON blob (the established tuple-6 dodge): the health strip (#37) + the slotted
+ * Kernel's breeding-meta loadout (nature/ball/EV/ability/egg-moves - #34/#35 display). Rides with every
  * {@code pushPastureConfig}; pos-keyed so the client caches it alongside the config (stale-while-revalidate).
  *
  * <p>Shape: {@code {"health":[{"id","icon","text"}...], "kernel":{"nature","ball","ev","ha","moves"}|null}}

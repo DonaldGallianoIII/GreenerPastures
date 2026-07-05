@@ -11,9 +11,9 @@ import java.util.List;
 
 /**
  * Server → client: the player's per-player BioBank contents for the browse accordion (INTERACTIVE_SPEC §3.3).
- * Each {@link Entry} carries an egg's full competitive card — species · shiny · per-stat IVs[6] · per-stat
+ * Each {@link Entry} carries an egg's full competitive card - species · shiny · per-stat IVs[6] · per-stat
  * EVs[6] (HP·Atk·Def·SpA·SpD·Spe order) · nature · gender · ability (best-effort, "" if unavailable).
- * (Tera / ball / OT / moves are post-hatch, so not part of an egg's spec — §7.3.)
+ * (Tera / ball / OT / moves are post-hatch, so not part of an egg's spec - §7.3.)
  */
 public record NotebookBioBankS2C(int total, List<Entry> entries) implements CustomPayload {
 

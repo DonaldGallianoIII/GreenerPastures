@@ -18,15 +18,15 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * MC adapter for the {@link AttributeBuff} enchant boosts — adds/updates/removes a <b>transient</b>
+ * MC adapter for the {@link AttributeBuff} enchant boosts - adds/updates/removes a <b>transient</b>
  * {@code EntityAttributeModifier} on the player so the rented buff is delivered the clean, non-destructive way:
  * it never writes an ItemStack (no dupe/desync surface) and syncs over the attribute channel the client already
- * trusts. The modifiers are temporary (never saved to NBT) — a lapsed buff just vanishes, and a relog/respawn
+ * trusts. The modifiers are temporary (never saved to NBT) - a lapsed buff just vanishes, and a relog/respawn
  * resets the player's attributes so the settle loop simply re-applies next second.
  *
  * <p>Called from {@link DaemonBuffs} once per second: {@link #reconcile} brings the player's modifiers in line
  * with what they paid for (granting/scaling present buffs, stripping absent ones), and {@link #clear} strips
- * everything when the player drops the Daemon or can't pay. Both run on the server thread only — the
+ * everything when the player drops the Daemon or can't pay. Both run on the server thread only - the
  * {@link #attributed} guard keeps {@code clear} a cheap no-op for the (vast) majority of players we never touched.
  */
 public final class DaemonAttributeBuffs {
@@ -43,7 +43,7 @@ public final class DaemonAttributeBuffs {
         ATTRS.put(AttributeBuff.MINING_DAMAGE,   EntityAttributes.PLAYER_BLOCK_BREAK_SPEED);
     }
 
-    /** The buffs this adapter delivers — folded into {@code DaemonBuffs.SUPPORTED} so they're billed only here. */
+    /** The buffs this adapter delivers - folded into {@code DaemonBuffs.SUPPORTED} so they're billed only here. */
     public static final Set<BuffId> DELIVERED;
     static {
         EnumSet<BuffId> s = EnumSet.noneOf(BuffId.class);
@@ -59,7 +59,7 @@ public final class DaemonAttributeBuffs {
         boolean any = false;
         for (AttributeBuff ab : AttributeBuff.values()) {
             EntityAttributeInstance inst = player.getAttributeInstance(ATTRS.get(ab));
-            if (inst == null) continue;                 // attribute somehow absent on this entity — skip defensively
+            if (inst == null) continue;                 // attribute somehow absent on this entity - skip defensively
             Identifier id = Identifier.of(NS, ab.modifierPath());
             int tier = paid.tier(ab.buff);
             if (tier <= 0) { inst.removeModifier(id); continue; }

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-/** Headless tests for the console APPLY_AUGMENT arg grammar (#34/#35) — malformed input must reject cleanly. */
+/** Headless tests for the console APPLY_AUGMENT arg grammar (#34/#35) - malformed input must reject cleanly. */
 class AugmentArgTest {
 
     @Test

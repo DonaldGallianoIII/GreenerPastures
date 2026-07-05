@@ -8,10 +8,10 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 /**
- * Client → server: toggle the pasture's <b>operator claim</b> — the locked-boolean "box" that decides who
+ * Client → server: toggle the pasture's <b>operator claim</b> - the locked-boolean "box" that decides who
  * pays the Soul-Tether Data cost (shared group pastures). The server applies
  * {@link com.greenerpastures.pasture.breeding.PastureClaim}. Sent by the wand GUI's claim box (the box UI
- * is pending — the functionality + this packet ship first).
+ * is pending - the functionality + this packet ship first).
  */
 public record ClaimOperatorPayload(BlockPos pos) implements CustomPayload {
     public static final Id<ClaimOperatorPayload> ID =

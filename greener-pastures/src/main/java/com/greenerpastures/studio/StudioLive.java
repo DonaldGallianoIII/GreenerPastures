@@ -15,9 +15,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * Design Studio — INTERACTIVE mode. A desktop window that runs the real {@link DaemonController}
+ * Design Studio - INTERACTIVE mode. A desktop window that runs the real {@link DaemonController}
  * (the same state + input code as in-game), so you can drag nodes, wire pairs, right-click to unpair,
- * scroll to zoom — exactly like the Minecraft screen, but without launching Minecraft.
+ * scroll to zoom - exactly like the Minecraft screen, but without launching Minecraft.
  *
  * <p>Run: {@code ./gradlew studioLive}. Needs a desktop display (WSLg on Win11, or an X server).
  */
@@ -30,7 +30,7 @@ public final class StudioLive {
 
     private static void open() {
         DaemonController ctrl = StudioData.demoController();
-        JFrame frame = new JFrame("Greener Pastures — Daemon (Design Studio · live)");
+        JFrame frame = new JFrame("Greener Pastures - Daemon (Design Studio · live)");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         DaemonPanel panel = new DaemonPanel(ctrl);
         frame.setContentPane(panel);

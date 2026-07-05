@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Mon-compression rails — every dupe/strand gate, in refusal-priority order. */
+/** Mon-compression rails - every dupe/strand gate, in refusal-priority order. */
 class SpecimenRulesTest {
 
     @Test
@@ -43,9 +43,9 @@ class SpecimenRulesTest {
     @Test
     void releaseGates() {
         assertNull(SpecimenRules.releaseRefusal(true, true));
-        assertEquals("This disk is blank — archive a party mon from the Notebook's Specimens tab.",
+        assertEquals("This disk is blank - archive a party mon from the Notebook's Specimens tab.",
                 SpecimenRules.releaseRefusal(false, true));
-        assertEquals("Party and PC are both full — no room to release.",
+        assertEquals("Party and PC are both full - no room to release.",
                 SpecimenRules.releaseRefusal(true, false));
     }
 }

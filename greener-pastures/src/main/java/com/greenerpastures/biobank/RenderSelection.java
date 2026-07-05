@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Splits a BioBank's stored eggs into <b>keep</b> vs <b>render</b> — the filter on the
+ * Splits a BioBank's stored eggs into <b>keep</b> vs <b>render</b> - the filter on the
  * BioBank → Renderer step ("you only ever render the cull, never the eggs you wanted"). The keep rule
  * is a {@link ValueRule}; everything it doesn't deem worth keeping becomes the render batch (the cull →
  * Data). Minecraft-free. The {@link RenderLedger} then previews that render batch with its own

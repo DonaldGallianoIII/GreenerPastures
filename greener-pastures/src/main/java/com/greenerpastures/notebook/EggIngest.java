@@ -20,18 +20,18 @@ import java.util.UUID;
  * Eggs-as-data ingest (EGG_PIPELINE_SPEC). A Kernel'd <b>+ linked</b> pasture routes each bred egg here, and the
  * pasture's <b>Daemon graph</b> ({@link GraphEval}) decides its fate: <b>KEEP</b> → stored losslessly in the
  * owner's BioBank, or <b>VOID</b> → rendered to Data (credited + logged) when the player has wired a filter that
- * culls it. With no graph (or nothing wired to the egg output) it keeps <i>everything</i> — the old behaviour, so
+ * culls it. With no graph (or nothing wired to the egg output) it keeps <i>everything</i> - the old behaviour, so
  * existing pastures are unchanged. Shiny / unreadable eggs are always kept (SACRED, in {@link GraphEval}).
  *
  * <p>The <b>void log is the trust feature</b> (VISUAL_SCRIPTING_UI_IDEA.md): every void is an observable
- * {@code egg_voided} analytics event <i>and</i> a {@code GpLog} line — so "no eggs for hours" reads as
+ * {@code egg_voided} analytics event <i>and</i> a {@code GpLog} line - so "no eggs for hours" reads as
  * "produced N, voided N-1 by IV≥31, kept 1", not "bugged". Returns false only when the BioBank is full, so the
  * breeder trays the physical egg and nothing is lost. Never throws.
  */
 public final class EggIngest {
     private EggIngest() {}
 
-    /** Data credited per egg the graph renders (voids) — a modest per-egg trickle; the dark-economy income. */
+    /** Data credited per egg the graph renders (voids) - a modest per-egg trickle; the dark-economy income. */
     private static final long VOID_DATA_PER_EGG = 10L;
 
     private static final java.util.Random BREADCRUMB = new java.util.Random();
@@ -56,7 +56,7 @@ public final class EggIngest {
                         "filter", filter, "data", Long.toString(value));
                 EggLog.record(owner, species, true, filter);   // player-facing void feed
                 EggLog.addData(owner, value);                  // dashboard "Data earned"
-                // The breadcrumb (1/2000 renders): the void stream coughs up ILLICIT data — the disk lands in
+                // The breadcrumb (1/2000 renders): the void stream coughs up ILLICIT data - the disk lands in
                 // the ritual spoils pool with a whisper, pointing players at the hidden Black Market ritual.
                 if (BREADCRUMB.nextInt(2000) == 0) {
                     com.greenerpastures.ritual.RitualLedger.get(server).addLoot(owner,

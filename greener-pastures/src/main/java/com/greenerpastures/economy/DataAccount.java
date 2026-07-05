@@ -1,9 +1,9 @@
 package com.greenerpastures.economy;
 
 /**
- * A player's <b>Data</b> balance — the one currency, which comes ONLY from rendered (culled) eggs.
+ * A player's <b>Data</b> balance - the one currency, which comes ONLY from rendered (culled) eggs.
  * Minecraft-free + unit-tested; the MC adapter persists one of these per player. Starvation is just an
- * inability to pay (tethers go inert, base breeding continues) — the balance is never negative and
+ * inability to pay (tethers go inert, base breeding continues) - the balance is never negative and
  * never destructive.
  */
 public final class DataAccount {
@@ -24,7 +24,7 @@ public final class DataAccount {
     /** True if the balance can cover {@code amount}. */
     public boolean canAfford(long amount) { return amount <= 0 || balance >= amount; }
 
-    /** Pay {@code amount} iff affordable; returns whether it was paid. Never goes negative — an unpaid
+    /** Pay {@code amount} iff affordable; returns whether it was paid. Never goes negative - an unpaid
      *  debit is a "starve" (the caller leaves that tether/buff inert this tick). */
     public boolean tryDebit(long amount) {
         if (amount <= 0) return true;

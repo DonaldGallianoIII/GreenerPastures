@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Client-side cache the {@link NotebookScreen} renders from (NOTEBOOK_INTERACTIVE_SPEC §2.1) — the screen never
+ * Client-side cache the {@link NotebookScreen} renders from (NOTEBOOK_INTERACTIVE_SPEC §2.1) - the screen never
  * touches server objects, it reads this. Updated by the S2C receivers (wired in {@code GreenerPasturesClient}),
  * which then call {@link NotebookScreen#refreshIfOpen()} to rebuild the open console.
  *
@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class NotebookState {
     private NotebookState() {}
 
-    /** False until the first status push lands — lets the status bar show "…" instead of a bogus 0. */
+    /** False until the first status push lands - lets the status bar show "…" instead of a bogus 0. */
     public static volatile boolean hasStatus = false;
     public static volatile long data = 0L;
     public static volatile int gpu = 0;
@@ -77,7 +77,7 @@ public final class NotebookState {
 
     // ── Pastures tab ─────────────────────────────────────────────────────────
     public static volatile List<PastureSnapshot> pastures = List.of();
-    /** #37 — {@code {"<dim|pos>":"flagId,flagId"}} badge markers per snapshot (server-built JSON). */
+    /** #37 - {@code {"<dim|pos>":"flagId,flagId"}} badge markers per snapshot (server-built JSON). */
     public static volatile String pasturesHealthJson = "";
 
     public static boolean applyPastures(NotebookPasturesS2C p) {
@@ -91,12 +91,12 @@ public final class NotebookState {
     /** The pasture the player right-clicked with the Notebook (its editable config), or null when none is focused. */
     public static volatile NotebookPastureConfigS2C pastureConfig = null;
 
-    /** True while a pasture's real config is round-tripping — the UI shows a "loading" shell, not stale/empty data. */
+    /** True while a pasture's real config is round-tripping - the UI shows a "loading" shell, not stale/empty data. */
     public static volatile boolean pastureConfigLoading = false;
 
     /** Last-known config/graph per pasture (stale-while-revalidate): a reopened pasture renders its cached view
-     *  INSTANTLY and the server refresh lands silently — no loading state for pastures you've seen this session.
-     *  Keyed by {@link #posKey} (dim + pos — position alone collides across dimensions, R3 BUG-1) and LRU-capped
+     *  INSTANTLY and the server refresh lands silently - no loading state for pastures you've seen this session.
+     *  Keyed by {@link #posKey} (dim + pos - position alone collides across dimensions, R3 BUG-1) and LRU-capped
      *  so a mega-farm session can't grow the client heap unbounded (R3 client #6). */
     public static final Map<String, NotebookPastureConfigS2C> pastureConfigCache = lru(128);
     public static final Map<String, String> pastureGraphCache = lru(128);
@@ -120,7 +120,7 @@ public final class NotebookState {
         p = withStatsBackfill(p, pastureConfigCache.get(key));
         pastureConfigCache.put(key, p);
         NotebookPastureConfigS2C cur = pastureConfig;
-        if (cur != null && cur.pos() == p.pos()) {   // only the FOCUSED pasture updates the live view —
+        if (cur != null && cur.pos() == p.pos()) {   // only the FOCUSED pasture updates the live view -
             pastureConfig = p;                        // a background prefetch must never hijack the open screen
             pastureConfigLoading = false;
             return true;
@@ -129,7 +129,7 @@ public final class NotebookState {
     }
 
     /** Stale-while-revalidate, done properly (BUG-012): the 1-min prefetch sweep sends the SAME pasture with a
-     *  stats-less roster shape, and it used to overwrite the focused view — genders vanished and every 2-parent
+     *  stats-less roster shape, and it used to overwrite the focused view - genders vanished and every 2-parent
      *  line read "this pair can't breed". A stats-less incoming entry keeps the cached entry's stats; entries
      *  that arrive WITH stats always win (a real full push still refreshes everything). */
     private static NotebookPastureConfigS2C withStatsBackfill(NotebookPastureConfigS2C p,
@@ -170,7 +170,7 @@ public final class NotebookState {
         String json = p.json() == null ? "" : p.json();
         pastureExtraCache.put(posKey(p.pos()), json);
         NotebookPastureConfigS2C cur = pastureConfig;
-        if (cur != null && cur.pos() == p.pos()) {   // focused only — prefetches stay cache-only
+        if (cur != null && cur.pos() == p.pos()) {   // focused only - prefetches stay cache-only
             pastureExtraJson = json;
             return true;
         }
@@ -181,7 +181,7 @@ public final class NotebookState {
         String json = p.json() == null ? "" : p.json();
         pastureGraphCache.put(posKey(p.pos()), json);
         NotebookPastureConfigS2C cur = pastureConfig;
-        if (cur != null && cur.pos() == p.pos()) {   // focused only — prefetches stay cache-only
+        if (cur != null && cur.pos() == p.pos()) {   // focused only - prefetches stay cache-only
             pastureGraphJson = json;
             return true;
         }
@@ -295,7 +295,7 @@ public final class NotebookState {
         return changed;
     }
 
-    /** Wipe the whole client cache — called on world-leave so a new world (or server) never renders the previous
+    /** Wipe the whole client cache - called on world-leave so a new world (or server) never renders the previous
      *  one's data. The pasture caches are keyed by POSITION only, so cross-world they could even collide. */
     public static void clearAll() {
         hasStatus = false; data = 0L; gpu = 0; daemonOn = false;

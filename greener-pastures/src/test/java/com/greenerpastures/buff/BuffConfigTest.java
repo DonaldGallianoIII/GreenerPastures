@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Headless tests for the buff config DEFAULTS + the worker-not-fighter invariant. Never calls {@code load/save}
- * so Gson (lazy in {@link BuffConfig}) is never loaded — the test JVM has no Gson on its runtime classpath. JSON
+ * so Gson (lazy in {@link BuffConfig}) is never loaded - the test JVM has no Gson on its runtime classpath. JSON
  * round-trip is verified in-game (QA).
  */
 class BuffConfigTest {
@@ -47,7 +47,7 @@ class BuffConfigTest {
 
     @Test
     void catalogHoldsTheWorkerNotFighterInvariant() {
-        // The catalog IS the allow-list — assert no combat / binary-capped enchant ever sneaks in (a +N on
+        // The catalog IS the allow-list - assert no combat / binary-capped enchant ever sneaks in (a +N on
         // Sharpness/Protection or on Silk Touch/Mending/Infinity would break the PvP-neutral guarantee).
         for (BuffId b : BuffId.values()) {
             String id = b.id;
@@ -59,7 +59,7 @@ class BuffConfigTest {
                     id + " must not be a combat enchant");
             assertFalse(id.equals("silk_touch") || id.equals("mending") || id.equals("infinity")
                             || id.equals("aqua_affinity") || id.equals("depth_strider"),
-                    id + " is binary/already-capped — a +N is meaningless, must be auto-skipped");
+                    id + " is binary/already-capped - a +N is meaningless, must be auto-skipped");
         }
     }
 }

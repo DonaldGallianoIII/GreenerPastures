@@ -10,7 +10,7 @@ import net.minecraft.util.Identifier;
 import java.util.List;
 
 /**
- * Server → client: the <b>Kernel Augmenter</b> tab (INTERACTIVE_SPEC §3.5) — the first held Kernel's tier +
+ * Server → client: the <b>Kernel Augmenter</b> tab (INTERACTIVE_SPEC §3.5) - the first held Kernel's tier +
  * slot capacity/usage + the augment catalog ({@link Aug}: type · effect label · slot cost · applied). Targets
  * the first {@code BreedingUpgradeItem} in the player's inventory. GPU/Data costs are <b>deferred</b> (§7.5);
  * the only live gate is <b>slot capacity + no-dupe</b>.
@@ -19,7 +19,7 @@ public record NotebookAugmenterS2C(boolean hasKernel, String tier, int slotsUsed
         implements CustomPayload {
 
     /** {@code slotCost} = slots the NEXT action (install or upgrade) would occupy TOTAL; {@code appliedLevel}
-     *  0 = not installed. Exactly six fields — the tuple-codec ceiling. */
+     *  0 = not installed. Exactly six fields - the tuple-codec ceiling. */
     public record Aug(String type, String label, int slotCost, int appliedLevel, int gpuCost, int maxLevel) {
         public static final PacketCodec<RegistryByteBuf, Aug> CODEC = PacketCodec.tuple(
                 PacketCodecs.STRING, Aug::type,

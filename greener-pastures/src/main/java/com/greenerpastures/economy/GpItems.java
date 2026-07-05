@@ -10,10 +10,10 @@ import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 
 /**
- * Art-first item registrations for the console economy — the <b>GPU</b> augment reagent, the <b>Data-disk</b>
+ * Art-first item registrations for the console economy - the <b>GPU</b> augment reagent, the <b>Data-disk</b>
  * denominations (the physical form of the {@code Data} balance), and the <b>Notebook</b> (the future unified
- * console). These are currently plain items carrying real 32×32 art; behaviour — reading/writing Data disks,
- * opening the console, applying augments — lands with the Notebook build (see {@code NOTEBOOK_CONSOLE_SPEC.md}).
+ * console). These are currently plain items carrying real 32×32 art; behaviour - reading/writing Data disks,
+ * opening the console, applying augments - lands with the Notebook build (see {@code NOTEBOOK_CONSOLE_SPEC.md}).
  */
 public final class GpItems {
     private GpItems() {}
@@ -41,7 +41,7 @@ public final class GpItems {
                 new com.greenerpastures.specimen.SpecimenDiskItem(new Item.Settings().maxCount(16)));
         NOTEBOOK      = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "notebook"),
                 new NotebookItem(new Item.Settings().maxCount(1)));
-        // Data disks (§5c — Data's physical form): a binary denomination ladder, baked (no config, anti-p2w).
+        // Data disks (§5c - Data's physical form): a binary denomination ladder, baked (no config, anti-p2w).
         // The Notebook's Dashboard WRITES a blank into a denomination; right-click READS it back to balance.
         DISK_BLANK    = disk("data_disk_blank", 0L);
         DISK_BYTE     = disk("data_disk_byte", 8L);
@@ -50,10 +50,10 @@ public final class GpItems {
         DISK_GIGABYTE = disk("data_disk_gigabyte", 262_144L);
         DISK_TERABYTE = disk("data_disk_terabyte", 4_194_304L);
         DISK_ROCKET   = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "data_disk_rocket"),
-                new IllicitDiskItem(new Item.Settings().maxCount(16)));   // NOT a denomination — the corruption orb (Team Rocket contraband)
+                new IllicitDiskItem(new Item.Settings().maxCount(16)));   // NOT a denomination - the corruption orb (Team Rocket contraband)
 
         // One dedicated creative tab for the whole mod (release polish): auto-collects every item registered
-        // under our namespace — entries resolve LAZILY (on tab open), so registration order doesn't matter.
+        // under our namespace - entries resolve LAZILY (on tab open), so registration order doesn't matter.
         Registry.register(Registries.ITEM_GROUP, Identifier.of(GreenerPastures.MOD_ID, "all"),
                 net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup.builder()
                         .icon(() -> new net.minecraft.item.ItemStack(NOTEBOOK))

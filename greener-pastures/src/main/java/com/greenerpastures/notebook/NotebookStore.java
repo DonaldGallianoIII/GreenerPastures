@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * World-saved per-player <b>Notebook item storage</b> — the digital warehouse harvested loot flows into
+ * World-saved per-player <b>Notebook item storage</b> - the digital warehouse harvested loot flows into
  * (see {@code NOTEBOOK_CONSOLE_SPEC.md} §3). MC persistence adapter around the pure {@link NotebookStorage};
  * mirrors {@code DataStore}. Player-bound, so the warehouse survives losing the Notebook item.
  */
@@ -21,7 +21,7 @@ public final class NotebookStore extends PersistentState {
     private final Map<UUID, NotebookStorage> stores = new HashMap<>();
 
     // Per-player encoded-NBT cache (perf-audit R3 #3/#7): the harvest deposits every minute pin this store
-    // dirty, and PersistentState re-encodes EVERYTHING on each autosave — so reuse last save's compound for
+    // dirty, and PersistentState re-encodes EVERYTHING on each autosave - so reuse last save's compound for
     // every player whose warehouse didn't change. rev bumps on mutation; the on-disk format is unchanged.
     private final Map<UUID, Long> revs = new HashMap<>();
     private final Map<UUID, NbtCompound> encoded = new HashMap<>();

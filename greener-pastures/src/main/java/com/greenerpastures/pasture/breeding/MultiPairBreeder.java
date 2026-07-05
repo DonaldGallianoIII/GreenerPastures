@@ -28,7 +28,7 @@ import java.util.Set;
 /**
  * The multi-pair breeding engine. Driven by a stable Fabric server-tick event (no mixin) over the
  * pasture records in {@link PastureRegistry}: every breeding interval, each compatible pair in a
- * pasture with a Pasture Upgrade slotted lays one egg in parallel — same per-egg rate as Cobbreeding,
+ * pasture with a Pasture Upgrade slotted lays one egg in parallel - same per-egg rate as Cobbreeding,
  * just N pairs at once. Per-pasture timers are in-memory; a missed interval after a restart is harmless.
  *
  * <p>Pairing comes from the wand's Breeding Arrangement board ({@link PastureData#pairings}: tethering
@@ -46,10 +46,10 @@ public final class MultiPairBreeder {
      *  baked into a world save. */
     public static volatile long testIntervalTicks = 0L;
 
-    /** Catch-up ceiling for missed broods (12h of world time) — mirrors PastureHarvest's drop catch-up. */
+    /** Catch-up ceiling for missed broods (12h of world time) - mirrors PastureHarvest's drop catch-up. */
     private static final long MAX_CATCHUP_TICKS = 12L * 60L * 60L * 20L;
 
-    /** The augment functions the breeder actually applies to the egg — and therefore the only tethers it pays
+    /** The augment functions the breeder actually applies to the egg - and therefore the only tethers it pays
      *  burn for: Shiny (proc), Speed (cadence), IV Floor (perfect IVs) and EV (EV head-start). Drop Rate/Yield
      *  belong to the Harvester, Enrichment to the Renderer: each consumer drains its own set on its own clock
      *  ({@link TetherRuntime#resolveFor}), so a tether is never double-charged. */
@@ -81,14 +81,14 @@ public final class MultiPairBreeder {
                 if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;
                 BlockEntity be = world.getBlockEntity(pos);
                 if (!(be instanceof PokemonPastureBlockEntity pasture)) {
-                    // chunk loaded but the pasture block is GONE (TNT / creeper / command / piston — none
+                    // chunk loaded but the pasture block is GONE (TNT / creeper / command / piston - none
                     // fire PlayerBlockBreakEvents). Reclaim its items + record AFTER the loop (removing from
                     // the live sub-map mid-iteration would CME). (re-audit H2)
                     (orphans != null ? orphans : (orphans = new java.util.ArrayList<>())).add(pos);
                     continue;
                 }
                 // Self-heal the pairing board: a mon untethered/released while this pasture is LOADED leaves a
-                // stale UUID in pd.pairings — harmless to breeding (pairs resolve against the live roster) but
+                // stale UUID in pd.pairings - harmless to breeding (pairs resolve against the live roster) but
                 // it renders as a hex-labelled ghost parent in the console graph (BUG-011). The roster here is
                 // authoritative (chunk loaded, BE present), so pruning is safe; never do this for unloaded pastures.
                 if (!pd.pairings.isEmpty()) {
@@ -107,7 +107,7 @@ public final class MultiPairBreeder {
                 if (tier == null) continue;                                  // present but no Pasture Upgrade slotted
                 if (!CobbreedingBridge.isBreedingActivated(be.getCachedState())) continue;
 
-                // Only our configured pairs should breed — keep Cobbreeding's native ticker from laying
+                // Only our configured pairs should breed - keep Cobbreeding's native ticker from laying
                 // a rogue random egg by holding its timer open every scan (not just on our breed ticks).
                 CobbreedingBridge.suppressNativeBreeding(pos, now);
 
@@ -116,19 +116,19 @@ public final class MultiPairBreeder {
                 int laid = 0;
                 if (now >= pd.nextBreedTick) {
                     // Resolve the Kernel's base mods × slotted Soul Tethers against the operator's Data:
-                    // fed → amplify + drain; starved → free base, no drain (TetherRuntime — all tested).
-                    // Only the breeding-function tethers (shiny/speed) — the Harvester/Renderer drain theirs.
+                    // fed → amplify + drain; starved → free base, no drain (TetherRuntime - all tested).
+                    // Only the breeding-function tethers (shiny/speed) - the Harvester/Renderer drain theirs.
                     long balance = (pd.owner != null) ? DataStore.get(server).balanceOf(pd.owner) : 0L;
                     TetherRuntime.Resolution res = TetherRuntime.resolveFor(
                             pd.baseAugmentLevels(), pd.slottedTethers(), balance, BREEDING_FUNCTIONS);
 
                     long interval = testIntervalTicks > 0
-                            ? testIntervalTicks   // QA override (/gp breed interval N) — fixed rate, floor bypassed
+                            ? testIntervalTicks   // QA override (/gp breed interval N) - fixed rate, floor bypassed
                             : speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
                                     res.effective().speedLevel(), tier.baseSpeedFactor());
 
                     // CATCH-UP: broods missed while this chunk was unloaded (the loop skips unloaded chunks, so
-                    // lastBreedTick froze). Rolled now with the current pairs/Kernel — every egg still walks the
+                    // lastBreedTick froze). Rolled now with the current pairs/Kernel - every egg still walks the
                     // full pipeline (shiny proc, Daemon graph, BioBank/void log, goals). Capped at 12h; offline
                     // gaps are gated out by OfflineProgress (online away-time counts, offline doesn't). broods=1
                     // is the normal loaded-chunk case.
@@ -139,14 +139,14 @@ public final class MultiPairBreeder {
                     }
                     pd.lastBreedTick = now;
 
-                    // Build the pair list ONCE for all broods — the roster/pairings can't change mid-catch-up
+                    // Build the pair list ONCE for all broods - the roster/pairings can't change mid-catch-up
                     // (the chunk was unloaded), and a 12h catch-up is up to ~288 broods (perf-audit R3 tick #8).
                     java.util.List<java.util.List<PokemonPastureBlockEntity.Tethering>> pairs = buildPairs(pasture, tier, pd);
                     String mode = pd.pairings.isEmpty() ? "auto" : "buckets";
                     int productiveBroods = 0;
                     for (int b = 0; b < broods && !pairs.isEmpty(); b++) {
                         int got = breedPairs(world, pos, tier, pd, now, res.effective(), pairs, mode);
-                        if (got == 0 && laid == 0 && b > 2) break;   // sterile pasture — don't grind 288 no-op broods
+                        if (got == 0 && laid == 0 && b > 2) break;   // sterile pasture - don't grind 288 no-op broods
                         if (got > 0) productiveBroods++;
                         laid += got;
                     }
@@ -157,7 +157,7 @@ public final class MultiPairBreeder {
                                 (pd.name.isEmpty() ? pos.toShortString() : pd.name)
                                 + " caught up " + broods + " broods while away → " + laid + " eggs");
                     }
-                    if (laid > 0 && res.drain() > 0 && pd.owner != null) {   // tethers earned their burn — per productive brood
+                    if (laid > 0 && res.drain() > 0 && pd.owner != null) {   // tethers earned their burn - per productive brood
                         DataStore.get(server).tryDebit(pd.owner, res.drain() * Math.max(1, productiveBroods));
                         GpLog.d("tether", "drain", "pos", pos.toShortString(),
                                 "data", res.drain() * Math.max(1, productiveBroods), "owner", pd.owner.toString());
@@ -171,7 +171,7 @@ public final class MultiPairBreeder {
                 }
             } catch (Throwable t) {
                 // One misbehaving pasture (a tethering whose Pokémon failed to deserialize, a Cobblemon/
-                // Cobbreeding API drift, etc.) must NEVER take down the world tick — skip it, keep serving
+                // Cobbreeding API drift, etc.) must NEVER take down the world tick - skip it, keep serving
                 // the rest. The bridge already self-disables on egg-build failure; this guards the rest.
                 GpLog.w("breeder", "pasture_skip", "pos", pos.toShortString(), "err", String.valueOf(t));
             }
@@ -188,7 +188,7 @@ public final class MultiPairBreeder {
     }
 
     /** Faster cadence = Speed augment (×1.5/×2/×3 by effective level) × the KERNEL's own tier perk
-     *  ({@link BreedingTier#baseSpeedFactor()} — every kernel breeds faster, greener much faster), floored
+     *  ({@link BreedingTier#baseSpeedFactor()} - every kernel breeds faster, greener much faster), floored
      *  so breeding never runs absurdly fast (the floor protects the server). */
     private static long speedAdjustedInterval(long baseInterval, int speedLevel, double tierFactor) {
         double factor = switch (Math.max(0, Math.min(3, speedLevel))) {
@@ -203,7 +203,7 @@ public final class MultiPairBreeder {
         return Math.max(3000L, Math.round(baseInterval / (factor * Math.max(1.0, tierFactor))));
     }
 
-    /** Snapshot the roster + resolve the configured pairs — hoisted out of the brood loop so a catch-up
+    /** Snapshot the roster + resolve the configured pairs - hoisted out of the brood loop so a catch-up
      *  builds them once, not per brood. snapshot: getTetheredPokemon() hands back Cobblemon's LIVE backing
      *  list; iterating it directly while Cobblemon mutates it (tether / release / checkPokemon) risks a CME
      *  (re-audit M1). */
@@ -219,7 +219,7 @@ public final class MultiPairBreeder {
     }
 
     /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue.
-     *  {@code eff} is the resolved effective augments (base × any fed breeding Tether) from onWorldTick — it
+     *  {@code eff} is the resolved effective augments (base × any fed breeding Tether) from onWorldTick - it
      *  shapes each egg's shiny proc, IV floor and EV floor. {@code pairs} comes prebuilt from
      *  {@link #buildPairs} (reused across catch-up broods). */
     private static int breedPairs(ServerWorld world, BlockPos pos, BreedingTier tier, PastureData pd, long now,

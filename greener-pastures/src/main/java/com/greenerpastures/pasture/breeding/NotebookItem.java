@@ -26,7 +26,7 @@ import net.minecraft.world.World;
 import java.util.List;
 
 /**
- * The Notebook — the player's unified console (see {@code NOTEBOOK_CONSOLE_SPEC.md}). It <b>replaces the
+ * The Notebook - the player's unified console (see {@code NOTEBOOK_CONSOLE_SPEC.md}). It <b>replaces the
  * Pasture Wand</b> and has two open modes:
  * <ul>
  *   <li><b>Right-click a pasture</b> → that pasture's config screen ({@link #openMenu}).</li>
@@ -75,7 +75,7 @@ public class NotebookItem extends Item {
 
     /**
      * Open a pasture's config screen (moved here from the retired Pasture Wand). Shared by the Notebook's
-     * right-click-a-pasture path and the {@code OpenPasturePayload} Esc-return path — so closing a sub-screen
+     * right-click-a-pasture path and the {@code OpenPasturePayload} Esc-return path - so closing a sub-screen
      * with Esc lands the player back on this menu instead of dropping to the world.
      */
     public static void openMenu(ServerPlayerEntity sp, BlockPos pasturePos) {

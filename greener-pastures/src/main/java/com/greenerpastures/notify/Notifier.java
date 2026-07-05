@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The MC side of notifications — observes the analytics event stream (called from {@code Analytics.record} with
+ * The MC side of notifications - observes the analytics event stream (called from {@code Analytics.record} with
  * the stamped event row), runs the pure {@link NotifyRules}, and delivers the message + chime. Two delivery
  * shapes: a <b>broadcast</b> (the shiny ping, to {@code all} / {@code ops}) and an <b>owner-targeted</b> ping (the
  * Data milestone, only to the player whose Data crossed). Fully wrapped so a notification can never break event

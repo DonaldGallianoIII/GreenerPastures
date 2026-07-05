@@ -5,11 +5,11 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
 /**
- * In-game {@link GpCanvas} backend — forwards to Minecraft's {@code DrawContext} + {@code TextRenderer}.
+ * In-game {@link GpCanvas} backend - forwards to Minecraft's {@code DrawContext} + {@code TextRenderer}.
  *
  * <p>Text scales <b>uniformly with the canvas transform</b>, so a label always stays inside its
  * (also-scaled) box at any zoom. Bitmap text softens a little at fractional zoom; truly crisp text at
- * every zoom needs a bundled vector font (a separate, later task — not worth faking).
+ * every zoom needs a bundled vector font (a separate, later task - not worth faking).
  */
 public class McGpCanvas implements GpCanvas {
     private final DrawContext ctx;
@@ -23,7 +23,7 @@ public class McGpCanvas implements GpCanvas {
     @Override public void fill(int x1, int y1, int x2, int y2, int argb) { ctx.fill(x1, y1, x2, y2, argb); }
     @Override public void gradient(int x1, int y1, int x2, int y2, int top, int bottom) { ctx.fillGradient(x1, y1, x2, y2, top, bottom); }
 
-    /** No native line in DrawContext — plot a continuous thickness-t line per segment (no gaps/cubes). */
+    /** No native line in DrawContext - plot a continuous thickness-t line per segment (no gaps/cubes). */
     @Override public void stroke(double[] xs, double[] ys, float width, int color) {
         int t = Math.max(1, Math.round(width));
         for (int i = 1; i < xs.length; i++) seg(xs[i - 1], ys[i - 1], xs[i], ys[i], t, color);

@@ -11,10 +11,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * The buffs a player has <b>compiled</b> onto a Daemon — its {@code greenerpastures:daemon_loadout} data
+ * The buffs a player has <b>compiled</b> onto a Daemon - its {@code greenerpastures:daemon_loadout} data
  * component, stored as {@code {buff id → level}} (BUG-004). Deliberately mirrors
  * {@link com.greenerpastures.pasture.breeding.Augments} (a Kernel's compiled mods): forward-compat string keys,
- * bounded entry count, level ≥1. The old global Mk-tier-while-held model is gone — a Daemon now grants only the
+ * bounded entry count, level ≥1. The old global Mk-tier-while-held model is gone - a Daemon now grants only the
  * buffs in this loadout, each at its chosen level, and is billed for <i>only</i> those. A cheap
  * Feather-Falling-only Daemon is a valid, minimal build.
  *
@@ -51,7 +51,7 @@ public record DaemonLoadout(Map<String, Integer> levels) {
         return b == null ? 0 : levels.getOrDefault(b.id, 0);
     }
 
-    /** Copy with {@code b} set to {@code lvl} (≤0 removes it) — one entry per buff, replace-in-place. */
+    /** Copy with {@code b} set to {@code lvl} (≤0 removes it) - one entry per buff, replace-in-place. */
     public DaemonLoadout withLevel(BuffId b, int lvl) {
         if (b == null) return this;
         Map<String, Integer> m = new LinkedHashMap<>(levels);

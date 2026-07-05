@@ -8,12 +8,12 @@ import java.util.List;
 
 /**
  * A Renderer's decision for one batch of pasture eggs: split into KEEP vs RENDER (cull → Data), value the
- * render batch, and — above all — <b>enforce the sacred shiny rule</b>: a shiny egg is NEVER rendered,
+ * render batch, and - above all - <b>enforce the sacred shiny rule</b>: a shiny egg is NEVER rendered,
  * whatever the {@link ValueRule} says. Minecraft-free + unit-tested.
  *
  * <p>The Renderer block is a thin adapter: it reads each tray egg into an {@link EggSummary}, calls
  * {@link #plan}, then removes exactly the {@code render} set and credits {@code data} to the owner. The
- * shiny guard lives here (not just in the adapter) so a mis-set {@link ValueRule} can never eat a shiny —
+ * shiny guard lives here (not just in the adapter) so a mis-set {@link ValueRule} can never eat a shiny -
  * the invariant is proven by a test, independent of any config.
  */
 public final class RenderRun {
@@ -29,7 +29,7 @@ public final class RenderRun {
      * Decide keep-vs-render for a batch and value the render set as Data.
      *
      * @param eggs                 the batch (e.g. a pasture's egg tray), MC-free summaries
-     * @param keep                 the value rule — eggs it deems valuable are kept
+     * @param keep                 the value rule - eggs it deems valuable are kept
      * @param baseValuePerEgg      Data per rendered egg (the economy's balance constant)
      * @param enrichmentMultiplier ≥1 Enrichment-tether multiplier (sub-1 / NaN floors to 1×)
      */
@@ -45,7 +45,7 @@ public final class RenderRun {
 
     /**
      * The per-egg decision the Renderer uses: an egg is RENDERED (culled → Data) iff the value rule
-     * doesn't keep it AND it isn't shiny. <b>SACRED</b> — a shiny short-circuits to "never rendered",
+     * doesn't keep it AND it isn't shiny. <b>SACRED</b> - a shiny short-circuits to "never rendered",
      * whatever the rule says. The block adapter calls this per tray slot so the sacred-shiny invariant
      * has exactly one tested home, shared with {@link #plan}.
      */

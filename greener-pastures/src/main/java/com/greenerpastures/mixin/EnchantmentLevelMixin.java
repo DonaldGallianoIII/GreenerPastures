@@ -13,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * The read side of the Daemon enchant boost: adds the holder's resolved tier to the enchant level the loot
  * table reads. Gated entirely by {@link DaemonEnchantBoost}'s thread-local window (only set during a
- * fed-Daemon holder's block-drop resolution by {@link BlockDropBoostMixin}), so outside that window — tooltips,
- * anvils, grindstones, other players, the client — it is a no-op. Pure read interception: it never writes the
+ * fed-Daemon holder's block-drop resolution by {@link BlockDropBoostMixin}), so outside that window - tooltips,
+ * anvils, grindstones, other players, the client - it is a no-op. Pure read interception: it never writes the
  * ItemStack, so there is no dupe/desync/NBT path.
  */
 @Mixin(EnchantmentHelper.class)

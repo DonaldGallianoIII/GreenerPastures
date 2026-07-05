@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * Server → client: the Daemon <b>Compiler</b> tab (INTERACTIVE_SPEC §3.4). Carries the installable buff
- * <b>catalog</b> ({@link Buff}: id · label · category · cap · cost-per-tier — cap/cost come from server config),
+ * <b>catalog</b> ({@link Buff}: id · label · category · cap · cost-per-tier - cap/cost come from server config),
  * the held Daemon's installed <b>loadout</b> ({buff-id → tier}), its ON state, and the total <b>drain</b> Data/s.
  * Targets the first Daemon found in the player's inventory.
  */

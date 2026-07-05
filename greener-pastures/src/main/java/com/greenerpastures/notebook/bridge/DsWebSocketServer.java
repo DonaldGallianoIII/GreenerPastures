@@ -16,13 +16,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 
 /**
- * A tiny, dependency-free WebSocket server (RFC 6455, text frames) bound to <b>loopback only</b> — the transport
+ * A tiny, dependency-free WebSocket server (RFC 6455, text frames) bound to <b>loopback only</b> - the transport
  * for the Notebook console's React UI (dev browser AND, later, MCEF in-game). Hand-rolled on a plain
  * {@link ServerSocket} so we nest <i>nothing</i> (no Netty HTTP codec): the traffic is small loopback JSON, so
  * this is more than enough and keeps the jar tiny.
  *
  * <p>Server→client frames are unmasked text; client→server frames are masked (we unmask). One reader thread per
- * connection; broadcasts fan out to all open connections. Never throws to callers — a bad socket just drops.
+ * connection; broadcasts fan out to all open connections. Never throws to callers - a bad socket just drops.
  */
 public final class DsWebSocketServer {
     private static final String WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";

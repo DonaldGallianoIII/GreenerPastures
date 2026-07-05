@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * Payload sent to the client when the Pasture Wand GUI opens: which pasture, its name, and its mon
- * roster (read server-side — the data Cobblemon doesn't sync to clients). Carried by the extended
+ * roster (read server-side - the data Cobblemon doesn't sync to clients). Carried by the extended
  * screen-handler, so the client GUI is built from real server data. (Pair count is derived live from
  * the synced upgrade slot, so it isn't sent here.)
  */

@@ -1,12 +1,12 @@
 package com.greenerpastures.pasture.breeding;
 
 /**
- * The bounded bonus shiny-reroll math — Greener Pastures' ONLY shiny contribution — lifted out of the
+ * The bounded bonus shiny-reroll math - Greener Pastures' ONLY shiny contribution - lifted out of the
  * Minecraft-bound {@code CobbreedingBridge} so it's unit-tested headless. Pure: the RNG rolls are passed
  * in.
  *
  * <p>Per egg the boost is ×(1+procChance), and because each egg sees only its own pasture's augment the
- * aggregate across any number of pastures is also ×(1+procChance) — it is mathematically incapable of
+ * aggregate across any number of pastures is also ×(1+procChance) - it is mathematically incapable of
  * exploding. {@link #effectiveOdds} replicates Cobbreeding's {@code calcShiny} from plain config values.
  */
 public final class ShinyOdds {
@@ -20,7 +20,7 @@ public final class ShinyOdds {
     public static double effectiveOdds(double baseRate, Float always, Float crystal, Float masuda,
                                        boolean parentAShiny, boolean parentBShiny, boolean differentOT) {
         // base "never shiny" (server set shinyRate=0, or NaN) ⇒ infinite odds ⇒ probability 0. Without this,
-        // baseRate 0 makes shinyProbability clamp to 1.0 and every proc becomes a GUARANTEED shiny — the
+        // baseRate 0 makes shinyProbability clamp to 1.0 and every proc becomes a GUARANTEED shiny - the
         // exact opposite of intent, and a breach of the gated-shiny invariant (bug-hunt #13).
         if (!(baseRate > 0.0)) return Double.POSITIVE_INFINITY;
         double odds = baseRate;
@@ -55,7 +55,7 @@ public final class ShinyOdds {
     }
 
     /**
-     * The whole decision: true iff OUR proc is what makes the egg shiny — never when it's already shiny
+     * The whole decision: true iff OUR proc is what makes the egg shiny - never when it's already shiny
      * (no double-count) or procChance ≤ 0. {@code rollProc}/{@code rollShiny} are uniform [0,1), injected
      * so this is deterministic + testable. (The live bridge calls {@link #procFires} then {@link #shinyHits}
      * directly, to roll the shiny die only when the proc actually fires.)

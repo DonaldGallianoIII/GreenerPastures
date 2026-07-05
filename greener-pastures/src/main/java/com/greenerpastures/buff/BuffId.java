@@ -1,14 +1,14 @@
 package com.greenerpastures.buff;
 
 /**
- * The catalog of Daemon "root" buffs — the <b>worker-not-fighter</b> QOL/farming boosts a held, fed Daemon
+ * The catalog of Daemon "root" buffs - the <b>worker-not-fighter</b> QOL/farming boosts a held, fed Daemon
  * grants (rented via Data: lose fuel → lose the buff). Each constant is one buff: an {@link BuffCategory#ENCHANT}
  * that rides a vanilla enchant {@code tier} levels past its normal max, an {@link BuffCategory#EFFECT} status
  * effect, or a mod-implemented {@link BuffCategory#HOOK}.
  *
  * <p>Pure data (ids/strings only) so the cores + tests stay MC-free; the MC adapter maps {@link #registryId} to
  * the actual {@code Enchantment}/{@code StatusEffect}. <b>By design this catalog contains ONLY the included
- * buffs</b> — every combat enchant (Sharpness, Protection, Power, Knockback, Thorns, trident, crossbow…) and
+ * buffs</b> - every combat enchant (Sharpness, Protection, Power, Knockback, Thorns, trident, crossbow…) and
  * every binary/already-capped one (Silk Touch, Mending, Infinity, Flame, Channeling, Aqua Affinity, Depth
  * Strider) is simply absent, so a "+N" can never apply to them. This keeps the mod PvP-neutral.
  *
@@ -36,7 +36,7 @@ public enum BuffId {
 
     // ── HOOK buffs: mod-implemented mechanics (no vanilla registry entry) ──
     /** NOT Haste (Deuce, 2026-07-03): a straight multiplier on tool break SPEED via the
-     *  {@code player.block_break_speed} attribute — Haste III + Eff V still can't instamine deepslate;
+     *  {@code player.block_break_speed} attribute - Haste III + Eff V still can't instamine deepslate;
      *  Mining Damage III (+100%) stacked on them can. Gathering-flagged (economy-impacting). */
     MINING_DAMAGE  ("mining_damage",   "Mining Damage",   BuffCategory.HOOK,    null,                        0, true),
     AUTO_SMELT     ("auto_smelt",      "Auto-Smelt",      BuffCategory.HOOK,    null,                        0, true),
@@ -45,16 +45,16 @@ public enum BuffId {
     XP_BOOST       ("xp_boost",        "XP Boost",        BuffCategory.HOOK,    null,                        0, false),
     POTION_DURATION("potion_duration", "Potion Duration", BuffCategory.HOOK,    null,                        0, false);
 
-    /** Stable string key used in config JSON / NBT — lowercase, matches everything else in the mod. */
+    /** Stable string key used in config JSON / NBT - lowercase, matches everything else in the mod. */
     public final String id;
     /** Human label for tooltips / GpLog. */
     public final String label;
     public final BuffCategory category;
     /** Vanilla enchant id (ENCHANT) or status-effect id (EFFECT); {@code null} for HOOK. An MC-free string. */
     public final String registryId;
-    /** Vanilla max level of the rode enchant (ENCHANT only) — the adapter adds the resolved tier on top. 0 otherwise. */
+    /** Vanilla max level of the rode enchant (ENCHANT only) - the adapter adds the resolved tier on top. 0 otherwise. */
     public final int vanillaMax;
-    /** Economy-impacting "gathering" buff (Fortune/Looting/auto-smelt/…) — admins may cap these on shop servers. */
+    /** Economy-impacting "gathering" buff (Fortune/Looting/auto-smelt/…) - admins may cap these on shop servers. */
     public final boolean gathering;
 
     BuffId(String id, String label, BuffCategory category, String registryId, int vanillaMax, boolean gathering) {

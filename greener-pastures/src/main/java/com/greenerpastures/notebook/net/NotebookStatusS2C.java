@@ -8,7 +8,7 @@ import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 /**
- * Server → client: the always-on status-bar figures — the player's Data <b>balance</b>, their GPU
+ * Server → client: the always-on status-bar figures - the player's Data <b>balance</b>, their GPU
  * <b>inventory count</b> (GPU is a physical item, not a balance), and whether any Daemon in their inventory
  * is ON. Pushed on console open and after every console action. Part of the sync layer (INTERACTIVE_SPEC §2).
  */

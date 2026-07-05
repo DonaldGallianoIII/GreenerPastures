@@ -7,29 +7,29 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Snack Repel charge + merge math (Overdrive pt.1 rev 2 — can charged by berry count, ultra-cake style). */
+/** Snack Repel charge + merge math (Overdrive pt.1 rev 2 - can charged by berry count, ultra-cake style). */
 class SnackRepelMathTest {
 
     @Test
     void chargeScalesWithBerryCountAndCapsAtSix() {
-        assertEquals(10, SnackRepelMath.chargeMagnitude(1, 10.0), "one chilan = ÷10 — Deuce's canonical example");
+        assertEquals(10, SnackRepelMath.chargeMagnitude(1, 10.0), "one chilan = ÷10 - Deuce's canonical example");
         assertEquals(30, SnackRepelMath.chargeMagnitude(3, 10.0));
         assertEquals(60, SnackRepelMath.chargeMagnitude(6, 10.0));
-        assertEquals(60, SnackRepelMath.chargeMagnitude(9, 10.0), "6-copy cap — double a pot cook, just like the cake");
+        assertEquals(60, SnackRepelMath.chargeMagnitude(9, 10.0), "6-copy cap - double a pot cook, just like the cake");
     }
 
     @Test
     void uselessChargesAreRefused() {
         assertEquals(0, SnackRepelMath.chargeMagnitude(0, 10.0));
         assertEquals(0, SnackRepelMath.chargeMagnitude(1, 0.0));
-        assertEquals(0, SnackRepelMath.chargeMagnitude(1, 1.2), "÷1 repels nothing — invalid charge");
+        assertEquals(0, SnackRepelMath.chargeMagnitude(1, 1.2), "÷1 repels nothing - invalid charge");
     }
 
     @Test
     void cansMergePerTypeCappedAtDoubleTheStrongest() {
         Map<String, Integer> m = SnackRepelMath.mergeCans(List.of(
                 Map.entry("dark", 60), Map.entry("dark", 60), Map.entry("dark", 60)));
-        assertEquals(Map.of("dark", 120), m, "3 full cans cap at 2× the strongest — double additive, just not more");
+        assertEquals(Map.of("dark", 120), m, "3 full cans cap at 2× the strongest - double additive, just not more");
         Map<String, Integer> two = SnackRepelMath.mergeCans(List.of(
                 Map.entry("dark", 60), Map.entry("normal", 10)));
         assertEquals(2, two.size());

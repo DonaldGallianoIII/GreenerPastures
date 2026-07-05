@@ -56,7 +56,7 @@ public final class CompositionReader {
                         speciesCounts.merge(key, 1, Integer::sum);
                         // Regional forms as aspect-qualified keys ("meowth:alolan") so form-gated rituals
                         // (Ominous Bottle's Alolan crime syndicate) can demand the REAL crew. The plain
-                        // species key above still counts too — form mons satisfy species-level gates.
+                        // species key above still counts too - form mons satisfy species-level gates.
                         try {
                             for (String aspect : p.getAspects()) {
                                 if (aspect == null) continue;
@@ -74,7 +74,7 @@ public final class CompositionReader {
                 }
             }
         } catch (Throwable t) {
-            // a Cobblemon API edge must never crash the harvest — return whatever we gathered
+            // a Cobblemon API edge must never crash the harvest - return whatever we gathered
         }
         return new PastureMons(perMon, new Composition(typeCounts, species, speciesCounts));
     }

@@ -22,9 +22,9 @@ import net.minecraft.world.World;
 import java.util.Map;
 
 /**
- * Charging a <b>Snack Repel</b> (Snack Overdrive pt.1 rev 2 — Deuce: "the can with the berry you DON'T want,
+ * Charging a <b>Snack Repel</b> (Snack Overdrive pt.1 rev 2 - Deuce: "the can with the berry you DON'T want,
  * count scales it like the ultra cake"): one UNCHARGED can + 1–6 typed berries of ONE species → a charged
- * can labelled {@code 🚫 ÷N <Type> Types}. Magnitude = the berries' summed typing value (6-copy cap —
+ * can labelled {@code 🚫 ÷N <Type> Types}. Magnitude = the berries' summed typing value (6-copy cap -
  * {@link SnackRepelMath#chargeMagnitude}). The charged can then goes into an Ultra Compressed Snack craft.
  * Deterministic (preview-safe); refuses mixed berry species, non-typed berries, or an already-charged can.
  */
@@ -53,7 +53,7 @@ public class SnackRepelChargeRecipe extends SpecialCraftingRecipe {
             ItemStack s = input.getStackInSlot(i);
             if (s.isEmpty()) continue;
             if (s.isOf(GpItems.SNACK_REPEL)) {
-                if (s.contains(GpComponents.REPEL_TYPES)) junk = true;   // already charged — no topping up (v1)
+                if (s.contains(GpComponents.REPEL_TYPES)) junk = true;   // already charged - no topping up (v1)
                 cans++;
                 continue;
             }
@@ -61,7 +61,7 @@ public class SnackRepelChargeRecipe extends SpecialCraftingRecipe {
                 berry = s;
                 berries++;
             } else {
-                junk = true;   // a second berry species (or any other item) — refuse
+                junk = true;   // a second berry species (or any other item) - refuse
             }
         }
         return new Scan(cans, berry, berries, junk);

@@ -3,7 +3,7 @@ package com.greenerpastures.biobank;
 import java.util.Arrays;
 
 /**
- * Per-stat IV gate — the logic behind the Daemon's <b>FILTER</b> node (6 stats, each a {@code [min,max]}
+ * Per-stat IV gate - the logic behind the Daemon's <b>FILTER</b> node (6 stats, each a {@code [min,max]}
  * range). Minecraft-free + unit-tested; the MC adapter feeds it an egg's 6 IVs. Stat order matches
  * Cobblemon: HP, Atk, Def, SpA, SpD, Spe.
  */

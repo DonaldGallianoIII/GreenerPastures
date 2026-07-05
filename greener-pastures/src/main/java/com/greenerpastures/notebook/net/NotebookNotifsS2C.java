@@ -8,7 +8,7 @@ import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 /**
- * Server → client: the viewing player's Inbox (dismissible notifications — catch-up pings etc.) as a JSON blob
+ * Server → client: the viewing player's Inbox (dismissible notifications - catch-up pings etc.) as a JSON blob
  * {@code {"notes":[{"id":n,"icon":"⛏","text":"…","t":ms}]}} for the console's Inbox tab.
  */
 public record NotebookNotifsS2C(String json) implements CustomPayload {

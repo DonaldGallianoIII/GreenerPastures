@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Server → client: the full editable config for the ONE pasture right-clicked with the Notebook, so the React
  * console can render an editable pasture screen (name · mon roster + pairing buckets · Kernel · link). This is the
- * data Cobblemon doesn't sync — the same the owo {@code PastureScreen} used to get through its handled-screen.
+ * data Cobblemon doesn't sync - the same the owo {@code PastureScreen} used to get through its handled-screen.
  *
  * <p>{@code tier} is {@code ""} when no Kernel is slotted (⇒ no multi-pair breeding). {@code pos} is packed
  * ({@link net.minecraft.util.math.BlockPos#asLong()}). Same tuple-6 shape as {@link com.greenerpastures.notebook.PastureSnapshot}.

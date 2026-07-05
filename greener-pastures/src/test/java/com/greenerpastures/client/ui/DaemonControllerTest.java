@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The Daemon's pairing model is Minecraft-free (that's why it also drives the desktop studio), so its
- * logic tests need no bootstrap at all — pure + instant.
+ * logic tests need no bootstrap at all - pure + instant.
  */
 class DaemonControllerTest {
 
@@ -36,7 +36,7 @@ class DaemonControllerTest {
 
     @Test
     void maxPairsClampsToTheEightPairCeiling() {
-        assertEquals(8, new DaemonController(List.of(), 99, "Farm").maxPairs(), "tether cap is 8 pairs — never more");
+        assertEquals(8, new DaemonController(List.of(), 99, "Farm").maxPairs(), "tether cap is 8 pairs - never more");
         assertEquals(0, new DaemonController(List.of(), 0, "Farm").maxPairs(), "no Kernel = no breeding threads");
     }
 

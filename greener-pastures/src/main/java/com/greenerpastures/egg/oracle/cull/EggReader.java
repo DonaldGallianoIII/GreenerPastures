@@ -44,7 +44,7 @@ public final class EggReader {
     private static Method getShiny;            // PokemonProperties.getShiny() -> Boolean
     private static Method getIvs;              // PokemonProperties.getIvs() -> IVs (Iterable)
     private static Method getSpecies;          // PokemonProperties.getSpecies() -> String
-    private static Method getEvs;              // PokemonProperties.getEvs() -> EVs (Iterable) — may be absent
+    private static Method getEvs;              // PokemonProperties.getEvs() -> EVs (Iterable) - may be absent
     private static Method getNature;           // PokemonProperties.getNature() -> Nature/String
     private static Method getGender;           // PokemonProperties.getGender() -> Gender/String
     private static Method getAbility;          // PokemonProperties.getAbility() -> Ability/String
@@ -69,20 +69,20 @@ public final class EggReader {
             getNature = tryMethod(props, "getNature");
             getGender = tryMethod(props, "getGender");
             getAbility = tryMethod(props, "getAbility");
-            LOGGER.info("[EggOracle] Cobbreeding egg API found — IV culling enabled.");
+            LOGGER.info("[EggOracle] Cobbreeding egg API found - IV culling enabled.");
         } catch (Throwable t) {
             extractProperties = null;
             LOGGER.warn("[EggOracle] Cobbreeding egg API unavailable ({}); shiny-by-name fallback only.", t.toString());
         }
     }
 
-    /** True once Cobbreeding's egg API resolved — i.e. IV/quality reading is live. */
+    /** True once Cobbreeding's egg API resolved - i.e. IV/quality reading is live. */
     public static boolean apiAvailable() {
         init();
         return extractProperties != null;
     }
 
-    /** Any Cobbreeding Pokémon egg (any type, shiny or not). Pure id check — never throws. */
+    /** Any Cobbreeding Pokémon egg (any type, shiny or not). Pure id check - never throws. */
     public static boolean isEgg(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         Identifier id = Registries.ITEM.getId(stack.getItem());
@@ -91,7 +91,7 @@ public final class EggReader {
     }
 
     // Per-ItemStack identity cache (an egg's baked properties are immutable once bred). The Renderer
-    // re-reads the same tray stacks every cull tick and BioBank bulk-deposits many at once — without this,
+    // re-reads the same tray stacks every cull tick and BioBank bulk-deposits many at once - without this,
     // each call re-ran Cobbreeding's reflective decrypt. Synchronized access-order LRU, bounded (re-audit N1).
     private static final int CACHE_MAX = 4096;
     private static final Map<ItemStack, Decoded> CACHE = Collections.synchronizedMap(
@@ -112,7 +112,7 @@ public final class EggReader {
         return d;
     }
 
-    /** Read everything off an egg in ONE reflective decrypt — the only place that invokes Cobbreeding. */
+    /** Read everything off an egg in ONE reflective decrypt - the only place that invokes Cobbreeding. */
     private static Decoded decodeUncached(ItemStack stack) {
         init();
         boolean shiny = false, ivsKnown = false;
@@ -172,7 +172,7 @@ public final class EggReader {
     /**
      * Best-effort species key for an egg (server-safe). Cobbreeding's baked {@code getSpecies()} with a
      * display-name fallback, normalized to a lowercase namespace-free token (e.g. "charmander"). Never
-     * throws; "unknown" if undetermined. Cached per stack — shares the one decrypt with {@link #read}.
+     * throws; "unknown" if undetermined. Cached per stack - shares the one decrypt with {@link #read}.
      */
     public static String species(ItemStack stack) {
         if (!isEgg(stack)) return "unknown";

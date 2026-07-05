@@ -1,7 +1,7 @@
 package com.greenerpastures.client.ui;
 
 /**
- * The unified <b>Notebook</b> chrome (Minecraft-free) — the mockup's window frame wrapping the Daemon
+ * The unified <b>Notebook</b> chrome (Minecraft-free) - the mockup's window frame wrapping the Daemon
  * canvas: a title bar + Kernel status, a tab strip (Daemon · Dashboard · Compiler), and a header row
  * with the pasture <b>name</b> and the <b>Kernel slot</b> (tier + installed augments). Draws the
  * Daemon canvas via {@link DaemonView#paintCanvas} then overlays the chrome.

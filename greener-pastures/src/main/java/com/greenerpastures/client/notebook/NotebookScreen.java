@@ -32,12 +32,12 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 /**
- * The <b>Notebook console</b> — the mod's unified data-science shell (see {@code NOTEBOOK_CONSOLE_SPEC.md}),
+ * The <b>Notebook console</b> - the mod's unified data-science shell (see {@code NOTEBOOK_CONSOLE_SPEC.md}),
  * rendered natively in <b>owo-ui</b> to match the reference JSX mock
  * ({@code design/design_reference/notebook-console.NOTES.md}).
  *
- * <p>This is the <b>shell</b> (Phase 4): the window chrome — title bar · tab strip · {@code gp://} command bar ·
- * content area · status bar — with working tab switching. Per-tab content is Phase 5; each tab currently shows an
+ * <p>This is the <b>shell</b> (Phase 4): the window chrome - title bar · tab strip · {@code gp://} command bar ·
+ * content area · status bar - with working tab switching. Per-tab content is Phase 5; each tab currently shows an
  * intent blurb so the structure is legible. Status-bar figures (Data/GPU/Kernel/Daemon) are placeholders until the
  * live server sync lands.
  *
@@ -46,7 +46,7 @@ import net.minecraft.util.Identifier;
  */
 public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
 
-    // ── palette (notebook-console.NOTES.md) — surfaces are 0xAARRGGBB, text is 0xRRGGBB ───────────────
+    // ── palette (notebook-console.NOTES.md) - surfaces are 0xAARRGGBB, text is 0xRRGGBB ───────────────
     private static final int BG = 0xFF070C11, PANEL = 0xFF0C141B, PANEL_HI = 0xFF0F1A22,
             TABBAR = 0xFF0A1219, INSET = 0xFF070E13, LINE = 0xFF1B2A36, SCRIM = 0xB8030609, SLOT = 0xFF060B0F;
     private static final int GREEN = 0x43D869, AMBER = 0xF5B234, CYAN = 0x5BE0E0,
@@ -59,14 +59,14 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         PASTURES("Pastures", "gp://pastures", "your pastures · 8-pair grid · link + status"),
         COMPILER("Compiler", "gp://daemon/compiler", "build the Daemon's buff loadout"),
         AUGMENTER("Augmenter", "gp://kernel/augmenter", "apply GPU augments to Kernels"),
-        DASHBOARD("Dashboard", "gp://dashboard", "farm analytics — coming soon");
+        DASHBOARD("Dashboard", "gp://dashboard", "farm analytics - coming soon");
         final String label, path, blurb;
         Tab(String l, String p, String b) { label = l; path = p; blurb = b; }
     }
 
     private final int activeTab;
     private String selectedPastureKey = null;   // Pastures tab selection; survives refreshIfOpen, resets on tab switch
-    private String expandedSpecies = null;      // BioBank accordion — the one open species (null = all collapsed)
+    private String expandedSpecies = null;      // BioBank accordion - the one open species (null = all collapsed)
 
     public NotebookScreen() { this(Tab.PASTURES.ordinal()); }
 
@@ -104,7 +104,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
 
     private Component titleBar() {
         FlowLayout bar = Containers.horizontalFlow(Sizing.fill(100), Sizing.content());
-        bar.gap(5);   // gap() is FlowLayout-only — call it on the typed var, not after surface()/padding() (→ ParentComponent)
+        bar.gap(5);   // gap() is FlowLayout-only - call it on the typed var, not after surface()/padding() (→ ParentComponent)
         bar.surface(Surface.flat(TABBAR))
            .verticalAlignment(VerticalAlignment.CENTER)
            .padding(Insets.of(5, 5, 8, 8));
@@ -161,7 +161,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
             .padding(Insets.of(16));
         body.child(label(tab().label, GREEN))
             .child(label(tab().blurb, MUTED))
-            .child(label("shell is live — this tab's content lands next", TEXT).margins(Insets.top(4)));
+            .child(label("shell is live - this tab's content lands next", TEXT).margins(Insets.top(4)));
         return body;
     }
 
@@ -188,7 +188,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
             FlowLayout empty = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
             empty.horizontalAlignment(HorizontalAlignment.CENTER);
             empty.verticalAlignment(VerticalAlignment.CENTER);
-            empty.child(label("empty — harvested loot from your linked pastures collects here", MUTED));
+            empty.child(label("empty - harvested loot from your linked pastures collects here", MUTED));
             body.child(empty);
             return body;
         }
@@ -228,7 +228,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         return String.format("%.1fB", n / 1_000_000_000.0);
     }
 
-    // ── Compiler (Daemon) tab — triptych: DAEMON · EFFECT · LOADOUT ─────────────────────────────────────
+    // ── Compiler (Daemon) tab - triptych: DAEMON · EFFECT · LOADOUT ─────────────────────────────────────
     private Component compilerContent() {
         if (!NotebookState.compilerHasDaemon) {
             FlowLayout empty = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
@@ -338,7 +338,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         return (seconds / 86400) + "d";
     }
 
-    // ── Pastures tab — read-only snapshot monitor ───────────────────────────────────────────────────────
+    // ── Pastures tab - read-only snapshot monitor ───────────────────────────────────────────────────────
     private Component pasturesContent() {
         FlowLayout body = Containers.horizontalFlow(Sizing.fill(100), Sizing.expand());
         body.surface(Surface.flat(PANEL));
@@ -395,7 +395,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         }
         col.child(label(sel.name(), GREEN));
         col.child(label(sel.tier() + " · " + sel.eggCount() + " eggs queued · " + sel.pairs().size() + " pairs", MUTED));
-        col.child(label("read-only — modify at the pasture in-world", MUTED));
+        col.child(label("read-only - modify at the pasture in-world", MUTED));
         FlowLayout pairs = Containers.verticalFlow(Sizing.fill(100), Sizing.content());
         pairs.gap(2);
         if (sel.pairs().isEmpty()) {
@@ -425,7 +425,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         return TEXT;
     }
 
-    // ── Augmenter (Kernel) tab — KERNEL slots + AUGMENT catalog ─────────────────────────────────────────
+    // ── Augmenter (Kernel) tab - KERNEL slots + AUGMENT catalog ─────────────────────────────────────────
     private Component augmenterContent() {
         if (!NotebookState.augHasKernel) {
             FlowLayout empty = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
@@ -510,7 +510,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         ClientPlayNetworking.send(new NotebookActionC2S(NotebookActionC2S.REMOVE_AUGMENT, type, 0));
     }
 
-    // ── BioBank tab — species accordion (browse; slice 6a stats) ────────────────────────────────────────
+    // ── BioBank tab - species accordion (browse; slice 6a stats) ────────────────────────────────────────
     private Component biobankContent() {
         FlowLayout body = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
         body.gap(6);
@@ -526,7 +526,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
             FlowLayout empty = Containers.verticalFlow(Sizing.fill(100), Sizing.expand());
             empty.horizontalAlignment(HorizontalAlignment.CENTER);
             empty.verticalAlignment(VerticalAlignment.CENTER);
-            empty.child(label("empty — deposit eggs at a BioBank block (right-click)", MUTED));
+            empty.child(label("empty - deposit eggs at a BioBank block (right-click)", MUTED));
             body.child(empty);
             return body;
         }
@@ -650,7 +650,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
     }
 
     /** Rebuild the console in place when fresh {@link NotebookState} arrives. Called from the S2C receivers
-     *  (client thread) — NOT the constructor, so no re-request, no loop. */
+     *  (client thread) - NOT the constructor, so no re-request, no loop. */
     public static void refreshIfOpen() {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.currentScreen instanceof NotebookScreen ns) ns.rebuild();
@@ -683,7 +683,7 @@ public class NotebookScreen extends BaseOwoScreen<FlowLayout> {
         return Components.box(Sizing.fill(100), Sizing.fixed(1)).color(Color.ofArgb(LINE)).fill(true);
     }
 
-    /** An invisible, width-greedy box — the flexbox "space-between" trick in a horizontal flow. */
+    /** An invisible, width-greedy box - the flexbox "space-between" trick in a horizontal flow. */
     private static Component expander() {
         return Components.box(Sizing.expand(), Sizing.fixed(1)).color(Color.ofArgb(0)).fill(true);
     }

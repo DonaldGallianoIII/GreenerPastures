@@ -10,7 +10,7 @@ import net.minecraft.util.Identifier;
 /**
  * Client → server: save the focused pasture's Daemon graph (the whole graph JSON, authored in the React node
  * editor). The server validates reach + a size cap, then stores it on
- * {@link com.greenerpastures.pasture.breeding.PastureData#graphJson}. Not echoed back — the editor is the
+ * {@link com.greenerpastures.pasture.breeding.PastureData#graphJson}. Not echoed back - the editor is the
  * authority while open; the persisted copy loads on the next open.
  */
 public record NotebookGraphSaveC2S(long pos, String json) implements CustomPayload {

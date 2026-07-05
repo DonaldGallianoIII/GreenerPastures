@@ -9,7 +9,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 
 /**
- * {@code /gp harvest} — a QA/admin handle on the Notebook-harvest cadence so a tester can watch drop rates live
+ * {@code /gp harvest} - a QA/admin handle on the Notebook-harvest cadence so a tester can watch drop rates live
  * instead of waiting a minute per sweep. Sets {@link PastureHarvest#testIntervalTicks}; <b>op-gated (level 2)</b>;
  * reset on server start (a fast test rate can never ship in a world save). Mirrors {@code /gp breed}. Usage:
  * <pre>
@@ -36,7 +36,7 @@ public final class HarvestCommand {
         long t = PastureHarvest.testIntervalTicks;
         String msg = t > 0
                 ? "⛏ harvest override: sweep every " + (t / 20.0) + "s (" + t + " ticks)"
-                : "⛏ harvest: normal cadence — one sweep per IRL minute (1200 ticks). "
+                : "⛏ harvest: normal cadence - one sweep per IRL minute (1200 ticks). "
                         + "Speed it up for testing: /gp harvest interval <seconds>";
         ctx.getSource().sendFeedback(() -> Text.literal(msg), false);
         return 1;
@@ -46,7 +46,7 @@ public final class HarvestCommand {
         long ticks = seconds * 20L;
         PastureHarvest.testIntervalTicks = ticks;
         GpLog.i("notebook_harvest", "test_interval", "seconds", seconds, "ticks", ticks);
-        ctx.getSource().sendFeedback(() -> Text.literal("⛏ harvest override ON — sweep every " + seconds
+        ctx.getSource().sendFeedback(() -> Text.literal("⛏ harvest override ON - sweep every " + seconds
                 + "s (" + ticks + " ticks). Procs are per sweep, so rates scale with speed. /gp harvest default to restore."), false);
         return 1;
     }
@@ -54,7 +54,7 @@ public final class HarvestCommand {
     private static int clear(CommandContext<ServerCommandSource> ctx) {
         PastureHarvest.testIntervalTicks = 0L;
         GpLog.i("notebook_harvest", "test_interval", "seconds", 0, "ticks", 0L);
-        ctx.getSource().sendFeedback(() -> Text.literal("⛏ harvest override cleared — back to one sweep per minute."), false);
+        ctx.getSource().sendFeedback(() -> Text.literal("⛏ harvest override cleared - back to one sweep per minute."), false);
         return 1;
     }
 }

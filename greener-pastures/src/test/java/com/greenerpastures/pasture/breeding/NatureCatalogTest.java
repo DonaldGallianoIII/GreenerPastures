@@ -52,7 +52,7 @@ class NatureCatalogTest {
 
     @Test
     void orderIsStableAtItsAnchors() {
-        // A stored augment index must always mean the same nature — pin anchors so a reorder is caught by CI.
+        // A stored augment index must always mean the same nature - pin anchors so a reorder is caught by CI.
         assertEquals("hardy", NatureCatalog.NATURES.get(0));
         assertEquals("adamant", NatureCatalog.NATURES.get(3));
         assertEquals("modest", NatureCatalog.NATURES.get(15));

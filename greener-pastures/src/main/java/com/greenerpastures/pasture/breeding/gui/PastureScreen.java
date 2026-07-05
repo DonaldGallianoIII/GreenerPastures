@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Client GUI for the Pasture Wand — black/silver, laid out to Deuce's GreenerPastures-Layout.html:
+ * Client GUI for the Pasture Wand - black/silver, laid out to Deuce's GreenerPastures-Layout.html:
  * heading + an "Arrange" button to the pairing board, a name field, a contiguous 9-wide upgrade slot
  * row (slot 0 = Pasture Upgrade, tinted green), an "Active Mons" summary, then the player inventory.
  * The name is saved to the shared server-side {@link PastureData} when the screen closes.
@@ -46,7 +46,7 @@ public class PastureScreen extends HandledScreen<PastureMenu> {
     protected void init() {
         super.init();
 
-        // Name field — design nameField (8, 24, 96, 14)
+        // Name field - design nameField (8, 24, 96, 14)
         this.initialName = this.handler.pastureName();
         this.nameField = new TextFieldWidget(this.textRenderer, this.x + 8, this.y + 24, 96, 14,
                 Text.literal("Pasture name"));
@@ -55,7 +55,7 @@ public class PastureScreen extends HandledScreen<PastureMenu> {
         this.nameField.setPlaceholder(Text.literal("Name Here!"));
         addDrawableChild(this.nameField);
 
-        // Arrange (bucket board) + Daemon (node graph) — our own GpButtons (no vanilla ButtonWidget):
+        // Arrange (bucket board) + Daemon (node graph) - our own GpButtons (no vanilla ButtonWidget):
         // drawn in render(), hit-tested in mouseClicked().
         buttons.clear();
         buttons.add(new GpButton(this.x + 128, this.y + 8, 64, 14, "Arrange", this::openArrangement));
@@ -83,13 +83,13 @@ public class PastureScreen extends HandledScreen<PastureMenu> {
         client.setScreen(d);
     }
 
-    /** Claim/release this pasture as yours — links it to your Notebook (you collect its drops, eggs &
+    /** Claim/release this pasture as yours - links it to your Notebook (you collect its drops, eggs &
      *  outputs) via the operator-claim packet. The server applies {@code PastureClaim} and replies in chat. */
     private void toggleClaim() {
         try {
             ClientPlayNetworking.send(new ClaimOperatorPayload(this.handler.pasturePos));
         } catch (Throwable ignored) {
-            // connection gone (world closing) — nothing to send to
+            // connection gone (world closing) - nothing to send to
         }
     }
 
@@ -167,7 +167,7 @@ public class PastureScreen extends HandledScreen<PastureMenu> {
             try {
                 ClientPlayNetworking.send(new SaveNamePayload(this.handler.pasturePos, this.nameField.getText()));
             } catch (Throwable ignored) {
-                // connection gone (world closing) — nothing to persist to
+                // connection gone (world closing) - nothing to persist to
             }
         }
     }

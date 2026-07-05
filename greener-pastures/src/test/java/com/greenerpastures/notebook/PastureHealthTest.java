@@ -7,7 +7,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the pure pasture-health matrix (#37) — the console's warning strip + tab badges. */
+/** Headless tests for the pure pasture-health matrix (#37) - the console's warning strip + tab badges. */
 class PastureHealthTest {
 
     private static List<String> ids(boolean linked, boolean kernel, int mons, boolean full, List<String> bank) {
@@ -39,7 +39,7 @@ class PastureHealthTest {
 
     @Test
     void unknownMonCountSkipsParentCheck() {
-        assertTrue(ids(true, true, -1, false, null).isEmpty());   // chunk unloaded — never guess
+        assertTrue(ids(true, true, -1, false, null).isEmpty());   // chunk unloaded - never guess
     }
 
     @Test

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the section profiler — tree shape, counters, reset, and report rendering. */
+/** Headless tests for the section profiler - tree shape, counters, reset, and report rendering. */
 class GpProfTest {
 
     @BeforeEach

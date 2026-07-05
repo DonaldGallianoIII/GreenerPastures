@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * The read side of the <b>entity-scoped</b> Daemon enchant boosts (Lure, Luck of the Sea, Frost Walker). Each of
  * these 1.21.1 read seams carries the acting entity, so the boost is gated right here on the entity being a paid
- * fed-Daemon holder ({@link DaemonValueBoost}) — no thread-local needed. Pure read interception: it adds the
+ * fed-Daemon holder ({@link DaemonValueBoost}) - no thread-local needed. Pure read interception: it adds the
  * holder's tier to the value the game reads, never writes a stack, so there is no dupe/desync/NBT path, and it is
  * a no-op for everyone but a server-side paying holder.
  *

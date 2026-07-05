@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the Renderer's keep/cull/value decision — esp. the SACRED shiny guard. */
+/** Headless tests for the Renderer's keep/cull/value decision - esp. the SACRED shiny guard. */
 class RenderRunTest {
 
     private static EggSummary plain(String sp)   { return new EggSummary(sp, false, 60, 0); }

@@ -1,7 +1,7 @@
 package com.greenerpastures.pasture.breeding;
 
 /**
- * Hatch Haste math (Deuce, 2026-07-05 — "hatching is the un-automated bottleneck"): Cobbreeding eggs carry
+ * Hatch Haste math (Deuce, 2026-07-05 - "hatching is the un-automated bottleneck"): Cobbreeding eggs carry
  * a {@code cobbreeding:timer} component (ticks, ~20 drained per second in a player inventory, 40 with an
  * incubator-ability mon in the party). The augment scales that timer at EGG BUILD: level I halves it,
  * II quarters it, III leaves a tenth. Floor of one second so a hatch is never instant-on-pickup (the pop

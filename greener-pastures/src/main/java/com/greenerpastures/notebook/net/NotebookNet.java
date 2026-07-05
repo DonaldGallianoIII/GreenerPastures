@@ -65,7 +65,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * Notebook console networking — the shared server↔client <b>sync layer</b> (NOTEBOOK_INTERACTIVE_SPEC §2).
+ * Notebook console networking - the shared server↔client <b>sync layer</b> (NOTEBOOK_INTERACTIVE_SPEC §2).
  *
  * <p>C2S {@link NotebookRequestC2S} asks for a tab's data; the server replies with the always-on
  * {@link NotebookStatusS2C} (Data balance + GPU item-count + Daemon-on) and, later, per-tab payloads.
@@ -76,10 +76,10 @@ public final class NotebookNet {
 
     private static final Gson GSON = new Gson();
 
-    /** Per-player last prefetch-sweep time (ms) — the console poll re-warms the client cache at most 1×/min. */
+    /** Per-player last prefetch-sweep time (ms) - the console poll re-warms the client cache at most 1×/min. */
     private static final Map<UUID, Long> lastPrefetch = new HashMap<>();
 
-    /** Per-player, per-channel LAST payload actually sent — the server-side change gate (perf-audit R3 S2).
+    /** Per-player, per-channel LAST payload actually sent - the server-side change gate (perf-audit R3 S2).
      *  The console poll rebuilds every channel each second; this drops identical payloads BEFORE the packet
      *  layer, so unchanged data pays no encode, no zlib, no client decode + deep-equals. Records compare
      *  structurally, so equality is exact (no hash-collision staleness). Server thread only. */
@@ -97,7 +97,7 @@ public final class NotebookNet {
         if (changed(player, channel, payload)) ServerPlayNetworking.send(player, payload);
     }
 
-    /** Player left — drop their gate/prefetch state (unbounded-per-player maps on 24/7 servers, R3 #5/F11). */
+    /** Player left - drop their gate/prefetch state (unbounded-per-player maps on 24/7 servers, R3 #5/F11). */
     public static void onDisconnect(UUID player) {
         lastPush.remove(player);
         lastPrefetch.remove(player);
@@ -105,7 +105,7 @@ public final class NotebookNet {
         daemonTargetSlot.remove(player);
     }
 
-    /** Reset per-server-session state — called on SERVER_STARTED (a new SP world shares the JVM). */
+    /** Reset per-server-session state - called on SERVER_STARTED (a new SP world shares the JVM). */
     public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); }
 
     public static void init() {
@@ -146,7 +146,7 @@ public final class NotebookNet {
                 onDisconnect(handler.getPlayer().getUuid()));
     }
 
-    /** Push every known (snapshotted) pasture's config + graph for {@code player} — pre-warms the client cache.
+    /** Push every known (snapshotted) pasture's config + graph for {@code player} - pre-warms the client cache.
      *  Current dimension + loaded chunks only (a live roster needs the block entity); the 1-min console-poll sweep
      *  self-heals any pasture whose chunk wasn't loaded yet. Capped for sanity. */
     public static void prefetchConfigs(ServerPlayerEntity player) {
@@ -193,14 +193,14 @@ public final class NotebookNet {
         });
     }
 
-    /** Send the viewing player's recent egg-ingest feed (kept/voided + filter) + totals — the console Log view. */
+    /** Send the viewing player's recent egg-ingest feed (kept/voided + filter) + totals - the console Log view. */
     public static void pushEggLog(ServerPlayerEntity player) {
         List<NotebookEggLogS2C.Entry> out = new ArrayList<>();
         for (EggLog.Entry e : EggLog.recent(player.getUuid())) out.add(new NotebookEggLogS2C.Entry(e.species(), e.voided(), e.filter()));
         sendGated(player, "egglog", new NotebookEggLogS2C(EggLog.kept(player.getUuid()), EggLog.voided(player.getUuid()), out));
     }
 
-    /** Send the viewing player's Inbox (dismissible notifications — catch-up pings etc.) for the Inbox tab. */
+    /** Send the viewing player's Inbox (dismissible notifications - catch-up pings etc.) for the Inbox tab. */
     public static void pushNotifs(ServerPlayerEntity player) {
         JsonArray notes = new JsonArray();
         for (com.greenerpastures.notify.Inbox.Note n : com.greenerpastures.notify.Inbox.notesOf(player.getUuid())) {
@@ -285,7 +285,7 @@ public final class NotebookNet {
                     int mt = o.has("minIvTotal") ? o.get("minIvTotal").getAsInt() : 0;
                     int cn = o.has("count") ? o.get("count").getAsInt() : 1;
                     if (species != null && !CobbreedingBridge.isSpecies(species)) {   // reject a fake species (would never match)
-                        player.sendMessage(Text.literal("§c[Greener Pastures]§r No such species: \"" + species + "\" — goal not set."), false);
+                        player.sendMessage(Text.literal("§c[Greener Pastures]§r No such species: \"" + species + "\" - goal not set."), false);
                         return;
                     }
                     GoalStore.set(player.getUuid(), new BreedingGoal(species, shiny, mp, mt, cn));
@@ -358,7 +358,7 @@ public final class NotebookNet {
 
     /** Take from Notebook storage into the player's inventory. mode: 0 = one item · 1 = one stack · 2 = all.
      *  <b>Space-verified + manual placement</b> (Deuce, 2026-07-03): we count the MAIN inventory's real capacity
-     *  for this item and place stacks into slots ourselves — never via {@code insertStack}, whose return other
+     *  for this item and place stacks into slots ourselves - never via {@code insertStack}, whose return other
      *  mods can mixin-hijack (a backpack "absorbed" 3k ink sacs by reporting fit-into-nowhere). Storage is
      *  debited only for what we physically placed, so nothing can ever be destroyed. */
     private static void pull(ServerPlayerEntity player, String itemId, int mode) {
@@ -373,7 +373,7 @@ public final class NotebookNet {
         ItemStack probe = new ItemStack(item);
         int maxStack = probe.getMaxCount();
 
-        long capacity = 0;                                   // real room in MAIN slots only — counted by us
+        long capacity = 0;                                   // real room in MAIN slots only - counted by us
         for (ItemStack s : main) {
             if (s.isEmpty()) capacity += maxStack;
             else if (ItemStack.areItemsAndComponentsEqual(s, probe)) capacity += Math.max(0, s.getMaxCount() - s.getCount());
@@ -385,7 +385,7 @@ public final class NotebookNet {
         };
         want = Math.min(Math.min(want, have), capacity);
         if (want <= 0) {                                     // no room → refuse loudly, storage untouched
-            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full — nothing pulled."), false);
+            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full - nothing pulled."), false);
             GpLog.i("notebook", "pull_full", "player", player.getUuid().toString(), "item", itemId);
             return;
         }
@@ -453,7 +453,7 @@ public final class NotebookNet {
         if (clamped > cur) {                                   // tiering UP costs GPU; down is free, never refunded
             gpuSpent = (clamped - cur) * GPU_PER_BUFF_TIER;
             if (!consumeGpu(player, gpuSpent)) {
-                player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough GPU — need "
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough GPU - need "
                         + gpuSpent + ", you have " + countGpu(player) + "."), false);
                 return;
             }
@@ -486,7 +486,7 @@ public final class NotebookNet {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         List<PastureSnapshot> snaps = PastureSnapshotStore.get(server).snapshotsOf(player.getUuid());
-        // #37 — per-snapshot ⚠ badge flags, from registry-side state (works for unloaded chunks; parent/bank
+        // #37 - per-snapshot ⚠ badge flags, from registry-side state (works for unloaded chunks; parent/bank
         // checks need the live block entity and only run for loaded ones).
         PastureRegistry reg = PastureRegistry.get(server);
         Map<String, ServerWorld> dims = new HashMap<>();   // dim string → world, resolved ONCE per push (R3 F4)
@@ -516,8 +516,8 @@ public final class NotebookNet {
         return gatherHealth(server, pd, be);
     }
 
-    /** Health flags with a (possibly null) live block entity in hand — the pure core does the deciding.
-     *  Species come straight off the tether list (NOT {@code rosterOf} — no per-mon stats JSON on a 1/s poll). */
+    /** Health flags with a (possibly null) live block entity in hand - the pure core does the deciding.
+     *  Species come straight off the tether list (NOT {@code rosterOf} - no per-mon stats JSON on a 1/s poll). */
     private static List<PastureHealth.Flag> gatherHealth(MinecraftServer server, PastureData pd, PokemonPastureBlockEntity be) {
         int monCount = -1;
         List<String> fullSpecies = null;
@@ -580,29 +580,29 @@ public final class NotebookNet {
             int claimable = com.greenerpastures.glitch.MissingnoMath.claimable(
                     ds.lifetimeEarnedOf(player.getUuid()), ds.missingnoClaimedOf(player.getUuid()));
             if (claimable <= 0) {
-                player.sendMessage(Text.literal("§c[Greener Pastures]§r The glitch requires a million rendered — keep feeding the Daemon."), false);
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r The glitch requires a million rendered - keep feeding the Daemon."), false);
                 return;
             }
             com.cobblemon.mod.common.pokemon.Pokemon mon = com.greenerpastures.glitch.Missingno.create();
             boolean accepted = com.cobblemon.mod.common.util.PlayerExtensionsKt.party(player).add(mon);
             if (!accepted) accepted = com.cobblemon.mod.common.util.PlayerExtensionsKt.pc(player).add(mon);
             if (!accepted) {
-                player.sendMessage(Text.literal("§c[Greener Pastures]§r Party and PC are full — the glitch has nowhere to manifest."), false);
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Party and PC are full - the glitch has nowhere to manifest."), false);
                 return;
             }
             ds.claimMissingno(player.getUuid());
             player.sendMessage(Text.literal("§d§kAB§r §5M̸i̷s̶s̴i̵n̷g̸N̵o̶. joins you.§r §d§kAB§r"), false);
-            com.greenerpastures.notify.Inbox.push(player.getUuid(), "▓", "MissingNo. manifested — one million rendered.");
+            com.greenerpastures.notify.Inbox.push(player.getUuid(), "▓", "MissingNo. manifested - one million rendered.");
             GpLog.i("missingno", "summon", "player", player.getUuid().toString(),
                     "lifetime", Long.toString(ds.lifetimeEarnedOf(player.getUuid())),
                     "claimed", Integer.toString(ds.missingnoClaimedOf(player.getUuid())));
         } catch (Throwable t) {
             GpLog.w("missingno", "summon_fail", "err", String.valueOf(t));
-            player.sendMessage(Text.literal("§c[Greener Pastures]§r The glitch failed to manifest — nothing was consumed."), false);
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r The glitch failed to manifest - nothing was consumed."), false);
         }
     }
 
-    // ── Specimen Disks (mon compression v1 — Deuce, 2026-07-05) ─────────────────────────────────────────
+    // ── Specimen Disks (mon compression v1 - Deuce, 2026-07-05) ─────────────────────────────────────────
 
     /** The Specimens tab: live party digest + blank-disk count. Change-gated like every channel. */
     public static void pushSpecimens(ServerPlayerEntity player) {
@@ -639,7 +639,7 @@ public final class NotebookNet {
     }
 
     /** Party mon → written Specimen Disk. Dupe-proof order: verify EVERY gate (SpecimenRules) including a
-     *  guaranteed landing slot, THEN remove from party, THEN mint into the pre-verified slot — with
+     *  guaranteed landing slot, THEN remove from party, THEN mint into the pre-verified slot - with
      *  offerOrDrop as the never-lose-the-mon last resort. No insertStack, ever. */
     private static void compressMon(ServerPlayerEntity player, int slot) {
         try {
@@ -667,7 +667,7 @@ public final class NotebookNet {
                     mon.getSpecies().getName(), mon.getLevel(), mon.getShiny(),
                     mon.getGender().name().toLowerCase(java.util.Locale.ROOT)));
             if (!party.remove(mon)) {
-                player.sendMessage(Text.literal("§c[Greener Pastures]§r Could not archive — the party refused the removal."), false);
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Could not archive - the party refused the removal."), false);
                 return;
             }
             ItemStack blank = inv.main.get(blankSlot);
@@ -676,7 +676,7 @@ public final class NotebookNet {
             else {
                 int empty = inv.getEmptySlot();
                 if (empty >= 0) inv.main.set(empty, written);
-                else inv.offerOrDrop(written);   // race fallback — the mon is NEVER lost
+                else inv.offerOrDrop(written);   // race fallback - the mon is NEVER lost
             }
             player.sendMessage(Text.literal("§a[Greener Pastures]§r Archived §b" + mon.getSpecies().getName()
                     + "§r to a Specimen Disk."), false);
@@ -685,13 +685,13 @@ public final class NotebookNet {
                     "shiny", Boolean.toString(mon.getShiny()));
         } catch (Throwable t) {
             GpLog.w("specimen", "compress_fail", "err", String.valueOf(t));
-            player.sendMessage(Text.literal("§c[Greener Pastures]§r Archive failed — nothing was changed."), false);
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r Archive failed - nothing was changed."), false);
         }
     }
 
     // ── Multi-item targeting (backlog #5): with 2+ Kernels/Daemons in the inventory, the tabs used to
     // operate on whichever was found first. The client picks a target card; we remember the SLOT per player
-    // (session-scoped: cleared on disconnect + SERVER_STARTED) and re-validate it on EVERY use — if the slot
+    // (session-scoped: cleared on disconnect + SERVER_STARTED) and re-validate it on EVERY use - if the slot
     // no longer holds the right item we silently fall back to first-found (never operate on the wrong stack).
     private static final Map<UUID, Integer> augTargetSlot = new java.util.concurrent.ConcurrentHashMap<>();
     private static final Map<UUID, Integer> daemonTargetSlot = new java.util.concurrent.ConcurrentHashMap<>();
@@ -755,7 +755,7 @@ public final class NotebookNet {
         return 1;   // uniform 1 slot per augment for v1
     }
 
-    // ── GPU economy (§7.5 — now LIVE): baked constants, deliberately NO config (anti-p2w, same rule as
+    // ── GPU economy (§7.5 - now LIVE): baked constants, deliberately NO config (anti-p2w, same rule as
     // drop rates). Quality augments (shiny/IV/EV/breeding-meta) cost more than throughput ones; a Daemon
     // buff tier is a flat install fee on top of its ongoing Data drain. Re-picking a parameterized augment's
     // VALUE stays free (the augment was already bought); removal never refunds.
@@ -767,7 +767,7 @@ public final class NotebookNet {
         return at.function.cls == com.greenerpastures.economy.TetherClass.QUALITY ? GPU_QUALITY : GPU_THROUGHPUT;
     }
 
-    /** Consume {@code n} GPUs from the player's main+offhand (manual decrement — never trust insertStack-style
+    /** Consume {@code n} GPUs from the player's main+offhand (manual decrement - never trust insertStack-style
      *  seams; mirrors pull()). Returns false (and consumes nothing) if they hold fewer than {@code n}. */
     private static boolean consumeGpu(ServerPlayerEntity player, int n) {
         if (n <= 0) return true;
@@ -908,7 +908,7 @@ public final class NotebookNet {
         return root.toString();
     }
 
-    // The nature/ball catalogs are compile-time constants — build their JSON ONCE instead of 57 elements per
+    // The nature/ball catalogs are compile-time constants - build their JSON ONCE instead of 57 elements per
     // push per second (perf-audit R3 F3). Never mutated after creation, so sharing the instance is safe.
     private static JsonArray naturesJsonCache, ballsJsonCache;
 
@@ -940,7 +940,7 @@ public final class NotebookNet {
         AugmentType at = arg == null ? null : augmentType(arg.type());
         if (at == null || !at.appliesTo(ref.stack())) return;
         if (Boolean.TRUE.equals(ref.stack().get(GpComponents.CORRUPTED))) {
-            player.sendMessage(Text.literal("§5⛧§r This Kernel is §8corrupted§r — it is beyond modification."), false);
+            player.sendMessage(Text.literal("§5⛧§r This Kernel is §8corrupted§r - it is beyond modification."), false);
             return;
         }
         if (at.parameterized() != (arg.index() > 0 || arg.ev() != null)) return;   // param augments need a value; plain ones must not carry one
@@ -955,13 +955,13 @@ public final class NotebookNet {
             int slotsAfter = slotsUsed(ref.stack()) - AugmentType.slotsForLevel(curLevel)
                     + AugmentType.slotsForLevel(targetLevel);
             if (slotsAfter > tier.slots) {
-                player.sendMessage(Text.literal("§c[Greener Pastures]§r No room — level " + targetLevel
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r No room - level " + targetLevel
                         + " needs " + AugmentType.slotsForLevel(targetLevel) + " slots total on this Kernel."), false);
                 return;
             }
             int fee = gpuCost(at);
             if (!consumeGpu(player, fee)) {
-                player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough GPU — "
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough GPU - "
                         + at.effectSummary() + " costs " + fee + ", you have " + countGpu(player) + "."), false);
                 return;
             }
@@ -1005,7 +1005,7 @@ public final class NotebookNet {
         AugmentType at = augmentType(typeName);
         if (at == null || !at.appliesTo(ref.stack()) || !at.installedOn(ref.stack())) return;
         if (Boolean.TRUE.equals(ref.stack().get(GpComponents.CORRUPTED))) {
-            player.sendMessage(Text.literal("§5⛧§r This Kernel is §8corrupted§r — it is beyond modification."), false);
+            player.sendMessage(Text.literal("§5⛧§r This Kernel is §8corrupted§r - it is beyond modification."), false);
             return;
         }
         ItemStack out = ref.stack().copy();
@@ -1019,15 +1019,15 @@ public final class NotebookNet {
     // ── BioBank (per-player; browse-only in 6a) ─────────────────────────────────────────────────────────
 
     /** Withdraw the egg at {@code flatIndex} (the console's flattened BioBank order) back into the player's
-     *  inventory — placed into a MAIN slot we picked ourselves (never {@code insertStack}; see {@link #pull}). */
+     *  inventory - placed into a MAIN slot we picked ourselves (never {@code insertStack}; see {@link #pull}). */
     private static void withdrawEgg(ServerPlayerEntity player, int flatIndex) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         var main = player.getInventory().main;
         int slot = -1;
         for (int i = 0; i < main.size(); i++) if (main.get(i).isEmpty()) { slot = i; break; }
-        if (slot < 0) {                                   // no room — leave the egg in the BioBank (never destroy)
-            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full — the egg stays in the BioBank."), false);
+        if (slot < 0) {                                   // no room - leave the egg in the BioBank (never destroy)
+            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full - the egg stays in the BioBank."), false);
             GpLog.i("notebook", "biobank_full", "player", player.getUuid().toString());
             return;
         }
@@ -1046,7 +1046,7 @@ public final class NotebookNet {
         pushPastureConfig(player, pos, true);
     }
 
-    /** {@code full=false} is the PREFETCH shape (R3 F6): cache-warming only — skip the snapshot re-capture and
+    /** {@code full=false} is the PREFETCH shape (R3 F6): cache-warming only - skip the snapshot re-capture and
      *  the per-mon reflective stats JSON (parent-inspector data). A real focus round-trips {@code full=true}
      *  moments later and silently upgrades the cache (stale-while-revalidate already handles it). */
     public static void pushPastureConfig(ServerPlayerEntity player, BlockPos pos, boolean full) {
@@ -1095,7 +1095,7 @@ public final class NotebookNet {
             }
             if (a != null && a.level(com.greenerpastures.economy.AugmentFunction.ABILITY) > 0) k.addProperty("ha", true);
             if (a != null && a.level(com.greenerpastures.economy.AugmentFunction.EGG_MOVE) > 0) k.addProperty("moves", true);
-            // Full augment map + corruption — the client dresses its DISPLAY stack with these so hovering the
+            // Full augment map + corruption - the client dresses its DISPLAY stack with these so hovering the
             // slotted kernel shows the real tooltip, not a default-born one (Deuce, 2026-07-04).
             if (kernel.contains(net.minecraft.component.DataComponentTypes.CUSTOM_NAME))
                 k.addProperty("name", kernel.getName().getString());
@@ -1133,12 +1133,12 @@ public final class NotebookNet {
                     PastureClaim.Result r = PastureClaim.toggle(pd.owner, player.getUuid());
                     if (r.changed()) {
                         pd.owner = r.owner();
-                        pd.lastHarvestTick = world.getTime();   // anchor offline-progress at claim — never backfill the unowned past
+                        pd.lastHarvestTick = world.getTime();   // anchor offline-progress at claim - never backfill the unowned past
                         pd.lastBreedTick = world.getTime();
                         reg.markDirty();
                         player.sendMessage(Text.literal(r.outcome() == PastureClaim.Outcome.CLAIMED
-                                ? "§a[Greener Pastures]§r Linked — this pasture's drops, eggs & outputs collect into your Notebook (you pay its tether cost)."
-                                : "§a[Greener Pastures]§r Unlinked — its outputs no longer collect to you."), false);
+                                ? "§a[Greener Pastures]§r Linked - this pasture's drops, eggs & outputs collect into your Notebook (you pay its tether cost)."
+                                : "§a[Greener Pastures]§r Unlinked - its outputs no longer collect to you."), false);
                     } else {
                         player.sendMessage(Text.literal("§c[Greener Pastures]§r This pasture is owned by someone else."), false);
                     }
@@ -1191,7 +1191,7 @@ public final class NotebookNet {
     }
 
     /** Save the focused pasture's Daemon graph (the whole JSON authored in the React node editor). Validates reach
-     *  + a size cap, stores it on {@link PastureData}. Not echoed back — the editor is the authority while open. */
+     *  + a size cap, stores it on {@link PastureData}. Not echoed back - the editor is the authority while open. */
     private static void onGraphSave(NotebookGraphSaveC2S p, ServerPlayNetworking.Context ctx) {
         ServerPlayerEntity player = ctx.player();
         MinecraftServer server = player.getServer();
@@ -1203,7 +1203,7 @@ public final class NotebookNet {
             if (player.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0 * 64.0) return;
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;
             String json = p.json() == null ? "" : p.json();
-            if (json.length() > 65536) return;   // sanity cap — a pasture graph is never this big
+            if (json.length() > 65536) return;   // sanity cap - a pasture graph is never this big
             PastureRegistry reg = PastureRegistry.get(server);
             PastureData pd = reg.getOrCreate(world, pos);
             pd.graphJson = json;
@@ -1250,7 +1250,7 @@ public final class NotebookNet {
         ServerPlayNetworking.send(player, new NotebookBioBankS2C(entries.size(), entries));
     }
 
-    /** Write Data onto blank media (§5c — the Notebook is the drive): consume 1 blank + debit the
+    /** Write Data onto blank media (§5c - the Notebook is the drive): consume 1 blank + debit the
      *  denomination's value → hand back the written disk. Refuses BEFORE debiting; never destroys media. */
     private static void writeDisk(ServerPlayerEntity player, String denomId) {
         MinecraftServer server = player.getServer();
@@ -1268,19 +1268,19 @@ public final class NotebookNet {
         }
         DataStore data = DataStore.get(server);
         if (data.balanceOf(player.getUuid()) < disk.value) {
-            player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough Data — that disk holds "
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r Not enough Data - that disk holds "
                     + String.format("%,d", disk.value) + "."), false);
             return;
         }
         ItemStack blank = inv.main.get(blankSlot);
         if (blank.getCount() == 1) {
             if (!data.tryDebit(player.getUuid(), disk.value)) return;
-            inv.main.set(blankSlot, new ItemStack(denomItem));           // media swaps in place — always room
+            inv.main.set(blankSlot, new ItemStack(denomItem));           // media swaps in place - always room
         } else {
             int empty = -1;
             for (int i = 0; i < inv.main.size(); i++) if (inv.main.get(i).isEmpty()) { empty = i; break; }
             if (empty < 0) {
-                player.sendMessage(Text.literal("§c[Greener Pastures]§r Inventory full — make room for the written disk."), false);
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Inventory full - make room for the written disk."), false);
                 return;
             }
             if (!data.tryDebit(player.getUuid(), disk.value)) return;
@@ -1357,7 +1357,7 @@ public final class NotebookNet {
         sendGated(player, "rituals", new NotebookRitualsS2C(GSON.toJson(root)));
     }
 
-    /** Take ritual loot into the inventory — same manual capacity+placement contract as {@link #pull}
+    /** Take ritual loot into the inventory - same manual capacity+placement contract as {@link #pull}
      *  (never trust insertStack, refuse loudly, the pool is only debited by what actually landed). */
     private static void ritualPull(ServerPlayerEntity player, String itemId, int mode) {
         MinecraftServer server = player.getServer();
@@ -1382,7 +1382,7 @@ public final class NotebookNet {
         };
         want = Math.min(Math.min(want, have), capacity);
         if (want <= 0) {
-            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full — nothing pulled."), false);
+            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r Inventory full - nothing pulled."), false);
             GpLog.i("ritual", "pull_full", "player", player.getUuid().toString(), "item", itemId);
             return;
         }
@@ -1410,7 +1410,7 @@ public final class NotebookNet {
         KernelRef ref = targetKernel(player);
         if (ref == null) return;
         if (Boolean.TRUE.equals(ref.stack().get(GpComponents.CORRUPTED))) {
-            player.sendMessage(Text.literal("§5⛧§r Already corrupted — the disk finds nothing left to take."), false);
+            player.sendMessage(Text.literal("§5⛧§r Already corrupted - the disk finds nothing left to take."), false);
             return;
         }
         // consume exactly one Illicit Data Disk from main+offhand
@@ -1437,7 +1437,7 @@ public final class NotebookNet {
                         AugmentType.DROP_RATE, AugmentType.DROP_YIELD, AugmentType.IV_FLOOR,
                         AugmentType.ABILITY, AugmentType.EGG_MOVES};
                 AugmentType gift = pool[CORRUPT_RNG.nextInt(pool.length)];
-                out = gift.apply(out, gift.storedValueFor(out, 1));   // base-aware — a Greener's drop-rate base must never be downgraded by the gift
+                out = gift.apply(out, gift.storedValueFor(out, 1));   // base-aware - a Greener's drop-rate base must never be downgraded by the gift
                 detail = gift.effectSummary() + " §7(installed beyond capacity)§r";
             }
             case WILD -> {
@@ -1451,7 +1451,7 @@ public final class NotebookNet {
                 } else {
                     Integer bonus = out.get(GpComponents.CORRUPT_PAIRS);
                     out.set(GpComponents.CORRUPT_PAIRS, (bonus == null ? 0 : bonus) + 1);
-                    detail = "+1 breeding pair — beyond its tier";
+                    detail = "+1 breeding pair - beyond its tier";
                 }
             }
             case NOTHING -> detail = "";
@@ -1474,7 +1474,7 @@ public final class NotebookNet {
         String line = com.greenerpastures.pasture.breeding.compiler.KernelCorruption.reveal(roll, detail);
         player.sendMessage(Text.literal(line), false);
         com.greenerpastures.notify.Inbox.push(player.getUuid(), "⛧",
-                "Corruption: " + roll.outcome() + (detail.isEmpty() ? "" : " — " + detail.replaceAll("§.", "")));
+                "Corruption: " + roll.outcome() + (detail.isEmpty() ? "" : " - " + detail.replaceAll("§.", "")));
         GpLog.i("corrupt", "kernel", "player", player.getUuid().toString(),
                 "outcome", roll.outcome().name(), "variant", roll.variant(), "detail", detail.replaceAll("§.", ""));
     }

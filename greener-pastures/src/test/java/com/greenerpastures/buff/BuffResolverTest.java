@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Headless tests for the pure buff resolver: Daemon level ⇒ tier, per-buff caps, and the tier-scaled summed
- * Data drain. No Gson, no MC — only {@code defaults()}/{@code resolve}.
+ * Data drain. No Gson, no MC - only {@code defaults()}/{@code resolve}.
  */
 class BuffResolverTest {
 
@@ -82,7 +82,7 @@ class BuffResolverTest {
     @Test
     void applicableFilterChargesOnlyForDeliverableBuffs() {
         // The adapter delivers buffs as their hooks land. With the filter, the player is billed ONLY for the
-        // buffs the mod can currently apply — never for one it hasn't wired up.
+        // buffs the mod can currently apply - never for one it hasn't wired up.
         BuffConfig def = BuffConfig.defaults();
         Set<BuffId> delivered = Set.of(BuffId.HASTE, BuffId.SATURATION, BuffId.MAGNET);
         ResolvedBuffs all = BuffResolver.resolve(def, 3);
@@ -104,7 +104,7 @@ class BuffResolverTest {
         assertEquals(0.0, r.dataPerSec(), 1e-9, "and drains no Data");
     }
 
-    // ── BUG-004: resolveLoadout — per-item compiled loadout instead of a single global Mk tier ──────────────
+    // ── BUG-004: resolveLoadout - per-item compiled loadout instead of a single global Mk tier ──────────────
 
     @Test
     void resolveLoadoutBillsOnlyTheInstalledBuffs() {
@@ -114,7 +114,7 @@ class BuffResolverTest {
         assertEquals(2, r.tiers().size(), "only the two compiled buffs run");
         assertEquals(3, r.tier(BuffId.FORTUNE));
         assertEquals(1, r.tier(BuffId.HASTE));
-        assertEquals(0, r.tier(BuffId.LOOTING), "an un-installed buff is inactive — you pay for what you compiled");
+        assertEquals(0, r.tier(BuffId.LOOTING), "an un-installed buff is inactive - you pay for what you compiled");
         // gathering Fortune costs 0.5/tier, QOL Haste 0.25/tier ⇒ 3×0.5 + 1×0.25
         assertEquals(3 * 0.5 + 1 * 0.25, r.dataPerSec(), 1e-9);
         assertEquals(3, r.daemonLevel(), "summary level = the loadout's highest effective tier");

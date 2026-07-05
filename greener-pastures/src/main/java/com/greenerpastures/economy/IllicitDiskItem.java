@@ -13,7 +13,7 @@ import net.minecraft.world.World;
 import java.util.List;
 
 /**
- * The <b>Illicit Data Disk</b> (Deuce 2026-07-04: "like a corruption orb from Path of Exile") — NOT a
+ * The <b>Illicit Data Disk</b> (Deuce 2026-07-04: "like a corruption orb from Path of Exile") - NOT a
  * currency denomination: it Vaal-rolls a Kernel through the Notebook's Augmenter (one of
  * blessed/wild/nothing/bricked, then corrupted forever). Sourced from the hidden Black Market ritual and,
  * whisper-rare, from the Renderer's void stream. Right-click just whispers the hint; the deed happens at

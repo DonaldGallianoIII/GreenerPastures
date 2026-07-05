@@ -18,13 +18,13 @@ import net.minecraft.util.math.Vec3d;
 /**
  * In-world finder: boxes every Cobblemon Pokémon whose display name matches the target
  * species (set from the Farm dashboard), so you can walk straight to the right pasture
- * instead of hand-checking dozens. Matches the entity's shown name — works for un-nicknamed
+ * instead of hand-checking dozens. Matches the entity's shown name - works for un-nicknamed
  * breeding stock; nicknamed mons match on the nickname.
  */
 public final class PokemonFinder {
     private PokemonFinder() {}
 
-    // magenta — stands out against everything
+    // magenta - stands out against everything
     private static final float MR = 1.0f, MG = 0.35f, MB = 0.9f;
     private static final int HUD_COLOR = 0xFFFF5BD1;
 

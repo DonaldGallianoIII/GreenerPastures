@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Pure-logic tests for the Kernel tiers — no Minecraft needed. Runs headless via {@code ./gradlew test}. */
+/** Pure-logic tests for the Kernel tiers - no Minecraft needed. Runs headless via {@code ./gradlew test}. */
 class BreedingTierTest {
 
     @Test
@@ -42,7 +42,7 @@ class BreedingTierTest {
         assertEquals(150, BreedingTier.GOLD.baseDropRateCentipercent(),      "gold +1.50%");
         assertEquals(200, BreedingTier.DIAMOND.baseDropRateCentipercent(),   "diamond +2.00%");
         assertEquals(250, BreedingTier.NETHERITE.baseDropRateCentipercent(), "netherite +2.50%");
-        // Greener jumps off the line (Deuce 2026-07-04: doubled, then tuned down 1% the same day) —
+        // Greener jumps off the line (Deuce 2026-07-04: doubled, then tuned down 1% the same day) -
         // the top kernel is a JUMP, priced like one (8 netherite/emerald blocks).
         assertEquals(500, BreedingTier.GREENER.baseDropRateCentipercent(),   "greener +5.00%");
     }

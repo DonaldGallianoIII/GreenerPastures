@@ -12,7 +12,7 @@ public class CullSettings {
 
     public Tier classify(EggInfo e) {
         if (e == null) return Tier.NOT_EGG;
-        if (e.shiny()) return Tier.SHINY;   // shiny always wins — gold regardless of IVs
+        if (e.shiny()) return Tier.SHINY;   // shiny always wins - gold regardless of IVs
         if (!e.ivsKnown()) return Tier.UNKNOWN;
         if (e.ivTotal() >= keepMinIvTotal || e.perfectCount() >= keepMinPerfect) return Tier.KEEPER;
         return Tier.CULL;

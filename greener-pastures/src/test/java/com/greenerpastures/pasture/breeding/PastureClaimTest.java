@@ -27,7 +27,7 @@ class PastureClaimTest {
     void clickingYourOwnBoxReleasesIt() {
         PastureClaim.Result r = PastureClaim.toggle(A, A);
         assertEquals(PastureClaim.Outcome.RELEASED, r.outcome());
-        assertNull(r.owner(), "unlocks — free for the next person");
+        assertNull(r.owner(), "unlocks - free for the next person");
         assertTrue(r.changed());
     }
 
@@ -35,7 +35,7 @@ class PastureClaimTest {
     void anotherPlayerCannotToggleYourLock() {
         PastureClaim.Result r = PastureClaim.toggle(A, B);
         assertEquals(PastureClaim.Outcome.LOCKED_BY_OTHER, r.outcome());
-        assertEquals(A, r.owner(), "owner unchanged — only A can release");
+        assertEquals(A, r.owner(), "owner unchanged - only A can release");
         assertFalse(r.changed());
     }
 

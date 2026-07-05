@@ -3,7 +3,7 @@ package com.greenerpastures.economy;
 /**
  * The Compiler's Soul-Tether inscription, Minecraft-free + unit-tested. Writing {@code [function, tier]}
  * onto a tether costs Data upfront ({@link TetherEconomics#inscribeCost}); re-inscribing or wiping
- * recovers only part ({@link TetherEconomics#REFUND_RATE}), so you can <b>never profit by flipping</b> —
+ * recovers only part ({@link TetherEconomics#REFUND_RATE}), so you can <b>never profit by flipping</b> -
  * the upfront cost is always real (book-style re-inscription, Deuce 2026-06-28).
  *
  * <p>Re-inscribing = wipe the current tier (refund) then inscribe the new one (cost): net =

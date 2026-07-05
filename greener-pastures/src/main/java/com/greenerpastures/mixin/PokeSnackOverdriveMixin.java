@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * <b>Snack Overdrive</b> — both halves live here. Pt.1: carries a placed snack's <b>repel payload</b> through the block's life
+ * <b>Snack Overdrive</b> - both halves live here. Pt.1: carries a placed snack's <b>repel payload</b> through the block's life
  * (Snack Overdrive pt.1): Cobblemon's {@code initializeFromItemStack} copies only ITS components, so our
  * {@code gp:repel_types} would die on placement without this. We capture it, persist it across chunk
  * reloads, hand it back on {@code toItemStack}, and lazily add ONE {@link GpRepelInfluence} to the snack's
@@ -38,7 +38,7 @@ public class PokeSnackOverdriveMixin implements com.greenerpastures.drops.GpRepe
     /** Pt.2 spawn-speed credit bank (SnackSpeed): fractional spawns carried between random ticks. */
     @Unique private double gp$credits = 0.0;
 
-    /** Every bite_time entry, per copy — the values vanilla throws away by picking one at random. */
+    /** Every bite_time entry, per copy - the values vanilla throws away by picking one at random. */
     @Unique
     private static java.util.List<Double> gp$biteValues(PokeSnackBlockEntity be) {
         java.util.List<Double> out = new java.util.ArrayList<>();
@@ -52,7 +52,7 @@ public class PokeSnackOverdriveMixin implements com.greenerpastures.drops.GpRepe
         return out;
     }
 
-    /** Pt.2: replace the vanilla countdown (ONE random bite_time entry, hard 2× cap — decompile-verified
+    /** Pt.2: replace the vanilla countdown (ONE random bite_time entry, hard 2× cap - decompile-verified
      *  rot) with the credit accumulator: every copy counts multiplicatively, expected value exact, burst-
      *  capped, credits hold (capped) while nobody's in range. Fail-soft: ANY error before the cancel falls
      *  straight through to vanilla randomTick. */
@@ -97,7 +97,7 @@ public class PokeSnackOverdriveMixin implements com.greenerpastures.drops.GpRepe
     }
 
     /** Join at SPAWNER CREATION, not first spawn attempt: Cobblenav's snack inspector reads
-     *  {@code getSpawner().getInfluences()} the moment it's created — a lazy join made the Nav (and the
+     *  {@code getSpawner().getInfluences()} the moment it's created - a lazy join made the Nav (and the
      *  first spawn attempt) compute WITHOUT the repel (Deuce caught it Nav-in-hand, 2026-07-04). The
      *  lambda is Cobblemon's synthetic spawner initializer; static target, {@code remap=false}. */
     @Inject(method = "spawner_delegate$lambda$0", at = @At("RETURN"), remap = false)

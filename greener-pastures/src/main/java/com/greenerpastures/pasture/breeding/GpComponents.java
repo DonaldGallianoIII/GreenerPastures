@@ -22,7 +22,7 @@ public final class GpComponents {
                     .packetCodec(Augments.PACKET_CODEC)
                     .build());
 
-    /** The {@code greenerpastures:ev_spread} per-stat EV allocation a Kernel carries (BUG-002 — replaces the flat
+    /** The {@code greenerpastures:ev_spread} per-stat EV allocation a Kernel carries (BUG-002 - replaces the flat
      *  "+N on every stat" EV augment). Save + packet codecs so it persists AND can sync to a future GUI. */
     public static final ComponentType<EvSpread> EV_SPREAD = Registry.register(
             Registries.DATA_COMPONENT_TYPE,
@@ -32,7 +32,7 @@ public final class GpComponents {
                     .packetCodec(EvSpread.PACKET_CODEC)
                     .build());
 
-    /** {@code greenerpastures:corrupted} — the Illicit Data Disk's permanent mark (Vaal-orb style): a
+    /** {@code greenerpastures:corrupted} - the Illicit Data Disk's permanent mark (Vaal-orb style): a
      *  corrupted Kernel still WORKS but the Augmenter refuses it forever. */
     public static final ComponentType<Boolean> CORRUPTED = Registry.register(
             Registries.DATA_COMPONENT_TYPE,
@@ -42,7 +42,7 @@ public final class GpComponents {
                     .packetCodec(net.minecraft.network.codec.PacketCodecs.BOOL)
                     .build());
 
-    /** {@code greenerpastures:corrupt_pairs} — the WILD corruption's +N breeding pairs (a 9-pair Greener). */
+    /** {@code greenerpastures:corrupt_pairs} - the WILD corruption's +N breeding pairs (a 9-pair Greener). */
     public static final ComponentType<Integer> CORRUPT_PAIRS = Registry.register(
             Registries.DATA_COMPONENT_TYPE,
             Identifier.of(GreenerPastures.MOD_ID, "corrupt_pairs"),
@@ -51,9 +51,9 @@ public final class GpComponents {
                     .packetCodec(net.minecraft.network.codec.PacketCodecs.VAR_INT)
                     .build());
 
-    /** {@code greenerpastures:repel_types} — an Ultra Compressed Snack's REPEL payload (Snack Overdrive pt.1):
+    /** {@code greenerpastures:repel_types} - an Ultra Compressed Snack's REPEL payload (Snack Overdrive pt.1):
      *  type → summed magnitude; our spawn influence DIVIDES matching types' weight by it. Flipped seasonings
-     *  are removed from Cobblemon's bait component entirely (firstOrNull TYPING quirk — see RepelFold). */
+     *  are removed from Cobblemon's bait component entirely (firstOrNull TYPING quirk - see RepelFold). */
     public static final ComponentType<java.util.Map<String, Integer>> REPEL_TYPES = Registry.register(
             Registries.DATA_COMPONENT_TYPE,
             Identifier.of(GreenerPastures.MOD_ID, "repel_types"),
@@ -65,7 +65,7 @@ public final class GpComponents {
                             net.minecraft.network.codec.PacketCodecs.VAR_INT, 32))
                     .build());
 
-    /** {@code greenerpastures:specimen} — a compressed Pokémon (lossless {@code Pokemon.saveToNBT} payload)
+    /** {@code greenerpastures:specimen} - a compressed Pokémon (lossless {@code Pokemon.saveToNBT} payload)
      *  on a Specimen Disk. The companion SUMMARY renders the tooltip so this is never parsed per frame. */
     public static final ComponentType<net.minecraft.nbt.NbtCompound> SPECIMEN = Registry.register(
             Registries.DATA_COMPONENT_TYPE,

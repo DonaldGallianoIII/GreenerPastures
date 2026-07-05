@@ -24,7 +24,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Better Pasture module — opt-in multi-pair breeding via the Notebook + slotted Pasture
+ * Better Pasture module - opt-in multi-pair breeding via the Notebook + slotted Pasture
  * Upgrades. All Cobbreeding contact is isolated in {@link CobbreedingBridge} (version-guarded);
  * the breeding engine is {@link MultiPairBreeder}. Stays dormant if Cobbreeding is unavailable.
  */
@@ -51,18 +51,18 @@ public final class BetterPasture {
 
     private static void registerItems() {
         // every Kernel ships with a base drop-rate perk that SCALES with the tier (copper +0.25% … greener
-        // +1.50% — BUG-001 fix; was a flat +0.25% on every tier): a default augments component, visible on the
+        // +1.50% - BUG-001 fix; was a flat +0.25% on every tier): a default augments component, visible on the
         // tooltip, read by the Harvester, and amplifiable by a Drop Rate tether (Deuce, 2026-06-29).
         for (BreedingTier tier : BreedingTier.values()) {
             Augments kernelBase = Augments.NONE.withLevel(AugmentFunction.DROP_RATE, tier.baseDropRateCentipercent());
             BreedingUpgradeItem item = new BreedingUpgradeItem(tier,
-                    // maxCount 1 — NEVER stackable (BUG-013): augments/corruption are stack-wide component
+                    // maxCount 1 - NEVER stackable (BUG-013): augments/corruption are stack-wide component
                     // writes, so a stack of 16 kernels would all get augmented for one GPU payment.
                     new Item.Settings().maxCount(1).component(GpComponents.AUGMENTS, kernelBase));
             Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "breeding_upgrade_" + tier.id()), item);
             ITEMS.put(tier, item);
         }
-        // Augments are no longer physical items — they're applied to a Kernel in the Notebook's Augmenter tab
+        // Augments are no longer physical items - they're applied to a Kernel in the Notebook's Augmenter tab
         // (the AugmentType catalog + a GPU reagent). Only the Kernels themselves show in the creative group.
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> {
             ITEMS.values().forEach(entries::add);
@@ -71,7 +71,7 @@ public final class BetterPasture {
 
     /**
      * When a managed pasture's block is broken, return our items (the slotted Pasture Upgrade + any
-     * augmented Kernels) and any queued eggs to the world, then free the record — otherwise both are lost
+     * augmented Kernels) and any queued eggs to the world, then free the record - otherwise both are lost
      * and the record lingers in the save + is rescanned every breeding tick forever (review H1).
      */
     private static void registerBreakCleanup() {
@@ -91,7 +91,7 @@ public final class BetterPasture {
     /**
      * Return a pasture's items (the slotted Pasture Upgrade + augmented Kernels + any queued eggs) to the
      * world and free its record. Shared by the player-break hook above and the breeder's non-player-removal
-     * reclaim — TNT / creeper / {@code /setblock} / piston don't fire {@code PlayerBlockBreakEvents}
+     * reclaim - TNT / creeper / {@code /setblock} / piston don't fire {@code PlayerBlockBreakEvents}
      * (re-audit H2). Caller must not be mid-iterating the registry's live sub-map (this calls remove()).
      */
     public static void reclaim(ServerWorld world, BlockPos at, PastureData pd, PastureRegistry reg) {

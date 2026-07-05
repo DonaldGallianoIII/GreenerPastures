@@ -11,12 +11,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The beyond-vanilla enchant boost — delivered <b>without ever writing an ItemStack</b> (so there is no dupe /
+ * The beyond-vanilla enchant boost - delivered <b>without ever writing an ItemStack</b> (so there is no dupe /
  * desync / NBT surface; see {@code ENCHANT_BOOST.md}). The block-drop mixin {@link
  * com.greenerpastures.mixin.BlockDropBoostMixin} calls {@link #begin}/{@link #end} to scope a thread-local
  * window around a fed-Daemon holder's loot resolution; the read mixin {@link
  * com.greenerpastures.mixin.EnchantmentLevelMixin} calls {@link #boost} to add the resolved tier to the
- * enchant level the loot table reads. Pure read interception, gated to that window — never fires for tooltips,
+ * enchant level the loot table reads. Pure read interception, gated to that window - never fires for tooltips,
  * anvils, or other players.
  *
  * <p>Server loot generation is single-threaded, so the {@link ThreadLocal} is safe and self-clearing (each
@@ -57,7 +57,7 @@ public final class DaemonEnchantBoost {
 
     /**
      * Add the active boost for {@code enchantment} to its read {@code original} level. Only rides an enchant the
-     * gear <i>already has</i> ({@code original > 0}) — "beyond the vanilla max", not "grant from nothing" — and
+     * gear <i>already has</i> ({@code original > 0}) - "beyond the vanilla max", not "grant from nothing" - and
      * only inside an open window. Clamped to the component's 255 ceiling.
      */
     public static int boost(RegistryEntry<Enchantment> enchantment, int original) {

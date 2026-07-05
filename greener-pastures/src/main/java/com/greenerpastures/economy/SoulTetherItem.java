@@ -9,7 +9,7 @@ import net.minecraft.util.Formatting;
 import java.util.List;
 
 /**
- * The Soul Tether item — a rented amplifier. Blank until inscribed at a Compiler with {@code [function,
+ * The Soul Tether item - a rented amplifier. Blank until inscribed at a Compiler with {@code [function,
  * tier]} (costs Data); slotted into a Kernel's functional slot it amplifies that Kernel's matching base
  * mod while the operator's Daemon is fed. All magnitude / burn numbers come from the tested
  * {@link SoulTether}, so the tooltip is the single source of truth with the runtime.
@@ -24,7 +24,7 @@ public class SoulTetherItem extends Item {
         super.appendTooltip(stack, context, tooltip, type);
         Tether t = stack.get(DarkEconomy.TETHER);
         if (t == null || t.isBlank()) {
-            tooltip.add(Text.literal("Blank — inscribe [function · tier] at a Compiler").formatted(Formatting.DARK_GRAY));
+            tooltip.add(Text.literal("Blank - inscribe [function · tier] at a Compiler").formatted(Formatting.DARK_GRAY));
             return;
         }
         SoulTether st = t.toSoulTether();

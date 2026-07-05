@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/** Fake-but-representative data for the Design Studio (no Minecraft) — shared by the PNG + live modes. */
+/** Fake-but-representative data for the Design Studio (no Minecraft) - shared by the PNG + live modes. */
 public final class StudioData {
     private StudioData() {}
 

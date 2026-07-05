@@ -13,7 +13,7 @@ import net.minecraft.item.ItemStack;
  * Each type names an {@link AugmentFunction} and the level/magnitude it writes; install + apply are
  * <b>generic</b> over that function (merge into the {@code greenerpastures:augments} component), so adding
  * an augment is just one new constant (+ a display line in {@link #effectSummary}). Ships all SEVEN v1
- * functions — each now has a live effect (shiny / speed / IV floor / EV at the breeder, drop rate / drop
+ * functions - each now has a live effect (shiny / speed / IV floor / EV at the breeder, drop rate / drop
  * yield at the Harvester, enrichment at the Renderer).
  *
  * <p>Magnitudes are calibration (tune via config). A Drop Rate augment deliberately writes ABOVE the
@@ -25,7 +25,7 @@ public enum AugmentType {
     SHINY     ("shiny-boost",      "1.0", AugmentFunction.SHINY,      30),   // % chance of one bounded reroll
     SPEED     ("speed-boost",      "1.0", AugmentFunction.SPEED,       1),   // level I → faster breeding cadence
     ENRICHMENT("enrichment-boost", "1.0", AugmentFunction.ENRICHMENT, 20),   // +20% → 1.20× render value
-    DROP_RATE ("droprate-boost",   "2.0", AugmentFunction.DROP_RATE, 200),   // centipercent: 2.00% (base is 0.50%/tier) — doubled 2026-07-03
+    DROP_RATE ("droprate-boost",   "2.0", AugmentFunction.DROP_RATE, 200),   // centipercent: 2.00% (base is 0.50%/tier) - doubled 2026-07-03
     DROP_YIELD("dropyield-boost",  "1.0", AugmentFunction.DROP_YIELD,  1),   // +1 to the amount-budget ceiling
     IV_FLOOR  ("ivfloor-boost",    "1.0", AugmentFunction.IV_FLOOR,    3),   // guarantee 3 perfect (31) IVs
     EV        ("ev-primer",        "2.0", AugmentFunction.EV,          0),   // PARAMETERIZED: the allocator's targeted EV_SPREAD (BUG-002; v1's flat +20 blanket retired)
@@ -38,7 +38,7 @@ public enum AugmentType {
     public final String pkgName;
     public final String version;
     public final AugmentFunction function;
-    /** Level / magnitude written for {@link #function} — units are the function's own (% · level · centipercent · budget). */
+    /** Level / magnitude written for {@link #function} - units are the function's own (% · level · centipercent · budget). */
     public final int value;
 
     AugmentType(String pkgName, String version, AugmentFunction function, int value) {
@@ -48,7 +48,7 @@ public enum AugmentType {
         this.value = value;
     }
 
-    /** Item-id suffix (stable) — the registered item is {@code augment_<function id>}, e.g. {@code augment_shiny},
+    /** Item-id suffix (stable) - the registered item is {@code augment_<function id>}, e.g. {@code augment_shiny},
      *  {@code augment_drop_rate}. Keeping {@code augment_shiny} byte-identical preserves the existing item. */
     public String id() {
         return function.id;
@@ -64,16 +64,16 @@ public enum AugmentType {
         return !kernel.isEmpty() && kernel.getItem() instanceof BreedingUpgradeItem;
     }
 
-    /** A choice-carrying augment (#34/#35) whose install needs a picked value — the console sends
+    /** A choice-carrying augment (#34/#35) whose install needs a picked value - the console sends
      *  {@code "NATURE:7"} / {@code "EV:0,252,…"} instead of the bare type; a bare install is rejected. */
     public boolean parameterized() {
         return this == EV || this == NATURE || this == BALL;
     }
 
-    /** True if the Kernel's level for this function is already at/above {@code value} — so re-compiling is a
+    /** True if the Kernel's level for this function is already at/above {@code value} - so re-compiling is a
      *  no-op AND a higher mod (incl. a future stronger augment, or a hand-set base) is never downgraded.
      *  Selectors count as installed at ANY picked value; the EV primer counts by its EV_SPREAD component
-     *  (v1's blanket level ≥20 no longer marks it — the breeder only reads the spread). */
+     *  (v1's blanket level ≥20 no longer marks it - the breeder only reads the spread). */
     public boolean installedOn(ItemStack kernel) {
         return installedLevelOn(kernel) > 0;
     }
@@ -121,7 +121,7 @@ public enum AugmentType {
         return parameterized() || this == ABILITY || this == EGG_MOVES ? 1 : 2;
     }
 
-    /** PURE slot math (headless-tested): level II occupies THREE slots total — not even possible on Copper. */
+    /** PURE slot math (headless-tested): level II occupies THREE slots total - not even possible on Copper. */
     public static int slotsForLevel(int level) {
         return level >= 2 ? 3 : level == 1 ? 1 : 0;
     }
@@ -137,7 +137,7 @@ public enum AugmentType {
     }
 
     /** Parameterized install: set this augment's function to the PICKED {@code level} (a selector's catalog
-     *  index). The EV primer never routes here — its value is the EV_SPREAD component, not a level. */
+     *  index). The EV primer never routes here - its value is the EV_SPREAD component, not a level. */
     public ItemStack apply(ItemStack kernel, int level) {
         ItemStack out = kernel.copy();
         Augments base = out.get(GpComponents.AUGMENTS);

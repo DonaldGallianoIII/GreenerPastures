@@ -7,17 +7,17 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Bounded FIFO buffer of bred eggs that feeds a pasture's small visible tray — the runtime for the
+ * Bounded FIFO buffer of bred eggs that feeds a pasture's small visible tray - the runtime for the
  * COLLECTION node in {@code EGG_STORAGE_DESIGN.md}. <b>Minecraft-free</b> and generic over the egg
  * type {@code T} (the adapter uses {@code EggQueue<ItemStack>}), so all of this logic is unit-tested
  * headless.
  *
- * <p><b>Key invariant — pause, don't evict.</b> When the queue is full, {@link #offer} returns
+ * <p><b>Key invariant - pause, don't evict.</b> When the queue is full, {@link #offer} returns
  * {@code false} (the producer pauses breeding) rather than dropping the head, so a kept egg is never
  * lost. FIFO is the order; a future <b>Soul Tether</b> can reorder via a separate seam (not here).
  *
  * <p>Cap is configurable; the design floor is {@link #MIN_CAP} (= 8 pairs × 3 eggs), enforced by the
- * config layer that sets the cap — the core accepts any non-negative cap so it stays trivially testable.
+ * config layer that sets the cap - the core accepts any non-negative cap so it stays trivially testable.
  */
 public final class EggQueue<T> {
     /** Per-pasture queue floor from the design: 8 pairs × 3 eggs/cycle. Config clamps to at least this. */
@@ -35,7 +35,7 @@ public final class EggQueue<T> {
 
     /**
      * Add an egg to the tail if there's room. Returns {@code false} when full (the producer should
-     * pause) — the queue never evicts, so the oldest kept egg is safe.
+     * pause) - the queue never evicts, so the oldest kept egg is safe.
      */
     public boolean offer(T egg) {
         if (egg == null || q.size() >= cap) return false;
@@ -50,7 +50,7 @@ public final class EggQueue<T> {
     public T peek() { return q.peekFirst(); }
 
     /**
-     * Drain up to {@code freeSlots} eggs (FIFO order) into {@code sink} — the "while the tray has an
+     * Drain up to {@code freeSlots} eggs (FIFO order) into {@code sink} - the "while the tray has an
      * empty slot, pop the queue into it" step. Returns how many were moved.
      */
     public int drainInto(int freeSlots, Consumer<? super T> sink) {
@@ -68,7 +68,7 @@ public final class EggQueue<T> {
      */
     public void setCap(int newCap) { this.cap = Math.max(0, newCap); }
 
-    /** Iterate in FIFO order (oldest first) without copying — for in-place persistence (perf-audit H6). */
+    /** Iterate in FIFO order (oldest first) without copying - for in-place persistence (perf-audit H6). */
     public void forEach(java.util.function.Consumer<? super T> action) {
         for (T t : q) action.accept(t);
     }

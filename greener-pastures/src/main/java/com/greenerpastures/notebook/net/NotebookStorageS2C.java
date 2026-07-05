@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Server → client: the player's Notebook item-storage snapshot — {registry-id → count} plus the per-item
+ * Server → client: the player's Notebook item-storage snapshot - {registry-id → count} plus the per-item
  * capacity. Feeds the Harvester/Storage tab grid. Pushed on request and after any pull. (INTERACTIVE_SPEC §3.1)
  */
 public record NotebookStorageS2C(Map<String, Long> items, long capacity) implements CustomPayload {

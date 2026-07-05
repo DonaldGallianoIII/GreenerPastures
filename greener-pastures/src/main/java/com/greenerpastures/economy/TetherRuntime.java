@@ -12,7 +12,7 @@ import java.util.Set;
  * only, no drain).
  *
  * <p><b>All-or-nothing</b> (DAEMON_AND_TETHERS.md): if the balance can't cover the full burn this cycle,
- * the tethers fall back to the free base. Starvation drops you to base — it never pauses breeding and
+ * the tethers fall back to the free base. Starvation drops you to base - it never pauses breeding and
  * never destroys anything; hunger is a luxury, never life support. The breeder calls {@link #resolve}
  * each cycle, applies {@link Resolution#effective()} to the egg, and debits {@link Resolution#drain()}.
  */
@@ -43,7 +43,7 @@ public final class TetherRuntime {
         return new Resolution(EffectiveAugments.of(base, List.of()), 0L, false);
     }
 
-    /** The tethers whose function is in {@code functions} — the subset a single consumer owns. Blank or
+    /** The tethers whose function is in {@code functions} - the subset a single consumer owns. Blank or
      *  unknown-function tethers are dropped. */
     public static List<SoulTether> select(List<SoulTether> tethers, Set<AugmentFunction> functions) {
         List<SoulTether> out = new ArrayList<>();
@@ -58,12 +58,12 @@ public final class TetherRuntime {
     }
 
     /**
-     * {@link #resolve} restricted to the tethers a consumer owns ({@code functions}) — the per-consumer,
+     * {@link #resolve} restricted to the tethers a consumer owns ({@code functions}) - the per-consumer,
      * per-clock entry point. Because the Kernel's tethers are shared but each consumer runs on its own
      * clock (breeder per breeding cycle · Harvester per IRL minute · Renderer per cull), every consumer
      * resolves + drains ONLY its own functions so a tether is billed exactly once.
      *
-     * <p><b>Contract:</b> the consumer function sets MUST be disjoint — {@code SHINY/SPEED} = breeder ·
+     * <p><b>Contract:</b> the consumer function sets MUST be disjoint - {@code SHINY/SPEED} = breeder ·
      * {@code DROP_RATE/DROP_YIELD} = Harvester · {@code ENRICHMENT} = Renderer. Overlapping sets would
      * charge one tether on two clocks.
      */

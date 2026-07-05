@@ -13,7 +13,7 @@ class AugmentLevelTest {
         assertEquals(300, AugmentType.DROP_RATE.valueAt(2), "+2.00% → +3.00%");
         assertEquals(2, AugmentType.DROP_YIELD.valueAt(2));
         assertEquals(30, AugmentType.ENRICHMENT.valueAt(2), "+20% → +30% render");
-        assertEquals(4, AugmentType.IV_FLOOR.valueAt(2), "4.5 rounds DOWN — perfection stays a chase");
+        assertEquals(4, AugmentType.IV_FLOOR.valueAt(2), "4.5 rounds DOWN - perfection stays a chase");
         assertEquals(2, AugmentType.SPEED.valueAt(2), "native curve: level 2 = ×2 cadence");
         assertEquals(2, AugmentType.HATCH.valueAt(2), "native curve: level 2 = ×0.25 hatch");
     }
@@ -33,7 +33,7 @@ class AugmentLevelTest {
     void levelTwoOccupiesThreeSlots() {
         assertEquals(0, AugmentType.slotsForLevel(0));
         assertEquals(1, AugmentType.slotsForLevel(1));
-        assertEquals(3, AugmentType.slotsForLevel(2), "Deuce: 3 slots total — not even possible on a Copper Kernel");
+        assertEquals(3, AugmentType.slotsForLevel(2), "Deuce: 3 slots total - not even possible on a Copper Kernel");
     }
 
     @Test

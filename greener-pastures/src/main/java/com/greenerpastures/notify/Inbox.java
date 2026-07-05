@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Per-player <b>dismissible notifications</b> for the Notebook console's Inbox tab (Deuce, 2026-07-03: catch-up
  * pings out of chat, into the console, dismissible so they never stack unboundedly). In-memory for the server
  * session (cleared on SERVER_STARTED like the other session stores); capped per player so an absent owner's
- * inbox can't grow forever — oldest notes fall off. Thread-safe: pushed from world ticks, read from networking.
+ * inbox can't grow forever - oldest notes fall off. Thread-safe: pushed from world ticks, read from networking.
  */
 public final class Inbox {
     private Inbox() {}
@@ -24,7 +24,7 @@ public final class Inbox {
     private static final AtomicLong IDS = new AtomicLong(1);
     private static final Map<UUID, Deque<Note>> NOTES = new HashMap<>();
 
-    /** Add a note to {@code player}'s inbox (works whether they're online or not — they see it next open). */
+    /** Add a note to {@code player}'s inbox (works whether they're online or not - they see it next open). */
     public static synchronized void push(UUID player, String icon, String text) {
         if (player == null || text == null || text.isEmpty()) return;
         Deque<Note> d = NOTES.computeIfAbsent(player, k -> new ArrayDeque<>());
@@ -53,7 +53,7 @@ public final class Inbox {
         }
     }
 
-    /** SERVER_STARTED hygiene — a new world (same JVM in singleplayer) starts with empty inboxes. */
+    /** SERVER_STARTED hygiene - a new world (same JVM in singleplayer) starts with empty inboxes. */
     public static synchronized void clearAll() {
         NOTES.clear();
     }

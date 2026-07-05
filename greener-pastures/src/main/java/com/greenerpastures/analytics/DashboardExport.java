@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Renders {@link DashboardStats} to shareable artifacts — a CSV (for spreadsheets) and a self-contained
+ * Renders {@link DashboardStats} to shareable artifacts - a CSV (for spreadsheets) and a self-contained
  * dark-theme HTML page. Pure string generation, Minecraft-free + unit-tested; the command/GUI that writes
  * these to a file is the thin adapter on top.
  */
@@ -29,13 +29,13 @@ public final class DashboardExport {
     public static String toHtml(DashboardStats s) {
         StringBuilder b = new StringBuilder();
         b.append("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">")
-                .append("<title>Greener Pastures — Dashboard</title><style>")
+                .append("<title>Greener Pastures - Dashboard</title><style>")
                 .append("body{background:#0c0f14;color:#e7eef6;font-family:'JetBrains Mono',Consolas,monospace;margin:24px}")
                 .append("h1{color:#4fd6a0}h2{color:#5cc8ff;margin-top:24px}")
                 .append("table{border-collapse:collapse;margin:8px 0}td,th{border:1px solid #2a3543;padding:4px 12px;text-align:left}")
                 .append("th{background:#161c25;color:#8593a4}.num{text-align:right;color:#d56bff}")
                 .append("</style></head><body>");
-        b.append("<h1>🌲 Greener Pastures — Breeding Dashboard</h1>");
+        b.append("<h1>🌲 Greener Pastures - Breeding Dashboard</h1>");
         b.append("<table>");
         row(b, "Total eggs", String.valueOf(s.totalEggs()));
         row(b, "Shiny", s.shinyTotal() + " (" + pct(s.shinyRate()) + ")");

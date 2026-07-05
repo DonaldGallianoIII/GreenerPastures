@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * A Pokémon's drop table — a list of {@link DropEntry}. Rolling it yields {@code item id → total count}
+ * A Pokémon's drop table - a list of {@link DropEntry}. Rolling it yields {@code item id → total count}
  * for the entries that fired. Minecraft-free + unit-tested. The Harvester block rolls a tethered mon's
- * table each harvest cycle and deposits the result straight into its own inventory — never a world item,
+ * table each harvest cycle and deposits the result straight into its own inventory - never a world item,
  * so nothing despawns and there's no ground-entity lag.
  */
 public record DropTable(List<DropEntry> entries) {

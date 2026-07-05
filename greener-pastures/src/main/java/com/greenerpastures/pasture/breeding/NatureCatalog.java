@@ -6,10 +6,10 @@ import java.util.List;
  * The 25 vanilla Pokémon natures, in a fixed canonical order, as the index table behind the <b>Nature</b>
  * selector augment. The {@code NATURE} augment stores a 1-based index as its "level" ({@code 0} = off); this
  * maps that index to the Cobblemon nature id string the egg spec wants. Pure data (lowercase id strings only) so
- * the cores/tests stay MC-free — Cobblemon validates the string at hatch, so an out-of-range/unknown value just
+ * the cores/tests stay MC-free - Cobblemon validates the string at hatch, so an out-of-range/unknown value just
  * lapses to vanilla nature inheritance rather than corrupting the egg.
  *
- * <p>Order is the standard nature table (Hardy…Quirky) and is <b>stable</b> — a stored index must always mean the
+ * <p>Order is the standard nature table (Hardy…Quirky) and is <b>stable</b> - a stored index must always mean the
  * same nature, so new entries (there won't be any; there are exactly 25) would only ever append.
  */
 public final class NatureCatalog {
@@ -29,14 +29,14 @@ public final class NatureCatalog {
 
     /**
      * The nature id for a 1-based augment level, or {@code null} if the level is off ({@code ≤0}) or past the
-     * catalog. Null means "no nature lock" — the egg keeps vanilla nature inheritance.
+     * catalog. Null means "no nature lock" - the egg keeps vanilla nature inheritance.
      */
     public static String byIndex(int level) {
         if (level <= 0 || level > NATURES.size()) return null;
         return NATURES.get(level - 1);
     }
 
-    /** The 1-based index of a nature id (case-insensitive), or {@code 0} if unknown — the inverse of {@link #byIndex}. */
+    /** The 1-based index of a nature id (case-insensitive), or {@code 0} if unknown - the inverse of {@link #byIndex}. */
     public static int indexOf(String natureId) {
         if (natureId == null) return 0;
         String want = natureId.trim().toLowerCase();

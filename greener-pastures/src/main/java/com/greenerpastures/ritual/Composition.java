@@ -15,7 +15,7 @@ import java.util.Set;
 public record Composition(Map<String, Integer> typeCounts, Set<String> species, Map<String, Integer> speciesCounts) {
     public static final Composition EMPTY = new Composition(Map.of(), Set.of());
 
-    /** Compat shape (typeCounts + species set) — species COUNTS default empty; count-gated rituals
+    /** Compat shape (typeCounts + species set) - species COUNTS default empty; count-gated rituals
      *  (e.g. "8 Meowth") need the 3-arg form the composition reader builds. */
     public Composition(Map<String, Integer> typeCounts, Set<String> species) {
         this(typeCounts, species, Map.of());
@@ -43,7 +43,7 @@ public record Composition(Map<String, Integer> typeCounts, Set<String> species, 
         speciesCounts = Map.copyOf(sc);
     }
 
-    /** How many tethered mons ARE this species (0 if absent) — the count-gate rituals check. */
+    /** How many tethered mons ARE this species (0 if absent) - the count-gate rituals check. */
     public int countOfSpecies(String s) {
         return s == null ? 0 : speciesCounts.getOrDefault(s.toLowerCase(Locale.ROOT), 0);
     }
@@ -58,10 +58,10 @@ public record Composition(Map<String, Integer> typeCounts, Set<String> species, 
         return s != null && species.contains(s.toLowerCase(Locale.ROOT));
     }
 
-    /** The set of types present (lowercased) — what {@link TypeDropTable#forTypes} keys on. */
+    /** The set of types present (lowercased) - what {@link TypeDropTable#forTypes} keys on. */
     public Set<String> types() { return typeCounts.keySet(); }
 
-    /** The combined composition of two pastures — spanning rituals (pastureSpan 2) evaluate against this:
+    /** The combined composition of two pastures - spanning rituals (pastureSpan 2) evaluate against this:
      *  type/species counts sum, species presence unions. Pure; either side null = the other unchanged. */
     public static Composition union(Composition a, Composition b) {
         if (a == null) return b == null ? EMPTY : b;

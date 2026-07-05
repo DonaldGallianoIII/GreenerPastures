@@ -26,7 +26,7 @@ import java.util.Map;
  * forgot which pasture" case), grouped by the real pasture position read off the pastured entities.
  *
  * <p>Limitation: this is client-side and reads the tether→pasture link off entities. Cobblemon syncs
- * that link server-only, so on a server this typically sees 0 — a proper version needs a server-side
+ * that link server-only, so on a server this typically sees 0 - a proper version needs a server-side
  * scan. The toggle prints a readable status to chat ({@link #chatReport}) instead of a long HUD line.
  */
 public final class PastureCheck {
@@ -77,7 +77,7 @@ public final class PastureCheck {
 
         int under = 0;
         for (Map.Entry<BlockPos, Integer> en : scanCounts(mc.world).entrySet()) {
-            if (en.getValue() >= 2) continue;             // full enough — skip to avoid clutter
+            if (en.getValue() >= 2) continue;             // full enough - skip to avoid clutter
             under++;
             BlockPos b = en.getKey();
             WorldRenderer.drawBox(m, lines,
@@ -97,7 +97,7 @@ public final class PastureCheck {
                 4, mc.getWindow().getScaledHeight() - 22, 0xFFFFD94D, true);
     }
 
-    /** Readable status to chat — called on toggle so it never overflows the HUD. */
+    /** Readable status to chat - called on toggle so it never overflows the HUD. */
     public static void chatReport(MinecraftClient mc) {
         if (mc.player == null) return;
         if (!enabled) {
@@ -106,7 +106,7 @@ public final class PastureCheck {
         }
         init();
         if (!ok || mc.world == null) {
-            mc.player.sendMessage(Text.literal("[EggOracle] Pasture check ON — Cobblemon classes not found."), false);
+            mc.player.sendMessage(Text.literal("[EggOracle] Pasture check ON - Cobblemon classes not found."), false);
             return;
         }
         Map<BlockPos, Integer> counts = scanCounts(mc.world);
@@ -114,12 +114,12 @@ public final class PastureCheck {
         long under = counts.values().stream().filter(v -> v < 2).count();
         if (total == 0) {
             mc.player.sendMessage(Text.literal(
-                    "[EggOracle] Pasture check ON — 0 tethered mons visible client-side. "
+                    "[EggOracle] Pasture check ON - 0 tethered mons visible client-side. "
                     + "Cobblemon syncs the pasture link server-only, so this view can't see them "
                     + "(a server-side check is the fix)."), false);
         } else {
             mc.player.sendMessage(Text.literal(
-                    "[EggOracle] Pasture check ON — " + counts.size() + " pasture(s), "
+                    "[EggOracle] Pasture check ON - " + counts.size() + " pasture(s), "
                     + under + " under-staffed (boxed yellow), " + total + " mons read."), false);
         }
     }

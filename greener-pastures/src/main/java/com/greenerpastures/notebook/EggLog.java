@@ -10,8 +10,8 @@ import java.util.UUID;
 
 /**
  * A tiny in-memory ring of each player's recent egg-ingest outcomes (kept / voided + which filter) plus running
- * totals — the live feed the console's Log view renders. This is the <b>void-log trust feature</b>
- * (VISUAL_SCRIPTING_UI_IDEA.md) made player-facing: "produced N, voided N-1 by IV, kept 1". Not persisted — a
+ * totals - the live feed the console's Log view renders. This is the <b>void-log trust feature</b>
+ * (VISUAL_SCRIPTING_UI_IDEA.md) made player-facing: "produced N, voided N-1 by IV, kept 1". Not persisted - a
  * rolling recent-activity tail (the durable record is the {@code egg_voided} analytics event). Thread-safe:
  * appended from the server breeding tick, read from the networking thread.
  */
@@ -27,7 +27,7 @@ public final class EggLog {
     private static final Map<UUID, Map<String, Integer>> BY_TIER = new HashMap<>();
     private static final Map<UUID, Map<Long, Integer>> SPARK = new HashMap<>(); // eggs per world-minute bucket
 
-    /** Drop one player's session stats — DISCONNECT pruning so a 24/7 server's maps stay bounded by the
+    /** Drop one player's session stats - DISCONNECT pruning so a 24/7 server's maps stay bounded by the
      *  ONLINE player count, not everyone who ever joined (perf-audit R3 #5). Dashboard stats are per-login. */
     public static synchronized void forget(UUID owner) {
         BY_PLAYER.remove(owner); COUNTS.remove(owner); TOTALS.remove(owner);
@@ -63,7 +63,7 @@ public final class EggLog {
         while (s.size() > 48) s.remove(s.firstKey());
     }
 
-    /** Credit Data earned from a rendered (voided) egg — folds into the dashboard's "Data earned" total. */
+    /** Credit Data earned from a rendered (voided) egg - folds into the dashboard's "Data earned" total. */
     public static synchronized void addData(UUID owner, long amt) {
         if (owner != null) TOTALS.computeIfAbsent(owner, k -> new long[4])[3] += amt;
     }
@@ -71,7 +71,7 @@ public final class EggLog {
     public static synchronized long[] totals(UUID owner) { return TOTALS.getOrDefault(owner, new long[4]).clone(); }
     public static synchronized Map<String, Integer> byTier(UUID owner) { return new java.util.LinkedHashMap<>(BY_TIER.getOrDefault(owner, Map.of())); }
 
-    /** Wipe everything — called on SERVER_STARTED so a new world (same JVM in singleplayer) never inherits the
+    /** Wipe everything - called on SERVER_STARTED so a new world (same JVM in singleplayer) never inherits the
      *  previous world's session stats (Deuce hit exactly this: a fresh world showing the old world's numbers). */
     public static synchronized void clearAll() {
         BY_PLAYER.clear();
@@ -81,7 +81,7 @@ public final class EggLog {
         SPARK.clear();
     }
 
-    /** The last 12 world-minute egg counts (oldest→newest, ending at the current minute) — the eggs/min sparkline. */
+    /** The last 12 world-minute egg counts (oldest→newest, ending at the current minute) - the eggs/min sparkline. */
     public static synchronized int[] spark(UUID owner, long nowTicks) {
         int[] out = new int[12];
         Map<Long, Integer> s = SPARK.get(owner);

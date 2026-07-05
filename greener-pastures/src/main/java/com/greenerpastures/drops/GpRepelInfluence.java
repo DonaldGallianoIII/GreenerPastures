@@ -15,15 +15,15 @@ import java.util.function.Supplier;
 
 /**
  * The Snack Repel's spawn-weight influence (Snack Overdrive pt.1): DIVIDES a candidate's spawn weight when
- * its form carries a repelled type — the exact inverse of Cobblemon's attract math ({@code newWeight *=
+ * its form carries a repelled type - the exact inverse of Cobblemon's attract math ({@code newWeight *=
  * value} in {@code SpawnBaitInfluence.affectWeight}). Ours handles EVERY repelled type independently (their
- * TYPING path only ever applies the FIRST entry — decompile-verified), never returns a negative weight, and
+ * TYPING path only ever applies the FIRST entry - decompile-verified), never returns a negative weight, and
  * fails soft: any resolution hiccup leaves the weight untouched. Added to the snack block's spawner by
  * {@code PokeSnackRepelMixin}; scope = snack-driven spawns only, ambient world spawning is untouched.
  */
 public final class GpRepelInfluence implements SpawningInfluence {
     private final Supplier<Map<String, Integer>> repels;
-    private volatile long lastLogMs = 0L;   // affectWeight runs per CANDIDATE (hundreds/attempt) — sample, don't spam
+    private volatile long lastLogMs = 0L;   // affectWeight runs per CANDIDATE (hundreds/attempt) - sample, don't spam
 
     public GpRepelInfluence(Supplier<Map<String, Integer>> repels) {
         this.repels = repels;

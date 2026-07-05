@@ -23,7 +23,7 @@ import java.util.UUID;
  * from the common entrypoint so the codecs exist on both sides and the receivers run server-side.
  *
  * <p>Pastures are shared ("anyone with a wand edits it"); we sanity-check the editor is near the pasture.
- * The ONE ownership bit is the <b>operator claim</b> (who pays the Soul-Tether cost) — an explicit
+ * The ONE ownership bit is the <b>operator claim</b> (who pays the Soul-Tether cost) - an explicit
  * locked-boolean toggle ({@link PastureClaim}), never set implicitly.
  */
 public final class PastureNet {
@@ -83,7 +83,7 @@ public final class PastureNet {
         });
     }
 
-    /** Toggle the operator claim — the locked-boolean tether-cost "box". Server-authoritative + validated;
+    /** Toggle the operator claim - the locked-boolean tether-cost "box". Server-authoritative + validated;
      *  only the current owner can release their lock (see {@link PastureClaim}). */
     private static void onClaim(ClaimOperatorPayload payload, ServerPlayNetworking.Context ctx) {
         ServerPlayerEntity player = ctx.player();
@@ -101,8 +101,8 @@ public final class PastureNet {
                 pd.owner = r.owner();
                 reg.markDirty();
                 player.sendMessage(Text.literal(r.outcome() == PastureClaim.Outcome.CLAIMED
-                        ? "§a[Greener Pastures]§r Linked — this pasture is yours: its drops, eggs & outputs collect into your Notebook (you also pay its tether cost)."
-                        : "§a[Greener Pastures]§r Unlinked — this pasture is free to claim; its outputs no longer collect to you."), false);
+                        ? "§a[Greener Pastures]§r Linked - this pasture is yours: its drops, eggs & outputs collect into your Notebook (you also pay its tether cost)."
+                        : "§a[Greener Pastures]§r Unlinked - this pasture is free to claim; its outputs no longer collect to you."), false);
             } else {
                 player.sendMessage(Text.literal(
                         "§c[Greener Pastures]§r This pasture is owned by someone else."), false);
@@ -110,7 +110,7 @@ public final class PastureNet {
         });
     }
 
-    /** Trust boundary: keep only sane (id → bucket) entries — bucket in [1, MAX_BUCKET], size-capped.
+    /** Trust boundary: keep only sane (id → bucket) entries - bucket in [1, MAX_BUCKET], size-capped.
      *  The codec already bounds decode size; this keeps junk buckets / nulls out of the persisted record. */
     private static Map<UUID, Integer> sanitize(Map<UUID, Integer> raw) {
         Map<UUID, Integer> clean = new HashMap<>();

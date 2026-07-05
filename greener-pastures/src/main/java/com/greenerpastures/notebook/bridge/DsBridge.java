@@ -27,10 +27,10 @@ import java.util.UUID;
 
 /**
  * The Notebook console's live data bridge (client-side). Runs a loopback WebSocket server
- * ({@link DsWebSocketServer}) that the React UI connects to — a dev browser (`npm run dev`) or, later, MCEF
+ * ({@link DsWebSocketServer}) that the React UI connects to - a dev browser (`npm run dev`) or, later, MCEF
  * in-game. It mirrors the client's {@link NotebookState} to the browser as JSON {@code state} frames and maps
  * browser {@code action} frames back to the <b>existing</b> C2S packets. So the React app is just a
- * NotebookState consumer (like the owo screen was) — the whole S2C/C2S sync layer is reused untouched.
+ * NotebookState consumer (like the owo screen was) - the whole S2C/C2S sync layer is reused untouched.
  *
  * <p>Client-only: {@link #init} is called from {@code GreenerPasturesClient}, never on a dedicated server.
  */
@@ -59,7 +59,7 @@ public final class DsBridge {
         if (server == null || !server.hasClients()) return;
         if (client.getNetworkHandler() == null) return;                  // not in a world
         // Idle-off (perf-audit R3 S1): the warm PRELOAD browser holds a WS connection for the whole session,
-        // so "has a client" is always true — gate the serialize+poll pipeline on the console actually being
+        // so "has a client" is always true - gate the serialize+poll pipeline on the console actually being
         // open. Reopening primes instantly (NotebookBrowserScreen.init sends a request + pushNow()).
         if (!DEV_ALWAYS_ON && !NotebookBrowserScreen.consoleOpen) return;
         tick++;
@@ -67,7 +67,7 @@ public final class DsBridge {
         if (tick % 4 == 0) pushChangedChannels();                        // ~5/s, diffed
     }
 
-    /** A browser just connected — pull fresh data + force a full re-push to it. */
+    /** A browser just connected - pull fresh data + force a full re-push to it. */
     private static void onConnect() {
         MinecraftClient client = MinecraftClient.getInstance();
         client.execute(() -> {
@@ -185,13 +185,13 @@ public final class DsBridge {
         ClientPlayNetworking.send(new NotebookGoalC2S(GSON.toJson(spec)));
     }
 
-    /** Force an immediate broadcast — used when a pasture is right-clicked so its config view appears at once,
+    /** Force an immediate broadcast - used when a pasture is right-clicked so its config view appears at once,
      *  without waiting for the next diff-push tick (so the previously-open tab doesn't linger). */
     public static void pushNow() {
         if (server != null && server.hasClients()) pushChangedChannels();
     }
 
-    /** World-leave: forget the diff baseline so EVERY channel re-broadcasts fresh (post-clear) values — the React
+    /** World-leave: forget the diff baseline so EVERY channel re-broadcasts fresh (post-clear) values - the React
      *  app must not keep rendering the previous world's data into the next one. */
     public static void onWorldLeave() {
         lastSent.clear();
@@ -238,7 +238,7 @@ public final class DsBridge {
         try { return GSON.fromJson(s, com.google.gson.JsonObject.class); } catch (Exception e) { return null; }
     }
 
-    /** The viewing player's recent egg-ingest feed (kept/voided + which filter) + totals — the console Log view. */
+    /** The viewing player's recent egg-ingest feed (kept/voided + which filter) + totals - the console Log view. */
     private static Object eggLogData() {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("kept", NotebookState.eggKept);
@@ -278,7 +278,7 @@ public final class DsBridge {
             roster.add(r);
         }
         m.put("roster", roster);
-        m.put("graph", NotebookState.pastureGraphJson);   // the Daemon graph JSON (React parses it) — Phase 1
+        m.put("graph", NotebookState.pastureGraphJson);   // the Daemon graph JSON (React parses it) - Phase 1
         Object extra = jsonChannel(NotebookState.pastureExtraJson);   // #37/#34/#35: health strip + Kernel loadout
         if (extra instanceof com.google.gson.JsonObject jo) {
             m.put("health", jo.get("health"));
@@ -287,7 +287,7 @@ public final class DsBridge {
         return m;
     }
 
-    /** The player's REAL inventory (read client-side): 36 main slots — [0..8] hotbar, [9..35] main — so the console's
+    /** The player's REAL inventory (read client-side): 36 main slots - [0..8] hotbar, [9..35] main - so the console's
      *  inventory window mirrors what the player actually holds (Deuce, 2026-07-01), not mock data. */
     private static Object inventoryData() {
         MinecraftClient client = MinecraftClient.getInstance();
@@ -349,7 +349,7 @@ public final class DsBridge {
     private static Object pasturesData() {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("pastures", NotebookState.pastures);
-        m.put("health", jsonChannel(NotebookState.pasturesHealthJson));   // #37 — {"dim|pos":"flagId,flagId"} badge markers
+        m.put("health", jsonChannel(NotebookState.pasturesHealthJson));   // #37 - {"dim|pos":"flagId,flagId"} badge markers
         return m;
     }
 

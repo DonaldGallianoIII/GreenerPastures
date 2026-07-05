@@ -1,7 +1,7 @@
 package com.greenerpastures.economy;
 
 /**
- * The grid readout — "is my Data net-positive?" Income (rendered eggs → Data) vs drain (tether burn +
+ * The grid readout - "is my Data net-positive?" Income (rendered eggs → Data) vs drain (tether burn +
  * global buffs), per breeding cycle. The Notebook's emotional-center plot: fuel pastures must out-earn
  * the trophy pastures they power. Pure + Minecraft-free.
  */

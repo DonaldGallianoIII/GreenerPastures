@@ -29,18 +29,18 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 
 /**
- * Client entrypoint — keybinds, HUD overlays, container overlays, and screen registration.
+ * Client entrypoint - keybinds, HUD overlays, container overlays, and screen registration.
  */
 public final class GreenerPasturesClient implements ClientModInitializer {
     /** Ticks since load; gates the notebook live-poll to ~1×/s while the console is open. */
     private static int notebookPollTick;
     private static int warmTick;
-    /** Mod-load state is immutable — resolve ONCE, not 20×/s on the tick path (perf-audit R3 client #3). */
+    /** Mod-load state is immutable - resolve ONCE, not 20×/s on the tick path (perf-audit R3 client #3). */
     private static boolean mcefPresent;
 
     @Override
     public void onInitializeClient() {
-        GreenerPastures.LOG.info("Greener Pastures — client init");
+        GreenerPastures.LOG.info("Greener Pastures - client init");
         mcefPresent = net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("mcef");
 
         // egg/ (client UI + container overlays)
@@ -50,7 +50,7 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // pasture/ wand GUI + Compiler bench
         HandledScreens.register(PastureMenu.TYPE, PastureScreen::new);
 
-        // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click).
+        // notebook/ console - client-side open hook for the Notebook item (air / non-pasture right-click).
         // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
         // Kernel right-click → rename screen (QoL: label your kernels)
         com.greenerpastures.pasture.breeding.BreedingUpgradeItem.renameScreenOpener =
@@ -88,7 +88,7 @@ public final class GreenerPasturesClient implements ClientModInitializer {
             openConsole();
         };
 
-        // notebook/ console sync — receive status pushes → cache + refresh the open console
+        // notebook/ console sync - receive status pushes → cache + refresh the open console
         ClientPlayNetworking.registerGlobalReceiver(NotebookStatusS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
                     if (NotebookState.applyStatus(payload)) NotebookScreen.refreshIfOpen();
@@ -154,7 +154,7 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                     if (NotebookState.applySpecimens(payload)) DsBridge.pushNow();
                 }));
 
-        // notebook/ console — poll the server ~1×/s while the console is open so the status bar + tabs tick live.
+        // notebook/ console - poll the server ~1×/s while the console is open so the status bar + tabs tick live.
         // Change-detection in NotebookState means an unchanged push does NOT repaint (no flicker / scroll-reset).
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!(client.currentScreen instanceof NotebookScreen)) return;
@@ -165,14 +165,14 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // Pre-warm the MCEF console browser in the background once in a world, so the FIRST open shows an
         // already-painted page (no black/loading blip). preload() self-guards: no MCEF / not-ready / already-warm.
         // While the console is CLOSED the pump runs at a trickle (full rate only during the post-preload
-        // warm-up) — the open-console render() pump + transition burst are untouched (perf-audit R3 S1/#2).
+        // warm-up) - the open-console render() pump + transition burst are untouched (perf-audit R3 S1/#2).
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!mcefPresent || client.getNetworkHandler() == null) return;
             if (++warmTick % 40 == 0) NotebookBrowserScreen.preload();
             if (!NotebookBrowserScreen.consoleOpen) NotebookBrowserScreen.backgroundPump(warmTick);
         });
 
-        // notebook/ console — live WS bridge for the React UI (dev browser now, MCEF in-game later). Loopback :25599.
+        // notebook/ console - live WS bridge for the React UI (dev browser now, MCEF in-game later). Loopback :25599.
         DsBridge.init();
 
         // World-leave hygiene: wipe the client cache + re-baseline the bridge, so a new world (same JVM) never
@@ -188,7 +188,7 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // analytics/ chart screens land here later.
     }
 
-    /** Open the Notebook console — the MCEF React UI when the {@code mcef} mod is present, else the owo shell. */
+    /** Open the Notebook console - the MCEF React UI when the {@code mcef} mod is present, else the owo shell. */
     private static void openConsole() {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mcefPresent) {

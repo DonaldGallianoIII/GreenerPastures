@@ -3,16 +3,16 @@ package com.greenerpastures.pasture.breeding;
 import java.util.List;
 
 /**
- * The Poké Ball ids behind the <b>Ball</b> selector augment — pick the ball a bred egg hatches in (collection /
+ * The Poké Ball ids behind the <b>Ball</b> selector augment - pick the ball a bred egg hatches in (collection /
  * aesthetic control breeders ask for). Same shape as {@link NatureCatalog}: the {@code BALL} augment stores a
  * 1-based index as its "level" ({@code 0} = off → vanilla "inherit mother's ball"), and this maps it to the
  * Cobblemon ball id string the egg spec wants.
  *
  * <p><b>Fully-namespaced ids</b> (e.g. {@code cobblemon:poke_ball}) so the egg spec resolves the ball
- * unambiguously — a bad/unknown id just lapses to the default ball at hatch (Cobblemon validates), never corrupts.
+ * unambiguously - a bad/unknown id just lapses to the default ball at hatch (Cobblemon validates), never corrupts.
  * Ids are the real Cobblemon ball registry names (derived from {@code PokeBalls}); order is stable + append-only so
  * a stored index always means the same ball. The 16 {@code ancient_*} (Hisuian) balls are intentionally omitted
- * from the v1 list — append them later if wanted, they must go at the END to keep existing indices stable.
+ * from the v1 list - append them later if wanted, they must go at the END to keep existing indices stable.
  */
 public final class BallCatalog {
     private BallCatalog() {}

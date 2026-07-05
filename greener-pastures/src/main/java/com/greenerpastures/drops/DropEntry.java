@@ -1,7 +1,7 @@
 package com.greenerpastures.drops;
 
 /**
- * One entry in a Pokémon's drop table — an item that drops with {@code chance} (0..1) in quantity
+ * One entry in a Pokémon's drop table - an item that drops with {@code chance} (0..1) in quantity
  * {@code [min, max]}. Minecraft-free + unit-tested. The MC adapter ({@code DropsBridge}) builds these from
  * a Cobblemon drop table, and we roll them OURSELVES so the cadence / yield is ours to modulate later
  * (Drop Rate / Drop Yield augments, species-combo easter eggs) rather than Cobblemon's.

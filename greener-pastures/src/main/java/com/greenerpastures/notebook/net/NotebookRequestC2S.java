@@ -8,7 +8,7 @@ import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 /**
- * Client → server: "push me the console data for tab {@code tab}" — sent when the Notebook console opens and
+ * Client → server: "push me the console data for tab {@code tab}" - sent when the Notebook console opens and
  * on every tab switch. The server replies with {@link NotebookStatusS2C} (always) plus, later, the tab's own
  * S2C payload. Part of the shared sync layer (NOTEBOOK_INTERACTIVE_SPEC §2).
  */

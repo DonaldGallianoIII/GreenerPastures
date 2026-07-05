@@ -17,7 +17,7 @@ import java.util.UUID;
 
 /**
  * Hands every player ONE {@link GpItems#NOTEBOOK} the first time they join a world with the mod installed
- * (Deuce, 2026-07-05: the Field Guide item died — it was just a skin over the Notebook's Guide tab, which
+ * (Deuce, 2026-07-05: the Field Guide item died - it was just a skin over the Notebook's Guide tab, which
  * the gifted Notebook carries anyway; gifting THE item also softens the onboarding wall). Persisted per
  * world, so relogs and tossing don't re-gift; full inventory → drops at their feet (never lost).
  */

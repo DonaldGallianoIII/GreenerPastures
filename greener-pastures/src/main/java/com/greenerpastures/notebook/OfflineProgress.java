@@ -19,11 +19,11 @@ import java.util.UUID;
 /**
  * The <b>online gate</b> for catch-up progress (Deuce, 2026-07-03): away-from-the-chunk time counts, but
  * OFFLINE time must not. In singleplayer that's automatic (world time freezes when the game closes), but on a
- * server the world ticks on — so we stamp each player's <b>logout world-time</b>, and on their next join shift
+ * server the world ticks on - so we stamp each player's <b>logout world-time</b>, and on their next join shift
  * every owned pasture's catch-up anchors ({@link PastureData#lastHarvestTick} / {@link PastureData#lastBreedTick})
  * forward by the offline gap, clamped to now. The arithmetic credits exactly the ONLINE away time, even when it
  * straddles the logout (left the chunk at 3pm, logged off at 4pm, back tomorrow → credited that 3-4pm hour), and
- * a pasture that kept running while offline (chunk held loaded by another player) clamps to now — no double credit.
+ * a pasture that kept running while offline (chunk held loaded by another player) clamps to now - no double credit.
  */
 public final class OfflineProgress extends PersistentState {
     private static final String ID = "greenerpastures_offline";

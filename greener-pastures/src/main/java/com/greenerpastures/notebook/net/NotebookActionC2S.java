@@ -11,7 +11,7 @@ import net.minecraft.util.Identifier;
  * Client → server: a tagged console action (INTERACTIVE_SPEC §2.1). Slice 2 uses {@link #PULL_ONE} (withdraw
  * one stack of {@code arg}) and {@link #PULL_ID} (withdraw all of {@code arg}); later actions extend the
  * {@code action} code space. The server validates, mutates the store, then re-pushes status + the affected
- * tab. Costs are deferred (INTERACTIVE_SPEC §7.5) — no GPU/Data gate yet.
+ * tab. Costs are deferred (INTERACTIVE_SPEC §7.5) - no GPU/Data gate yet.
  */
 public record NotebookActionC2S(int action, String arg, int amount) implements CustomPayload {
     public static final int PULL_ONE = 0;        // withdraw one stack of arg (a registry id)
@@ -23,7 +23,7 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int WITHDRAW = 6;        // BioBank: amount = flat egg index → materialize into inventory
     public static final int PULL_STACK = 7;      // Storage: arg = item id → take up to one stack (space-aware)
     public static final int DISMISS_NOTE = 8;    // Inbox: arg = note id, or "all"
-    public static final int WRITE_DISK = 9;      // Disks: arg = denomination item id — blank + balance → written disk
+    public static final int WRITE_DISK = 9;      // Disks: arg = denomination item id - blank + balance → written disk
     public static final int RITUAL_PULL = 10;    // Rituals: arg = item id, amount = mode (0 one · 1 stack · 2 all)
     public static final int CORRUPT_KERNEL = 11; // Augmenter: consume an Illicit Data Disk → Vaal-roll the held Kernel
     public static final int SET_KERNEL_TARGET = 12; // Augmenter: amount = inventory slot (1000 = offhand) to operate on

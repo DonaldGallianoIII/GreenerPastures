@@ -20,7 +20,7 @@ import java.util.UUID;
 
 /**
  * The server-side, per-pasture record (keyed by position in {@link PastureRegistry}). Shared, not
- * player-owned — anyone with a wand edits it. Single source of truth for everything pasture-related:
+ * player-owned - anyone with a wand edits it. Single source of truth for everything pasture-related:
  * the wand GUI, the breeding engine, the fill-check, the finder, the dashboards.
  */
 public class PastureData {
@@ -31,43 +31,43 @@ public class PastureData {
     /** mon (tetheringId) -> pair bucket number. Set via the wand GUI's pairing board (P2). */
     public final Map<UUID, Integer> pairings = new HashMap<>();
 
-    /** The Daemon visual-scripting graph — filter/sink/source nodes + flow edges + mon-node positions, as JSON
+    /** The Daemon visual-scripting graph - filter/sink/source nodes + flow edges + mon-node positions, as JSON
      *  authored in the Notebook console's node editor. The egg-routing eval
      *  ({@link com.greenerpastures.notebook.EggIngest}) reads it; {@code ""} = no graph (keep-all fallback). Persisted. */
     public String graphJson = "";
 
-    /** Bred eggs waiting to drain into the pasture's small visible tray — the FIFO from
+    /** Bred eggs waiting to drain into the pasture's small visible tray - the FIFO from
      *  {@code EGG_STORAGE_DESIGN.md} (bounded, pause-when-full, never evict). Persisted. */
     public final EggQueue<ItemStack> eggQueue = new EggQueue<>(EggQueue.MIN_CAP);
-    /** Next world-time this pasture may breed — in-memory schedule only (NOT persisted; a missed
+    /** Next world-time this pasture may breed - in-memory schedule only (NOT persisted; a missed
      *  interval after a restart is harmless). Lives here instead of a static map to avoid a leak. */
     public transient long nextBreedTick = 0L;
-    /** The pasture's owner — set by the explicit Notebook-link claim ({@link PastureClaim}). The owner
+    /** The pasture's owner - set by the explicit Notebook-link claim ({@link PastureClaim}). The owner
      *  collects this pasture's drops/eggs/outputs into their Notebook AND their Data account pays its
      *  Soul-Tether burn. Null = unowned → tethers inert (free base), outputs uncollected. */
     public UUID owner;
 
-    /** "Ghost pasture" — when true, this pasture's tethered mons never spawn as roaming entities (the lag fix):
+    /** "Ghost pasture" - when true, this pasture's tethered mons never spawn as roaming entities (the lag fix):
      *  their data still ticks (breeding + loot keep running) but no PokemonEntity exists. Persisted. */
     public boolean suppressed;
 
-    /** World-time (ticks) of the last harvest sweep that actually ran for this pasture — the offline-progress
+    /** World-time (ticks) of the last harvest sweep that actually ran for this pasture - the offline-progress
      *  anchor: when its chunk reloads, the sweep computes the missed interval count from this and rolls a
-     *  CATCH-UP deposit ("drops keep accumulating while the chunk is unloaded" — Deuce, 2026-07-03). Persisted;
+     *  CATCH-UP deposit ("drops keep accumulating while the chunk is unloaded" - Deuce, 2026-07-03). Persisted;
      *  0 = never swept (no backfill). {@link com.greenerpastures.notebook.OfflineProgress} shifts it past
      *  offline gaps on servers (online away-time counts, offline time doesn't). */
     public long lastHarvestTick;
 
-    /** World-time (ticks) of the last brood that actually ran — the breeding catch-up anchor (same semantics
+    /** World-time (ticks) of the last brood that actually ran - the breeding catch-up anchor (same semantics
      *  as {@link #lastHarvestTick}: unloaded-chunk gaps are rolled on reload, offline gaps are gated). Persisted. */
     public long lastBreedTick;
 
-    /** Gacha ritual pull-state per ritual id — {@code [bankedPulls, pity]} (NOTEBOOK_BUILD_PLAN 3b: the state
-     *  the retired Harvester block used to hold). Persisted so pity survives restarts — pity is a PROMISE. */
+    /** Gacha ritual pull-state per ritual id - {@code [bankedPulls, pity]} (NOTEBOOK_BUILD_PLAN 3b: the state
+     *  the retired Harvester block used to hold). Persisted so pity survives restarts - pity is a PROMISE. */
     public final Map<String, int[]> ritualState = new HashMap<>();
 
     /** The pair cap the breeder actually uses: the tier's pairs + any WILD-corruption bonus on the Kernel
-     *  ({@code corrupt_pairs} — the 9-pair Greener exists now). 0 with no Kernel. */
+     *  ({@code corrupt_pairs} - the 9-pair Greener exists now). 0 with no Kernel. */
     public int maxPairs() {
         BreedingTier t = tier();
         if (t == null) return 0;
@@ -75,7 +75,7 @@ public class PastureData {
         return t.maxPairs + (bonus == null ? 0 : Math.max(0, bonus));
     }
 
-    /** The installed Pasture Upgrade tier (slot 0), or null if none — drives pairs + slot count. */
+    /** The installed Pasture Upgrade tier (slot 0), or null if none - drives pairs + slot count. */
     public BreedingTier tier() {
         ItemStack s = upgrades.getStack(0);
         return (s.getItem() instanceof BreedingUpgradeItem bui) ? bui.tier() : null;
@@ -98,7 +98,7 @@ public class PastureData {
     }
 
     /** The Kernel's EV allocation spread (slot 0), or {@link EvSpread#NONE} if it carries none. The breeder
-     *  pre-sets these EVs per stat on each bred egg (BUG-002 — replaces the old flat "+N on every stat"). */
+     *  pre-sets these EVs per stat on each bred egg (BUG-002 - replaces the old flat "+N on every stat"). */
     public EvSpread evSpread() {
         EvSpread s = upgrades.getStack(0).get(GpComponents.EV_SPREAD);
         return s == null ? EvSpread.NONE : s;
@@ -106,7 +106,7 @@ public class PastureData {
 
     /** The Soul Tethers slotted into the Kernel's UNLOCKED functional slots, as runtime tethers (blanks
      *  dropped). Gated by the current tier's slot count, so a tether left in a slot a Kernel downgrade has
-     *  since hidden is NOT read or drained (it's inaccessible in the GUI — never bill an unreachable slot). */
+     *  since hidden is NOT read or drained (it's inaccessible in the GUI - never bill an unreachable slot). */
     public List<SoulTether> slottedTethers() {
         List<SoulTether> out = new ArrayList<>();
         BreedingTier tier = tier();

@@ -7,7 +7,7 @@ import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
 
 /**
- * The tooltip-sized digest of the mon on a Specimen Disk — rendered every frame, so the full specimen
+ * The tooltip-sized digest of the mon on a Specimen Disk - rendered every frame, so the full specimen
  * NBT is never parsed for display. Written once at compression alongside the lossless payload.
  */
 public record SpecimenSummary(String species, int level, boolean shiny, String gender) {

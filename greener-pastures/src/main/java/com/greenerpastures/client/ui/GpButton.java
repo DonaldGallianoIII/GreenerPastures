@@ -5,7 +5,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
 /**
- * Greener Pastures' own button — drawn and hit-tested entirely by us (a plain rect + centered label),
+ * Greener Pastures' own button - drawn and hit-tested entirely by us (a plain rect + centered label),
  * deliberately NOT a vanilla {@code ButtonWidget}/{@code Drawable}/{@code Element}. We avoid the
  * vanilla widget machinery because rendering it dragged the menu-blur path over our custom canvases.
  *

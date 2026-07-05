@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * {@code /gp perf} — the player-facing face of {@link GpProf} ("A Data Science Mod" profiles itself).
+ * {@code /gp perf} - the player-facing face of {@link GpProf} ("A Data Science Mod" profiles itself).
  * Op-gated (level 2), works in singleplayer and on servers:
  * <pre>
  *   /gp perf           top sections table in chat (count · avg · max · total ms)
@@ -32,7 +32,7 @@ public final class PerfCommand {
     }
 
     private static int table(CommandContext<ServerCommandSource> ctx) {
-        String head = "§a[Greener Pastures]§r perf — window " + (GpProf.sinceMs() / 1000) + "s";
+        String head = "§a[Greener Pastures]§r perf - window " + (GpProf.sinceMs() / 1000) + "s";
         ctx.getSource().sendFeedback(() -> Text.literal(head), false);
         for (String line : GpProf.table(12).split("\n")) {
             ctx.getSource().sendFeedback(() -> Text.literal("§7" + line), false);
@@ -46,7 +46,7 @@ public final class PerfCommand {
             Files.createDirectories(dir);
             String stamp = java.time.LocalDateTime.now()
                     .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-            Path out = dir.resolve("perf-flame-" + stamp + ".html");   // unique per run — back-to-back graphs must not clobber each other
+            Path out = dir.resolve("perf-flame-" + stamp + ".html");   // unique per run - back-to-back graphs must not clobber each other
             Files.writeString(out, GpProf.flameHtml());
             GpLog.i("perf", "flame_written", "path", out.toString(), "windowMs", GpProf.sinceMs());
             ctx.getSource().sendFeedback(() -> Text.literal(
@@ -60,7 +60,7 @@ public final class PerfCommand {
 
     private static int reset(CommandContext<ServerCommandSource> ctx) {
         GpProf.reset();
-        ctx.getSource().sendFeedback(() -> Text.literal("§a[Greener Pastures]§r perf window reset — timings start fresh now."), false);
+        ctx.getSource().sendFeedback(() -> Text.literal("§a[Greener Pastures]§r perf window reset - timings start fresh now."), false);
         return 1;
     }
 }

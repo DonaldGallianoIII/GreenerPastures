@@ -14,17 +14,17 @@ import java.util.Map;
 import java.util.Random;
 
 /**
- * The ONE place Greener Pastures reads Cobblemon's drop tables — isolated + fail-safe (mirrors
+ * The ONE place Greener Pastures reads Cobblemon's drop tables - isolated + fail-safe (mirrors
  * {@code CobbreedingBridge}). The Harvester's base roll uses Cobblemon's OWN {@code getDrops} (faithful to
- * vanilla rates: amount budget + per-entry %), gated by OUR per-mon <b>proc cadence</b> — the two levers
+ * vanilla rates: amount budget + per-entry %), gated by OUR per-mon <b>proc cadence</b> - the two levers
  * (cadence + amount/yield). The pasture has no defeats, so the proc IS our invention. Nothing ever spawns a
  * world item. {@link #dropTableFor} converts a species' table into our tested {@link DropTable} for the
- * planned override / easter-egg overlay. Item entries only — command / evolution entries are skipped.
+ * planned override / easter-egg overlay. Item entries only - command / evolution entries are skipped.
  */
 public final class DropsBridge {
     private DropsBridge() {}
 
-    /** Convert a species' Cobblemon drops into our {@link DropTable} — for the planned override / easter-egg
+    /** Convert a species' Cobblemon drops into our {@link DropTable} - for the planned override / easter-egg
      *  overlay (inspect or extend a mon's base table). Never throws. (The base harvest rolls Cobblemon's
      *  {@code getDrops} directly; this is the toolkit for custom / combo tables.) */
     public static DropTable dropTableFor(Pokemon pokemon) {
@@ -51,10 +51,10 @@ public final class DropsBridge {
 
     /**
      * Harvest a pasture for one tick: each tethered mon has {@code procChance} to roll a drop EVENT
-     * (LEVER 1 — cadence; replaces the wild "on defeat" trigger, since a pasture has no defeats). A procced
-     * mon rolls Cobblemon's OWN {@code getDrops} (amount budget + per-entry %, faithful to vanilla — LEVER 2),
+     * (LEVER 1 - cadence; replaces the wild "on defeat" trigger, since a pasture has no defeats). A procced
+     * mon rolls Cobblemon's OWN {@code getDrops} (amount budget + per-entry %, faithful to vanilla - LEVER 2),
      * and we resolve quantities exactly as Cobblemon does. {@code yieldBonus} widens that amount budget's
-     * ceiling (the Kernel's Drop Yield mod — a chance at more items per event, never fewer). →
+     * ceiling (the Kernel's Drop Yield mod - a chance at more items per event, never fewer). →
      * {@code item id → total count}. Never throws.
      */
     public static Map<String, Integer> harvest(PokemonPastureBlockEntity pasture, Random rng,
@@ -67,7 +67,7 @@ public final class DropsBridge {
         }
     }
 
-    /** Roster-list overload: a catch-up rolls MANY sweeps against one immutable roster — snapshot the tether
+    /** Roster-list overload: a catch-up rolls MANY sweeps against one immutable roster - snapshot the tether
      *  list once and reuse it across sweeps instead of re-copying per sweep (perf-audit R3 tick #1). */
     public static Map<String, Integer> harvest(java.util.List<PokemonPastureBlockEntity.Tethering> roster, Random rng,
                                                double procChance, int yieldBonus) {
@@ -78,7 +78,7 @@ public final class DropsBridge {
                 Pokemon p = t.getPokemon();
                 if (p == null) continue;
                 Map<String, Integer> rolled = rollEvent(p, rng, yieldBonus);
-                // per-proc audit line: the proc HAPPENED — an empty roll means the species' drop table came up
+                // per-proc audit line: the proc HAPPENED - an empty roll means the species' drop table came up
                 // dry (all low-% entries missed), which drop-rate QA must see distinctly from "no proc".
                 if (com.greenerpastures.core.GpLog.on(com.greenerpastures.core.GpLog.Level.DEBUG)) {
                     String species;
@@ -96,7 +96,7 @@ public final class DropsBridge {
 
     /** One drop EVENT via Cobblemon's faithful {@code getDrops} (amount budget + per-entry % + canDrop);
      *  item entries only, quantities rolled like Cobblemon ({@code RangesKt.random} over the range). The
-     *  amount budget is widened by {@code yieldBonus} (LEVER 2 — the Drop Yield mod). */
+     *  amount budget is widened by {@code yieldBonus} (LEVER 2 - the Drop Yield mod). */
     private static Map<String, Integer> rollEvent(Pokemon pokemon, Random rng, int yieldBonus) {
         Map<String, Integer> out = new LinkedHashMap<>();
         try {

@@ -15,16 +15,16 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The "Breeding Arrangement" board — laid out to Deuce's GreenerPastures-Layout.html (a centered
+ * The "Breeding Arrangement" board - laid out to Deuce's GreenerPastures-Layout.html (a centered
  * 400-wide frame): numbered <b>pair buckets</b> (112×66 on a 3-col / 128×80 grid, top-anchored at
  * y=30) you drag mons into, a "Node size" control, and an Unpaired pool filling the space below.
  *
  * <p>Bucket count comes from the slotted Pasture Upgrade ({@code maxPairs}). The bucket assignment IS
- * the state — chip positions are derived from it each frame — so closing the board sends the whole
+ * the state - chip positions are derived from it each frame - so closing the board sends the whole
  * assignment to the server, which drives {@code MultiPairBreeder}.
  */
 public class PastureArrangementScreen extends Screen {
-    // palette  (BG/zones are FULLY opaque — this screen paints its own solid canvas, no vanilla blur)
+    // palette  (BG/zones are FULLY opaque - this screen paints its own solid canvas, no vanilla blur)
     private static final int BG          = 0xFF0B0B0D;
     private static final int GRID        = 0xFF16161C;
     private static final int TEXT        = 0xFFD6D6DE;
@@ -38,7 +38,7 @@ public class PastureArrangementScreen extends Screen {
     private static final int CHIP_PAIRED_BORDER = 0xFF5A8A6A;
     private static final int DRAG_BG     = 0xFF2A2A34;
 
-    // layout (1 px = 1 GUI px) — design frame 400×260, buckets at 16/144/272 × 30/110, 112×66
+    // layout (1 px = 1 GUI px) - design frame 400×260, buckets at 16/144/272 × 30/110, 112×66
     private static final int FRAME_W = 400;
     private static final int COLS = 3;
     private static final int BW = 112, BH = 66;
@@ -138,7 +138,7 @@ public class PastureArrangementScreen extends Screen {
             }
         }
 
-        // Unpaired pool — fills from below the Node-size control to the bottom of the screen
+        // Unpaired pool - fills from below the Node-size control to the bottom of the screen
         int poolY = belowBucketsY + 26;
         int poolH = Math.max(40, this.height - poolY - 8);
         poolRect = new int[]{frameX + 16, poolY, FRAME_W - 32, poolH};
@@ -171,7 +171,7 @@ public class PastureArrangementScreen extends Screen {
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        // Paint our own opaque canvas — do NOT call renderBackground() (its blur/darkening would sit
+        // Paint our own opaque canvas - do NOT call renderBackground() (its blur/darkening would sit
         // on top of the world and bleed through, hiding everything but the buttons).
         ctx.fill(0, 0, this.width, this.height, BG);
         for (int gx = 0; gx < this.width; gx += 24) ctx.fill(gx, 0, gx + 1, this.height, GRID);
@@ -180,8 +180,8 @@ public class PastureArrangementScreen extends Screen {
         if (layoutDirty) { relayout(); layoutDirty = false; }
         if (flashTicks > 0) flashTicks--;
 
-        // Header — trimmed so it never runs under the Back button (top-right)
-        String title = pastureName.isEmpty() ? "Breeding Arrangement" : "Breeding Arrangement — " + pastureName;
+        // Header - trimmed so it never runs under the Back button (top-right)
+        String title = pastureName.isEmpty() ? "Breeding Arrangement" : "Breeding Arrangement - " + pastureName;
         ctx.drawText(this.textRenderer, Text.literal(this.textRenderer.trimToWidth(title, 300)), frameX + 8, 8, TEXT, false);
         ctx.drawText(this.textRenderer,
                 Text.literal(this.textRenderer.trimToWidth("drag a mon onto a pair · right-click to unpair · Esc to close", 320)),
@@ -331,7 +331,7 @@ public class PastureArrangementScreen extends Screen {
         try {
             ClientPlayNetworking.send(new SavePairingsPayload(pos, out));
         } catch (Throwable ignored) {
-            // connection gone — nothing to persist to
+            // connection gone - nothing to persist to
         }
     }
 
@@ -339,7 +339,7 @@ public class PastureArrangementScreen extends Screen {
     public void close() {
         persist();
         try { ClientPlayNetworking.send(new OpenPasturePayload(pos)); } catch (Throwable ignored) {}
-        super.close();   // server reopens the wand menu — Esc returns to the menu, not out to the world
+        super.close();   // server reopens the wand menu - Esc returns to the menu, not out to the world
     }
 
     @Override

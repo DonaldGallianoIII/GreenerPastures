@@ -29,12 +29,12 @@ public final class DarkEconomy {
     public static final Identifier DAEMON_ID = Identifier.of(GreenerPastures.MOD_ID, "daemon");
 
     public static Item DAEMON;
-    /** The {@code greenerpastures:daemon_level} int a Daemon carries — its Mk tier (1–3), the buff strength ceiling.
+    /** The {@code greenerpastures:daemon_level} int a Daemon carries - its Mk tier (1–3), the buff strength ceiling.
      *  <b>Superseded by {@link #DAEMON_LOADOUT} (BUG-004)</b>; still registered so old saved Daemons decode cleanly. */
     public static ComponentType<Integer> DAEMON_LEVEL;
-    /** The {@code greenerpastures:daemon_loadout} a Daemon carries — its compiled {@code buff → level} map (BUG-004). */
+    /** The {@code greenerpastures:daemon_loadout} a Daemon carries - its compiled {@code buff → level} map (BUG-004). */
     public static ComponentType<DaemonLoadout> DAEMON_LOADOUT;
-    /** The {@code greenerpastures:daemon_on} flag — is the Daemon toggled on (granting its loadout + showing glint). */
+    /** The {@code greenerpastures:daemon_on} flag - is the Daemon toggled on (granting its loadout + showing glint). */
     public static ComponentType<Boolean> DAEMON_ON;
     /** The {@code greenerpastures:tether} data component a Soul Tether item carries ([function, tier]). */
     public static ComponentType<Tether> TETHER;
@@ -61,6 +61,6 @@ public final class DarkEconomy {
 
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(e -> { e.add(DAEMON); e.add(SOUL_TETHER); });
 
-        GreenerPastures.LOG.info("[dark-economy] loaded — Daemon + Data store + Soul Tether item.");
+        GreenerPastures.LOG.info("[dark-economy] loaded - Daemon + Data store + Soul Tether item.");
     }
 }

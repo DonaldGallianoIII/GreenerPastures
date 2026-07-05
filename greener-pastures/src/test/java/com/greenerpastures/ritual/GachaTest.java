@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the gacha pull/pity math — odds and the pity guarantee, exactly. */
+/** Headless tests for the gacha pull/pity math - odds and the pity guarantee, exactly. */
 class GachaTest {
 
     @Test

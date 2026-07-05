@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One pasture's <b>last-opened snapshot</b> (INTERACTIVE_SPEC §3.2) — pure data, safe on both sides. Captured
+ * One pasture's <b>last-opened snapshot</b> (INTERACTIVE_SPEC §3.2) - pure data, safe on both sides. Captured
  * server-side when the player opens a pasture in-world (via {@code PastureWand}); the console's Pastures tab
  * shows these <b>read-only</b> (you modify a pasture at the pasture, not from the Notebook). Each {@code pairs}
  * line is a preformatted {@code "A × B · Status"} for legible display; {@code pos} is the packed BlockPos.

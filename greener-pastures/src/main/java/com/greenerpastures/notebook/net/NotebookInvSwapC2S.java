@@ -8,7 +8,7 @@ import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 /**
- * Client → server: swap two of the player's 36 main inventory slots — grab-and-move in the Notebook's native
+ * Client → server: swap two of the player's 36 main inventory slots - grab-and-move in the Notebook's native
  * inventory overlay. Own-inventory only; the server validates the indices before swapping.
  */
 public record NotebookInvSwapC2S(int a, int b) implements CustomPayload {

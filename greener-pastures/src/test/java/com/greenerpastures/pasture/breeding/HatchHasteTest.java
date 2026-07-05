@@ -18,7 +18,7 @@ class HatchHasteTest {
 
     @Test
     void oneSecondFloorSoTheHatchIsWitnessed() {
-        assertEquals(HatchHaste.MIN_TIMER_TICKS, HatchHaste.scaledTimer(100, 3), "10 ticks would be instant — floor to 1s");
+        assertEquals(HatchHaste.MIN_TIMER_TICKS, HatchHaste.scaledTimer(100, 3), "10 ticks would be instant - floor to 1s");
         assertEquals(HatchHaste.MIN_TIMER_TICKS, HatchHaste.scaledTimer(0, 1));
         assertEquals(HatchHaste.MIN_TIMER_TICKS, HatchHaste.scaledTimer(-50, 2), "garbage timers clamp sane");
     }

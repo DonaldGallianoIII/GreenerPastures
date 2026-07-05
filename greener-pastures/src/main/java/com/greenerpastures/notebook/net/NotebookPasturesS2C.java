@@ -12,9 +12,9 @@ import java.util.List;
 
 /**
  * Server → client: the player's tracked pastures as read-only {@link PastureSnapshot}s (INTERACTIVE_SPEC §3.2)
- * — one per pasture the player has opened in-world. Feeds the Pastures tab (list + selected 8-pair grid).
+ * - one per pasture the player has opened in-world. Feeds the Pastures tab (list + selected 8-pair grid).
  *
- * <p>{@code healthJson} (#37): {@code {"<dim|pos>": "flagId,flagId", …}} — the ⚠ badge markers per snapshot,
+ * <p>{@code healthJson} (#37): {@code {"<dim|pos>": "flagId,flagId", …}} - the ⚠ badge markers per snapshot,
  * from registry-side state (link/Kernel/tray always; parents/bank only while that pasture's chunk is loaded).
  */
 public record NotebookPasturesS2C(List<PastureSnapshot> pastures, String healthJson) implements CustomPayload {

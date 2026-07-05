@@ -25,11 +25,11 @@ import java.util.Map;
  * Confirmed in-game on this pack:
  *  - Egg items are typed but NOT shiny-tagged: cobbreeding:normal_<type>_pokemon_egg
  *    (there is no shiny_* item id).
- *  - Shiny status is a property (registered component, not custom_data) — but it IS shown
+ *  - Shiny status is a property (registered component, not custom_data) - but it IS shown
  *    in the (readable) tooltip, so we detect it there.
  *
  * Performance: results are cached per ItemStack instance. Slot stacks are stable while a
- * screen is open, so each egg's tooltip is built ~once, not every frame — safe for huge banks.
+ * screen is open, so each egg's tooltip is built ~once, not every frame - safe for huge banks.
  */
 public final class ShinyEggDetector {
     private ShinyEggDetector() {}

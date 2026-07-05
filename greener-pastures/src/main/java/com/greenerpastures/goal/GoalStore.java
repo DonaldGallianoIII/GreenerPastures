@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * In-memory per-player store of the active {@link BreedingGoal} and its running {@link GoalProgress}. v1 lives only
- * for the server session — a hunt is set, tracked, and cleared within a run; persistence across restarts is a
+ * for the server session - a hunt is set, tracked, and cleared within a run; persistence across restarts is a
  * follow-on (a {@code PersistentState} twin of {@code DataStore}). MC-free (so it's unit-tested); server-thread
  * access in practice, but a ConcurrentHashMap keeps it safe regardless.
  */
@@ -18,7 +18,7 @@ public final class GoalStore {
     private static final Map<UUID, BreedingGoal> goals = new ConcurrentHashMap<>();
     private static final Map<UUID, GoalProgress> progress = new ConcurrentHashMap<>();
 
-    /** Set (or replace) a player's goal — resets progress to zero. */
+    /** Set (or replace) a player's goal - resets progress to zero. */
     public static void set(UUID player, BreedingGoal goal) {
         if (player == null || goal == null) return;
         goals.put(player, goal);
@@ -31,7 +31,7 @@ public final class GoalStore {
         progress.remove(player);
     }
 
-    /** Wipe every player's goal — called on SERVER_STARTED so a new world (same JVM in singleplayer) never
+    /** Wipe every player's goal - called on SERVER_STARTED so a new world (same JVM in singleplayer) never
      *  inherits the previous world's hunts. */
     public static void clearAll() {
         goals.clear();

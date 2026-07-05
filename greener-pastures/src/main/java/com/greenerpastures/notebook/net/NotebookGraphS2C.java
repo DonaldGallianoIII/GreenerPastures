@@ -9,7 +9,7 @@ import net.minecraft.util.Identifier;
 
 /**
  * Server → client: the focused pasture's <b>Daemon graph</b> (filter/sink/source nodes + flow edges + mon-node
- * positions) as a JSON string. Pushed alongside {@link NotebookPastureConfigS2C} — which is already a full
+ * positions) as a JSON string. Pushed alongside {@link NotebookPastureConfigS2C} - which is already a full
  * tuple-6, so the graph rides its own packet rather than widening the config. {@code pos} is packed
  * ({@link net.minecraft.util.math.BlockPos#asLong()}); {@code json} is {@code ""} when the pasture has no graph.
  */

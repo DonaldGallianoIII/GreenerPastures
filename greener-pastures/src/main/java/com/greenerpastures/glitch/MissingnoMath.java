@@ -2,7 +2,7 @@ package com.greenerpastures.glitch;
 
 /**
  * MissingNo. entitlement + rotation math (Deuce, 2026-07-05): one summon per {@link #DATA_PER_SUMMON}
- * lifetime Data EARNED (rendered eggs only — balance-neutral flows never count), forever. The rotation
+ * lifetime Data EARNED (rendered eggs only - balance-neutral flows never count), forever. The rotation
  * pick always moves to a DIFFERENT sprite (a glitch that visibly glitches). Pure + tested.
  */
 public final class MissingnoMath {
@@ -22,7 +22,7 @@ public final class MissingnoMath {
         return (double) into / DATA_PER_SUMMON;
     }
 
-    /** Next sprite index: uniform over the others — never the same twice in a row. */
+    /** Next sprite index: uniform over the others - never the same twice in a row. */
     public static int pickNext(int currentIndex, int speciesCount, double roll) {
         if (speciesCount <= 1) return 0;
         int step = 1 + (int) (Math.min(0.999999, Math.max(0, roll)) * (speciesCount - 1));

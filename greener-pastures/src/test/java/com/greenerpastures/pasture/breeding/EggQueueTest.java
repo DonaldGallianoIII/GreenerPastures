@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the per-pasture FIFO egg-queue — pure data structure, no Minecraft. */
+/** Headless tests for the per-pasture FIFO egg-queue - pure data structure, no Minecraft. */
 class EggQueueTest {
 
     @Test
@@ -88,6 +88,6 @@ class EggQueueTest {
 
     @Test
     void minCapIsTheDesignFloor() {
-        assertEquals(24, EggQueue.MIN_CAP, "8 pairs × 3 eggs — the per-pasture queue floor");
+        assertEquals(24, EggQueue.MIN_CAP, "8 pairs × 3 eggs - the per-pasture queue floor");
     }
 }

@@ -17,10 +17,10 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * The per-player <b>ritual ledger</b> (Rituals v2 — Deuce, 2026-07-03): rituals are HIDDEN recipes, Steam-
- * hidden-achievement style. A composition is secret until the player first assembles it in a pasture — that
+ * The per-player <b>ritual ledger</b> (Rituals v2 - Deuce, 2026-07-03): rituals are HIDDEN recipes, Steam-
+ * hidden-achievement style. A composition is secret until the player first assembles it in a pasture - that
  * moment the ritual is <b>learned</b> (recorded here forever) and its recipe renders in the Notebook's
- * Rituals tab. Ritual outputs land in a <b>dedicated loot pool</b> here too — never in the Harvester storage —
+ * Rituals tab. Ritual outputs land in a <b>dedicated loot pool</b> here too - never in the Harvester storage -
  * so the tab is both the recipe book and the reward chest. World-saved; hits are the lifetime counter.
  */
 public final class RitualLedger extends PersistentState {
@@ -31,9 +31,9 @@ public final class RitualLedger extends PersistentState {
     private static final class Entry {
         final Set<String> learned = new HashSet<>();
         final Map<String, Long> hits = new HashMap<>();
-        final Map<String, Long> pulls = new HashMap<>();   // lifetime gacha pulls rolled — the "it's still working" counter
+        final Map<String, Long> pulls = new HashMap<>();   // lifetime gacha pulls rolled - the "it's still working" counter
         final Map<String, Long> loot = new LinkedHashMap<>();
-        final Map<String, int[]> spanState = new HashMap<>();   // spanning rituals: {banked, pity} per ritual — PLAYER-level (a pasture pair has no single home)
+        final Map<String, int[]> spanState = new HashMap<>();   // spanning rituals: {banked, pity} per ritual - PLAYER-level (a pasture pair has no single home)
     }
 
     private Entry of(UUID player) {
@@ -79,7 +79,7 @@ public final class RitualLedger extends PersistentState {
         return e == null ? 0L : e.pulls.getOrDefault(ritualId, 0L);
     }
 
-    /** Mutable {banked, pity} for a SPANNING ritual — caller mutates in place then {@link #markDirty()}s
+    /** Mutable {banked, pity} for a SPANNING ritual - caller mutates in place then {@link #markDirty()}s
      *  (same contract as {@code PastureData.ritualState}, just player-scoped). */
     public int[] spanStateOf(UUID player, String ritualId) {
         return of(player).spanState.computeIfAbsent(ritualId, k -> new int[]{0, 0});

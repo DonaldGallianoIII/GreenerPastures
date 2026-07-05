@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Server → client: the viewing player's recent egg-ingest feed (kept / voided + which filter) + running totals,
- * for the console's Log view — the void-log trust feature made visible. Pushed on the console's ~1×/s poll.
+ * for the console's Log view - the void-log trust feature made visible. Pushed on the console's ~1×/s poll.
  */
 public record NotebookEggLogS2C(long kept, long voided, List<Entry> entries) implements CustomPayload {
     public record Entry(String species, boolean voided, String filter) {

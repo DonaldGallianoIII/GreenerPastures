@@ -36,6 +36,6 @@ class TetherEconomicsTest {
     void inscribeThenWipeLeavesYouDown() {
         // inscribe tier III (pay 900), then wipe (get 450 back) → net -450, never a gain
         long net = TetherEconomics.wipeRefund(3) - TetherEconomics.inscribeCost(3);
-        assertTrue(net < 0, "round-tripping a tether costs Data — it's a sink, not a faucet");
+        assertTrue(net < 0, "round-tripping a tether costs Data - it's a sink, not a faucet");
     }
 }

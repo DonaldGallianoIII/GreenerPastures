@@ -6,14 +6,14 @@ import java.util.Set;
 
 /**
  * Pure resolver: given the {@link BuffConfig} and the held Daemon's level (Mk I/II/III ⇒ 1/2/3), compute which
- * buffs are active, at what tier, and the summed Data/sec to sustain them. No MC, no Gson — unit-tested.
+ * buffs are active, at what tier, and the summed Data/sec to sustain them. No MC, no Gson - unit-tested.
  *
  * <p>Effective tier of a buff = {@code min(daemonLevel, setting.maxTier)}; a buff disabled, capped to 0, or
  * resolving to tier 0 (no Daemon) is omitted. Drain is <b>tier-scaled and summed</b>:
- * {@code Σ tier × costPerSec} over the active buffs — running more, or higher-tier, buffs burns Data faster.
+ * {@code Σ tier × costPerSec} over the active buffs - running more, or higher-tier, buffs burns Data faster.
  *
  * <p>Every bound is re-clamped here at use-site (not just in the record's compact constructor) so a hand-edited
- * or corrupt config — or an older Gson that bypasses the canonical constructor — can never produce a negative
+ * or corrupt config - or an older Gson that bypasses the canonical constructor - can never produce a negative
  * cost, an over-ceiling tier, or a free-riding buff.
  */
 public final class BuffResolver {
@@ -26,7 +26,7 @@ public final class BuffResolver {
     /**
      * As {@link #resolve(BuffConfig, int)}, but only considers the buffs in {@code applicable} ({@code null} ⇒
      * every buff). The MC adapter passes exactly the buffs it can currently deliver, so a player is <b>never
-     * billed Data for a buff the mod hasn't wired up yet</b> — as each buff's adapter lands, it's added to that
+     * billed Data for a buff the mod hasn't wired up yet</b> - as each buff's adapter lands, it's added to that
      * set and starts being charged for. Per-buff (not per-category) so a category can be delivered piecemeal
      * (e.g. the item-magnet HOOK ships before auto-smelt/vein-mine).
      */
@@ -54,9 +54,9 @@ public final class BuffResolver {
     /**
      * Resolve a Daemon's <b>compiled loadout</b> (BUG-004) instead of a single global Mk tier: each installed
      * buff runs at <i>its own</i> chosen level, re-clamped to {@code min(level, cfg cap, +3 ceiling)}, and the
-     * bill is {@code Σ tier × costPerSec} over <b>only the installed buffs</b> — so a one-buff Daemon is cheap
+     * bill is {@code Σ tier × costPerSec} over <b>only the installed buffs</b> - so a one-buff Daemon is cheap
      * and you pay for exactly what you compiled. {@code deliverable} ({@code null} ⇒ all) gates to the buffs the
-     * adapter can currently apply, so — exactly as {@link #resolve(BuffConfig, int, Set)} — a player is never
+     * adapter can currently apply, so - exactly as {@link #resolve(BuffConfig, int, Set)} - a player is never
      * billed for a buff the mod hasn't wired up yet. The returned {@code daemonLevel} is the loadout's highest
      * effective tier (an informational summary; there's no longer one global level).
      *

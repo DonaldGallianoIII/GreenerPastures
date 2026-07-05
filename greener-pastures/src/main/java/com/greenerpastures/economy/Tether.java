@@ -9,7 +9,7 @@ import net.minecraft.network.codec.PacketCodecs;
 /**
  * The data a Soul Tether item carries: which augment {@code function} it amplifies and at what
  * {@code tier} (0 = blank / uninscribed). The item stores only {@code [function, tier]}; the runtime
- * {@link SoulTether} — with its economic class + burn — is derived via {@link #toSoulTether()} (the class
+ * {@link SoulTether} - with its economic class + burn - is derived via {@link #toSoulTether()} (the class
  * comes from {@link AugmentFunction}). Inscribed at the Compiler for Data; re-inscribable.
  */
 public record Tether(String function, int tier) {

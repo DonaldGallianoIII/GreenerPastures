@@ -17,10 +17,10 @@ import java.util.Optional;
  * Auto-smelt-on-mine: while a fed Daemon holder with the {@code AUTO_SMELT} buff breaks a block, each dropped
  * stack that has a furnace recipe is replaced by its smelted result (raw_iron → iron_ingot, sand → glass, …).
  * Runs at the END of {@code Block.getDroppedStacks} (see {@link com.greenerpastures.mixin.BlockDropBoostMixin}),
- * so it composes with the Fortune boost applied during generation — Fortune fattens the raw count, auto-smelt
+ * so it composes with the Fortune boost applied during generation - Fortune fattens the raw count, auto-smelt
  * then converts it. Like the enchant boost, it never mutates the player's gear; it only rewrites the loot list.
  *
- * <p>Binary (on/off) per the buff being active — the tier doesn't change the result, only the rental cost.
+ * <p>Binary (on/off) per the buff being active - the tier doesn't change the result, only the rental cost.
  */
 public final class DaemonAutoSmelt {
     private DaemonAutoSmelt() {}

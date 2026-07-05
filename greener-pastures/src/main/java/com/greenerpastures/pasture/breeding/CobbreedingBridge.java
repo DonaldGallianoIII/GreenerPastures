@@ -46,7 +46,7 @@ import java.util.Random;
  * version-guarded here, so the rest of Better Pasture stays clean and the mod <b>fails safe</b>
  * (disables the feature with a log) instead of crashing on an unsupported Cobbreeding version.
  *
- * <p>Coupling surface is entirely PUBLIC Cobbreeding/Cobblemon API — no private reflection, no
+ * <p>Coupling surface is entirely PUBLIC Cobbreeding/Cobblemon API - no private reflection, no
  * synthetic lambdas.
  */
 public final class CobbreedingBridge {
@@ -70,7 +70,7 @@ public final class CobbreedingBridge {
     @SuppressWarnings("unchecked")
     public static void init() {
         if (!FabricLoader.getInstance().isModLoaded(COBBREEDING)) {
-            GreenerPastures.LOG.warn("[better-pasture] Cobbreeding not present — multi-pair breeding disabled.");
+            GreenerPastures.LOG.warn("[better-pasture] Cobbreeding not present - multi-pair breeding disabled.");
             return;
         }
         try {
@@ -86,7 +86,7 @@ public final class CobbreedingBridge {
             GreenerPastures.LOG.info("[better-pasture] Cobbreeding bridge ready (egg format {}).", EGG_VERSION);
         } catch (Throwable t) {
             available = false;
-            GreenerPastures.LOG.warn("[better-pasture] Cobbreeding API not as expected — multi-pair breeding disabled.", t);
+            GreenerPastures.LOG.warn("[better-pasture] Cobbreeding API not as expected - multi-pair breeding disabled.", t);
         }
     }
 
@@ -94,7 +94,7 @@ public final class CobbreedingBridge {
         return available;
     }
 
-    /** True if {@code name} is a real Cobblemon species — for breeding-goal validation. Blank = "any" = valid;
+    /** True if {@code name} is a real Cobblemon species - for breeding-goal validation. Blank = "any" = valid;
      *  if the species API is unavailable we don't block the player (return true). */
     public static boolean isSpecies(String name) {
         if (name == null || name.isBlank()) return true;
@@ -149,7 +149,7 @@ public final class CobbreedingBridge {
 
     /**
      * Hold off Cobbreeding's <b>own</b> breeding ticker for a pasture WE manage, so only our
-     * configured pairs lay eggs — no rogue random egg from its all-tethered random-pair pick.
+     * configured pairs lay eggs - no rogue random egg from its all-tethered random-pair pick.
      * Public-API only: we keep resetting the pasture's breeding timer so Cobbreeding's
      * "time since last egg" never reaches its interval (it bails before laying). Call this every
      * scan for managed + breeding-active pastures.
@@ -187,7 +187,7 @@ public final class CobbreedingBridge {
     public record BredEgg(ItemStack stack, boolean shiny, boolean procShiny,
                           String species, int ivTotal, int perfectIvs) {}
 
-    /** Sum of the egg's 6 IVs (0 if the spread is unknown) — for the goal tracker, computed off {@code eggData}. */
+    /** Sum of the egg's 6 IVs (0 if the spread is unknown) - for the goal tracker, computed off {@code eggData}. */
     private static int ivTotal(PokemonProperties eggData) {
         IVs ivs = eggData.getIvs();
         if (ivs == null) return 0;
@@ -199,7 +199,7 @@ public final class CobbreedingBridge {
         return total;
     }
 
-    /** Count of the egg's 31-IV stats (0..6) — for the goal tracker, computed off {@code eggData}. */
+    /** Count of the egg's 31-IV stats (0..6) - for the goal tracker, computed off {@code eggData}. */
     private static int perfectIvs(PokemonProperties eggData) {
         IVs ivs = eggData.getIvs();
         if (ivs == null) return 0;
@@ -232,7 +232,7 @@ public final class CobbreedingBridge {
             List<Pokemon> pokemon = BreedingUtilities.getPokemon(pairSlots);
             var possible = BreedingUtilities.getPossibleEggs(pokemon);
             if (possible.isEmpty()) {
-                // Cobbreeding rejected the pair (no shared egg group / gender / Undiscovered) — a "dead pair" that
+                // Cobbreeding rejected the pair (no shared egg group / gender / Undiscovered) - a "dead pair" that
                 // can't lay. Surface it (BUG-006) so a mis-wired graph pairing is visible instead of silently idle.
                 if (pokemon.size() >= 2) GpLog.d("breeder", "pair_incompatible",
                         "a", pokemon.get(0).getSpecies().getName(), "b", pokemon.get(1).getSpecies().getName());
@@ -241,7 +241,7 @@ public final class CobbreedingBridge {
             PokemonProperties eggData = BreedingUtilities.chooseEgg(possible);
             if (eggData == null || eggData.getSpecies() == null) return null;
             boolean procShiny = maybeProcShiny(eggData, pokemon, shape.shinyProcChance());
-            applyIvFloor(eggData, shape.ivFloor());          // guarantee N perfect (31) IVs — raise-only
+            applyIvFloor(eggData, shape.ivFloor());          // guarantee N perfect (31) IVs - raise-only
             applyEvSpread(eggData, shape.evSpread());         // pre-set the per-stat EV allocation (BUG-002)
             applyNature(eggData, shape.nature());            // lock the egg's nature (Nature selector augment)
             applyBall(eggData, shape.ball());                // lock the egg's ball (Ball selector augment)
@@ -262,17 +262,17 @@ public final class CobbreedingBridge {
     /**
      * Greener Pastures' ONLY shiny contribution: a bounded, scale-safe bonus. After Cobbreeding has
      * computed the egg's shiny normally (fully honoring server config), if the egg is NOT already
-     * shiny we fire — with probability {@code procChance} (the upgrade's augment) — exactly ONE extra
+     * shiny we fire - with probability {@code procChance} (the upgrade's augment) - exactly ONE extra
      * shiny reroll at the SAME effective rate Cobbreeding would use (so it rewards boosted-server
      * grinders too). Per egg the boost is ×(1+procChance); because each egg sees only its own
-     * pasture's augment, the aggregate across any number of pastures is also just ×(1+procChance) — it
+     * pasture's augment, the aggregate across any number of pastures is also just ×(1+procChance) - it
      * is mathematically incapable of exploding. Uses {@code nextDouble()} so fractional odds are exact
      * (no int-floor). Returns true iff this reroll is what made the egg shiny.
      */
     private static boolean maybeProcShiny(PokemonProperties eggData, List<Pokemon> parents, double procChance) {
         try {
             if (procChance <= 0.0 || parents.size() < 2) return false;
-            if (Boolean.TRUE.equals(eggData.getShiny())) return false;                // already shiny — nothing to add
+            if (Boolean.TRUE.equals(eggData.getShiny())) return false;                // already shiny - nothing to add
             if (!ShinyOdds.procFires(procChance, RANDOM.nextDouble())) return false;  // the proc didn't fire
             double odds = effectiveShinyOdds(parents.get(0), parents.get(1));         // (rolled only after the proc fires)
             boolean hit = ShinyOdds.shinyHits(odds, RANDOM.nextDouble());
@@ -284,7 +284,7 @@ public final class CobbreedingBridge {
     }
 
     /** Hatch Haste (Deuce, 2026-07-05): scale a freshly built egg's Cobbreeding hatch TIMER per the augment
-     *  level (HatchHaste math: ×0.5/×0.25/×0.1, 1s floor) — {@code cTimer} is the same registry-id-resolved
+     *  level (HatchHaste math: ×0.5/×0.25/×0.1, 1s floor) - {@code cTimer} is the same registry-id-resolved
      *  component the rest of the bridge uses. Fail-soft: anything odd → the egg ships with its vanilla timer. */
     private static void applyHatchHaste(ItemStack stack, int level) {
         if (level <= 0 || stack == null || stack.isEmpty() || cTimer == null) return;
@@ -300,10 +300,10 @@ public final class CobbreedingBridge {
     }
 
     /**
-     * IV Floor augment: guarantee at least {@code count} perfect (31) IVs on the egg. A true FLOOR — IVs the
+     * IV Floor augment: guarantee at least {@code count} perfect (31) IVs on the egg. A true FLOOR - IVs the
      * parents already passed at 31 count toward it, and we never lower an existing IV; we only promote enough
      * not-yet-perfect stats to reach {@code count}. Mutates {@code eggData.getIvs()} in place (Cobbreeding
-     * applies it at hatch via {@code PokemonProperties.apply → setIV}). Never throws — egg-gen must not break.
+     * applies it at hatch via {@code PokemonProperties.apply → setIV}). Never throws - egg-gen must not break.
      */
     private static void applyIvFloor(PokemonProperties eggData, int count) {
         if (count <= 0) return;
@@ -322,7 +322,7 @@ public final class CobbreedingBridge {
             }
             int need = count - already;                     // inheritance may already satisfy the floor
             if (need <= 0) return;
-            java.util.Collections.shuffle(candidates);      // WHICH stats hit 31 must be random — fixed PERMANENT order made every floored egg HP/Atk/Def (Deuce, QA 2026-07-04)
+            java.util.Collections.shuffle(candidates);      // WHICH stats hit 31 must be random - fixed PERMANENT order made every floored egg HP/Atk/Def (Deuce, QA 2026-07-04)
             List<String> promoted = new ArrayList<>();
             for (Stat s : candidates) {
                 if (need <= 0) break;
@@ -369,7 +369,7 @@ public final class CobbreedingBridge {
     /**
      * Nature lock (the Nature selector augment): force the bred egg's nature to {@code natureId} (a Cobblemon
      * nature spec token, e.g. {@code "adamant"}). Writes it onto the egg's {@code PokemonProperties}, exactly as
-     * IV/EV are written — Cobbreeding carries it to the hatchling via {@code PokemonProperties.apply → nature},
+     * IV/EV are written - Cobbreeding carries it to the hatchling via {@code PokemonProperties.apply → nature},
      * overriding vanilla nature inheritance. {@code null}/blank ⇒ no lock (vanilla inheritance). Cobblemon
      * validates the token at hatch, so a bad id simply lapses rather than corrupting the egg. Never throws.
      */
@@ -385,7 +385,7 @@ public final class CobbreedingBridge {
 
     /**
      * Ball lock (the Ball selector augment): force the bred egg to hatch in {@code ballId} (a Cobblemon ball spec
-     * token, e.g. {@code "cobblemon:poke_ball"}). Same seam as nature — writes {@code PokemonProperties.setPokeball},
+     * token, e.g. {@code "cobblemon:poke_ball"}). Same seam as nature - writes {@code PokemonProperties.setPokeball},
      * carried at hatch via {@code apply → caughtBall}, overriding vanilla "inherit mother's ball". {@code null}/blank
      * ⇒ no lock; a bad id lapses to the default ball rather than corrupting. Never throws.
      */
@@ -403,7 +403,7 @@ public final class CobbreedingBridge {
      * Hidden Ability lock (the Ability augment): force the bred egg to the species' <b>hidden</b> ability. Looks the
      * egg's species up, scans its {@link AbilityPool} for the entry whose {@link PotentialAbility#getType()} is NOT
      * the {@code CommonAbilityType} (i.e. the hidden one), and writes its name onto the egg via
-     * {@code setAbility} — carried at hatch via {@code apply → ability}. Fails safe: a species with no hidden
+     * {@code setAbility} - carried at hatch via {@code apply → ability}. Fails safe: a species with no hidden
      * ability (or any lookup hiccup) simply isn't locked, keeping vanilla ability rolling. Never throws.
      */
     private static void applyHiddenAbility(PokemonProperties eggData, boolean force) {
@@ -429,7 +429,7 @@ public final class CobbreedingBridge {
     /**
      * Egg Moves teaching (the Egg Moves augment): give the hatchling the moves it can normally only inherit by
      * chain-breeding. Looks up the egg's species, reads {@code Learnset.getEggMoves()}, and writes the first few
-     * (capped at the 4 move slots) onto the egg via {@code setMoves} — carried at hatch via {@code apply → moves}.
+     * (capped at the 4 move slots) onto the egg via {@code setMoves} - carried at hatch via {@code apply → moves}.
      * Fails safe: a species with no egg moves (or any hiccup) is left with its normal level-up moveset. Never throws.
      */
     private static void applyEggMoves(PokemonProperties eggData, boolean teach) {
@@ -476,7 +476,7 @@ public final class CobbreedingBridge {
             return ShinyOdds.effectiveOdds(baseRate, always, crystal, masuda,
                     a.getShiny(), b.getShiny(), !sameTrainer(a, b));
         } catch (Throwable t) {
-            return baseRate;   // partial read — fall back to the base rate; never amplify wrongly
+            return baseRate;   // partial read - fall back to the base rate; never amplify wrongly
         }
     }
 
@@ -527,7 +527,7 @@ public final class CobbreedingBridge {
 
     private static final com.google.gson.Gson GSON_CB = new com.google.gson.Gson();
 
-    /** A tethered mon's inspectable stats (ivs / nature / gender / shiny / OT) as JSON — for the console's parent
+    /** A tethered mon's inspectable stats (ivs / nature / gender / shiny / OT) as JSON - for the console's parent
      *  inspector. Every field is best-effort so a reflection hiccup on one never blanks the rest. */
     private static String monStats(Pokemon pkm) {
         com.google.gson.JsonObject o = new com.google.gson.JsonObject();
@@ -548,7 +548,7 @@ public final class CobbreedingBridge {
         try { return pkm.getNature().getName().getPath(); } catch (Throwable t) { return ""; }
     }
 
-    /** The server's shiny-method multipliers (always / crystal / masuda) — for the console's shiny-breeding indicator. */
+    /** The server's shiny-method multipliers (always / crystal / masuda) - for the console's shiny-breeding indicator. */
     public static java.util.Map<String, Float> shinyMethods() {
         try { java.util.Map<String, Float> m = Cobbreeding.INSTANCE.getConfig().getShinyMethod(); return m == null ? java.util.Map.of() : m; }
         catch (Throwable t) { return java.util.Map.of(); }
@@ -560,7 +560,7 @@ public final class CobbreedingBridge {
     }
 
     /** {@code withStats=false} is the cache-prefetch shape (perf-audit R3 F6): species + buckets only, no
-     *  per-mon reflective stats JSON — the parent inspector's data arrives with the focused (full) push. */
+     *  per-mon reflective stats JSON - the parent inspector's data arrives with the focused (full) push. */
     public static java.util.List<MonEntry> rosterOf(PokemonPastureBlockEntity be, PastureData pd, boolean withStats) {
         java.util.List<MonEntry> out = new java.util.ArrayList<>();
         if (be == null) return out;

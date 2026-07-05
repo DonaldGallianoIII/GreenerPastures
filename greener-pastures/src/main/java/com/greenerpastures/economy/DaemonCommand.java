@@ -20,7 +20,7 @@ import net.minecraft.text.Text;
 import java.util.Map;
 
 /**
- * {@code /gp daemon} — the no-UI <b>compile</b> path for a held Daemon's buff loadout (BUG-004). Mirrors
+ * {@code /gp daemon} - the no-UI <b>compile</b> path for a held Daemon's buff loadout (BUG-004). Mirrors
  * {@code /gp augment} (Kernels): set ANY supported buff to ANY level, toggle the Daemon on/off, then keep it
  * anywhere in your inventory. The eventual Compiler GUI is the pretty version of this; the command is the
  * functional core, so the whole redesign is testable before the UI exists.
@@ -28,7 +28,7 @@ import java.util.Map;
  *   /gp daemon list                 show the held Daemon's loadout + on/off + Data balance
  *   /gp daemon set &lt;buff&gt; &lt;level&gt;   compile one buff (level 0 removes it; capped to the server's per-buff max)
  *   /gp daemon clear                strip the whole loadout
- *   /gp daemon on | off             toggle it (same as right-click) — ON shows the enchant glint
+ *   /gp daemon on | off             toggle it (same as right-click) - ON shows the enchant glint
  * </pre>
  */
 public final class DaemonCommand {
@@ -80,7 +80,7 @@ public final class DaemonCommand {
         BuffId id = BuffId.byId(buffId);
         if (id == null || !DaemonBuffs.supported().contains(id)) {
             ctx.getSource().sendError(Text.literal("Unknown / undeliverable buff '" + buffId
-                    + "' — tab-complete or /gp daemon list."));
+                    + "' - tab-complete or /gp daemon list."));
             return 0;
         }
         int level = IntegerArgumentType.getInteger(ctx, "level");
@@ -111,7 +111,7 @@ public final class DaemonCommand {
         Map<BuffId, Integer> m = l.toLevels();
         StringBuilder sb = new StringBuilder("Daemon [" + (on ? "ON" : "OFF") + "] · Data: " + balance + "\nLoadout:");
         if (m.isEmpty()) {
-            sb.append(" (empty — /gp daemon set <buff> <level>)");
+            sb.append(" (empty - /gp daemon set <buff> <level>)");
         } else {
             double total = 0.0;
             for (Map.Entry<BuffId, Integer> e : m.entrySet()) {
@@ -140,8 +140,8 @@ public final class DaemonCommand {
         if (held == null) return 0;
         DaemonItem.setOn(held, on);
         ctx.getSource().sendFeedback(() -> Text.literal(on
-                ? "Daemon ON — glint shown; installed buffs active while it's in your inventory."
-                : "Daemon OFF — inert, no Data drain."), false);
+                ? "Daemon ON - glint shown; installed buffs active while it's in your inventory."
+                : "Daemon OFF - inert, no Data drain."), false);
         return 1;
     }
 

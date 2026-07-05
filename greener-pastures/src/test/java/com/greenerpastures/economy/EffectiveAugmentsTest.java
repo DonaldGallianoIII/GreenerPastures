@@ -132,7 +132,7 @@ class EffectiveAugmentsTest {
 
     @Test
     void natureSelectorIsNeverAmplifiedByATether() {
-        // A selector encodes a CHOICE, not a magnitude — even a (hypothetical) Nature tether must not scale the
+        // A selector encodes a CHOICE, not a magnitude - even a (hypothetical) Nature tether must not scale the
         // index, or Adamant (4) would silently become a different nature. The raw base index passes through.
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.NATURE, 4);
         EffectiveAugments amped = EffectiveAugments.of(base, List.of(tether("nature", TetherClass.QUALITY, 3)));

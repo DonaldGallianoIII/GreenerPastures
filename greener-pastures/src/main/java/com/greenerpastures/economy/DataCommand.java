@@ -12,7 +12,7 @@ import net.minecraft.text.Text;
 import java.util.UUID;
 
 /**
- * The {@code /gp data} command — a QA/admin handle on the player's <b>Data</b> balance (the dark-economy
+ * The {@code /gp data} command - a QA/admin handle on the player's <b>Data</b> balance (the dark-economy
  * currency). Earning Data normally requires a Renderer culling eggs; but the Daemon "root" buffs only run while
  * the Daemon is <i>fed</i> (balance &gt; 0), so testing them straight from a fresh world is impossible without a
  * grant. This mints/sets a balance directly. <b>Op-gated (level 2)</b> since it creates currency. Usage:

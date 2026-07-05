@@ -197,7 +197,7 @@ public class EggOracleScreen extends Screen {
     }
 
     private static String fmtTime(double hours) {
-        if (Double.isInfinite(hours) || Double.isNaN(hours)) return "—";
+        if (Double.isInfinite(hours) || Double.isNaN(hours)) return "-";
         if (hours >= 48) return fmtNum(hours / 24.0, 1) + " days";
         if (hours >= 1) return fmtNum(hours, 1) + " hrs";
         return fmtNum(hours * 60.0, 0) + " min";

@@ -15,7 +15,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
- * Standalone (no-Minecraft) {@link GpCanvas} backend for the Design Studio — renders our GUI paint
+ * Standalone (no-Minecraft) {@link GpCanvas} backend for the Design Studio - renders our GUI paint
  * code with plain Java2D, so it runs as a normal Java program on the desktop. Pixels are ~faithful to
  * the in-game look (same palette, same layout); text metrics differ slightly from MC's font, so this
  * is a fast design preview, not a pixel-exact emulator.

@@ -7,7 +7,7 @@ import java.util.List;
  * The Daemon's <b>look</b>, Minecraft-free. {@link #paintCanvas} draws the node graph (units +
  * augment/filter/collection/void nodes + wires) onto a {@link GpCanvas}; {@link #paint} wraps it with
  * the standalone Daemon header/footer. The in-game screen and the Design Studio both paint through it
- * (McGpCanvas / Java2D) — <b>same code, same pixels</b>. Palette is the single source of truth.
+ * (McGpCanvas / Java2D) - <b>same code, same pixels</b>. Palette is the single source of truth.
  */
 public final class DaemonView {
     private DaemonView() {}
@@ -43,7 +43,7 @@ public final class DaemonView {
         public int[][] ivs;                 // filter: 6 rows {min,max}
         public String nature, shiny;        // filter
 
-        /** UNIT (existing signature — the controller uses this). */
+        /** UNIT (existing signature - the controller uses this). */
         public Node(double x, double y, String label, String species, boolean paired, int bucket) {
             this.x = x; this.y = y; this.label = label; this.species = species; this.paired = paired; this.bucket = bucket;
         }
@@ -100,7 +100,7 @@ public final class DaemonView {
         c.text(c.trim(m.hint, w - 20), 12, h - 15, DIM);
     }
 
-    /** Just the node canvas (grid + wires + nodes) — reused by the Notebook frame. */
+    /** Just the node canvas (grid + wires + nodes) - reused by the Notebook frame. */
     public static void paintCanvas(GpCanvas c, Model m, int w, int h) {
         c.fill(0, 0, w, h, BG);
         grid(c, m, w, h);
@@ -125,7 +125,7 @@ public final class DaemonView {
 
     private static void wire(GpCanvas c, double ax, double ay, double bx, double by, int color) {
         double dist = Math.hypot(bx - ax, by - ay);
-        double k = Math.max(28, Math.min(120, dist * 0.45 + 24));   // bow upward — both ports emanate from the top
+        double k = Math.max(28, Math.min(120, dist * 0.45 + 24));   // bow upward - both ports emanate from the top
         double c1x = ax, c1y = ay - k, c2x = bx, c2y = by - k;
         int n = (int) Math.max(18, Math.min(72, dist / 8));
         double[] xs = new double[n + 1], ys = new double[n + 1];

@@ -14,13 +14,13 @@ import java.util.Map;
 
 /**
  * One BioBank's contents: eggs (lossless ItemStacks) bucketed by species key. Lives in
- * {@link BioBankStore} (a per-world save), NOT in block-entity chunk NBT — so it scales to
+ * {@link BioBankStore} (a per-world save), NOT in block-entity chunk NBT - so it scales to
  * thousands without a chunk-save / reload spike (the principle from DAEMON_AND_TETHERS.md).
  */
 public final class BioBankData {
     private final Map<String, List<ItemStack>> bySpecies = new LinkedHashMap<>();
     private int total = 0;
-    /** Bumped on every mutation — the console's per-second push skips re-flattening an unchanged bank
+    /** Bumped on every mutation - the console's per-second push skips re-flattening an unchanged bank
      *  entirely (perf-audit R3 F2: the biggest per-viewer cost at hoard scale). Not persisted. */
     private long rev = 0;
 
@@ -31,7 +31,7 @@ public final class BioBankData {
     /** Bank one egg under its species key. The cap is <b>per unique species</b> (Deuce, 2026-07-01): each species
      *  holds up to {@link BioBank#capacity()} eggs, so many species coexist. Enforced here as the single source
      *  of truth, so a migrated/hand-edited save can't load a species past its cap. Returns false when THAT
-     *  species' bucket is full — the breeder then falls back to the tray for that egg. */
+     *  species' bucket is full - the breeder then falls back to the tray for that egg. */
     public boolean add(String species, ItemStack egg) {
         List<ItemStack> bucket = bySpecies.computeIfAbsent(species, s -> new ArrayList<>());
         if (bucket.size() >= BioBank.capacity()) return false;
@@ -48,9 +48,9 @@ public final class BioBankData {
         return out;
     }
 
-    /** Case-insensitive per-species count WITHOUT materializing the whole counts map — the health pass asks
+    /** Case-insensitive per-species count WITHOUT materializing the whole counts map - the health pass asks
      *  this once per tethered species per second (perf-audit R3 F4/#2). Roster names are display-cased
-     *  ("Eevee"); bank keys come from the egg reader — compare loosely, never copy. */
+     *  ("Eevee"); bank keys come from the egg reader - compare loosely, never copy. */
     public int countOfIgnoreCase(String species) {
         List<ItemStack> exact = bySpecies.get(species);
         if (exact != null) return exact.size();
@@ -67,7 +67,7 @@ public final class BioBankData {
         return out;
     }
 
-    /** The eggs banked under one species key (empty if none) — for the console's per-species drill-in. */
+    /** The eggs banked under one species key (empty if none) - for the console's per-species drill-in. */
     public List<ItemStack> entries(String species) {
         return bySpecies.getOrDefault(species, List.of());
     }
@@ -114,7 +114,7 @@ public final class BioBankData {
             for (NbtElement el : list) {
                 ItemStack st = ItemStack.fromNbt(lookup, el).orElse(null);
                 if (st == null) continue;
-                if (!d.add(species, st)) dropped++;   // over-cap (migrated/edited save) — clamp, don't load past it
+                if (!d.add(species, st)) dropped++;   // over-cap (migrated/edited save) - clamp, don't load past it
             }
         }
         if (dropped > 0) GpLog.w("biobank", "load_over_cap", "dropped", dropped, "cap", BioBank.capacity());

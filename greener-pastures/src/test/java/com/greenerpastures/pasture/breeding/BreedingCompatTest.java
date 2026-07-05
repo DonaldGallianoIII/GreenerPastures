@@ -7,7 +7,7 @@ import java.util.Set;
 import static com.greenerpastures.pasture.breeding.BreedingCompat.Gender.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Pure-logic tests for the breeding-compatibility rules (BUG-006) — no Minecraft needed. */
+/** Pure-logic tests for the breeding-compatibility rules (BUG-006) - no Minecraft needed. */
 class BreedingCompatTest {
 
     private static BreedingCompat.Parent mon(BreedingCompat.Gender g, String... groups) {

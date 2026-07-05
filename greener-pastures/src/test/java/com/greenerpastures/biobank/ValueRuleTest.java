@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the "valuable egg" safety rule — pure logic. */
+/** Headless tests for the "valuable egg" safety rule - pure logic. */
 class ValueRuleTest {
 
     private static EggSummary egg(boolean shiny, int ivTotal, int perfect) {

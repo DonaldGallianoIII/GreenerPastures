@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * World-saved per-player <b>pasture snapshots</b> (INTERACTIVE_SPEC §3.2) — each pasture's last-opened contents
+ * World-saved per-player <b>pasture snapshots</b> (INTERACTIVE_SPEC §3.2) - each pasture's last-opened contents
  * + breeding status, captured server-side when the player opens a pasture in-world ({@code PastureWand}) and
  * read <b>remotely + read-only</b> by the console's Pastures tab (Deuce: you can't modify a pasture from the
  * Notebook). Per-player + keyed by pasture, so it survives relog. Mirrors {@link NotebookStore}.
@@ -29,7 +29,7 @@ import java.util.UUID;
 public final class PastureSnapshotStore extends PersistentState {
     private static final String ID = "greenerpastures_pasture_snapshots";
 
-    /** Cap per-player snapshots so the store — and the NBT rewritten on every autosave — can't grow unbounded
+    /** Cap per-player snapshots so the store - and the NBT rewritten on every autosave - can't grow unbounded
      *  as a farm sprawls (perf-audit H1). Access-order LRU keeps the 64 most-recently-opened pastures per player. */
     private static final int MAX_PER_PLAYER = 64;
 
@@ -56,7 +56,7 @@ public final class PastureSnapshotStore extends PersistentState {
         markDirty();
     }
 
-    /** Forget a pasture's snapshot for every player — called when its block is reclaimed, so the console can't
+    /** Forget a pasture's snapshot for every player - called when its block is reclaimed, so the console can't
      *  show a destroyed pasture and the store shrinks with the world (perf-audit H1). */
     public void removeAt(String dim, long posLong) {
         String key = dim + "|" + posLong;
@@ -74,7 +74,7 @@ public final class PastureSnapshotStore extends PersistentState {
         String tierLabel = tier != null ? tier.name() : "no Kernel";
         int maxPairs = tier != null ? tier.maxPairs : 0;
         int eggCount = pd.eggQueue.size();
-        try {   // eggQueue is only our OVERFLOW buffer (usually 0) — the real eggs sit in the pasture's own tray
+        try {   // eggQueue is only our OVERFLOW buffer (usually 0) - the real eggs sit in the pasture's own tray
             var tray = CobbreedingBridge.eggsAt(pos);
             if (tray != null) for (net.minecraft.item.ItemStack egg : tray) if (!egg.isEmpty()) eggCount++;
         } catch (Throwable ignored) { }
@@ -92,7 +92,7 @@ public final class PastureSnapshotStore extends PersistentState {
             List<MonEntry> mons = byBucket.get(b);
             if (mons == null || mons.isEmpty()) continue;
             String a = mons.get(0).label();
-            String other = mons.size() > 1 ? mons.get(1).label() : "—";
+            String other = mons.size() > 1 ? mons.get(1).label() : "-";
             String st = mons.size() > 1 ? pairStatus : "Incomplete";
             pairs.add(a + " × " + other + " · " + st);
         }

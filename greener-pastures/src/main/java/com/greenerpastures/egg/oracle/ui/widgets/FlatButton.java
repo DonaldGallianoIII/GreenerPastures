@@ -6,7 +6,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
 
-/** A flat, accent-bordered button — none of the vanilla gray-bevel look. */
+/** A flat, accent-bordered button - none of the vanilla gray-bevel look. */
 public class FlatButton extends ButtonWidget {
     public FlatButton(int x, int y, int w, int h, Text msg, PressAction action) {
         super(x, y, w, h, msg, action, DEFAULT_NARRATION_SUPPLIER);

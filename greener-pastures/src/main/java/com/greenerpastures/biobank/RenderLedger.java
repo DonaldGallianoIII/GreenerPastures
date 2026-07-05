@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The BioBank's "Send to Renderer" dry-run — given the batch of eggs about to be rendered (destroyed →
+ * The BioBank's "Send to Renderer" dry-run - given the batch of eggs about to be rendered (destroyed →
  * Data), produce a per-species preview with safety flags, so the player sees exactly what they'll
  * consume BEFORE committing (the {@code −500 Froakie · −90 Charmander ✦shiny} ledger). Minecraft-free.
  *
  * <p>The shiny / perfect-IV flags are an <b>independent scan</b> of the actual batch (not derived from
- * the render filter) — defense-in-depth against a mis-set filter.
+ * the render filter) - defense-in-depth against a mis-set filter.
  */
 public final class RenderLedger {
     private RenderLedger() {}

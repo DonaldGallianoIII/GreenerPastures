@@ -13,7 +13,7 @@ import java.util.Map;
 
 /**
  * World-saved registry of {@link PastureData}, indexed <b>dimension → position</b>. The per-dimension
- * nesting makes the breeder's per-tick {@link #inWorld} an O(1) sub-map lookup — no map rebuild, no key
+ * nesting makes the breeder's per-tick {@link #inWorld} an O(1) sub-map lookup - no map rebuild, no key
  * parsing on the hot path (perf-audit H1). The on-disk format stays the flat {@code dim|pos.asLong()}
  * key map, so existing saves load unchanged (parsed once on load, flattened once on save).
  */
@@ -24,7 +24,7 @@ public final class PastureRegistry extends PersistentState {
 
     /** Cache the dim-key string per world so the per-tick {@link #inWorld}/{@link #get} lookups don't allocate a
      *  fresh Identifier string every call (perf-audit; identity-keyed, bounded by loaded-world count).
-     *  WEAK keys (R3 #4): a strong static Map&lt;World,…&gt; pins every ServerWorld ever loaded — in singleplayer the
+     *  WEAK keys (R3 #4): a strong static Map&lt;World,…&gt; pins every ServerWorld ever loaded - in singleplayer the
      *  integrated server restarts per world visited, so an evening of world-hopping leaked whole world graphs.
      *  Weak keys let GC reclaim closed worlds; a miss just recomputes one string. */
     private static final Map<World, String> DIM_KEY =
@@ -39,7 +39,7 @@ public final class PastureRegistry extends PersistentState {
         return m == null ? null : m.get(pos);
     }
 
-    /** Lookup by the dim-key STRING (a {@code PastureSnapshot.dim}) — the Pastures-tab health pass reads
+    /** Lookup by the dim-key STRING (a {@code PastureSnapshot.dim}) - the Pastures-tab health pass reads
      *  registry-side state (owner/Kernel/tray) for pastures whose world/chunk may not be loaded. */
     public PastureData get(String dimKey, BlockPos pos) {
         Map<BlockPos, PastureData> m = byDim.get(dimKey);
@@ -85,7 +85,7 @@ public final class PastureRegistry extends PersistentState {
         markDirty();
     }
 
-    /** Every pasture record in the given world — a live O(1) sub-map view (empty if the dim has none). */
+    /** Every pasture record in the given world - a live O(1) sub-map view (empty if the dim has none). */
     public Map<BlockPos, PastureData> inWorld(World world) {
         return byDim.getOrDefault(dimKey(world), Collections.emptyMap());
     }

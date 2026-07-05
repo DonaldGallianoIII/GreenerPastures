@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Persistent lifetime tally of eggs scanned and shinies found — the empirical shiny-rate
+ * Persistent lifetime tally of eggs scanned and shinies found - the empirical shiny-rate
  * dataset. Saved to config/shinyegghighlighter_stats.json so it survives restarts and
  * accumulates across worlds/servers.
  */

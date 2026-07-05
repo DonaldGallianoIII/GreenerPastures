@@ -4,7 +4,7 @@ import com.greenerpastures.biobank.EggSummary;
 
 /**
  * Live progress toward a {@link BreedingGoal}: how many eggs have been checked, how many matched, and the best
- * IV-total seen so far (a "closest yet" hint). Immutable — each checked egg returns a new snapshot — so it's
+ * IV-total seen so far (a "closest yet" hint). Immutable - each checked egg returns a new snapshot - so it's
  * trivially unit-tested and safe to recompute. The goal is {@link #reached} once matches hit the goal's count.
  */
 public record GoalProgress(int checked, int matched, int bestIvTotal) {

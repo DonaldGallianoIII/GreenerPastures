@@ -57,7 +57,7 @@ public class EggOracleClient {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(PastureCheck::renderWorld);
         HudRenderCallback.EVENT.register(PastureCheck::renderHud);
 
-        // Egg Culler overlay DISABLED — it drew the floating keep/cull readout on EVERY container
+        // Egg Culler overlay DISABLED - it drew the floating keep/cull readout on EVERY container
         // (inventory, chests, …), which was intrusive. Being reworked from a global overlay into a
         // dedicated item + GUI (like the Pasture Wand). The EggCuller/CullSettings code is kept for
         // that rework. See task: "Rework egg culler into an item + GUI".

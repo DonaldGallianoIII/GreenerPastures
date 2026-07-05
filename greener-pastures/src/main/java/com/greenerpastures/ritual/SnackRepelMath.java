@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Snack Repel math (Snack Overdrive pt.1, rev 2 — Deuce, 2026-07-04): the can is CHARGED with typed berries
+ * Snack Repel math (Snack Overdrive pt.1, rev 2 - Deuce, 2026-07-04): the can is CHARGED with typed berries
  * first (count scales magnitude exactly like the ultra cake: per-copy value summed, 6-copy cap = "double a
  * pot cook"), then charged cans merge into the snack (per-type sums, capped at DOUBLE the strongest single
- * can — the double-additive rule everywhere). Pure + tested.
+ * can - the double-additive rule everywhere). Pure + tested.
  */
 public final class SnackRepelMath {
     private SnackRepelMath() {}

@@ -1,5 +1,5 @@
 /* ============================================================
-   GREENER PASTURES — Notebook console (real, data-wired)
+   GREENER PASTURES - Notebook console (real, data-wired)
    Built on Deuce's mockup aesthetic (mockups/GreenerPasturesNotebook.jsx),
    wired to the live data contract (NOTEBOOK_DATA_CONTRACT.md) via the bridge SDK.
    Viewport-sized window; every tab reads its channel; buttons send actions.
@@ -336,7 +336,7 @@ export default function App() {
     </div>
   )
 }
-// InventoryWindow removed — the real MC inventory (with icons) is now drawn natively over the browser
+// InventoryWindow removed - the real MC inventory (with icons) is now drawn natively over the browser
 // (NotebookBrowserScreen), since the browser can't render Minecraft item textures.
 
 function Conn() {
@@ -364,7 +364,7 @@ function StatusBar() {
 }
 
 // Floating inventory window: mirrors the player's REAL inventory (`inventory` channel). Draggable by its header
-// (persists across tabs — always mounted outside the tab body) and minimizable to a single line. Drag applies a
+// (persists across tabs - always mounted outside the tab body) and minimizable to a single line. Drag applies a
 // GPU transform straight to the node (no per-move React re-render → smooth in MCEF), committed to state on release;
 // the delta is divided by --gp-scale to track the cursor under the viewport zoom.
 function InventoryWindow() {
@@ -404,7 +404,7 @@ function InventoryWindow() {
         <span style={{ flex: 1 }} />
         {!min && <span className="dim" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>⇧-click → storage</span>}
         <span onMouseDown={(e) => e.stopPropagation()} onClick={() => setMin((m) => !m)} title={min ? 'expand' : 'minimize'}
-          style={{ cursor: 'pointer', marginLeft: 8, color: 'var(--muted)', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, lineHeight: 1 }}>{min ? '▢' : '—'}</span>
+          style={{ cursor: 'pointer', marginLeft: 8, color: 'var(--muted)', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, lineHeight: 1 }}>{min ? '▢' : '-'}</span>
       </div>
       {!min && <div className="invgrid">{slots.slice(9, 36).map((s, i) => <Slot key={i} s={s} idx={i + 9} />)}</div>}
       {!min && <div className="invgrid hot">{slots.slice(0, 9).map((s, i) => <Slot key={i} s={s} idx={i} hot />)}</div>}
@@ -430,14 +430,14 @@ function BioBank() {
   const [open, setOpen] = useState(null)
   const [sortKey, setSortKey] = useState('iv')
   const entries = d?.entries
-  // Memoized: grouping thousands of eggs re-ran on EVERY render (sort clicks, accordion toggles) — R3 #9.
+  // Memoized: grouping thousands of eggs re-ran on EVERY render (sort clicks, accordion toggles) - R3 #9.
   const { groups, species } = useMemo(() => {
     const groups = {}
     ;(entries || []).forEach((e, i) => (groups[e.species] ||= []).push({ e, i }))
     return { groups, species: Object.keys(groups) }
   }, [entries])
   if (!d) return <div className="pane" />   // channel not received yet → blank, not a flash of the empty state
-  if (!species.length) return <Empty title="BioBank empty" msg="link a pasture — its eggs are pulled in here automatically while it's loaded" />
+  if (!species.length) return <Empty title="BioBank empty" msg="link a pasture - its eggs are pulled in here automatically while it's loaded" />
   return (
     <div className="pane">
       <div className="row" style={{ marginBottom: 8 }}>
@@ -497,7 +497,7 @@ function StatRow({ tag, vals, perfect, color }) {
   )
 }
 
-// ── Inbox — dismissible notifications (catch-up pings etc.; nothing stacks in chat) ──
+// ── Inbox - dismissible notifications (catch-up pings etc.; nothing stacks in chat) ──
 function InboxTab() {
   const d = useChannel('notifications')
   const notes = d?.notes || []
@@ -513,7 +513,7 @@ function InboxTab() {
         <span style={{ flex: 1 }} />
         {notes.length > 0 && <button className="btn" style={{ fontSize: 10, padding: '2px 8px' }} onClick={() => send('storage', 'DISMISS_NOTE', { id: 'all' })}>clear all</button>}
       </div>
-      {!notes.length ? <div className="muted" style={{ fontSize: 12 }}>all caught up — away-progress and pasture events land here.</div> : (
+      {!notes.length ? <div className="muted" style={{ fontSize: 12 }}>all caught up - away-progress and pasture events land here.</div> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {notes.map((n) => (
             <div key={n.id} className="note">
@@ -551,10 +551,10 @@ function Harvester() {
         {invFull && <span style={{ color: 'var(--red)', fontSize: 11, marginRight: 8 }}>⚠ inventory full</span>}
         <span className="dim" style={{ fontSize: 11 }}>L: one · ⇧-click: stack · R: all → inventory</span>
       </div>
-      {!list.length ? <div style={{ color: 'var(--muted)', fontSize: 12 }}>empty — harvested loot from your linked pastures collects here</div> : (
+      {!list.length ? <div style={{ color: 'var(--muted)', fontSize: 12 }}>empty - harvested loot from your linked pastures collects here</div> : (
         <div className="grid">
           {list.map(([id, n]) => { const ok = canTake(id); return (
-            <div key={id} className={`cell${ok ? '' : ' cell-full'}`} title={ok ? `${id} · L: one · ⇧: stack · R: all` : `${id} · inventory full — make room to pull`}
+            <div key={id} className={`cell${ok ? '' : ' cell-full'}`} title={ok ? `${id} · L: one · ⇧: stack · R: all` : `${id} · inventory full - make room to pull`}
               onClick={(ev) => { if (ok) send('storage', shiftHeld(ev) ? 'PULL_STACK' : 'PULL_ONE', { item: id }) }}
               onContextMenu={(ev) => { ev.preventDefault(); if (ok) send('storage', 'PULL_ID', { item: id }) }}>
               <span className="ct">{compact(n)}</span>
@@ -569,10 +569,10 @@ function Harvester() {
 
 // ── Pastures ─────────────────────────────────────────────────────────────────
 const FLAG_TEXT = {
-  unlinked: '🔗 not linked — drops & eggs are not collected',
-  no_kernel: '🧬 no Kernel — breeding & harvest offline',
+  unlinked: '🔗 not linked - drops & eggs are not collected',
+  no_kernel: '🧬 no Kernel - breeding & harvest offline',
   no_parents: '👥 fewer than 2 parents',
-  tray_full: '🥚 egg tray full — breeding paused',
+  tray_full: '🥚 egg tray full - breeding paused',
 }
 const flagLine = (id) => id.startsWith('bank_full:') ? `🏦 BioBank full for ${id.slice(10)}` : (FLAG_TEXT[id] || `⚠ ${id}`)
 
@@ -604,7 +604,7 @@ function Pastures() {
       <div className="pdetail inset">
         <div className="grn" style={{ fontWeight: 600, fontSize: 15 }}>{p.name}</div>
         <div className="muted mono" style={{ fontSize: 11, margin: '4px 0 2px' }}>{p.tier} · {p.eggCount} eggs queued · {p.pairs.length} pairs</div>
-        <div className="dim" style={{ fontSize: 11, marginBottom: 10 }}>read-only — modify at the pasture in-world</div>
+        <div className="dim" style={{ fontSize: 11, marginBottom: 10 }}>read-only - modify at the pasture in-world</div>
         {pFlags.length > 0 && (
           <div className="hstrip">
             {pFlags.map((id) => <span key={id} className="hflag">{flagLine(id)}</span>)}
@@ -642,7 +642,7 @@ function TargetCards({ items, kind, action }) {
 function Compiler() {
   const d = useChannel('compiler')
   const status = useChannel('status')
-  const meta = useChannel('augmenter')?.meta   // the augmeta blob (rides the augmenter channel) — carries the target-candidate lists
+  const meta = useChannel('augmenter')?.meta   // the augmeta blob (rides the augmenter channel) - carries the target-candidate lists
   if (!d) return <Empty title="…" msg="loading the Compiler channel" />
   if (!d.hasDaemon) return <Empty title="No Daemon in your inventory" msg="hold a Daemon (anywhere in your pack) to compile its buffs" />
   const installed = d.installed || {}
@@ -692,9 +692,9 @@ function Compiler() {
 }
 
 // ── Augmenter (Kernel augments · #34 EV allocator · #35 nature/ball pickers) ─
-// Standard nature table (universal Pokémon canon, stable) — display hints only; the LIST comes from the server.
+// Standard nature table (universal Pokémon canon, stable) - display hints only; the LIST comes from the server.
 const NATURE_FX = {
-  hardy: '—', docile: '—', serious: '—', bashful: '—', quirky: '—',
+  hardy: '-', docile: '-', serious: '-', bashful: '-', quirky: '-',
   lonely: '+Atk −Def', brave: '+Atk −Spe', adamant: '+Atk −SpA', naughty: '+Atk −SpD',
   bold: '+Def −Atk', relaxed: '+Def −Spe', impish: '+Def −SpA', lax: '+Def −SpD',
   timid: '+Spe −Atk', hasty: '+Spe −Def', jolly: '+Spe −SpA', naive: '+Spe −SpD',
@@ -707,7 +707,7 @@ function Augmenter() {
   const d = useChannel('augmenter')
   const status = useChannel('status')
   const gpu = status?.gpu ?? 0
-  const inv = useChannel('inventory')          // hooks stay above the early returns — hook order must never change between renders
+  const inv = useChannel('inventory')          // hooks stay above the early returns - hook order must never change between renders
   const [picker, setPicker] = useState(null)   // 'NATURE' | 'BALL' | 'EV' | null
   if (!d) return <Empty title="…" msg="loading the Augmenter channel" />
   if (!d.hasKernel) return <Empty title="No Kernel in your inventory" msg="hold a Kernel (a Pasture Upgrade) to augment it" />
@@ -728,7 +728,7 @@ function Augmenter() {
       <div className="tcol inset" style={{ width: 150 }}>
         <span className="h">Kernel</span>
         <span className="grn" style={{ fontWeight: 600 }}>{d.tier}{corrupted && <span style={{ color: '#a06bd4' }}> ⛧</span>}</span>
-        {corrupted && <span style={{ color: '#a06bd4', fontSize: 10 }}>corrupted — beyond modification{meta.corruptPairs ? ` · +${meta.corruptPairs} pair` : ''}</span>}
+        {corrupted && <span style={{ color: '#a06bd4', fontSize: 10 }}>corrupted - beyond modification{meta.corruptPairs ? ` · +${meta.corruptPairs} pair` : ''}</span>}
         <span className="muted">slots {d.slotsUsed}/{d.slotCap}</span>
         <div className="row" style={{ gap: 4 }}>
           {Array.from({ length: d.slotCap }).map((_, i) => <span key={i} className={`pip${i < d.slotsUsed ? ' on' : ''}`} />)}
@@ -736,14 +736,14 @@ function Augmenter() {
         <span className="cyn" style={{ marginTop: 6 }}>◈ {gpu} GPU</span>
         {orbCount > 0 && !corrupted && (
           <button className="btn" style={{ marginTop: 8, color: '#a06bd4', borderColor: '#5a3c74' }}
-            title={`consume 1 Illicit Data Disk (you have ${orbCount}) — bless, twist, or brick this Kernel. PERMANENT.`}
+            title={`consume 1 Illicit Data Disk (you have ${orbCount}) - bless, twist, or brick this Kernel. PERMANENT.`}
             onClick={() => send('augmenter', 'CORRUPT_KERNEL', {})}>⛧ CORRUPT</button>
         )}
       </div>
       <div className="tcol inset" style={{ flex: 1 }}>
         <span className="h">Augments · ◈ = GPU cost{corrupted ? ' · ⛧ locked' : ''}</span>
         {(d.catalog || []).map((a) => {
-          const gcost = a.gpuCost ?? 0   // GPU economy deferred server-side — treat "not sent" as free
+          const gcost = a.gpuCost ?? 0   // GPU economy deferred server-side - treat "not sent" as free
           const lvl = a.appliedLevel ?? (a.applied ? 1 : 0)   // 6-field payload (appliedLevel); tolerate old shape
           const param = PARAM_TYPES.includes(a.type)
           const chip = param ? valueChip(a.type) : null
@@ -754,7 +754,7 @@ function Augmenter() {
           return (
             <div key={a.type} className={`brow${lvl > 0 ? ' on' : ''}`}>
               <span style={{ color: lvl > 0 ? 'var(--text)' : 'var(--muted)', flex: 1 }}>
-                {a.label}{lvl >= 2 && <span className="cyn mono" style={{ fontSize: 10 }} title="level II — 1.5× effect · 3 slots"> II</span>}
+                {a.label}{lvl >= 2 && <span className="cyn mono" style={{ fontSize: 10 }} title="level II - 1.5× effect · 3 slots"> II</span>}
               </span>
               {chip && <span className="augval" title="current setting">{chip}</span>}
               <span className="dim mono" style={{ fontSize: 10 }} title={lvl === 1 && canUpgrade ? 'level II occupies 3 slots total' : ''}>{a.slotCost} slot{a.slotCost !== 1 ? 's' : ''}</span>
@@ -764,8 +764,8 @@ function Augmenter() {
                 <button className="btn go" disabled={!canDo} title={gpu < gcost ? 'not enough GPU' : d.slotsUsed + slotDelta > d.slotCap ? `level II needs 3 slots total (${slotDelta} more free)` : '1.5× effect · 3 slots total'}
                   onClick={() => send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>UPGRADE</button>}
               {lvl > 0
-                ? <button className="btn warn" disabled={corrupted} title={corrupted ? '⛧ corrupted — beyond modification' : 'frees the slots'} onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
-                : <button className="btn go" disabled={!canDo || corrupted} title={corrupted ? '⛧ corrupted — beyond modification' : gpu < gcost ? 'not enough GPU' : (d.slotsUsed + slotDelta > d.slotCap ? 'no free slots' : '')}
+                ? <button className="btn warn" disabled={corrupted} title={corrupted ? '⛧ corrupted - beyond modification' : 'frees the slots'} onClick={() => send('augmenter', 'REMOVE_AUGMENT', { type: a.type })}>REMOVE</button>
+                : <button className="btn go" disabled={!canDo || corrupted} title={corrupted ? '⛧ corrupted - beyond modification' : gpu < gcost ? 'not enough GPU' : (d.slotsUsed + slotDelta > d.slotCap ? 'no free slots' : '')}
                     onClick={() => param ? setPicker(a.type) : send('augmenter', 'APPLY_AUGMENT', { type: a.type })}>{param ? 'PICK…' : 'APPLY'}</button>}
             </div>
           )
@@ -779,12 +779,12 @@ function Augmenter() {
   )
 }
 
-// #35 — Nature Lock picker: the full server catalog (25), each with its stat-effect hint. Click = install.
+// #35 - Nature Lock picker: the full server catalog (25), each with its stat-effect hint. Click = install.
 function NaturePicker({ natures, current, onClose }) {
   const d = usePanelDrag()
   return (
     <div className="dcfg" ref={d.ref} style={{ ...d.style, width: 300 }} onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
-      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>🧬 Nature Lock — every egg hatches this nature<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
+      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>🧬 Nature Lock - every egg hatches this nature<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
       <div className="nat-grid">
         {natures.map((n, i) => (
           <button key={n} className={`dchip2${current === i + 1 ? ' on' : ''}`}
@@ -797,12 +797,12 @@ function NaturePicker({ natures, current, onClose }) {
   )
 }
 
-// #35 — Ball Lock picker: every breedable ball from the server catalog. Click = install.
+// #35 - Ball Lock picker: every breedable ball from the server catalog. Click = install.
 function BallPicker({ balls, current, onClose }) {
   const d = usePanelDrag()
   return (
     <div className="dcfg" ref={d.ref} style={{ ...d.style, width: 280 }} onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
-      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>◉ Ball Lock — every egg hatches in this ball<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
+      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>◉ Ball Lock - every egg hatches in this ball<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
       <div className="ball-grid">
         {balls.map((b, i) => (
           <button key={b} className={`dchip2${current === i + 1 ? ' on' : ''}`}
@@ -815,7 +815,7 @@ function BallPicker({ balls, current, onClose }) {
   )
 }
 
-// #34 — EV Primer allocator: a targeted 6-stat spread (each ≤252, total ≤510), applied to every bred egg.
+// #34 - EV Primer allocator: a targeted 6-stat spread (each ≤252, total ≤510), applied to every bred egg.
 function EvAllocator({ initial, onClose }) {
   const d = usePanelDrag()
   const [ev, setEv] = useState(() => (initial && initial.length === 6 ? [...initial] : [0, 0, 0, 0, 0, 0]))
@@ -824,12 +824,12 @@ function EvAllocator({ initial, onClose }) {
     const v = Math.max(0, Math.min(252, raw | 0))
     const others = total - ev[i]
     const next = [...ev]
-    next[i] = Math.min(v, 510 - others)   // clamp into the remaining budget — the bar can never overflow
+    next[i] = Math.min(v, 510 - others)   // clamp into the remaining budget - the bar can never overflow
     setEv(next)
   }
   return (
     <div className="dcfg" ref={d.ref} style={{ ...d.style, width: 250 }} onMouseDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
-      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>EV Primer — spread on every egg<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
+      <div className="dcfg-h dcfg-drag" onMouseDown={d.start}>EV Primer - spread on every egg<span className="dcfg-x" onClick={onClose} onMouseDown={(e) => e.stopPropagation()}>✕</span></div>
       {STATS.map((s, i) => (
         <div key={s} className="ev-row">
           <span style={{ width: 26 }}>{s}</span>
@@ -851,8 +851,8 @@ function EvAllocator({ initial, onClose }) {
   )
 }
 
-// ── Disks (§5c): write your Data balance onto blank media — the Notebook is the drive ──
-const DENOMS = [   // the rocket disk is NOT here — it's the corruption orb (Black Market ritual), not currency
+// ── Disks (§5c): write your Data balance onto blank media - the Notebook is the drive ──
+const DENOMS = [   // the rocket disk is NOT here - it's the corruption orb (Black Market ritual), not currency
   ['data_disk_byte', 'byte', 8], ['data_disk_kilobyte', 'kB', 1024], ['data_disk_megabyte', 'MB', 16384],
   ['data_disk_gigabyte', 'GB', 262144], ['data_disk_terabyte', 'TB', 4194304],
 ]
@@ -884,7 +884,7 @@ function DisksCard() {
   )
 }
 
-// ── Dashboard (live analytics — real breeding data over the `dashboard` channel) ──
+// ── Dashboard (live analytics - real breeding data over the `dashboard` channel) ──
 // The 1M-lifetime capstone: progress odometer + SUMMON when a MissingNo. is owed.
 function MissingnoCard() {
   const d = useChannel('dashboard')
@@ -904,13 +904,13 @@ function MissingnoCard() {
         </div>
         <span className="dim mono" style={{ fontSize: 10 }}>{(prog * 100).toFixed(1)}% to next</span>
         <button className="btn go" disabled={claimable < 1}
-          title={claimable < 1 ? 'one summon per 1,000,000 lifetime Data rendered' : `${claimable} owed — a glitch that rotates its very being · cannot battle`}
+          title={claimable < 1 ? 'one summon per 1,000,000 lifetime Data rendered' : `${claimable} owed - a glitch that rotates its very being · cannot battle`}
           onClick={() => send('dashboard', 'SUMMON_MISSINGNO', {})}>
           SUMMON{claimable > 0 ? ` (${claimable})` : ''}
         </button>
       </div>
       <div className="dim" style={{ fontSize: 10, marginTop: 4, fontStyle: 'italic' }}>
-        one per million rendered · rotates its form every few seconds · refuses all battles — a trophy, not a weapon
+        one per million rendered · rotates its form every few seconds · refuses all battles - a trophy, not a weapon
       </div>
     </div>
   )
@@ -969,7 +969,7 @@ function TierBars({ byTier }) {
     </div>
   )
 }
-// The breeding-goal hunt panel — set a target (species/shiny/IVs/count), watch live progress.
+// The breeding-goal hunt panel - set a target (species/shiny/IVs/count), watch live progress.
 function Goals() {
   const g = useChannel('goals')
   const bank = useChannel('biobank')
@@ -994,7 +994,7 @@ function Goals() {
           <div className="dim" style={{ fontSize: 10, marginTop: 4 }}>{g.matched}/{g.count} matched · {g.checked} eggs checked · best IV total {g.bestIvTotal}</div>
         </div>
       )}
-      {!present && !open && <div className="dim" style={{ fontSize: 11, marginTop: 6 }}>no active hunt — set a target and watch progress as your pastures lay.</div>}
+      {!present && !open && <div className="dim" style={{ fontSize: 11, marginTop: 6 }}>no active hunt - set a target and watch progress as your pastures lay.</div>}
       {open && (
         <div className="goal-form">
           <label>species<input className="gp-input" list="gp-species" value={form.species} placeholder="any species" onFocus={focusOn} onBlur={focusOff} onChange={(e) => setForm({ ...form, species: e.target.value })} />
@@ -1156,7 +1156,7 @@ function ConfigPanel({ node, onSet, onClose }) {
 const gsym = (g) => /^female/i.test(String(g)) ? '♀' : /^male/i.test(String(g)) ? '♂' : '⚲'
 const gcol = (g) => /^female/i.test(String(g)) ? '#ff8fb0' : /^male/i.test(String(g)) ? '#7db6ff' : 'var(--muted)'
 
-// Draggable pop-up — the header is the handle; offsetLeft/Top base + delta/scale keeps it under the cursor.
+// Draggable pop-up - the header is the handle; offsetLeft/Top base + delta/scale keeps it under the cursor.
 function usePanelDrag() {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)
@@ -1172,7 +1172,7 @@ function usePanelDrag() {
   return { ref, start, style: pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined }
 }
 
-// Parent inspector — click a mon node OR right-click a parent chip to see IVs / nature / gender / shiny / OT.
+// Parent inspector - click a mon node OR right-click a parent chip to see IVs / nature / gender / shiny / OT.
 function MonInspector({ species, stats, onClose }) {
   const d = usePanelDrag()
   const ivs = stats.ivs || [0, 0, 0, 0, 0, 0]
@@ -1187,8 +1187,8 @@ function MonInspector({ species, stats, onClose }) {
         {STATS.map((k, i) => <div key={k} className="iv-cell"><span className="iv-k">{k}</span><span className="iv-v" style={{ color: ivs[i] >= 31 ? 'var(--green)' : !ivs[i] ? 'var(--dim)' : 'var(--text)' }}>{ivs[i] || 0}</span></div>)}
       </div>
       <div className="insp-row"><span className="dim">IV total</span><span className="mono">{total}/186</span></div>
-      <div className="insp-row"><span className="dim">nature</span><span>{stats.nature ? cap(stats.nature) : '—'}</span></div>
-      <div className="insp-row"><span className="dim">OT</span><span className="mono" title={ot}>{ot ? (ot.length > 14 ? ot.slice(0, 14) + '…' : ot) : '—'}</span></div>
+      <div className="insp-row"><span className="dim">nature</span><span>{stats.nature ? cap(stats.nature) : '-'}</span></div>
+      <div className="insp-row"><span className="dim">OT</span><span className="mono" title={ot}>{ot ? (ot.length > 14 ? ot.slice(0, 14) + '…' : ot) : '-'}</span></div>
     </div>
   )
 }
@@ -1263,7 +1263,7 @@ function DaemonGraph({ cfg }) {
 
   // persistence + pairing derivation (each line's ≤2 parents → a bucket, so the breeder pairs them)
   const persist = (nd) => { touched.current = true; setDoc(nd); send('pasture', 'GRAPH', { pos: cfg.pos, json: JSON.stringify(nd) }) }
-  // Derive pairings from thread ORDER (bucket = k+1, clamped to the server's 1..8) — NOT gated on the live Kernel's
+  // Derive pairings from thread ORDER (bucket = k+1, clamped to the server's 1..8) - NOT gated on the live Kernel's
   // maxPairs, so removing/swapping the Kernel never wipes the graph's pairs. The breeder clamps buckets > maxPairs.
   const pushPairings = (nd) => { const p = {}; nd.threads.forEach((t, k) => { const mons = (t.nodes || []).filter((n) => n.type === 'MON').map((n) => n.monId); if (mons.length >= 2 && k < 8) { p[mons[0]] = k + 1; p[mons[1]] = k + 1 } }); send('pasture', 'PAIRINGS', { pos: cfg.pos, pairings: p }) }
   const commit = (nd, repair) => { persist(nd); if (repair) pushPairings(nd) }
@@ -1285,7 +1285,7 @@ function DaemonGraph({ cfg }) {
     if (cnt >= 2) return
     commit({ ...doc, threads: threads.map((t) => {
       if (t.id === active.id) {
-        // a pair shares its egg stream — auto-wire the new parent to whatever the existing parent already feeds
+        // a pair shares its egg stream - auto-wire the new parent to whatever the existing parent already feeds
         const targets = [...new Map((t.edges || []).filter((e) => { const fn = (t.nodes || []).find((n) => n.id === e.from); return fn && fn.type === 'MON' && e.fromPort === 'eggs' }).map((e) => [e.to + '/' + e.toPort, { to: e.to, toPort: e.toPort }])).values()]
         return { ...t, nodes: [...(t.nodes || []), { id: mid, type: 'MON', monId, x: 26, y: 20 + cnt * 76 }], edges: [...(t.edges || []), ...targets.map((s) => ({ from: mid, fromPort: 'eggs', to: s.to, toPort: s.toPort }))] }
       }
@@ -1299,7 +1299,7 @@ function DaemonGraph({ cfg }) {
     const r = boxRef.current.getBoundingClientRect()
     const c = toGraph(r.left + r.width / 2, r.top + r.height / 2)
     let x = Math.round(c.x - NODE_W / 2), y = Math.round(c.y - NODE_H / 2)
-    // cascade to the first free spot — stacking new nodes dead-center made each add look like it REPLACED the last
+    // cascade to the first free spot - stacking new nodes dead-center made each add look like it REPLACED the last
     for (let guard = 0; guard < 60 && nodes.some((n) => Math.abs(n.x - x) < NODE_W * 0.6 && Math.abs(n.y - y) < NODE_H * 0.9); guard++) { x += 34; y += 40 }
     const id = 'n' + Date.now().toString(36) + Math.floor(Math.random() * 1000)
     updateActive((t) => { t.nodes = [...t.nodes, { id, type, x, y, config: defaultConfig(type) }]; return t })
@@ -1376,12 +1376,12 @@ function DaemonGraph({ cfg }) {
         <button className="tab-add" disabled={threads.length >= capLines} title={threads.length >= capLines ? `Kernel allows ${maxPairs} lines` : 'new breeding line'} onClick={addThread}>+ line</button>
       </div>
       {!active ? (
-        <div className="muted" style={{ fontSize: 12, padding: '18px 4px' }}>No breeding lines yet — <b>+ line</b> to start one, add two parents, then wire their egg pipeline.{maxPairs ? '' : ' (Slot a Kernel first.)'}</div>
+        <div className="muted" style={{ fontSize: 12, padding: '18px 4px' }}>No breeding lines yet - <b>+ line</b> to start one, add two parents, then wire their egg pipeline.{maxPairs ? '' : ' (Slot a Kernel first.)'}</div>
       ) : (<>
         <div className="thread-roster" onMouseDown={(e) => e.stopPropagation()}>
           <span className="dim" style={{ fontSize: 10 }}>parents</span>
-          {roster.length === 0 ? <span className="dim" style={{ fontSize: 10 }}>— tether mons in-world</span> : roster.map((m) => { const home = monThread(m.id); const here = home && home.id === active.id; return (
-            <button key={m.id} className={`monchip${here ? ' here' : home ? ' busy' : ''}`} title={(home ? (here ? 'in this line — click to remove' : 'in ' + home.name) : 'click to add') + ' · right-click to inspect'} onClick={() => toggleMon(m.id)} onContextMenu={(e) => { e.preventDefault(); setInspectMon(m.id) }}>{cap(m.species)} <span style={{ color: gcol(m.stats?.gender) }}>{gsym(m.stats?.gender)}</span>{home && !here ? ` · ${home.name}` : ''}</button>
+          {roster.length === 0 ? <span className="dim" style={{ fontSize: 10 }}>- tether mons in-world</span> : roster.map((m) => { const home = monThread(m.id); const here = home && home.id === active.id; return (
+            <button key={m.id} className={`monchip${here ? ' here' : home ? ' busy' : ''}`} title={(home ? (here ? 'in this line - click to remove' : 'in ' + home.name) : 'click to add') + ' · right-click to inspect'} onClick={() => toggleMon(m.id)} onContextMenu={(e) => { e.preventDefault(); setInspectMon(m.id) }}>{cap(m.species)} <span style={{ color: gcol(m.stats?.gender) }}>{gsym(m.stats?.gender)}</span>{home && !here ? ` · ${home.name}` : ''}</button>
           )})}
         </div>
         <div className="daemon-palette" onMouseDown={(e) => e.stopPropagation()}>
@@ -1390,10 +1390,10 @@ function DaemonGraph({ cfg }) {
         </div>
         {monNodesActive.length === 2 && (
           <div className="shinybadge" onMouseDown={(e) => e.stopPropagation()}>
-            {!pairValid ? <span className="sb-bad" title="A pair needs one male + one female, or exactly one Ditto (Ditto can't breed Ditto).">⚠ this pair can't breed — need ♂ + ♀, or exactly one Ditto</span> : <>
+            {!pairValid ? <span className="sb-bad" title="A pair needs one male + one female, or exactly one Ditto (Ditto can't breed Ditto).">⚠ this pair can't breed - need ♂ + ♀, or exactly one Ditto</span> : <>
               <span className="dim">shiny breeding:</span>
-              <span className={masuda ? 'sb-on' : 'sb-off'} title={methods.masuda > 1 ? 'parents have different original trainers → boosted shiny odds' : 'Masuda not enabled on this server'}>✨ Masuda {masuda ? '✓' : '—'}</span>
-              <span className={crystal ? 'sb-on' : 'sb-off'} title={methods.crystal > 1 ? 'a parent is shiny → boosted shiny odds' : 'Crystal not enabled on this server'}>💎 Crystal {crystal ? '✓' : '—'}</span>
+              <span className={masuda ? 'sb-on' : 'sb-off'} title={methods.masuda > 1 ? 'parents have different original trainers → boosted shiny odds' : 'Masuda not enabled on this server'}>✨ Masuda {masuda ? '✓' : '-'}</span>
+              <span className={crystal ? 'sb-on' : 'sb-off'} title={methods.crystal > 1 ? 'a parent is shiny → boosted shiny odds' : 'Crystal not enabled on this server'}>💎 Crystal {crystal ? '✓' : '-'}</span>
             </>}
           </div>
         )}
@@ -1423,9 +1423,9 @@ function DaemonGraph({ cfg }) {
   )
 }
 
-// The editable pasture config — shown when you right-click a pasture with the Notebook (replaces the owo screen).
+// The editable pasture config - shown when you right-click a pasture with the Notebook (replaces the owo screen).
 // Wired to the server over the `pasture` bridge channel: NAME · PAIRINGS · CLAIM (link) · KERNEL · CLOSE (← back).
-// The player-facing egg-ingest feed — the void-log trust feature (kept K · voided V by which filter · recent).
+// The player-facing egg-ingest feed - the void-log trust feature (kept K · voided V by which filter · recent).
 function EggLogStrip() {
   const d = useChannel('eggLog')
   const entries = (d && d.entries) || []
@@ -1440,7 +1440,7 @@ function EggLogStrip() {
       </div>
       <div className="egglog-feed">
         {entries.length === 0
-          ? <span className="dim" style={{ fontSize: 10 }}>no eggs yet — link a Kernel'd pasture and wire a pipeline</span>
+          ? <span className="dim" style={{ fontSize: 10 }}>no eggs yet - link a Kernel'd pasture and wire a pipeline</span>
           : entries.map((e, i) => (
             <div key={`${entries.length - i}:${e.species}:${e.voided ? 1 : 0}`} className="egglog-row">
               <span style={{ color: e.voided ? 'var(--red)' : 'var(--green)' }}>{e.voided ? '✕' : '✓'}</span>
@@ -1497,7 +1497,7 @@ function PastureConfig({ cfg }) {
         <span style={{ flex: 1 }} />
         {hasKernel
           ? <span className="cyn mono" style={{ fontSize: 12 }}>{cfg.kernel?.name ? `“${cfg.kernel.name}” · ` : ''}{cap(cfg.tier.toLowerCase())} · {maxPairs} pairs</span>
-          : <span className="amb" style={{ fontSize: 11 }}>none — slot a Kernel for multi-pair breeding</span>}
+          : <span className="amb" style={{ fontSize: 11 }}>none - slot a Kernel for multi-pair breeding</span>}
         <button className="btn" style={{ marginLeft: 8 }} onClick={() => send('pasture', 'KERNEL', { pos: cfg.pos })}>
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
       </div>
@@ -1512,7 +1512,7 @@ function PastureConfig({ cfg }) {
         </div>
       )}
       <div className="dim" style={{ fontSize: 11, marginBottom: 6 }}>
-        Daemon · one tab per breeding line — add two parents, then wire their eggs through filters to BioBank / Data{maxPairs ? '' : ' · slot a Kernel to start'}
+        Daemon · one tab per breeding line - add two parents, then wire their eggs through filters to BioBank / Data{maxPairs ? '' : ' · slot a Kernel to start'}
       </div>
       <DaemonGraph cfg={cfg} />
       <EggLogStrip />
@@ -1534,7 +1534,7 @@ function SpecimensTab() {
         <span className="dim mono" style={{ fontSize: 10 }}>💾 {blanks} blank disk{blanks === 1 ? '' : 's'}</span>
       </div>
       <div className="dim" style={{ fontSize: 11, marginBottom: 10, lineHeight: 1.5 }}>
-        Archive a party Pokémon onto a <b>Specimen Disk</b> — lossless, IVs and all. Right-click the written
+        Archive a party Pokémon onto a <b>Specimen Disk</b> - lossless, IVs and all. Right-click the written
         disk to release it (party first, PC overflow); the media survives as a blank. Your last party member
         can't be archived{busy ? ' · 🔒 party busy (battle)' : ''}.
       </div>
@@ -1555,7 +1555,7 @@ function SpecimensTab() {
   )
 }
 
-// ── Rituals (v2): HIDDEN recipes — compositions are secret until you first assemble one ──
+// ── Rituals (v2): HIDDEN recipes - compositions are secret until you first assemble one ──
 function RitualsTab() {
   const d = useChannel('rituals')
   const inv = useChannel('inventory')
@@ -1590,7 +1590,7 @@ function RitualsTab() {
         <div className="inset" style={{ padding: 14, borderRadius: 8, marginBottom: 10 }}>
           <div className="amb" style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>᛭ Nothing recorded yet</div>
           <div className="dim" style={{ fontSize: 11, lineHeight: 1.5 }}>
-            Certain gatherings of Pokémon resonate. Assemble the right ones — the right species, the right numbers —
+            Certain gatherings of Pokémon resonate. Assemble the right ones - the right species, the right numbers -
             inside a single linked pasture, and its ritual will reveal itself here… along with what it yields.
           </div>
         </div>
@@ -1600,12 +1600,12 @@ function RitualsTab() {
             <div className="row">
               <span className="amb" style={{ fontWeight: 700, fontSize: 12 }}>🗡 {r.name}</span>
               <span style={{ flex: 1 }} />
-              <span className="dim mono" style={{ fontSize: 10 }} title="lifetime gacha pulls — climbing means the ritual is live">⟳ {r.pulls || 0} pulls</span>
+              <span className="dim mono" style={{ fontSize: 10 }} title="lifetime gacha pulls - climbing means the ritual is live">⟳ {r.pulls || 0} pulls</span>
               <span className="dim mono" style={{ fontSize: 10 }}>{r.hits} hit{r.hits === 1 ? '' : 's'} lifetime</span>
             </div>
             <div className="row" style={{ gap: 4, flexWrap: 'wrap', margin: '6px 0' }}>
               {recipeChips(r).map((c) => <span key={c} className="kchip">{c}</span>)}
-              <span className="dim" style={{ fontSize: 10 }}>— in {r.span > 1 ? `${r.span} pastures combined` : 'one pasture'} →</span>
+              <span className="dim" style={{ fontSize: 10 }}>- in {r.span > 1 ? `${r.span} pastures combined` : 'one pasture'} →</span>
               <span className="kchip" style={{ color: 'var(--amber)' }}>{r.pool ? '🎲 a random music disc' : `${r.qty}× ${cap(shortId(r.output))}`}</span>
             </div>
           </div>
@@ -1649,38 +1649,38 @@ function RitualsTab() {
 const GUIDE = [
   ['🌱 The Loop', `Tether parents in a pasture → slot a KERNEL → it breeds your configured pairs on a real clock →
 every egg flows into your NOTEBOOK as data. Keepers land in the BioBank; the rest render into Data. Data feeds
-your Daemon's buffs and your Soul Tethers, which make the next generation faster and shinier. That's the loop —
+your Daemon's buffs and your Soul Tethers, which make the next generation faster and shinier. That's the loop -
 everything else in this mod is a lever on it.`],
-  ['📓 Getting started', `1 · Craft a Notebook and right-click a pasture with it, then press LINK — an unlinked
+  ['📓 Getting started', `1 · Craft a Notebook and right-click a pasture with it, then press LINK - an unlinked
 pasture collects nothing (watch the amber warnings).  2 · Slot a Kernel (Copper → Greener: more pairs, more
 augment slots).  3 · Open Threads and put two parents on a line (♂+♀, or a Ditto).  4 · Wire the line through
-filters into the BioBank or Data.  5 · Walk away — drops and eggs keep accruing while the chunk is loaded, and
+filters into the BioBank or Data.  5 · Walk away - drops and eggs keep accruing while the chunk is loaded, and
 catch up the moment you return (12h cap, online time only).`],
   ['🧬 Kernels & the Augmenter', `Hold a Kernel near the Augmenter tab. Installs cost GPU (quality 2 ◈ ·
-throughput 1 ◈) plus a slot; picking a different nature/ball/EV spread later is FREE — the augment is yours.
+throughput 1 ◈) plus a slot; picking a different nature/ball/EV spread later is FREE - the augment is yours.
 Nature Lock and Ball Lock force every egg; the EV Primer applies a full 510-budget spread; IV Floor guarantees
-perfect stats; Ability Splice forces the hidden ability. Soul Tethers amplify installed augments — for rent,
+perfect stats; Ability Splice forces the hidden ability. Soul Tethers amplify installed augments - for rent,
 paid in Data.`],
-  ['👾 The Daemon & Data', `Eggs your graph declines don't vanish — they RENDER into Data, credited to you.
-The Daemon spends it: compile buffs onto it (2 ◈ per tier) and switch it on — it drains Data per second while
+  ['👾 The Daemon & Data', `Eggs your graph declines don't vanish - they RENDER into Data, credited to you.
+The Daemon spends it: compile buffs onto it (2 ◈ per tier) and switch it on - it drains Data per second while
 granting its loadout. Starved Daemon = buffs sleep, base augments keep working. Nothing is ever destroyed
 silently: shiny or unreadable eggs are ALWAYS kept, and the void log shows every render.`],
-  ['🏦 BioBank & the Graph', `The BioBank holds 256 eggs per species as data — sort by IVs, shininess, stats.
+  ['🏦 BioBank & the Graph', `The BioBank holds 256 eggs per species as data - sort by IVs, shininess, stats.
 The node graph (per breeding line) decides each egg's fate: IV/EV/nature/shiny filters → keep or render.
 Withdrawing checks your inventory first; the bank never deletes.`],
-  ['⛏ Harvest & Rituals', `Linked pastures trickle each mon's own Cobblemon drop table on a one-minute clock —
+  ['⛏ Harvest & Rituals', `Linked pastures trickle each mon's own Cobblemon drop table on a one-minute clock -
 no combat needed. Type-drops and gacha rituals (composition-gated, with pity) make a Cobblemon-only world fully
 farmable. Rates are baked into the mod ON PURPOSE: no server config can zero your drops and sell them back.`],
-  ['🔬 The fine print', `All analytics are local — your data never leaves your machine. The mod profiles itself:
+  ['🔬 The fine print', `All analytics are local - your data never leaves your machine. The mod profiles itself:
 /gp perf prints live ms timings, /gp perf flame renders a flame graph. MIT licensed. Bred with Cobbreeding;
-rendered with MCEF. — A Data Science Mod`],
+rendered with MCEF. - A Data Science Mod`],
 ]
 
 function GuideTab() {
   return (
     <div className="pane" style={{ overflow: 'auto' }}>
       <div className="h" style={{ marginBottom: 4 }}>Field Guide</div>
-      <div className="dim" style={{ fontSize: 11, marginBottom: 10 }}>everything the Notebook does, in one page — right-click the Field Guide item to come back here</div>
+      <div className="dim" style={{ fontSize: 11, marginBottom: 10 }}>everything the Notebook does, in one page - right-click the Field Guide item to come back here</div>
       {GUIDE.map(([title, body]) => (
         <div key={title} className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8 }}>
           <div className="grn" style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{title}</div>

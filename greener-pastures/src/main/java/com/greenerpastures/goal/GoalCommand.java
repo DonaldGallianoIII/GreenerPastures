@@ -13,7 +13,7 @@ import net.minecraft.text.Text;
 import java.util.UUID;
 
 /**
- * The {@code /gp goal} command — the player-facing way to set + inspect a breeding hunt (no GUI; RC-friendly). The
+ * The {@code /gp goal} command - the player-facing way to set + inspect a breeding hunt (no GUI; RC-friendly). The
  * mod's first command. Usage:
  * <pre>
  *   /gp goal                                         show the current goal + progress
@@ -77,7 +77,7 @@ public final class GoalCommand {
             return 1;
         }
         GoalProgress pr = GoalStore.progressOf(id);
-        String msg = "🎯 " + goal.describe() + " — matched " + pr.matched() + "/" + goal.count()
+        String msg = "🎯 " + goal.describe() + " - matched " + pr.matched() + "/" + goal.count()
                 + " (" + pr.checked() + " eggs checked, best IV total " + pr.bestIvTotal() + ")"
                 + (pr.reached(goal) ? " ✓ REACHED" : "");
         ctx.getSource().sendFeedback(() -> Text.literal(msg), false);

@@ -12,9 +12,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Local-only analytics facade — the "data science" core. Modules call {@link #record} with an
+ * Local-only analytics facade - the "data science" core. Modules call {@link #record} with an
  * {@link Event}; we stamp it with time / dimension and append it to a per-save JSONL log at
- * {@code <save>/greenerpastures/events.jsonl}. Nothing leaves the machine — players and server
+ * {@code <save>/greenerpastures/events.jsonl}. Nothing leaves the machine - players and server
  * admins read or export it themselves. Aggregation, charts, and CSV/HTML export build on this log.
  */
 public final class Analytics {

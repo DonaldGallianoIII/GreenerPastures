@@ -19,10 +19,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * GpLog — the single observability seam for Greener Pastures (see {@code OBSERVABILITY.md}).
+ * GpLog - the single observability seam for Greener Pastures (see {@code OBSERVABILITY.md}).
  *
- * <p>Every feature logs through here. Output is line-delimited JSON — one event per line,
- * {@code {"t","lvl","tag","ev",...payload}} — so a live {@code tail -f} is readable by eye AND the
+ * <p>Every feature logs through here. Output is line-delimited JSON - one event per line,
+ * {@code {"t","lvl","tag","ev",...payload}} - so a live {@code tail -f} is readable by eye AND the
  * file is {@code jq}-parseable. Writes run on a dedicated daemon thread (mirrors
  * {@link com.greenerpastures.analytics}'s {@code EventLog}) so logging never does disk I/O on the
  * game thread, and each line is flushed within ~1s so the tail is effectively live.
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Windows-side, so symlink it to {@code ~/gp-logs} and {@code tail -F ~/gp-logs/latest.log}.
  *
  * <p><b>Never crashes gameplay:</b> every public method swallows its own failures. If the log can't
- * open, the mod runs fine — just without the debug trace.
+ * open, the mod runs fine - just without the debug trace.
  *
  * <p>Usage: {@code GpLog.d("breeder", "enqueue", "pos", pos, "queueSize", n, "shiny", false);}
  */
@@ -42,7 +42,7 @@ public final class GpLog {
 
     /** True when the one dev/QA switch is on: {@code -Dgreenerpastures.qa=true}, env {@code GP_QA=true},
      *  or a {@code config/greenerpastures/qa.flag} marker file in the game dir. Enables the QA commands
-     *  AND defaults the log to DEBUG — one flag for a test instance. The marker file exists because
+     *  AND defaults the log to DEBUG - one flag for a test instance. The marker file exists because
      *  CurseForge rewrites {@code minecraftinstance.json} from its internal DB at launch, silently
      *  discarding JVM args set any way other than its own UI. */
     public static final boolean QA_MODE = computeQaMode();
@@ -63,7 +63,7 @@ public final class GpLog {
      *  per-sweep DEBUG trail); QA mode or {@code -Dgp.log.level} restores DEBUG. */
     public static volatile Level minLevel = QA_MODE ? Level.DEBUG : Level.INFO;
 
-    /** True when {@code level} would actually log — guard hot-LOOP log calls with this so their argument
+    /** True when {@code level} would actually log - guard hot-LOOP log calls with this so their argument
      *  strings (toString/format/varargs array) aren't built just to be dropped (perf-audit R3 #5). */
     public static boolean on(Level level) {
         return level.ordinal() >= minLevel.ordinal();
@@ -223,7 +223,7 @@ public final class GpLog {
                     w.flush();                              // ≤1s latency ⇒ live tail
                     if (lost > 0) dropped.addAndGet(-lost); // marker durably written → clear only what we reported
                 } catch (IOException io) {
-                    // a transient disk error must not permanently kill the debug log — reopen on the next line.
+                    // a transient disk error must not permanently kill the debug log - reopen on the next line.
                     // Back off so a *persistent* outage can't spin this thread (poll() returns instantly while
                     // the queue has a backlog); the drop count is preserved above for the next attempt.
                     GreenerPastures.LOG.error("[gplog] write failed for {}; will retry in 1s", file, io);
@@ -245,7 +245,7 @@ public final class GpLog {
         key(sb, "tag");   str(sb, "gplog");                        sb.append(',');
         key(sb, "ev");    str(sb, "dropped");                      sb.append(',');
         key(sb, "count"); sb.append(n);                           sb.append(',');
-        key(sb, "note");  str(sb, "gp-log queue full; events lost — raise QUEUE_CAP or minLevel");
+        key(sb, "note");  str(sb, "gp-log queue full; events lost - raise QUEUE_CAP or minLevel");
         sb.append('}');
         return sb.toString();
     }

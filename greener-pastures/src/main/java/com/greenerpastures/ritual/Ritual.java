@@ -2,7 +2,7 @@ package com.greenerpastures.ritual;
 
 /**
  * One ritual definition (data, from config): a {@link Requirement} a pasture must hold, the item it can yield,
- * and the gacha tuning — base chance per pull, hard pity (a hit guaranteed by this many pulls since the last
+ * and the gacha tuning - base chance per pull, hard pity (a hit guaranteed by this many pulls since the last
  * one), and an optional soft-pity ramp start ({@code 0} = none). {@code enabled=false} lets an admin switch
  * off a single ritual without deleting it. Pure data; the rolling lives in {@link Gacha}.
  */

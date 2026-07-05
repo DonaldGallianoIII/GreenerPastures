@@ -10,8 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 /**
- * Daemon HOOK buff — XP boost. While the player holds a fed Daemon with the {@code XP_BOOST} buff, scales up the
- * experience they gain by +25% per Mk tier (Mk III = +75%). A read-only multiply on the incoming amount —
+ * Daemon HOOK buff - XP boost. While the player holds a fed Daemon with the {@code XP_BOOST} buff, scales up the
+ * experience they gain by +25% per Mk tier (Mk III = +75%). A read-only multiply on the incoming amount -
  * never touches an ItemStack. Gated by {@link DaemonBuffs#paidBuffs} so it only applies while the buff is paid.
  */
 @Mixin(ServerPlayerEntity.class)

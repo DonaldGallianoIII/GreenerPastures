@@ -13,10 +13,10 @@ import java.util.Map;
  * The admin-editable config for the Daemon "root" buffs: a master {@code enabled} toggle plus a per-buff
  * {@link BuffSetting} map (keyed by {@link BuffId#id}). Serialized as JSON so a server admin can disable the
  * whole system, turn individual buffs on/off, cap a buff's tier (the Fortune/Looting "shop-economy" lever),
- * or re-price a buff's Data drain — all without touching code or rebuilding.
+ * or re-price a buff's Data drain - all without touching code or rebuilding.
  *
  * <p>{@link #defaults()} ships every buff enabled at the full +3 ceiling, with economy-impacting "gathering"
- * buffs priced higher per tier than pure QOL ones (these are <i>tuning</i> — edit the JSON / the eventual sim
+ * buffs priced higher per tier than pure QOL ones (these are <i>tuning</i> - edit the JSON / the eventual sim
  * dials them in). {@link #load} is <b>fail-safe</b>, exactly mirroring {@code RitualConfig}: a missing file is
  * written from defaults; a corrupt file logs and falls back to defaults without overwriting the admin's file;
  * it never crashes the server. Gson is loaded lazily (a holder) so the pure cores + {@code defaults()} stay
@@ -63,7 +63,7 @@ public record BuffConfig(boolean enabled, Map<String, BuffSetting> buffs) {
         }
     }
 
-    // ── built-in defaults (every buff on at +3; gathering buffs priced higher — all tunable via JSON) ──
+    // ── built-in defaults (every buff on at +3; gathering buffs priced higher - all tunable via JSON) ──
     public static BuffConfig defaults() {
         Map<String, BuffSetting> m = new LinkedHashMap<>();
         for (BuffId b : BuffId.values()) {
@@ -73,7 +73,7 @@ public record BuffConfig(boolean enabled, Map<String, BuffSetting> buffs) {
     }
 
     /** A buff added to the CATALOG after an admin's file was written must still appear (with its default
-     *  setting) — merge + persist, preserving every admin-tuned entry untouched. */
+     *  setting) - merge + persist, preserving every admin-tuned entry untouched. */
     private static BuffConfig mergeNewBuffs(BuffConfig c, Path file) {
         Map<String, BuffSetting> merged = null;
         for (BuffId b : BuffId.values()) {

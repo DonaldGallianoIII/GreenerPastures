@@ -8,7 +8,7 @@ import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
 /**
- * Server → client: the Specimens tab (mon compression) as one JSON blob — the live party (slot, species,
+ * Server → client: the Specimens tab (mon compression) as one JSON blob - the live party (slot, species,
  * level, shiny, gender) + how many blank Specimen Disks are in the inventory.
  *
  * <p>Shape: {@code {"party":[{"slot","species","level","shiny","gender"}], "blanks":N, "busy":bool}}

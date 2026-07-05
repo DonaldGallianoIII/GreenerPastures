@@ -14,11 +14,11 @@ import java.util.UUID;
 
 /**
  * World-saved store of every player's {@link BioBankData}, keyed by <b>player UUID</b> (INTERACTIVE_SPEC §7.2:
- * BioBank is per-player, block-free — the Notebook is the hub). The eggs live in this overworld save (not in
+ * BioBank is per-player, block-free - the Notebook is the hub). The eggs live in this overworld save (not in
  * block-entity chunk NBT), so a bank scales to thousands without bloating chunk saves. A BioBank block is now
  * just a deposit station that fills the depositing player's bank; the console's BioBank tab reads it.
  *
- * <p>(Migration note: old block-keyed banks — {@code dim|pos} keys — are dropped on load, since keys are now
+ * <p>(Migration note: old block-keyed banks - {@code dim|pos} keys - are dropped on load, since keys are now
  * UUIDs. Fine for the in-dev mod; re-deposit.)
  */
 public final class BioBankStore extends PersistentState {
@@ -27,7 +27,7 @@ public final class BioBankStore extends PersistentState {
     private final Map<UUID, BioBankData> banks = new HashMap<>();
 
     // Per-player encoded-NBT cache (perf-audit R3 #7): eggs deposit continuously, so this store is dirty on
-    // ~every autosave — but only the DEPOSITING player's bank changed. Reuse last save's compound for every
+    // ~every autosave - but only the DEPOSITING player's bank changed. Reuse last save's compound for every
     // bank whose rev didn't move; the on-disk format is unchanged. writeNbt runs on the server thread.
     private final Map<UUID, NbtCompound> encoded = new HashMap<>();
     private final Map<UUID, Long> encodedRev = new HashMap<>();
@@ -81,7 +81,7 @@ public final class BioBankStore extends PersistentState {
             try {
                 s.banks.put(UUID.fromString(k), BioBankData.fromNbt(map.getCompound(k), lookup));
             } catch (Exception e) {
-                // a malformed / legacy (dim|pos) key must not fail the whole world load — skip + log it
+                // a malformed / legacy (dim|pos) key must not fail the whole world load - skip + log it
                 GpLog.w("biobank", "load_skip_malformed", "key", k, "err", String.valueOf(e));
             }
         }

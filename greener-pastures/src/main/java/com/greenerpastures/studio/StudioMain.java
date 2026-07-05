@@ -10,7 +10,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 
 /**
- * Design Studio — PNG mode. Renders the Daemon OUTSIDE Minecraft using the exact same paint code
+ * Design Studio - PNG mode. Renders the Daemon OUTSIDE Minecraft using the exact same paint code
  * ({@link DaemonView#paint}) driven by the shared {@link DaemonController}. Headless; writes a PNG.
  * For the interactive window (drag/wire/zoom), see {@link StudioLive}.
  *

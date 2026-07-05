@@ -33,7 +33,7 @@ public final class EffectiveAugments {
             }
         }
         // 2) effective = base × amplification, only where a base mod actually exists. A SELECTOR augment
-        //    (Nature: level = a catalog index) is never amplified — scaling a choice is meaningless and would
+        //    (Nature: level = a catalog index) is never amplified - scaling a choice is meaningless and would
         //    corrupt the index (Adamant×1.2 → a different nature), so it passes through at its raw base level.
         Map<AugmentFunction, Double> eff = new EnumMap<>(AugmentFunction.class);
         if (base != null) {
@@ -55,7 +55,7 @@ public final class EffectiveAugments {
         return magnitude(f) > 0.0;
     }
 
-    /** Shiny proc as a 0..1 probability (clamped) — feeds the bounded bred-shiny reroll. */
+    /** Shiny proc as a 0..1 probability (clamped) - feeds the bounded bred-shiny reroll. */
     public double shinyProcChance() {
         return Math.max(0.0, Math.min(100.0, magnitude(AugmentFunction.SHINY))) / 100.0;
     }
@@ -66,12 +66,12 @@ public final class EffectiveAugments {
         return pct <= 0.0 ? 1.0 : 1.0 + pct / 100.0;
     }
 
-    /** Speed augment level (rounded), 0 when none — drives the breeding-cadence reduction. */
+    /** Speed augment level (rounded), 0 when none - drives the breeding-cadence reduction. */
     public int speedLevel() {
         return (int) Math.round(magnitude(AugmentFunction.SPEED));
     }
 
-    /** Hatch Haste level (rounded, clamped 0..3) — scales the bred egg's Cobbreeding TIMER at build. */
+    /** Hatch Haste level (rounded, clamped 0..3) - scales the bred egg's Cobbreeding TIMER at build. */
     public int hatchLevel() {
         return Math.min(3, (int) Math.round(magnitude(AugmentFunction.HATCH)));
     }
@@ -82,20 +82,20 @@ public final class EffectiveAugments {
         return magnitude(AugmentFunction.DROP_RATE) / 10000.0;
     }
 
-    /** IV Floor: the number of IVs (0..6) the breeder guarantees at the perfect value (31) on a bred egg —
+    /** IV Floor: the number of IVs (0..6) the breeder guarantees at the perfect value (31) on a bred egg -
      *  base level × any fed IV Floor tether (rounded, capped at the 6 stats); 0 when the Kernel has none. */
     public int ivFloorCount() {
         return Math.max(0, Math.min(6, (int) Math.round(magnitude(AugmentFunction.IV_FLOOR))));
     }
 
     /** EV Floor: the EVs (0..85 per stat) the breeder pre-sets on EVERY one of the 6 permanent stats of a bred
-     *  egg — a flat head-start, clamped so all six fit Cobblemon's 510 EV total. Base × tether; 0 when none. */
+     *  egg - a flat head-start, clamped so all six fit Cobblemon's 510 EV total. Base × tether; 0 when none. */
     public int evFloorPerStat() {
         return Math.max(0, Math.min(85, (int) Math.round(magnitude(AugmentFunction.EV))));
     }
 
     /** Nature selector: the 1-based catalog index of the nature to lock the bred egg to (0 = no lock). A SELECTOR
-     *  augment, so this is the raw base level — never tether-amplified. The breeder maps it via {@code NatureCatalog}. */
+     *  augment, so this is the raw base level - never tether-amplified. The breeder maps it via {@code NatureCatalog}. */
     public int natureIndex() {
         return Math.max(0, (int) Math.round(magnitude(AugmentFunction.NATURE)));
     }
@@ -107,7 +107,7 @@ public final class EffectiveAugments {
     }
 
     /** Hidden Ability: a binary toggle (any level ⇒ on) that forces the bred egg to the species' hidden ability.
-     *  Marked a selector so it's never tether-amplified — a toggle has nothing to scale. */
+     *  Marked a selector so it's never tether-amplified - a toggle has nothing to scale. */
     public boolean forceHiddenAbility() {
         return magnitude(AugmentFunction.ABILITY) >= 1.0;
     }

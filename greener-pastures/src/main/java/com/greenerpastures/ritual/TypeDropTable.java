@@ -16,7 +16,7 @@ public record TypeDropTable(boolean enabled, List<TypeDrop> drops) {
 
     /** New DEFAULT drops must reach existing config files without clobbering admin edits (same contract as
      *  the hand-designed-ritual merge): any default whose (type, item) pair is absent from this table is
-     *  appended; everything the admin wrote — including tuned rates for pairs that DO exist — is preserved.
+     *  appended; everything the admin wrote - including tuned rates for pairs that DO exist - is preserved.
      *  Returns {@code this} when nothing was missing. Pure + tested. */
     public TypeDropTable mergeMissingDefaults(TypeDropTable defaults) {
         if (defaults == null || defaults.drops.isEmpty()) return this;

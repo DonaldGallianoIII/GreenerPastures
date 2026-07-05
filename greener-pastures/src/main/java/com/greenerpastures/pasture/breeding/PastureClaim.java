@@ -3,7 +3,7 @@ package com.greenerpastures.pasture.breeding;
 import java.util.UUID;
 
 /**
- * The pasture <b>operator claim</b> — who pays the Soul-Tether Data cost. A deliberate locked-boolean
+ * The pasture <b>operator claim</b> - who pays the Soul-Tether Data cost. A deliberate locked-boolean
  * toggle (Deuce's model, 2026-06-28): pastures are shared (a group drops one or two and everyone adds
  * their mons), so the payer is set by an EXPLICIT click, never implicitly by slotting a tether. Pure +
  * unit-tested; the C2S {@code ClaimOperatorPayload} drives it and the breeder drains the claimed owner.
@@ -12,7 +12,7 @@ import java.util.UUID;
  * <ul>
  *   <li><b>free</b> (no owner) → a click <b>claims</b> it: it locks ON to you.</li>
  *   <li><b>yours</b> → a click <b>releases</b> it: it unlocks, free for the next person.</li>
- *   <li><b>someone else's</b> → a click is <b>rejected</b> — only the owner can release their lock.</li>
+ *   <li><b>someone else's</b> → a click is <b>rejected</b> - only the owner can release their lock.</li>
  * </ul>
  * No owner ⇒ tethers stay inert (the free base); the operator's Data only pays while they hold the lock.
  */

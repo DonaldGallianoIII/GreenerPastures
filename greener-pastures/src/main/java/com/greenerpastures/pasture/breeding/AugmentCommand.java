@@ -13,10 +13,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 
 /**
- * {@code /gp augment} — the no-UI install path for breeding augments onto a held <b>Kernel</b>
+ * {@code /gp augment} - the no-UI install path for breeding augments onto a held <b>Kernel</b>
  * ({@link BreedingUpgradeItem}). RC-friendly: set ANY function to ANY level/index, then slot the Kernel into a
- * pasture. It covers the selector augments (Nature/Ball — level = a {@link NatureCatalog}/{@link BallCatalog}
- * index), the binary ones (Hidden Ability / Egg Moves — level 1 = on), and the original magnitude augments. The
+ * pasture. It covers the selector augments (Nature/Ball - level = a {@link NatureCatalog}/{@link BallCatalog}
+ * index), the binary ones (Hidden Ability / Egg Moves - level 1 = on), and the original magnitude augments. The
  * eventual Compiler UI is the pretty version of this; the command is the functional core.
  * <pre>
  *   /gp augment list                    show the held Kernel's augments
@@ -79,7 +79,7 @@ public final class AugmentCommand {
         String fnId = StringArgumentType.getString(ctx, "function");
         AugmentFunction fn = AugmentFunction.byId(fnId);
         if (fn == null) {
-            ctx.getSource().sendError(Text.literal("Unknown augment '" + fnId + "' — tab-complete or /gp augment list."));
+            ctx.getSource().sendError(Text.literal("Unknown augment '" + fnId + "' - tab-complete or /gp augment list."));
             return 0;
         }
         int level = IntegerArgumentType.getInteger(ctx, "level");
@@ -102,7 +102,7 @@ public final class AugmentCommand {
         else held.set(GpComponents.EV_SPREAD, spread);
         ctx.getSource().sendFeedback(() -> Text.literal("Set EV spread (HP/Atk/Def/SpA/SpD/Spe) = "
                 + spread.hp() + "/" + spread.atk() + "/" + spread.def() + "/" + spread.spa() + "/"
-                + spread.spd() + "/" + spread.spe() + " — total " + spread.total() + " — on the Kernel."), false);
+                + spread.spd() + "/" + spread.spe() + " - total " + spread.total() + " - on the Kernel."), false);
         return 1;
     }
 

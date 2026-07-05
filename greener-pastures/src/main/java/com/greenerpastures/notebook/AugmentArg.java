@@ -1,13 +1,13 @@
 package com.greenerpastures.notebook;
 
 /**
- * The parsed argument of a console <b>APPLY_AUGMENT</b> action (#34/#35) — plain {@code "SHINY"} for the
+ * The parsed argument of a console <b>APPLY_AUGMENT</b> action (#34/#35) - plain {@code "SHINY"} for the
  * magnitude augments, {@code "NATURE:7"} / {@code "BALL:12"} for the selector pickers (1-based catalog index),
  * {@code "EV:hp,atk,def,spa,spd,spe"} for the EV allocator. <b>Minecraft-free</b> so the whole grammar is
  * unit-tested headless; {@code NotebookNet} maps {@code type} to an {@code AugmentType} and validates ranges
  * against the (pure) catalogs.
  *
- * <p>{@link #parse} returns {@code null} for anything malformed — a bad console payload must reject cleanly,
+ * <p>{@link #parse} returns {@code null} for anything malformed - a bad console payload must reject cleanly,
  * never install garbage on a Kernel.
  */
 public record AugmentArg(String type, int index, int[] ev) {

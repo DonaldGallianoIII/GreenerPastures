@@ -1,7 +1,7 @@
 package com.greenerpastures.biobank;
 
 /**
- * The filterable summary of a single egg — <b>Minecraft-free</b>, so the egg-economy logic (value
+ * The filterable summary of a single egg - <b>Minecraft-free</b>, so the egg-economy logic (value
  * rule, render ledger, filters) is unit-tested headless. The MC adapter builds one of these from a
  * Cobbreeding egg {@code ItemStack} via {@code EggReader} (species + shiny + IVs).
  *

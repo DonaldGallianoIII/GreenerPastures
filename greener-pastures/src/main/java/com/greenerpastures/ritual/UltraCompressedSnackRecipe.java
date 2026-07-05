@@ -30,12 +30,12 @@ import java.util.Map;
 /**
  * The <b>Ultra Compressed Snack</b> (Deuce, 2026-07-03): put poke snacks in a crafting grid → ONE snack
  * carrying the seasonings of all of them. Cobblemon's cooking pot caps a snack at 3 seasonings (3 input
- * slots); the Ultra's value is BREADTH beyond that — up to {@link #MAX_EFFECTS} DISTINCT effects in one
+ * slots); the Ultra's value is BREADTH beyond that - up to {@link #MAX_EFFECTS} DISTINCT effects in one
  * snack, which the pot could never cook.
  *
  * <p><b>Double-additive rule</b> (Deuce, 2026-07-04): Cobblemon's spawner stacks duplicate bait-effect
  * entries additively (decompile-verified, 1.7.3). Unbounded merging let 9 shiny-seasoned snacks stack 27
- * shiny effects — out of control — so stacking is allowed up to DOUBLE a single pot-cook and no more:
+ * shiny effects - out of control - so stacking is allowed up to DOUBLE a single pot-cook and no more:
  * each effect keeps at most {@link #MAX_STACK_PER_EFFECT} copies (2 × the pot's 3 seasoning slots), the
  * list holds at most {@link #MAX_EFFECTS} DISTINCT effects (first-seen grid order), and each flavour sums
  * but caps at 2× the strongest single input. Deuce's canonical example: snacks of [chilan+ega+starf],
@@ -45,7 +45,7 @@ import java.util.Map;
  * identity-driven), so towers treat it as a normal snack.
  */
 public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
-    /** Hard cap on DISTINCT bait effects an Ultra can carry — 3 pot-cooked snacks' worth of breadth. */
+    /** Hard cap on DISTINCT bait effects an Ultra can carry - 3 pot-cooked snacks' worth of breadth. */
     public static final int MAX_EFFECTS = 9;
 
     /** Max copies of the SAME effect ("double additive, just not more"): 2 × a pot-cook's 3 slots. */
@@ -71,7 +71,7 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
             ItemStack s = input.getStackInSlot(i);
             if (s.isEmpty()) continue;
             if (s.isOf(com.greenerpastures.economy.GpItems.SNACK_REPEL)) {
-                if (!s.contains(com.greenerpastures.pasture.breeding.GpComponents.REPEL_TYPES)) return false;   // uncharged can — charge it with berries first
+                if (!s.contains(com.greenerpastures.pasture.breeding.GpComponents.REPEL_TYPES)) return false;   // uncharged can - charge it with berries first
                 continue;
             }
             if (!s.isOf(CobblemonItems.POKE_SNACK)) return false;
@@ -120,9 +120,9 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
         Map<Flavour, Integer> mergedFlavours = new EnumMap<>(Flavour.class);
         flavourSum.forEach((k, v) -> mergedFlavours.put(k, Math.min(v, 2 * flavourMax.getOrDefault(k, 0))));
 
-        // Snack Repel (Overdrive pt.1 rev 2 — Deuce's design): CHARGED cans carry their own {type → ÷magnitude}
+        // Snack Repel (Overdrive pt.1 rev 2 - Deuce's design): CHARGED cans carry their own {type → ÷magnitude}
         // payload; here they simply merge onto the snack (per-type sums, capped at double the strongest single
-        // can — SnackRepelMath). Attract berries in the grid are untouched — the repel came pre-bottled.
+        // can - SnackRepelMath). Attract berries in the grid are untouched - the repel came pre-bottled.
         Map<String, Integer> repelSums = SnackRepelMath.mergeCans(cans);
 
         ItemStack out = new ItemStack(CobblemonItems.POKE_SNACK);
@@ -142,13 +142,13 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
         repelSums.forEach((type, mag) -> lore.add(Text.literal(
                 "🚫 ÷" + mag + " " + Character.toUpperCase(type.charAt(0)) + type.substring(1) + " Types")
                 .formatted(Formatting.RED)));
-        double speed = SnackSpeed.throughputFactor(biteValuesOf(merged));   // TRUE speed (Overdrive pt.2) — the Cobblemon tooltip's "Reduce Bite Time" line lies
+        double speed = SnackSpeed.throughputFactor(biteValuesOf(merged));   // TRUE speed (Overdrive pt.2) - the Cobblemon tooltip's "Reduce Bite Time" line lies
         if (speed > 1.005) lore.add(Text.literal(String.format("⚡ spawn speed ×%.1f", speed)).formatted(Formatting.GOLD));
         out.set(DataComponentTypes.LORE, new LoreComponent(lore));
         return out;
     }
 
-    /** Every kept copy's bite_time value (per copy — the multiplicative stack SnackSpeed honors). */
+    /** Every kept copy's bite_time value (per copy - the multiplicative stack SnackSpeed honors). */
     private static List<Double> biteValuesOf(List<Identifier> merged) {
         List<Double> out = new ArrayList<>();
         for (Identifier id : merged) {

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Aggregated breeding stats for the analytics Dashboard — pure data-crunching over {@link EggEvent}s,
+ * Aggregated breeding stats for the analytics Dashboard - pure data-crunching over {@link EggEvent}s,
  * Minecraft-free + unit-tested. (CSV/HTML export and the {@code events.jsonl} reader come next, as
  * separate pieces, so each stays independently testable.)
  */
@@ -17,7 +17,7 @@ public record DashboardStats(int totalEggs, Map<String, Integer> byTier, Map<Str
         return totalEggs == 0 ? 0.0 : (double) shinyTotal / totalEggs;
     }
 
-    /** Of the shinies, the fraction OUR bonus proc is responsible for (0..1) — the "shinies this augment earned you" stat. */
+    /** Of the shinies, the fraction OUR bonus proc is responsible for (0..1) - the "shinies this augment earned you" stat. */
     public double procShareOfShinies() {
         return shinyTotal == 0 ? 0.0 : (double) procShinyTotal / shinyTotal;
     }
