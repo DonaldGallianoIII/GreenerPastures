@@ -876,6 +876,37 @@ function DisksCard() {
 }
 
 // ── Dashboard (live analytics — real breeding data over the `dashboard` channel) ──
+// The 1M-lifetime capstone: progress odometer + SUMMON when a MissingNo. is owed.
+function MissingnoCard() {
+  const d = useChannel('dashboard')
+  const life = d?.lifetimeEarned ?? 0
+  const claimable = d?.mnClaimable ?? 0
+  const prog = Math.max(0, Math.min(1, d?.mnProgress ?? 0))
+  return (
+    <div className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 10 }}>
+      <div className="row">
+        <span style={{ fontWeight: 700, fontSize: 12, color: '#c77dff', fontFamily: 'monospace' }}>▓▒░ M̸i̷s̶s̴i̵n̷g̸N̵o̶. ░▒▓</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim mono" style={{ fontSize: 10 }}>{fmt(life)} lifetime rendered</span>
+      </div>
+      <div className="row" style={{ gap: 8, marginTop: 6, alignItems: 'center' }}>
+        <div style={{ flex: 1, height: 6, background: '#1a1330', borderRadius: 3, overflow: 'hidden' }}>
+          <div style={{ width: `${(prog * 100).toFixed(1)}%`, height: '100%', background: 'linear-gradient(90deg,#7b2cbf,#c77dff)' }} />
+        </div>
+        <span className="dim mono" style={{ fontSize: 10 }}>{(prog * 100).toFixed(1)}% to next</span>
+        <button className="btn go" disabled={claimable < 1}
+          title={claimable < 1 ? 'one summon per 1,000,000 lifetime Data rendered' : `${claimable} owed — a glitch that rotates its very being · cannot battle`}
+          onClick={() => send('dashboard', 'SUMMON_MISSINGNO', {})}>
+          SUMMON{claimable > 0 ? ` (${claimable})` : ''}
+        </button>
+      </div>
+      <div className="dim" style={{ fontSize: 10, marginTop: 4, fontStyle: 'italic' }}>
+        one per million rendered · rotates its form every few seconds · refuses all battles — a trophy, not a weapon
+      </div>
+    </div>
+  )
+}
+
 function Dashboard() {
   const d = useChannel('dashboard')
   const laid = d?.laid || 0, shiny = d?.shiny || 0, kept = d?.kept || 0, voided = d?.voided || 0, dataEarned = d?.dataEarned || 0
@@ -889,6 +920,7 @@ function Dashboard() {
       </div>
       <Goals />
       <DisksCard />
+      <MissingnoCard />
       <div className="statrow">
         <Stat label="eggs" value={laid} />
         <Stat label="shiny" value={shiny} sub={`${shinyRate.toFixed(2)}%`} color="var(--pair)" />

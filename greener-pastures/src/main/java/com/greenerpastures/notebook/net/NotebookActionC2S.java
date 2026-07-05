@@ -30,6 +30,7 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int SET_DAEMON_TARGET = 13; // Compiler: amount = inventory slot of the Daemon to operate on
     public static final int RENAME_HELD_KERNEL = 14; // arg = new display name for the MAIN-HAND Kernel (empty clears)
     public static final int COMPRESS_MON = 15;      // Specimens: amount = party slot → archive onto a blank Specimen Disk
+    public static final int SUMMON_MISSINGNO = 16;  // Dashboard: claim one owed MissingNo. (1 per million lifetime Data)
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

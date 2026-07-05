@@ -23,6 +23,10 @@ public final class DataStore extends PersistentState {
     private static final String ID = "greenerpastures_data";
 
     private final Map<UUID, DataAccount> accounts = new HashMap<>();
+    /** Lifetime Data EARNED from rendering (never decremented; disk reads/QA mints deliberately excluded —
+     *  a write→read cycle must not pump this). Gates MissingNo. summons: one per million, forever. */
+    private final Map<UUID, Long> lifetimeEarned = new HashMap<>();
+    private final Map<UUID, Integer> missingnoClaimed = new HashMap<>();
 
     /** This player's account, creating an empty one on first touch. */
     public DataAccount accountOf(UUID player) {
@@ -42,6 +46,28 @@ public final class DataStore extends PersistentState {
         markDirty();
     }
 
+    /** Credit RENDER income: balance + the lifetime-earned tally (the MissingNo. odometer). Use this for
+     *  egg rendering ONLY — {@link #credit} for neutral flows (disk reads) that must not count. */
+    public void creditEarned(UUID player, long amount) {
+        if (amount <= 0) return;
+        credit(player, amount);
+        lifetimeEarned.merge(player, amount, Long::sum);
+    }
+
+    public long lifetimeEarnedOf(UUID player) {
+        return lifetimeEarned.getOrDefault(player, 0L);
+    }
+
+    public int missingnoClaimedOf(UUID player) {
+        return missingnoClaimed.getOrDefault(player, 0);
+    }
+
+    /** Record one MissingNo. claim (caller validates entitlement via MissingnoMath). */
+    public void claimMissingno(UUID player) {
+        missingnoClaimed.merge(player, 1, Integer::sum);
+        markDirty();
+    }
+
     /** Spend iff affordable; returns whether it was paid. Never goes negative. */
     public boolean tryDebit(UUID player, long amount) {
         boolean paid = accountOf(player).tryDebit(amount);
@@ -54,6 +80,12 @@ public final class DataStore extends PersistentState {
         NbtCompound accs = new NbtCompound();
         accounts.forEach((u, a) -> accs.putLong(u.toString(), a.balance()));
         nbt.put("accounts", accs);
+        NbtCompound life = new NbtCompound();
+        lifetimeEarned.forEach((u, v) -> life.putLong(u.toString(), v));
+        nbt.put("lifetimeEarned", life);
+        NbtCompound mn = new NbtCompound();
+        missingnoClaimed.forEach((u, v) -> mn.putInt(u.toString(), v));
+        nbt.put("missingnoClaimed", mn);
         return nbt;
     }
 
@@ -66,6 +98,14 @@ public final class DataStore extends PersistentState {
             } catch (IllegalArgumentException ignored) {
                 // drop a malformed uuid key
             }
+        }
+        NbtCompound life = nbt.getCompound("lifetimeEarned");   // absent pre-MissingNo → 0 (back-compat)
+        for (String k : life.getKeys()) {
+            try { s.lifetimeEarned.put(UUID.fromString(k), life.getLong(k)); } catch (IllegalArgumentException ignored) { }
+        }
+        NbtCompound mn = nbt.getCompound("missingnoClaimed");
+        for (String k : mn.getKeys()) {
+            try { s.missingnoClaimed.put(UUID.fromString(k), mn.getInt(k)); } catch (IllegalArgumentException ignored) { }
         }
         return s;
     }

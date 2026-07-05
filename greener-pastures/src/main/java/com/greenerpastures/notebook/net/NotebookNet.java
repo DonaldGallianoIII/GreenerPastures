@@ -233,6 +233,14 @@ public final class NotebookNet {
         JsonObject methods = new JsonObject();
         CobbreedingBridge.shinyMethods().forEach((k, v) -> methods.addProperty(k, v));
         o.add("shinyMethods", methods);   // {always, crystal, masuda} multipliers → the shiny-breeding indicator
+        MinecraftServer server = player.getServer();
+        if (server != null) {                                     // MissingNo. odometer (1 summon / 1M lifetime rendered)
+            DataStore ds = DataStore.get(server);
+            long life = ds.lifetimeEarnedOf(id);
+            o.addProperty("lifetimeEarned", life);
+            o.addProperty("mnClaimable", com.greenerpastures.glitch.MissingnoMath.claimable(life, ds.missingnoClaimedOf(id)));
+            o.addProperty("mnProgress", com.greenerpastures.glitch.MissingnoMath.progressToNext(life));
+        }
         sendGated(player, "dashboard", new NotebookDashboardS2C(GSON.toJson(o)));
     }
 
@@ -314,6 +322,7 @@ public final class NotebookNet {
                 }
                 case NotebookActionC2S.RENAME_HELD_KERNEL -> { renameHeldKernel(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.COMPRESS_MON -> { compressMon(player, p.amount()); pushSpecimens(player); }
+                case NotebookActionC2S.SUMMON_MISSINGNO -> { summonMissingno(player); pushDashboard(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -559,6 +568,38 @@ public final class NotebookNet {
             }
         }
         return null;
+    }
+
+    /** Claim one owed MissingNo. (Dashboard button): entitlement = lifetime rendered / 1M − already claimed.
+     *  Lands in the party (PC overflow); both full → refuse WITHOUT burning the claim. */
+    private static void summonMissingno(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        try {
+            DataStore ds = DataStore.get(server);
+            int claimable = com.greenerpastures.glitch.MissingnoMath.claimable(
+                    ds.lifetimeEarnedOf(player.getUuid()), ds.missingnoClaimedOf(player.getUuid()));
+            if (claimable <= 0) {
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r The glitch requires a million rendered — keep feeding the Daemon."), false);
+                return;
+            }
+            com.cobblemon.mod.common.pokemon.Pokemon mon = com.greenerpastures.glitch.Missingno.create();
+            boolean accepted = com.cobblemon.mod.common.util.PlayerExtensionsKt.party(player).add(mon);
+            if (!accepted) accepted = com.cobblemon.mod.common.util.PlayerExtensionsKt.pc(player).add(mon);
+            if (!accepted) {
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Party and PC are full — the glitch has nowhere to manifest."), false);
+                return;
+            }
+            ds.claimMissingno(player.getUuid());
+            player.sendMessage(Text.literal("§d§kAB§r §5M̸i̷s̶s̴i̵n̷g̸N̵o̶. joins you.§r §d§kAB§r"), false);
+            com.greenerpastures.notify.Inbox.push(player.getUuid(), "▓", "MissingNo. manifested — one million rendered.");
+            GpLog.i("missingno", "summon", "player", player.getUuid().toString(),
+                    "lifetime", Long.toString(ds.lifetimeEarnedOf(player.getUuid())),
+                    "claimed", Integer.toString(ds.missingnoClaimedOf(player.getUuid())));
+        } catch (Throwable t) {
+            GpLog.w("missingno", "summon_fail", "err", String.valueOf(t));
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r The glitch failed to manifest — nothing was consumed."), false);
+        }
     }
 
     // ── Specimen Disks (mon compression v1 — Deuce, 2026-07-05) ─────────────────────────────────────────

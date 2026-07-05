@@ -44,7 +44,7 @@ public final class EggIngest {
             GraphEval.Result r = GraphEval.route(pd.graphJson, monId, card);
             if (r.route() == GraphEval.Route.VOID) {
                 long value = RenderValuation.dataFor(1, VOID_DATA_PER_EGG, 1.0);
-                DataStore.get(server).credit(owner, value);
+                DataStore.get(server).creditEarned(owner, value);   // render income counts toward the MissingNo. odometer
                 String filter = r.rejectedBy() == null ? "pipeline" : r.rejectedBy();
                 Analytics.record(world, Event.of("egg_voided")
                         .put("species", species).put("shiny", card != null && card.shiny())

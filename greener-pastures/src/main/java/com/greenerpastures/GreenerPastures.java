@@ -77,6 +77,7 @@ public final class GreenerPastures implements ModInitializer {
         RitualSystem.init();
         com.greenerpastures.ritual.UltraCompressedSnackRecipe.init();   // N poke snacks → one merged mega-bait (Deuce spec)
         com.greenerpastures.ritual.SnackRepelChargeRecipe.init();       // can + typed berries → charged Snack Repel (Overdrive pt.1)
+        com.greenerpastures.glitch.Missingno.init();                     // the 1M-Data capstone: rotation ticker + battle refusal
 
         // notebook/ — block-free harvest: owned (Notebook-linked) pastures roll drops → owner's Notebook storage
         // (replaces the Harvester block for owned pastures; the block stands down for them to avoid double-dip).
