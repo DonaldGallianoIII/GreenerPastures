@@ -162,6 +162,65 @@ class RitualConfigTest {
     }
 
     @Test
+    void batch2ShipsFourteenHintedRituals() {
+        RitualBook book = RitualConfig.defaults().rituals();
+        String[] ids = {"nether_star", "wither_skull", "elytra", "totem_of_undying", "shulker_shell",
+                "trident", "heart_of_the_sea", "echo_chorus", "saddle", "name_tag", "slime_court",
+                "ominous_bottle", "pasture_band", "fossil_communion"};
+        for (String id : ids) {
+            Ritual r = book.byId(id);
+            assertNotNull(r, id + " missing");
+            assertFalse(r.hint().isEmpty(), id + " needs a hint — hints ARE the discovery design");
+        }
+        // supply chain: the wither skull trickles faster than the star it feeds
+        assertTrue(book.byId("wither_skull").baseChancePercent() > book.byId("nether_star").baseChancePercent());
+        // apex pacing: nether star + fossils are the slowest things in the book
+        assertTrue(book.byId("nether_star").baseChancePercent() <= 0.5);
+        assertTrue(book.byId("fossil_communion").pastureSpan() == 2, "fossils span pastures like the Summit");
+        // the pre-batch-2 rituals stay unhinted (fully hidden, untouched per Deuce)
+        assertTrue(book.byId("feast_of_the_blade").hint().isEmpty());
+        assertTrue(book.byId("black_market").hint().isEmpty());
+    }
+
+    @Test
+    void groupGateCountsAnyMix() {
+        Ritual elytra = RitualConfig.defaults().rituals().byId("elytra");
+        Composition allHeracross = new Composition(Map.of(), Set.of(),
+                Map.of("ninjask", 1, "shedinja", 1, "heracross", 6));
+        Composition mixed = new Composition(Map.of(), Set.of(),
+                Map.of("ninjask", 1, "shedinja", 1, "heracross", 3, "pinsir", 3));
+        Composition fiveBeetles = new Composition(Map.of(), Set.of(),
+                Map.of("ninjask", 1, "shedinja", 1, "heracross", 2, "pinsir", 3));
+        assertTrue(elytra.requirement().satisfiedBy(allHeracross), "6 heracross alone is a valid mix");
+        assertTrue(elytra.requirement().satisfiedBy(mixed), "3+3 is a valid mix");
+        assertFalse(elytra.requirement().satisfiedBy(fiveBeetles), "5 beetles is not 6");
+    }
+
+    @Test
+    void formQualifiedKeysGateTheOminousBottle() {
+        Ritual bottle = RitualConfig.defaults().rituals().byId("ominous_bottle");
+        Composition kantoCrew = new Composition(Map.of(), Set.of(), Map.of(
+                "absol", 4, "honchkrow", 1, "meowth", 2, "persian", 1, "zigzagoon", 2));
+        Composition alolanCrew = new Composition(Map.of(), Set.of(), Map.of(
+                "absol", 4, "honchkrow", 1, "meowth", 2, "meowth:alolan", 2,
+                "persian", 1, "persian:alolan", 1, "zigzagoon", 2, "zigzagoon:galarian", 2));
+        assertFalse(bottle.requirement().satisfiedBy(kantoCrew), "Kanto strays can't bottle Alolan misfortune");
+        assertTrue(bottle.requirement().satisfiedBy(alolanCrew), "the real syndicate (reader emits form keys alongside base)");
+    }
+
+    @Test
+    void outputPoolRollsUniformlyAndFallsBackToFixed() {
+        Ritual band = RitualConfig.defaults().rituals().byId("pasture_band");
+        assertFalse(band.outputPool().isEmpty());
+        Set<String> seen = new java.util.HashSet<>();
+        java.util.Random rng = new java.util.Random(42);
+        for (int i = 0; i < 500; i++) seen.add(band.rollOutput(rng::nextDouble));
+        assertEquals(band.outputPool().size(), seen.size(), "500 rolls hit every disc in the set list");
+        Ritual fixedOut = RitualConfig.defaults().rituals().byId("saddle");
+        assertEquals("minecraft:saddle", fixedOut.rollOutput(rng::nextDouble), "no pool → fixed output, always");
+    }
+
+    @Test
     void speciesCountsAreCaseInsensitiveAndDefaultEmpty() {
         Composition c = new Composition(Map.of(), Set.of(), Map.of("Meowth", 8));
         assertTrue(c.countOfSpecies("meowth") == 8 && c.countOfSpecies("MEOWTH") == 8);

@@ -54,6 +54,20 @@ public final class CompositionReader {
                         String key = sp.toLowerCase(Locale.ROOT);
                         species.add(key);
                         speciesCounts.merge(key, 1, Integer::sum);
+                        // Regional forms as aspect-qualified keys ("meowth:alolan") so form-gated rituals
+                        // (Ominous Bottle's Alolan crime syndicate) can demand the REAL crew. The plain
+                        // species key above still counts too — form mons satisfy species-level gates.
+                        try {
+                            for (String aspect : p.getAspects()) {
+                                if (aspect == null) continue;
+                                String a = aspect.toLowerCase(Locale.ROOT);
+                                if (a.equals("alolan") || a.equals("galarian") || a.equals("hisuian") || a.equals("paldean")) {
+                                    String fk = key + ":" + a;
+                                    species.add(fk);
+                                    speciesCounts.merge(fk, 1, Integer::sum);
+                                }
+                            }
+                        } catch (Throwable ignored2) { }
                     }
                 } catch (Throwable ignored) {
                     // species unreadable → skip (rituals that need a signature species just won't fire)

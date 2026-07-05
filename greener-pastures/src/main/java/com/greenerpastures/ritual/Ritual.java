@@ -8,9 +8,11 @@ package com.greenerpastures.ritual;
  */
 public record Ritual(String id, String name, boolean enabled, Requirement requirement,
                      String outputItem, int outputQty, double baseChancePercent, int hardPity, int softPityStart,
-                     int pastureSpan) {
+                     int pastureSpan, String hint, java.util.List<String> outputPool) {
 
     public Ritual {
+        hint = hint == null ? "" : hint;                       // "" = fully hidden (no locked teaser card)
+        outputPool = outputPool == null ? java.util.List.of() : java.util.List.copyOf(outputPool);   // non-empty = each hit rolls one of these instead of outputItem
         outputQty = Math.max(1, outputQty);
         baseChancePercent = Math.max(0.0, Math.min(100.0, baseChancePercent));
         hardPity = Math.max(1, hardPity);
@@ -22,6 +24,19 @@ public record Ritual(String id, String name, boolean enabled, Requirement requir
     /** Compat shape (pre-span era): single-pasture ritual. */
     public Ritual(String id, String name, boolean enabled, Requirement requirement,
                   String outputItem, int outputQty, double baseChancePercent, int hardPity, int softPityStart) {
-        this(id, name, enabled, requirement, outputItem, outputQty, baseChancePercent, hardPity, softPityStart, 1);
+        this(id, name, enabled, requirement, outputItem, outputQty, baseChancePercent, hardPity, softPityStart, 1, "", java.util.List.of());
+    }
+
+    /** Compat shape (pre-hint era): spanning ritual without teaser/pool. */
+    public Ritual(String id, String name, boolean enabled, Requirement requirement,
+                  String outputItem, int outputQty, double baseChancePercent, int hardPity, int softPityStart,
+                  int pastureSpan) {
+        this(id, name, enabled, requirement, outputItem, outputQty, baseChancePercent, hardPity, softPityStart, pastureSpan, "", java.util.List.of());
+    }
+
+    /** The item a HIT pays: fixed output, or one uniform roll from the pool (the Music Disc jukebox). */
+    public String rollOutput(java.util.function.DoubleSupplier rng) {
+        if (outputPool.isEmpty()) return outputItem;
+        return outputPool.get(Math.min(outputPool.size() - 1, (int) (rng.getAsDouble() * outputPool.size())));
     }
 }

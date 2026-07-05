@@ -1524,13 +1524,18 @@ function RitualsTab() {
   const lootList = Object.entries(loot).sort((a, b) => b[1] - a[1])
   const slots = inv?.slots || []
   const canTake = (id) => slots.some((s) => !s || (s.id === id && s.count < 64))
+  const prettySpecies = (sp) => {                     // "meowth:alolan" → "Alolan Meowth"
+    const [base, form] = String(sp).split(':')
+    return form ? `${cap(form)} ${cap(base)}` : cap(base)
+  }
   const recipeChips = (r) => {
     const chips = []
-    Object.entries(r.species || {}).forEach(([sp, n]) => chips.push(`${n}× ${cap(sp)}`))
+    Object.entries(r.species || {}).forEach(([sp, n]) => chips.push(`${n}× ${prettySpecies(sp)}`))
+    ;(r.groups || []).forEach((g) => chips.push(`${g.min}× ${(g.anyOf || []).map(prettySpecies).join(' / ')}`))
     Object.entries(r.types || {}).forEach(([t, n]) => chips.push(`${n}× ${cap(t)}-type`))
     if (r.minDistinct > 0) chips.push(`${r.minDistinct}+ distinct types`)
     if (r.span > 1) chips.push(`🏟 across ${r.span} pastures`)
-    ;(r.signature || []).forEach((sp) => chips.push(`⭑ ${cap(sp)}`))
+    ;(r.signature || []).forEach((sp) => chips.push(`⭑ ${prettySpecies(sp)}`))
     return chips
   }
   return (
@@ -1560,7 +1565,7 @@ function RitualsTab() {
             <div className="row" style={{ gap: 4, flexWrap: 'wrap', margin: '6px 0' }}>
               {recipeChips(r).map((c) => <span key={c} className="kchip">{c}</span>)}
               <span className="dim" style={{ fontSize: 10 }}>— in {r.span > 1 ? `${r.span} pastures combined` : 'one pasture'} →</span>
-              <span className="kchip" style={{ color: 'var(--amber)' }}>{r.qty}× {cap(shortId(r.output))}</span>
+              <span className="kchip" style={{ color: 'var(--amber)' }}>{r.pool ? '🎲 a random music disc' : `${r.qty}× ${cap(shortId(r.output))}`}</span>
             </div>
           </div>
           <div className={`cell${n > 0 ? (ok ? '' : ' cell-full') : ''}`} style={{ width: 74, alignSelf: 'stretch', opacity: n > 0 ? 1 : 0.35 }}
@@ -1572,6 +1577,14 @@ function RitualsTab() {
           </div>
         </div>
       )})}
+      {(d?.locked || []).map((l) => (
+        <div key={l.name} className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8, opacity: 0.75 }}>
+          <div className="row">
+            <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--muted)' }}>🔒 {l.name}</span>
+          </div>
+          <div className="dim" style={{ fontSize: 11, fontStyle: 'italic', marginTop: 4 }}>“{l.hint}”</div>
+        </div>
+      ))}
       {(() => { const covered = new Set(learned.map((r) => r.output)); const orphans = lootList.filter(([id]) => !covered.has(id)); return orphans.length === 0 ? null : (<>
       <div className="row" style={{ margin: '10px 0 6px' }}>
         <span className="h">Unclaimed spoils</span>

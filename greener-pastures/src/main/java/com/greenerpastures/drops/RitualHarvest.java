@@ -96,13 +96,13 @@ public final class RitualHarvest {
             if (rolled > 0 && ledger != null && owner != null) ledger.addPulls(owner, r.id(), rolled);
             if (hits > 0) {
                 if (ledger != null && owner != null) {
-                    ledger.addLoot(owner, r.outputItem(), r.outputQty() * hits);
+                    String lastItem = payHits(ledger, owner, r, hits, rng);
                     ledger.addHits(owner, r.id(), hits);
                     com.greenerpastures.notify.Inbox.push(owner, "🗡",
-                            r.name() + " granted " + (r.outputQty() * hits) + "× " + r.outputItem().replace("minecraft:", ""));
+                            r.name() + " granted " + (r.outputQty() * hits) + "× " + lastItem.replace("minecraft:", ""));
+                    GpLog.i("ritual", "hit", "ritual", r.id(), "hits", hits,
+                            "item", lastItem, "qty", r.outputQty() * hits, "pity", st[1]);
                 }
-                GpLog.i("ritual", "hit", "ritual", r.id(), "hits", hits,
-                        "item", r.outputItem(), "qty", r.outputQty() * hits, "pity", st[1]);
             } else if (GpLog.on(GpLog.Level.DEBUG)) {
                 GpLog.d("ritual", "pulls", "ritual", r.id(), "banked", st[0], "pity", st[1], "sweeps", sweeps);
             }
@@ -156,18 +156,31 @@ public final class RitualHarvest {
                 int rolled = bankedBeforeRoll - state.bankedPulls();
                 if (rolled > 0) ledger.addPulls(owner, r.id(), rolled);
                 if (hits > 0) {
-                    ledger.addLoot(owner, r.outputItem(), r.outputQty() * hits);
+                    String lastItem = payHits(ledger, owner, r, hits, rng);
                     ledger.addHits(owner, r.id(), hits);
                     com.greenerpastures.notify.Inbox.push(owner, "🗡",
-                            r.name() + " granted " + (r.outputQty() * hits) + "× " + r.outputItem().replace("minecraft:", "").replace("cobblemon:", ""));
+                            r.name() + " granted " + (r.outputQty() * hits) + "× " + lastItem.replace("minecraft:", "").replace("cobblemon:", ""));
                     GpLog.i("ritual", "hit", "ritual", r.id(), "hits", hits,
-                            "item", r.outputItem(), "qty", r.outputQty() * hits, "pity", st[1]);
+                            "item", lastItem, "qty", r.outputQty() * hits, "pity", st[1]);
                 } else if (GpLog.on(GpLog.Level.DEBUG)) {
                     GpLog.d("ritual", "pulls", "ritual", r.id(), "banked", st[0], "pity", st[1], "sweeps", sweeps);
                 }
             }
         }
         return out;
+    }
+
+    /** Pay {@code hits} into the loot pool — each hit rolls the ritual's output INDEPENDENTLY (the Music
+     *  Disc pool gives a different disc per hit; fixed-output rituals behave exactly as before). Returns the
+     *  last item paid, for the Inbox line. */
+    private static String payHits(com.greenerpastures.ritual.RitualLedger ledger, java.util.UUID owner,
+                                  Ritual r, int hits, Random rng) {
+        String last = r.outputItem();
+        for (int h = 0; h < hits; h++) {
+            last = r.rollOutput(rng::nextDouble);
+            ledger.addLoot(owner, last, r.outputQty());
+        }
+        return last;
     }
 
     /** Owner → (pasture pos → last-swept composition). Snapshots exist ONLY from real sweeps and expire in

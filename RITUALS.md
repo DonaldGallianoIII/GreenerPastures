@@ -122,3 +122,33 @@ chat/`GpLog` readout in the interim).**
    game-written `--config rituals.json`. Tune odds/pity/rarity headlessly. (e.g. base Nether Forge ≈ 1
    `netherite_scrap`/1.6h; Drop Rate 1% + Yield 1 → 1/0.6h.)
 7. ⏳ Manual-pull gacha **GUI** on the Harvester (live %/pity + PULL buttons) — when at PC.
+
+---
+
+# Batch 2 — Pasture Ritual Spec (Deuce design session, 2026-07-05 — ACCEPTED + SHIPPED)
+
+14 hinted hidden rituals (hints show as 🔒 locked teaser cards; recipe reveals on discovery).
+Tier grid @1 pull/min: LOW 5%/15/30 · MID 2.5%/40/80 · HIGH 1.2%/80/160 · APEX 0.4-0.5%/150-300.
+
+| id | output | mons | tier | hint |
+|---|---|---|---|---|
+| nether_star | Nether Star | 1 Hydreigon, 3 Marowak, 4 Yamask | APEX 0.4% | "Three heads. Three skulls. The restless dead." |
+| wither_skull | Wither Skeleton Skull | 3 Duskull, 4 Houndoom, 1 Marowak | MID | "The hounds guard what the dead wear." |
+| elytra | Elytra | 1 Ninjask, 1 Shedinja, 6× any-mix Heracross/Pinsir (GroupCount gate) | HIGH | "What the swift one leaves behind, the sky claims." |
+| totem_of_undying | Totem | 4 Sableye, 1 Blissey | HIGH | "The gem-eyed ones guard the egg of second chances." |
+| shulker_shell | 2× Shulker Shell | 8 Shuckle | MID | "Say it out loud." |
+| trident | Trident | 1 Dhelmise, 2 Jellicent, 4 Frillish | HIGH | "Where sailors drown, their weapons linger." |
+| heart_of_the_sea | Heart of the Sea | 8 Luvdisc, 2 Clamperl, 1 Lapras | HIGH | "The gentle sea keeps its heart hidden among lovers and pearls." |
+| echo_chorus | 2× Echo Shard | 2 Noibat, 2 Zubat, 2 Loudred, 1 Exploud, 1 Kricketune | MID | "What screams in the dark leaves pieces behind." |
+| saddle | Saddle | 1 Mudsdale, 2 Zebstrika, 4 Ponyta | LOW | "The herd provides for its rider." |
+| name_tag | Name Tag | 1 Smeargle, 4 Chatot | LOW | "The painter takes commissions." |
+| slime_court | 4× Slime Ball | 4 Goomy, 2 Shellos, 1 Ditto, 1 Goodra | MID 3.5% | "The dragon of slime holds court." |
+| ominous_bottle | Ominous Bottle | 4 Absol, 1 Honchkrow, 2 ALOLAN Meowth, 1 ALOLAN Persian, 2 GALARIAN Zigzagoon (form-gated) | MID | "Misfortune, bottled at the source." |
+| pasture_band | random Music Disc (18-disc outputPool, per-hit roll) | 1 Chatot, 4 Kricketune, 4 Chingling | MID | "The pasture band takes requests." |
+| fossil_communion | Sniffer Egg | all 11 base fossils (Oma/Kabu/Aero/Lileep/Anorith/Crani/Shieldon/Tirtouga/Archen/Tyrunt/Amaura), span 2 pastures | APEX 0.5% | "The ancients recognize their own." |
+
+Engine additions this batch: `Requirement.GroupCount` (N total across any-of species) · form-qualified
+composition keys (`meowth:alolan` — reader emits them alongside base species) · `Ritual.hint` (locked
+teaser cards) · `Ritual.outputPool` (per-hit random output). Rejected list per spec (dragon egg parked,
+ghast tear/ender pearl/etc. already covered elsewhere). Pre-batch rituals untouched (Kartana feast —
+NB spec said "Tropius", shipped config says Kartana, left as shipped).

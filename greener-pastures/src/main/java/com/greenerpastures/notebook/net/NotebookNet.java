@@ -1245,10 +1245,20 @@ public final class NotebookNet {
         java.util.Set<String> learned = ledger.learnedOf(player.getUuid());
         JsonObject root = new JsonObject();
         JsonArray arr = new JsonArray();
+        JsonArray lockedArr = new JsonArray();
         int hidden = 0;
         for (com.greenerpastures.ritual.Ritual r : book.rituals()) {
             if (!r.enabled()) continue;
-            if (!learned.contains(r.id())) { hidden++; continue; }
+            if (!learned.contains(r.id())) {
+                if (r.hint().isEmpty()) { hidden++; }
+                else {                                        // hinted teaser: the PRIZE + the riddle, no recipe
+                    JsonObject lock = new JsonObject();
+                    lock.addProperty("name", r.name());
+                    lock.addProperty("hint", r.hint());
+                    lockedArr.add(lock);
+                }
+                continue;
+            }
             JsonObject o = new JsonObject();
             o.addProperty("id", r.id());
             o.addProperty("name", r.name());
@@ -1267,9 +1277,23 @@ public final class NotebookNet {
             o.addProperty("hits", ledger.hitsOf(player.getUuid(), r.id()));
             o.addProperty("pulls", ledger.pullsOf(player.getUuid(), r.id()));
             if (r.pastureSpan() > 1) o.addProperty("span", r.pastureSpan());
+            if (!r.outputPool().isEmpty()) o.addProperty("pool", true);
+            if (!r.requirement().groupMinCounts().isEmpty()) {
+                JsonArray groups = new JsonArray();
+                for (var g : r.requirement().groupMinCounts()) {
+                    JsonObject go = new JsonObject();
+                    JsonArray any = new JsonArray();
+                    g.anyOf().forEach(any::add);
+                    go.add("anyOf", any);
+                    go.addProperty("min", g.min());
+                    groups.add(go);
+                }
+                o.add("groups", groups);
+            }
             arr.add(o);
         }
         root.add("learned", arr);
+        root.add("locked", lockedArr);
         root.addProperty("hidden", hidden);
         JsonObject loot = new JsonObject();
         ledger.lootOf(player.getUuid()).forEach(loot::addProperty);
