@@ -49,7 +49,9 @@ hint removed · [x] orphaned ritual loot explains itself · [x] jukebox Inbox li
 pools · [x] odometer saturation · [x] span snapshot prune · [x] breadcrumb isolated (no triple
 outcome) · [x] phantom doc refs. Still deferred (accepted): Cobblenav re-place notice (Deuce's
 world only), 1s buff grace window, mixin target brittleness (pack pins Cobblemon 1.7.3).
-OPEN QUESTION for Deuce: WILD variant-0 installs a drop mod on kernels that had none - intended jackpot?
+CLOSED (Deuce, 2026-07-05): WILD variant-0 IS the intended jackpot - it doubles whatever drop
+rate the kernel carries, born base included, and slaps the mod on even if none was installed.
+Working as designed; no code change. Review cycle fully closed - zero open findings.
 
 ## ORIGINAL UX NOTES (history)
 - STALE COPY: "right-click with the wand" (Pastures empty state) and "right-click the Field Guide item" (Guide/Specimens footer) - items that no longer exist. EMBARRASSING, trivial fix.
