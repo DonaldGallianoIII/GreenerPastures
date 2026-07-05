@@ -22,7 +22,6 @@ public final class GpItems {
     public static Item SNACK_REPEL;
     public static Item SPECIMEN_DISK;
     public static Item NOTEBOOK;
-    public static Item FIELD_GUIDE;
     public static Item DISK_BLANK, DISK_BYTE, DISK_KILOBYTE, DISK_MEGABYTE, DISK_GIGABYTE, DISK_TERABYTE, DISK_ROCKET;
 
     private static Item item(String id, Item.Settings settings) {
@@ -42,8 +41,6 @@ public final class GpItems {
                 new com.greenerpastures.specimen.SpecimenDiskItem(new Item.Settings().maxCount(16)));
         NOTEBOOK      = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "notebook"),
                 new NotebookItem(new Item.Settings().maxCount(1)));
-        FIELD_GUIDE   = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "field_guide"),
-                new com.greenerpastures.core.FieldGuideItem(new Item.Settings().maxCount(1)));
         // Data disks (§5c — Data's physical form): a binary denomination ladder, baked (no config, anti-p2w).
         // The Notebook's Dashboard WRITES a blank into a denomination; right-click READS it back to balance.
         DISK_BLANK    = disk("data_disk_blank", 0L);
@@ -66,10 +63,9 @@ public final class GpItems {
                                 .sorted()
                                 .forEach(id -> e.add(Registries.ITEM.get(id))))
                         .build());
-        // Keep the Notebook + Guide discoverable in vanilla Tools too (players look there first).
+        // Keep the Notebook discoverable in vanilla Tools too (players look there first).
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(e -> {
             e.add(NOTEBOOK);
-            e.add(FIELD_GUIDE);
         });
     }
 }

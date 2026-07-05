@@ -16,9 +16,10 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Hands every player ONE {@link GpItems#FIELD_GUIDE} the first time they join a world with the mod installed
- * (#18 — the awareness book must reach players who'd never open a wiki). Persisted per world, so relogs and
- * guide-tossing don't re-gift; if their inventory is full the guide just drops at their feet (never lost).
+ * Hands every player ONE {@link GpItems#NOTEBOOK} the first time they join a world with the mod installed
+ * (Deuce, 2026-07-05: the Field Guide item died — it was just a skin over the Notebook's Guide tab, which
+ * the gifted Notebook carries anyway; gifting THE item also softens the onboarding wall). Persisted per
+ * world, so relogs and tossing don't re-gift; full inventory → drops at their feet (never lost).
  */
 public final class FirstJoinGift extends PersistentState {
     private static final String ID = "greenerpastures_greeted";
@@ -32,7 +33,7 @@ public final class FirstJoinGift extends PersistentState {
             if (g.greeted.contains(id)) return;
             g.greeted.add(id);
             g.markDirty();
-            handler.player.getInventory().offerOrDrop(new ItemStack(GpItems.FIELD_GUIDE));
+            handler.player.getInventory().offerOrDrop(new ItemStack(GpItems.NOTEBOOK));
             GpLog.i("guide", "first_join_gift", "player", id.toString());
         }));
     }
