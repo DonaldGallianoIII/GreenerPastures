@@ -243,6 +243,14 @@ public final class NotebookState {
 
     // ── Rituals tab (JSON blob, parsed in React) ─────────────────────────────
     public static volatile String ritualsJson = "";
+    public static volatile String specimensJson = "";
+
+    public static boolean applySpecimens(com.greenerpastures.notebook.net.NotebookSpecimensS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !specimensJson.equals(j);
+        specimensJson = j;
+        return changed;
+    }
 
     public static boolean applyRituals(com.greenerpastures.notebook.net.NotebookRitualsS2C p) {
         String j = p.json() == null ? "" : p.json();
@@ -300,7 +308,7 @@ public final class NotebookState {
         augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of(); augMetaJson = "";
         biobankTotal = 0; biobank = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
-        dashboardJson = ""; goalsJson = ""; notifsJson = ""; ritualsJson = "";
+        dashboardJson = ""; goalsJson = ""; notifsJson = ""; ritualsJson = ""; specimensJson = "";
         navTab = ""; navSeq = 0;
     }
 }

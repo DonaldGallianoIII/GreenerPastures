@@ -65,6 +65,24 @@ public final class GpComponents {
                             net.minecraft.network.codec.PacketCodecs.VAR_INT, 32))
                     .build());
 
+    /** {@code greenerpastures:specimen} — a compressed Pokémon (lossless {@code Pokemon.saveToNBT} payload)
+     *  on a Specimen Disk. The companion SUMMARY renders the tooltip so this is never parsed per frame. */
+    public static final ComponentType<net.minecraft.nbt.NbtCompound> SPECIMEN = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(GreenerPastures.MOD_ID, "specimen"),
+            ComponentType.<net.minecraft.nbt.NbtCompound>builder()
+                    .codec(net.minecraft.nbt.NbtCompound.CODEC)
+                    .packetCodec(net.minecraft.network.codec.PacketCodecs.NBT_COMPOUND)
+                    .build());
+
+    public static final ComponentType<com.greenerpastures.specimen.SpecimenSummary> SPECIMEN_SUMMARY = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(GreenerPastures.MOD_ID, "specimen_summary"),
+            ComponentType.<com.greenerpastures.specimen.SpecimenSummary>builder()
+                    .codec(com.greenerpastures.specimen.SpecimenSummary.CODEC)
+                    .packetCodec(com.greenerpastures.specimen.SpecimenSummary.PACKET_CODEC)
+                    .build());
+
     /** Force class-load so the static registration above runs. Call once from module init. */
     public static void init() {}
 }

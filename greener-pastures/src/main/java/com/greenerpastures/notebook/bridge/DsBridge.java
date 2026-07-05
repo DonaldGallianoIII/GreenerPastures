@@ -123,6 +123,7 @@ public final class DsBridge {
             case "WRITE_DISK"     -> new NotebookActionC2S(NotebookActionC2S.WRITE_DISK, str(p, "denom", ""), 0);
             case "RITUAL_PULL"    -> new NotebookActionC2S(NotebookActionC2S.RITUAL_PULL, str(p, "item", ""), (int) num(p, "mode", 0));
             case "CORRUPT_KERNEL" -> new NotebookActionC2S(NotebookActionC2S.CORRUPT_KERNEL, "", 0);
+            case "COMPRESS_MON"   -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_MON, "", (int) num(p, "slot", -1));
             case "SET_KERNEL_TARGET" -> new NotebookActionC2S(NotebookActionC2S.SET_KERNEL_TARGET, "", (int) num(p, "slot", -1));
             case "SET_DAEMON_TARGET" -> new NotebookActionC2S(NotebookActionC2S.SET_DAEMON_TARGET, "", (int) num(p, "slot", -1));
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
@@ -217,6 +218,7 @@ public final class DsBridge {
         push("goals", jsonChannel(NotebookState.goalsJson));
         push("notifications", jsonChannel(NotebookState.notifsJson));
         push("rituals", jsonChannel(NotebookState.ritualsJson));
+        push("specimens", jsonChannel(NotebookState.specimensJson));
         push("nav", navData());
     }
 

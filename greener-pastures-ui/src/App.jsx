@@ -261,6 +261,7 @@ const TABS = [
   { id: 'dashboard', label: 'Dashboard', path: 'gp://dashboard' },
   { id: 'inbox',     label: 'Inbox',     path: 'gp://inbox' },
   { id: 'rituals',   label: 'Rituals',   path: 'gp://rituals' },
+  { id: 'specimens', label: 'Specimens', path: 'gp://specimens' },
   { id: 'guide',     label: 'Guide',     path: 'gp://guide' },
 ]
 const STAT_NAMES = ['HP', 'At', 'Df', 'SA', 'SD', 'Sp']
@@ -325,6 +326,7 @@ export default function App() {
           {tab === 'dashboard' && <Dashboard />}
           {tab === 'inbox' && <InboxTab />}
           {tab === 'rituals' && <RitualsTab />}
+          {tab === 'specimens' && <SpecimensTab />}
           {tab === 'guide' && <GuideTab />}
         </div>
         </>)}
@@ -1477,6 +1479,41 @@ function PastureConfig({ cfg }) {
   )
 }
 const pairHue = (b) => `hsl(${(b * 67) % 360} 70% 62%)`
+// ── Specimens (mon compression v1): party mon → lossless data on a Specimen Disk ──
+function SpecimensTab() {
+  const d = useChannel('specimens')
+  const party = d?.party || []
+  const blanks = d?.blanks ?? 0
+  const busy = !!d?.busy
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="row" style={{ marginBottom: 8 }}>
+        <span className="h">Specimens</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim mono" style={{ fontSize: 10 }}>💾 {blanks} blank disk{blanks === 1 ? '' : 's'}</span>
+      </div>
+      <div className="dim" style={{ fontSize: 11, marginBottom: 10, lineHeight: 1.5 }}>
+        Archive a party Pokémon onto a <b>Specimen Disk</b> — lossless, IVs and all. Right-click the written
+        disk to release it (party first, PC overflow); the media survives as a blank. Your last party member
+        can't be archived{busy ? ' · 🔒 party busy (battle)' : ''}.
+      </div>
+      {party.length === 0 ? (
+        <div className="dim" style={{ fontSize: 11 }}>party is empty (or still syncing…)</div>
+      ) : party.map((m) => (
+        <div key={m.slot} className="brow">
+          <span className="mono dim" style={{ fontSize: 10, width: 20 }}>#{m.slot + 1}</span>
+          <span style={{ flex: 1, color: m.shiny ? 'var(--amber)' : 'var(--text)' }}>
+            {m.shiny ? '✨ ' : ''}{cap(m.species)} <span className="dim mono" style={{ fontSize: 10 }}>Lv.{m.level} · {m.gender}</span>
+          </span>
+          <button className="btn go" disabled={busy || blanks < 1 || party.length <= 1}
+            title={busy ? 'party is busy' : blanks < 1 ? 'craft a blank Specimen Disk (blank data disk + amethyst + echo shard)' : party.length <= 1 ? 'your last party member stays with you' : 'archive to disk'}
+            onClick={() => send('specimens', 'COMPRESS_MON', { slot: m.slot })}>ARCHIVE</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Rituals (v2): HIDDEN recipes — compositions are secret until you first assemble one ──
 function RitualsTab() {
   const d = useChannel('rituals')

@@ -130,6 +130,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookPastureExtraS2C.ID, NotebookPastureExtraS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookAugmenterMetaS2C.ID, NotebookAugmenterMetaS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookRitualsS2C.ID, NotebookRitualsS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookSpecimensS2C.ID, NotebookSpecimensS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -181,6 +182,7 @@ public final class NotebookNet {
                 pushGoals(player);
                 pushNotifs(player);
                 pushRituals(player);
+                pushSpecimens(player);
                 long nowMs = System.currentTimeMillis();
                 Long last = lastPrefetch.get(player.getUuid());
                 if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -311,6 +313,7 @@ public final class NotebookNet {
                     pushCompiler(player); pushAugmenter(player);
                 }
                 case NotebookActionC2S.RENAME_HELD_KERNEL -> { renameHeldKernel(player, p.arg()); pushAugmenter(player); }
+                case NotebookActionC2S.COMPRESS_MON -> { compressMon(player, p.amount()); pushSpecimens(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -556,6 +559,93 @@ public final class NotebookNet {
             }
         }
         return null;
+    }
+
+    // ── Specimen Disks (mon compression v1 — Deuce, 2026-07-05) ─────────────────────────────────────────
+
+    /** The Specimens tab: live party digest + blank-disk count. Change-gated like every channel. */
+    public static void pushSpecimens(ServerPlayerEntity player) {
+        JsonObject root = new JsonObject();
+        JsonArray party = new JsonArray();
+        try {
+            var store = com.cobblemon.mod.common.util.PlayerExtensionsKt.party(player);
+            for (int i = 0; i < com.greenerpastures.specimen.SpecimenRules.PARTY_SLOTS; i++) {
+                com.cobblemon.mod.common.pokemon.Pokemon mon = store.get(i);
+                if (mon == null) continue;
+                JsonObject o = new JsonObject();
+                o.addProperty("slot", i);
+                o.addProperty("species", mon.getSpecies().getName());
+                o.addProperty("level", mon.getLevel());
+                o.addProperty("shiny", mon.getShiny());
+                o.addProperty("gender", mon.getGender().name().toLowerCase(java.util.Locale.ROOT));
+                party.add(o);
+            }
+            root.addProperty("busy", com.cobblemon.mod.common.util.PlayerExtensionsKt.isPartyBusy(player));
+        } catch (Throwable t) {
+            root.addProperty("busy", true);   // Cobblemon hiccup → tab shows read-only, never crashes the push
+        }
+        root.add("party", party);
+        root.addProperty("blanks", countBlankSpecimenDisks(player));
+        sendGated(player, "specimens", new NotebookSpecimensS2C(GSON.toJson(root)));
+    }
+
+    private static int countBlankSpecimenDisks(ServerPlayerEntity player) {
+        int n = 0;
+        for (ItemStack st : player.getInventory().main) {
+            if (st.isOf(com.greenerpastures.economy.GpItems.SPECIMEN_DISK) && !st.contains(GpComponents.SPECIMEN)) n += st.getCount();
+        }
+        return n;
+    }
+
+    /** Party mon → written Specimen Disk. Dupe-proof order: verify EVERY gate (SpecimenRules) including a
+     *  guaranteed landing slot, THEN remove from party, THEN mint into the pre-verified slot — with
+     *  offerOrDrop as the never-lose-the-mon last resort. No insertStack, ever. */
+    private static void compressMon(ServerPlayerEntity player, int slot) {
+        try {
+            var party = com.cobblemon.mod.common.util.PlayerExtensionsKt.party(player);
+            var inv = player.getInventory();
+            int blankSlot = -1;
+            for (int i = 0; i < inv.main.size(); i++) {
+                ItemStack st = inv.main.get(i);
+                if (st.isOf(com.greenerpastures.economy.GpItems.SPECIMEN_DISK) && !st.contains(GpComponents.SPECIMEN)) { blankSlot = i; break; }
+            }
+            boolean landing = blankSlot >= 0 && (inv.main.get(blankSlot).getCount() == 1 || inv.getEmptySlot() >= 0);
+            com.cobblemon.mod.common.pokemon.Pokemon mon =
+                    (slot >= 0 && slot < com.greenerpastures.specimen.SpecimenRules.PARTY_SLOTS) ? party.get(slot) : null;
+            String err = com.greenerpastures.specimen.SpecimenRules.compressRefusal(
+                    party.size(), slot, com.cobblemon.mod.common.util.PlayerExtensionsKt.isPartyBusy(player),
+                    mon != null, blankSlot >= 0, landing);
+            if (err != null) {
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r " + err), false);
+                return;
+            }
+            ItemStack written = new ItemStack(com.greenerpastures.economy.GpItems.SPECIMEN_DISK);
+            written.set(GpComponents.SPECIMEN, mon.saveToNBT(player.getServerWorld().getRegistryManager(),
+                    new net.minecraft.nbt.NbtCompound()));
+            written.set(GpComponents.SPECIMEN_SUMMARY, new com.greenerpastures.specimen.SpecimenSummary(
+                    mon.getSpecies().getName(), mon.getLevel(), mon.getShiny(),
+                    mon.getGender().name().toLowerCase(java.util.Locale.ROOT)));
+            if (!party.remove(mon)) {
+                player.sendMessage(Text.literal("§c[Greener Pastures]§r Could not archive — the party refused the removal."), false);
+                return;
+            }
+            ItemStack blank = inv.main.get(blankSlot);
+            blank.decrement(1);
+            if (inv.main.get(blankSlot).isEmpty()) inv.main.set(blankSlot, written);
+            else {
+                int empty = inv.getEmptySlot();
+                if (empty >= 0) inv.main.set(empty, written);
+                else inv.offerOrDrop(written);   // race fallback — the mon is NEVER lost
+            }
+            player.sendMessage(Text.literal("§a[Greener Pastures]§r Archived §b" + mon.getSpecies().getName()
+                    + "§r to a Specimen Disk."), false);
+            GpLog.i("specimen", "compress", "player", player.getUuid().toString(),
+                    "species", mon.getSpecies().getName(), "level", Integer.toString(mon.getLevel()),
+                    "shiny", Boolean.toString(mon.getShiny()));
+        } catch (Throwable t) {
+            GpLog.w("specimen", "compress_fail", "err", String.valueOf(t));
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r Archive failed — nothing was changed."), false);
+        }
     }
 
     // ── Multi-item targeting (backlog #5): with 2+ Kernels/Daemons in the inventory, the tabs used to
