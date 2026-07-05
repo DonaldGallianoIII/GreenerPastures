@@ -8,7 +8,13 @@ package com.greenerpastures.egg.oracle.cull;
  * of an egg's spec, so they aren't here (BioBank stores eggs, not hatched mons - Deuce §7.3).
  */
 public record EggCard(String species, boolean shiny, int[] ivs, int[] evs,
-                      String nature, String gender, String ability) {
+                      String nature, String gender, String ability, boolean ivsKnown) {
+
+    /** Compat shape (pre-readability): assumes a good decrypt. New decode paths must pass ivsKnown. */
+    public EggCard(String species, boolean shiny, int[] ivs, int[] evs,
+                   String nature, String gender, String ability) {
+        this(species, shiny, ivs, evs, nature, gender, ability, true);
+    }
 
     public int ivTotal() {
         int t = 0;

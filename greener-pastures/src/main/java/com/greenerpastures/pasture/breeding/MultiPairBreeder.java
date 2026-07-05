@@ -211,7 +211,14 @@ public final class MultiPairBreeder {
             PokemonPastureBlockEntity pasture, BreedingTier tier, PastureData pd) {
         List<PokemonPastureBlockEntity.Tethering> live = pasture.getTetheredPokemon();
         if (live == null || live.size() < 2) return List.of();
-        List<PokemonPastureBlockEntity.Tethering> tethered = new ArrayList<>(live);
+        List<PokemonPastureBlockEntity.Tethering> tethered = new ArrayList<>();
+        for (PokemonPastureBlockEntity.Tethering t : new ArrayList<>(live)) {
+            try {   // the glitch never breeds - a MissingNo frozen on Ditto would be a universal parent (review)
+                if (com.greenerpastures.glitch.Missingno.isMissingno(t.getPokemon())) continue;
+            } catch (Throwable ignored) { }
+            tethered.add(t);
+        }
+        if (tethered.size() < 2) return List.of();
         int cap = pd.maxPairs();   // tier pairs + any WILD-corruption bonus
         return pd.pairings.isEmpty()
                 ? adjacencyPairs(tethered, cap)

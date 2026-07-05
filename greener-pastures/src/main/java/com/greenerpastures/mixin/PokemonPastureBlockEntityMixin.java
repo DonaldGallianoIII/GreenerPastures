@@ -22,6 +22,25 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(PokemonPastureBlockEntity.class)
 public class PokemonPastureBlockEntityMixin {
 
+    /** MissingNo. never enters a pasture (adversarial review, 2026-07-05): tethered mons leave the party,
+     *  so the glitch would FREEZE on its current species - frozen on Ditto it becomes an immortal universal
+     *  breeding parent, breaking the purely-cosmetic contract. Refused at the source, with a message. */
+    @org.spongepowered.asm.mixin.injection.Inject(method = "tether", at = @org.spongepowered.asm.mixin.injection.At("HEAD"),
+            cancellable = true, remap = false)
+    private void greenerpastures$refuseGlitchTether(net.minecraft.server.network.ServerPlayerEntity player,
+            com.cobblemon.mod.common.pokemon.Pokemon pokemon, net.minecraft.util.math.Direction direction,
+            org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<Boolean> cir) {
+        try {
+            if (com.greenerpastures.glitch.Missingno.isMissingno(pokemon)) {
+                player.sendMessage(net.minecraft.text.Text.literal(
+                        "§d§kA§r§5 MissingNo. refuses confinement - it is a trophy, not livestock. §d§kA§r"), false);
+                cir.setReturnValue(false);
+            }
+        } catch (Throwable ignored) {
+            // never break tethering for normal mons
+        }
+    }
+
     @Redirect(method = "tether",
             at = @At(value = "INVOKE",
                      target = "Lnet/minecraft/world/World;spawnEntity(Lnet/minecraft/entity/Entity;)Z",

@@ -29,7 +29,7 @@ public final class GraphEval {
     private static final String[] STATS = {"HP", "Atk", "Def", "SpA", "SpD", "Spe"};
 
     public static Result route(String graphJson, UUID monId, EggCard card) {
-        if (card == null || card.shiny()) return keep(null);            // SACRED - never lose a shiny / unreadable egg
+        if (card == null || card.shiny() || !card.ivsKnown()) return keep(null);   // SACRED - never lose a shiny OR an egg we couldn't READ (a failed decrypt zero-fills the card; filtering zeros would void hidden shinies - review C1/C2)
         if (graphJson == null || graphJson.isEmpty()) return keep(null);
         JsonObject g;
         try { g = GSON.fromJson(graphJson, JsonObject.class); } catch (Exception e) { return keep(null); }

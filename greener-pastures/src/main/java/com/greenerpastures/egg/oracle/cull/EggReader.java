@@ -160,7 +160,7 @@ public final class EggReader {
         if (!shiny) shiny = shinyByName(stack);            // ★ in the name flags a shiny even if the API missed it
         if (species == null) species = speciesByName(stack);
         return new Decoded(species, new EggInfo(shiny, ivsKnown, ivTotal, perfect),
-                new EggCard(species, shiny, ivs, evs, nature, gender, ability));
+                new EggCard(species, shiny, ivs, evs, nature, gender, ability, ivsKnown));   // unreadable decrypt -> the graph MUST keep (sacred rule, review C1)
     }
 
     /** Read what we can off an egg. Returns null if it isn't an egg. Never throws. Cached per stack. */

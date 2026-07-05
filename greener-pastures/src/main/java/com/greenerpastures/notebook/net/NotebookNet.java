@@ -1436,9 +1436,24 @@ public final class NotebookNet {
                 AugmentType[] pool = {AugmentType.SHINY, AugmentType.SPEED, AugmentType.ENRICHMENT,
                         AugmentType.DROP_RATE, AugmentType.DROP_YIELD, AugmentType.IV_FLOOR,
                         AugmentType.ABILITY, AugmentType.EGG_MOVES};
-                AugmentType gift = pool[CORRUPT_RNG.nextInt(pool.length)];
-                out = gift.apply(out, gift.storedValueFor(out, 1));   // base-aware - a Greener's drop-rate base must never be downgraded by the gift
-                detail = gift.effectSummary() + " §7(installed beyond capacity)§r";
+                // Never-worse gift (review: BLESSED could overwrite a level-II augment back to I): pick an
+                // augment that can still IMPROVE - uninstalled installs at I, level-I upgrades to II (beyond
+                // slot cap either way). All maxed (absurdly rare) -> the bless fizzles into "nothing".
+                AugmentType gift = null;
+                int giftLevel = 1;
+                int start = CORRUPT_RNG.nextInt(pool.length);
+                for (int i = 0; i < pool.length; i++) {
+                    AugmentType cand = pool[(start + i) % pool.length];
+                    int cur = cand.installedLevelOn(out);
+                    if (cur < cand.maxLevel()) { gift = cand; giftLevel = cur + 1; break; }
+                }
+                if (gift == null) {
+                    detail = "the blessing found nothing left to improve";
+                } else {
+                    out = gift.apply(out, gift.storedValueFor(out, giftLevel));
+                    detail = gift.effectSummary() + (giftLevel > 1 ? " §7(upgraded to II beyond capacity)§r"
+                            : " §7(installed beyond capacity)§r");
+                }
             }
             case WILD -> {
                 if (roll.variant() == 0) {
