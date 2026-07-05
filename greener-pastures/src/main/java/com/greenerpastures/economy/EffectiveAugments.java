@@ -71,6 +71,11 @@ public final class EffectiveAugments {
         return (int) Math.round(magnitude(AugmentFunction.SPEED));
     }
 
+    /** Hatch Haste level (rounded, clamped 0..3) — scales the bred egg's Cobbreeding TIMER at build. */
+    public int hatchLevel() {
+        return Math.min(3, (int) Math.round(magnitude(AugmentFunction.HATCH)));
+    }
+
     /** Drop-rate bonus as a 0..1 fraction ADDED to the Harvester's per-mon proc. Stored in centipercent
      *  ({@code 25} = 0.25%), so a tether amplifies it the same as any mod; 0 when the Kernel has none. */
     public double dropRateFraction() {

@@ -19,7 +19,7 @@ _Compiled 2026-07-05 from a full 3-agent code survey; current as of jar bafd0029
 - **Multi-pair breeding** — a Kernel breeds up to **8 pairs in parallel** per pasture
 - **Kernel ladder** (wrap the previous tier in blocks): Copper 2 → Iron 3 → Gold 4 → Diamond 5 → Netherite 6 → **Greener 8** pairs; egg speed ×1.1→×1.6; drops +0.5%→+5%
 - **Visual egg pipelines** — node-graph editor per breeding line: parents → IV/EV/Nature/Shiny filters → BioBank (keep) or Data (render); pan/zoom/wire, Masuda/Crystal badges, mon inspector
-- **11 augments** — Shiny reroll, Speed ×1.5/×2/×3, IV Floor, EV Primer (510-budget allocator), Nature Lock (25), Ball Lock, Hidden Ability, Egg Moves, Enrichment, Drop Rate, Drop Yield; GPU install costs (quality 2◈ / throughput 1◈), re-pick free
+- **12 augments** — Shiny reroll, Speed ×1.5/×2/×3, **Hatch Haste (eggs hatch ×0.5/×0.25/×0.1 — the last un-automated step, automated)**, IV Floor, EV Primer (510-budget allocator), Nature Lock (25), Ball Lock, Hidden Ability, Egg Moves, Enrichment, Drop Rate, Drop Yield; GPU install costs (quality 2◈ / throughput 1◈), re-pick free
 - **Soul Tethers** — rented +10/20/30% amplifiers burning Data per cycle while the Daemon is fed
 - **Away catch-up** — missed broods roll exactly on return (12h cap) → Inbox report
 - **Kernel rename + target cards** — name rigs; choose which kernel/daemon a tab edits

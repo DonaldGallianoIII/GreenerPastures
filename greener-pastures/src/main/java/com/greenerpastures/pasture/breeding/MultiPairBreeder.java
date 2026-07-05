@@ -55,7 +55,7 @@ public final class MultiPairBreeder {
      *  ({@link TetherRuntime#resolveFor}), so a tether is never double-charged. */
     private static final Set<AugmentFunction> BREEDING_FUNCTIONS =
             EnumSet.of(AugmentFunction.SHINY, AugmentFunction.SPEED,
-                    AugmentFunction.IV_FLOOR, AugmentFunction.EV);
+                    AugmentFunction.IV_FLOOR, AugmentFunction.EV, AugmentFunction.HATCH);
 
     public static void init() {
         ServerTickEvents.END_WORLD_TICK.register(MultiPairBreeder::onWorldTick);
@@ -232,7 +232,8 @@ public final class MultiPairBreeder {
                     NatureCatalog.byIndex(eff.natureIndex()),     // Nature selector → nature id (null = no lock)
                     BallCatalog.byIndex(eff.ballIndex()),         // Ball selector → ball id (null = no lock)
                     eff.forceHiddenAbility(),                     // Ability toggle → force the hidden ability
-                    eff.teachEggMoves());                         // Egg Moves toggle → teach species egg moves
+                    eff.teachEggMoves(),                          // Egg Moves toggle → teach species egg moves
+                    eff.hatchLevel());                            // Hatch Haste → scale the egg's Cobbreeding TIMER
             CobbreedingBridge.BredEgg egg = CobbreedingBridge.buildEggForPair(pairs.get(i), shape);
             if (egg == null) continue;                              // incompatible pair, skip
             if (pd.owner != null) {                                 // LINKED → eggs as DATA into the owner's Notebook BioBank

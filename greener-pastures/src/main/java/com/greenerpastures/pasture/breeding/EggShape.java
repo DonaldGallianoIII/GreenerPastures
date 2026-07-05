@@ -17,8 +17,15 @@ package com.greenerpastures.pasture.breeding;
  * @param teachEggMoves     teach the species' egg moves to the hatchling (Egg Moves augment)
  */
 public record EggShape(double shinyProcChance, int ivFloor, EvSpread evSpread,
-                       String nature, String ball, boolean forceHiddenAbility, boolean teachEggMoves) {
+                       String nature, String ball, boolean forceHiddenAbility, boolean teachEggMoves,
+                       int hatchLevel) {
+
+    /** Compat shape (pre-Hatch-Haste). */
+    public EggShape(double shinyProcChance, int ivFloor, EvSpread evSpread,
+                    String nature, String ball, boolean forceHiddenAbility, boolean teachEggMoves) {
+        this(shinyProcChance, ivFloor, evSpread, nature, ball, forceHiddenAbility, teachEggMoves, 0);
+    }
 
     /** No shaping — plain vanilla egg-gen (used when a pasture has no breeding augments). */
-    public static final EggShape NONE = new EggShape(0.0, 0, EvSpread.NONE, null, null, false, false);
+    public static final EggShape NONE = new EggShape(0.0, 0, EvSpread.NONE, null, null, false, false, 0);
 }

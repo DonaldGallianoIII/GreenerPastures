@@ -27,7 +27,8 @@ public enum AugmentFunction {
     NATURE    ("nature",     "Nature",         TetherClass.QUALITY, true),
     BALL      ("ball",       "Poké Ball",      TetherClass.QUALITY, true),
     ABILITY   ("ability",    "Hidden Ability", TetherClass.QUALITY, true),
-    EGG_MOVE  ("egg_move",   "Egg Moves",      TetherClass.QUALITY, true);
+    EGG_MOVE  ("egg_move",   "Egg Moves",      TetherClass.QUALITY, true),
+    HATCH     ("hatch",      "Hatch Haste",    TetherClass.THROUGHPUT);   // egg TIMER scaling: I ×0.5 · II ×0.25 · III ×0.1
 
     public final String id;
     public final String label;

@@ -84,6 +84,7 @@ public class BreedingUpgradeItem extends Item {
                 case BALL -> Text.literal("◉ " + pretty(stripNs(BallCatalog.byIndex(lvl)), "ball " + lvl)).formatted(Formatting.LIGHT_PURPLE);
                 case ABILITY -> Text.literal("✦ hidden ability").formatted(Formatting.LIGHT_PURPLE);
                 case EGG_MOVE -> Text.literal("📖 egg moves").formatted(Formatting.LIGHT_PURPLE);
+                case HATCH -> Text.literal("🐣 hatch ×" + HatchHaste.factorLabel(lvl)).formatted(Formatting.YELLOW);
             });
         }
     }

@@ -250,6 +250,7 @@ public final class CobbreedingBridge {
             boolean shiny = Boolean.TRUE.equals(eggData.getShiny());
             ItemStack stack = assembleEgg(eggData);
             if (stack == null) return null;
+            applyHatchHaste(stack, shape.hatchLevel());       // scale the egg's Cobbreeding TIMER (Hatch Haste augment)
             return new BredEgg(stack, shiny, procShiny, eggData.getSpecies(), ivTotal(eggData), perfectIvs(eggData));
         } catch (Throwable t) {
             GreenerPastures.LOG.error("[better-pasture] egg build failed; disabling to stay safe.", t);
@@ -279,6 +280,22 @@ public final class CobbreedingBridge {
             return hit;
         } catch (Throwable t) {
             return false;   // a bonus roll must NEVER break egg-gen
+        }
+    }
+
+    /** Hatch Haste (Deuce, 2026-07-05): scale a freshly built egg's Cobbreeding hatch TIMER per the augment
+     *  level (HatchHaste math: ×0.5/×0.25/×0.1, 1s floor) — {@code cTimer} is the same registry-id-resolved
+     *  component the rest of the bridge uses. Fail-soft: anything odd → the egg ships with its vanilla timer. */
+    private static void applyHatchHaste(ItemStack stack, int level) {
+        if (level <= 0 || stack == null || stack.isEmpty() || cTimer == null) return;
+        try {
+            int cur = stack.getOrDefault(cTimer, 600);
+            int scaled = HatchHaste.scaledTimer(cur, level);
+            if (scaled >= cur) return;
+            stack.set(cTimer, scaled);
+            GpLog.d("breeding", "hatch_haste", "level", level, "from", cur, "to", scaled);
+        } catch (Throwable ignored) {
+            // egg-shaping must never abort egg-gen
         }
     }
 

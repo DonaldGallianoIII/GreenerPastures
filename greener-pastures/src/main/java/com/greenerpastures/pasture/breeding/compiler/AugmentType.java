@@ -4,6 +4,7 @@ import com.greenerpastures.economy.AugmentFunction;
 import com.greenerpastures.pasture.breeding.Augments;
 import com.greenerpastures.pasture.breeding.BreedingUpgradeItem;
 import com.greenerpastures.pasture.breeding.EvSpread;
+import com.greenerpastures.pasture.breeding.HatchHaste;
 import com.greenerpastures.pasture.breeding.GpComponents;
 import net.minecraft.item.ItemStack;
 
@@ -31,7 +32,8 @@ public enum AugmentType {
     NATURE    ("nature-lock",      "1.0", AugmentFunction.NATURE,      0),   // PARAMETERIZED: picked 1-based NatureCatalog index
     BALL      ("ball-lock",        "1.0", AugmentFunction.BALL,        0),   // PARAMETERIZED: picked 1-based BallCatalog index
     ABILITY   ("ability-splice",   "1.0", AugmentFunction.ABILITY,     1),   // toggle: force the hidden ability on every egg
-    EGG_MOVES ("eggmove-tutor",    "1.0", AugmentFunction.EGG_MOVE,    1);   // toggle: teach species egg moves at hatch
+    EGG_MOVES ("eggmove-tutor",    "1.0", AugmentFunction.EGG_MOVE,    1),   // toggle: teach species egg moves at hatch
+    HATCH     ("hatch-haste",      "1.0", AugmentFunction.HATCH,       1);   // level I → bred eggs hatch in half the time (II ×0.25 · III ×0.1 via QA/tethers)
 
     public final String pkgName;
     public final String version;
@@ -111,6 +113,7 @@ public enum AugmentType {
             case BALL       -> "◉ Ball Lock · every egg hatches in the picked ball";
             case ABILITY    -> "✦ Ability Splice · force the hidden ability";
             case EGG_MOVES  -> "📖 Egg-Move Tutor · teach species egg moves";
+            case HATCH      -> "🐣 Hatch Haste " + value + " · bred eggs hatch ×" + HatchHaste.factorLabel(value);
         };
     }
 }
