@@ -408,7 +408,7 @@ function InventoryWindow() {
         <span className="dot" style={{ background: 'var(--green)', width: 7, height: 7 }} />
         <span className="t">inventory</span>
         <span style={{ flex: 1 }} />
-        {!min && <span className="dim" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>⇧-click → storage</span>}
+        {!min && <span className="dim" style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8 }}>browser preview - manage items in-game</span>}
         <span onMouseDown={(e) => e.stopPropagation()} onClick={() => setMin((m) => !m)} title={min ? 'expand' : 'minimize'}
           style={{ cursor: 'pointer', marginLeft: 8, color: 'var(--muted)', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, lineHeight: 1 }}>{min ? '▢' : '-'}</span>
       </div>
@@ -422,7 +422,7 @@ function Slot({ s, idx, hot }) {
   const isGpu = s.id.endsWith(':gpu')
   const label = isGpu ? '◈' : shortId(s.id).replace(/\s/g, '').slice(0, 3)
   return (
-    <div className={`islot2 has${hot ? ' hot' : ''}${isGpu ? ' gpu' : ''}`} title={`${shortId(s.id)} ×${s.count} · ⇧-click → storage`}
+    <div className={`islot2 has${hot ? ' hot' : ''}${isGpu ? ' gpu' : ''}`} title={`${shortId(s.id)} ×${s.count}`}
       onClick={(ev) => { if (shiftHeld(ev)) send('storage', 'DEPOSIT', { slot: idx }) }}>
       <span className="g" style={isGpu ? { color: 'var(--cyan)' } : null}>{label}</span>
       <span className="c">{s.count}</span>
@@ -485,7 +485,7 @@ function EggCard({ e, idx }) {
         {e.ability && <span className="cyn mono" style={{ fontSize: 11 }}>{cap(e.ability)}</span>}
         <span style={{ flex: 1 }} />
         <span className="mono" style={{ fontSize: 11, color: ivT >= 160 ? 'var(--green)' : 'var(--muted)' }}>Σ{ivT}/186</span>
-        <button className="btn" style={{ padding: '2px 7px', fontSize: 10 }} title="withdraw → a real egg in your inventory (to hatch)" onClick={() => send('biobank', 'WITHDRAW', { index: idx })}>↧ pull</button>
+        <button className="btn" style={{ padding: '2px 7px', fontSize: 10 }} title="pull → a real egg in your inventory (to hatch)" onClick={() => send('biobank', 'WITHDRAW', { index: idx })}>↧ pull</button>
       </div>
       <StatRow tag="IV" vals={e.ivs} perfect={31} color="var(--green)" />
       {hasEv && <StatRow tag="EV" vals={e.evs} perfect={252} color="var(--amber)" />}
@@ -932,7 +932,7 @@ function Dashboard() {
     <div className="pane">
       <div className="row" style={{ marginBottom: 10 }}>
         <span className="h">Dashboard</span>
-        <span className="dim" style={{ fontSize: 11 }}>live · this session</span>
+        <span className="dim" style={{ fontSize: 11 }}>live · stats reset each session</span>
       </div>
       <Goals />
       <DisksCard />
@@ -942,7 +942,7 @@ function Dashboard() {
         <Stat label="shiny" value={shiny} sub={`${shinyRate.toFixed(2)}%`} color="var(--pair)" />
         <Stat label="kept" value={kept} color="var(--green)" />
         <Stat label="voided" value={voided} color="var(--red)" />
-        <Stat label="data earned" value={dataEarned} color="var(--cyan)" />
+        <Stat label="data earned (session)" value={dataEarned} color="var(--cyan)" />
       </div>
       <div className="dgrid">
         <div className="dcard"><LinePlot title="eggs/min" sub="last 12 min" color="var(--amber)" data={spark} /></div>

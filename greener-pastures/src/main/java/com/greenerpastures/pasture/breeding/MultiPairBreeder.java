@@ -224,7 +224,7 @@ public final class MultiPairBreeder {
     /** Faster cadence = Speed augment (×1.5/×2/×3 by effective level) × the KERNEL's own tier perk
      *  ({@link BreedingTier#baseSpeedFactor()} - every kernel breeds faster, greener much faster), floored
      *  so breeding never runs absurdly fast (the floor protects the server). */
-    private static long speedAdjustedInterval(long baseInterval, int speedLevel, double tierFactor) {
+    public static long speedAdjustedInterval(long baseInterval, int speedLevel, double tierFactor) {
         double factor = switch (Math.max(0, Math.min(3, speedLevel))) {
             case 1 -> 1.5;
             case 2 -> 2.0;

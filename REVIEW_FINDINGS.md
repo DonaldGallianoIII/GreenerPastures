@@ -42,8 +42,14 @@ one tier past the mortal ceiling instead of the impossible +1 pair.
 [x] pity chips · [x] MissingnoCard hidden at 0 · [x] PC-aware summon message · [x] GPU/Illicit
 never consumed from offhand · [x] battle refusal messages BOTH sides · [x] 7th berry refuses ·
 [x] BRICKED degrade names the augment loss · [x] written-disk death warning ·
-[ ] deferred: verb unification, ghost pastures in Pastures tab, speed-on-floored-kernel warning,
-dashboard time-scope labels, dead React-fallback deposit hint, Cobblenav re-place notice.
+ROUND 3 (same day - Deuce: "I want to do them now"): [x] ghost pastures pruned from the tab the
+moment their record dies · [x] Speed on a floored kernel now REFUSES for free ("GPU saved") ·
+[x] dashboard scope labels honest · [x] verb: pull everywhere for withdrawals · [x] dead deposit
+hint removed · [x] orphaned ritual loot explains itself · [x] jukebox Inbox line honest about
+pools · [x] odometer saturation · [x] span snapshot prune · [x] breadcrumb isolated (no triple
+outcome) · [x] phantom doc refs. Still deferred (accepted): Cobblenav re-place notice (Deuce's
+world only), 1s buff grace window, mixin target brittleness (pack pins Cobblemon 1.7.3).
+OPEN QUESTION for Deuce: WILD variant-0 installs a drop mod on kernels that had none - intended jackpot?
 
 ## ORIGINAL UX NOTES (history)
 - STALE COPY: "right-click with the wand" (Pastures empty state) and "right-click the Field Guide item" (Guide/Specimens footer) - items that no longer exist. EMBARRASSING, trivial fix.

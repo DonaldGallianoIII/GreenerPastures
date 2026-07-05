@@ -58,12 +58,17 @@ public final class EggIngest {
                 EggLog.addData(owner, value);                  // dashboard "Data earned"
                 // The breadcrumb (1/2000 renders): the void stream coughs up ILLICIT data - the disk lands in
                 // the ritual spoils pool with a whisper, pointing players at the hidden Black Market ritual.
-                if (BREADCRUMB.nextInt(2000) == 0) {
-                    com.greenerpastures.ritual.RitualLedger.get(server).addLoot(owner,
-                            "greenerpastures:data_disk_rocket", 1);
-                    com.greenerpastures.notify.Inbox.push(owner, "\u26e7",
-                            "Something ILLICIT surfaced in the void stream \u2014 check your Ritual spoils\u2026");
-                    GpLog.i("egg_ingest", "illicit_breadcrumb", "owner", owner.toString());
+                try {   // review m1: a throw here after the Data credit flipped ingest to false and the
+                        // breeder trayed the SAME egg - egg + Data + void log, triple outcome. Isolated.
+                    if (BREADCRUMB.nextInt(2000) == 0) {
+                        com.greenerpastures.ritual.RitualLedger.get(server).addLoot(owner,
+                                "greenerpastures:data_disk_rocket", 1);
+                        com.greenerpastures.notify.Inbox.push(owner, "\u26e7",
+                                "Something ILLICIT surfaced in the void stream - check your Ritual spoils...");
+                        GpLog.i("egg_ingest", "illicit_breadcrumb", "owner", owner.toString());
+                    }
+                } catch (Throwable breadcrumbFailed) {
+                    // the whisper is a bonus - never let it re-tray a rendered egg
                 }
                 return true;   // rendered to Data → egg consumed; the breeder must NOT tray-fallback
             }

@@ -135,6 +135,15 @@ public final class CobbreedingBridge {
         }
     }
 
+    /** Cobbreeding's configured MAX breeding interval (the best case for a Speed comparison); fallback 24000. */
+    public static long maxBreedingIntervalTicks() {
+        try {
+            return Cobbreeding.INSTANCE.getConfig().getMaxBreedingTimeInTicks();
+        } catch (Throwable t) {
+            return 24000L;
+        }
+    }
+
     /** A fresh breeding interval (ticks) drawn from Cobbreeding's own min/max, so our rate matches. */
     public static int nextBreedingInterval() {
         try {

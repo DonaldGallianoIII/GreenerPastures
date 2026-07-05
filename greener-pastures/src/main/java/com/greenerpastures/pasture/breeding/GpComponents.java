@@ -53,7 +53,7 @@ public final class GpComponents {
 
     /** {@code greenerpastures:repel_types} - an Ultra Compressed Snack's REPEL payload (Snack Overdrive pt.1):
      *  type → summed magnitude; our spawn influence DIVIDES matching types' weight by it. Flipped seasonings
-     *  are removed from Cobblemon's bait component entirely (firstOrNull TYPING quirk - see RepelFold). */
+     *  are removed from Cobblemon's bait component entirely (firstOrNull TYPING quirk - see SnackRepelMath). */
     public static final ComponentType<java.util.Map<String, Integer>> REPEL_TYPES = Registry.register(
             Registries.DATA_COMPONENT_TYPE,
             Identifier.of(GreenerPastures.MOD_ID, "repel_types"),

@@ -51,7 +51,10 @@ public final class DataStore extends PersistentState {
     public void creditEarned(UUID player, long amount) {
         if (amount <= 0) return;
         credit(player, amount);
-        lifetimeEarned.merge(player, amount, Long::sum);
+        lifetimeEarned.merge(player, amount, (a, b) -> {   // saturate - a wrapped odometer would erase earned summons
+            long sum = a + b;
+            return sum < a ? Long.MAX_VALUE : sum;
+        });
     }
 
     public long lifetimeEarnedOf(UUID player) {

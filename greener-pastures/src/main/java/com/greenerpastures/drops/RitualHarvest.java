@@ -99,8 +99,9 @@ public final class RitualHarvest {
                 if (ledger != null && owner != null) {
                     String lastItem = payHits(ledger, owner, r, hits, rng);
                     ledger.addHits(owner, r.id(), hits);
-                    com.greenerpastures.notify.Inbox.push(owner, "🗡",
-                            r.name() + " granted " + (r.outputQty() * hits) + "× " + lastItem.replace("minecraft:", ""));
+                    com.greenerpastures.notify.Inbox.push(owner, "🗡", r.outputPool().isEmpty()
+                            ? r.name() + " granted " + (r.outputQty() * hits) + "× " + lastItem.replace("minecraft:", "")
+                            : r.name() + " played " + hits + " request" + (hits == 1 ? "" : "s") + " - check Ritual spoils");
                     GpLog.i("ritual", "hit", "ritual", r.id(), "hits", hits,
                             "item", lastItem, "qty", r.outputQty() * hits, "pity", st[1]);
                 }
@@ -123,10 +124,15 @@ public final class RitualHarvest {
             mine.put(posKey, new long[]{nowMs});
             for (Ritual r : cfg.activeRituals().spanning()) {
                 java.util.List<Long> partners = new java.util.ArrayList<>();
-                for (Map.Entry<Long, Composition> other : comps.entrySet()) {
+                for (var it = comps.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry<Long, Composition> other = it.next();
                     if (other.getKey() == posKey) continue;
                     long[] ts = mine.get(other.getKey());
-                    if (ts == null || nowMs - ts[0] > SNAPSHOT_FRESH_MS) continue;   // stale (unloaded/destroyed) → not a partner
+                    if (ts == null || nowMs - ts[0] > SNAPSHOT_FRESH_MS) {   // stale (unloaded/destroyed) → not a partner
+                        it.remove();                                          // and prune the dead key (review minor: map grew forever)
+                        mine.remove(other.getKey());
+                        continue;
+                    }
                     if (r.requirement().satisfiedBy(Composition.union(comp, other.getValue()))) partners.add(other.getKey());
                 }
                 if (partners.isEmpty()) continue;

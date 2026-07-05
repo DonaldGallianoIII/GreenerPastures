@@ -19,7 +19,7 @@ import java.util.function.Supplier;
  * value} in {@code SpawnBaitInfluence.affectWeight}). Ours handles EVERY repelled type independently (their
  * TYPING path only ever applies the FIRST entry - decompile-verified), never returns a negative weight, and
  * fails soft: any resolution hiccup leaves the weight untouched. Added to the snack block's spawner by
- * {@code PokeSnackRepelMixin}; scope = snack-driven spawns only, ambient world spawning is untouched.
+ * {@code PokeSnackOverdriveMixin}; scope = snack-driven spawns only, ambient world spawning is untouched.
  */
 public final class GpRepelInfluence implements SpawningInfluence {
     private final Supplier<Map<String, Integer>> repels;

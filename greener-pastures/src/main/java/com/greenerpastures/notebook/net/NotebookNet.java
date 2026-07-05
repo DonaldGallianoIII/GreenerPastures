@@ -368,7 +368,10 @@ public final class NotebookNet {
         MinecraftServer server = player.getServer();
         if (server == null || itemId == null || itemId.isEmpty()) return;
         Item item = Registries.ITEM.get(Identifier.of(itemId));
-        if (item == Items.AIR) return;
+        if (item == Items.AIR) {
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r That item no longer exists in this world (a mod or datapack changed) - it can't be withdrawn."), false);
+            return;
+        }
         NotebookStore store = NotebookStore.get(server);
         long have = store.storageOf(player.getUuid()).count(itemId);
         if (have <= 0) return;
@@ -496,12 +499,24 @@ public final class NotebookNet {
         for (ServerWorld w : server.getWorlds()) dims.put(w.getRegistryKey().getValue().toString(), w);
         JsonObject health = new JsonObject();
         try (var span = com.greenerpastures.core.GpProf.begin("net.health_pass")) {
+            java.util.List<PastureSnapshot> ghosts = null;
             for (PastureSnapshot s : snaps) {
                 BlockPos pos = BlockPos.fromLong(s.pos());
                 PastureData pd = reg.get(s.dim(), pos);
-                if (pd == null) continue;
+                if (pd == null) {
+                    // review U13: a destroyed pasture's snapshot lingered in the tab forever with stale
+                    // counts. No registry record = the pasture is gone - prune the ghost from the store.
+                    (ghosts != null ? ghosts : (ghosts = new java.util.ArrayList<>())).add(s);
+                    continue;
+                }
                 String csv = PastureHealth.idsCsv(gatherHealth(server, dims.get(s.dim()), pos, pd));
                 if (!csv.isEmpty()) health.addProperty(s.dim() + "|" + s.pos(), csv);
+            }
+            if (ghosts != null) {
+                for (PastureSnapshot g : ghosts) PastureSnapshotStore.get(server).removeAt(g.dim(), g.pos());
+                java.util.Set<Long> gone = new java.util.HashSet<>();
+                for (PastureSnapshot g : ghosts) gone.add(g.pos());
+                snaps = snaps.stream().filter(s2 -> !gone.contains(s2.pos())).toList();
             }
         }
         sendGated(player, "pastures", new NotebookPasturesS2C(snaps, health.toString()));
@@ -958,6 +973,20 @@ public final class NotebookNet {
         if (!installed || upgrade) {                                               // install OR upgrade: slot gate + GPU fee
             BreedingTier tier = ((BreedingUpgradeItem) ref.stack().getItem()).tier();
             int targetLevel = installed ? curLevel + 1 : 1;
+            if (at == AugmentType.SPEED) {
+                // review u3: Speed on an already-floored kernel spent GPU for literally nothing. Compare the
+                // best-case interval before/after - if the 2.5-min floor eats the whole gain, refuse for free.
+                long base = com.greenerpastures.pasture.breeding.CobbreedingBridge.maxBreedingIntervalTicks();
+                long before = com.greenerpastures.pasture.breeding.MultiPairBreeder.speedAdjustedInterval(
+                        base, curLevel == 0 ? 0 : at.valueAt(curLevel), tier.baseSpeedFactor());
+                long after = com.greenerpastures.pasture.breeding.MultiPairBreeder.speedAdjustedInterval(
+                        base, at.valueAt(targetLevel), tier.baseSpeedFactor());
+                if (after >= before) {
+                    player.sendMessage(Text.literal("§e[Greener Pastures]§r This Kernel already breeds at the 2.5-minute floor - Speed "
+                            + (installed ? "II" : "I") + " would change nothing. GPU saved."), false);
+                    return;
+                }
+            }
             int slotsAfter = slotsUsed(ref.stack()) - AugmentType.slotsForLevel(curLevel)
                     + AugmentType.slotsForLevel(targetLevel);
             if (slotsAfter > tier.slots) {
@@ -1392,7 +1421,10 @@ public final class NotebookNet {
         MinecraftServer server = player.getServer();
         if (server == null || itemId == null || itemId.isEmpty()) return;
         Item item = Registries.ITEM.get(Identifier.of(itemId));
-        if (item == Items.AIR) return;
+        if (item == Items.AIR) {
+            player.sendMessage(Text.literal("§c[Greener Pastures]§r That item no longer exists in this world (a mod or datapack changed) - it can't be withdrawn."), false);
+            return;
+        }
         com.greenerpastures.ritual.RitualLedger ledger = com.greenerpastures.ritual.RitualLedger.get(server);
         long have = ledger.lootOf(player.getUuid()).getOrDefault(itemId, 0L);
         if (have <= 0) return;

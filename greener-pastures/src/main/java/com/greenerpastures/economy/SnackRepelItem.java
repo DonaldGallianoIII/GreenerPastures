@@ -12,7 +12,7 @@ import java.util.List;
  * <b>Snack Repel</b> (Snack Overdrive pt.1 - Deuce's sprite, 2026-07-04): a spray can crafted into an Ultra
  * Compressed Snack. Each can INVERTS one typed seasoning group - the type those berries would have attracted
  * is instead repelled (spawn weight ÷ the same summed magnitude the attract would have multiplied by). The
- * flip happens at craft time ({@code RepelFold}); this item is inert on its own.
+ * flip happens at craft time ({@code SnackRepelMath}); this item is inert on its own.
  */
 public class SnackRepelItem extends Item {
 
