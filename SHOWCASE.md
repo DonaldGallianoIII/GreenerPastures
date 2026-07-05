@@ -1,5 +1,5 @@
 # 🌱 Greener Pastures — Feature Showcase
-_Compiled 2026-07-05 from a full 3-agent code survey (jar 9d4e8a2f, 293 tests). The share-with-people list._
+_Compiled 2026-07-05 from a full 3-agent code survey; current as of jar bafd0029, 296 tests. The share-with-people list._
 
 **One item is the whole mod: the Notebook.** Right-click → a real web app (React via MCEF/Chromium) running inside Minecraft. Every player gets one on first join.
 
@@ -52,6 +52,12 @@ _Compiled 2026-07-05 from a full 3-agent code survey (jar 9d4e8a2f, 293 tests). 
 ## 💽 Specimen Disks
 - Party mon → lossless data on reusable media (blank disk + amethyst + echo shard); Notebook Specimens tab archives, right-click releases (party→PC), blank returned
 - Dupe-proof rails: no mid-battle, never your last mon, landing verified before removal
+
+## ▓▒░ MissingNo. — the endgame trophy
+- Render **one million lifetime Data** → the Dashboard's glitch card lets you **summon MissingNo.** — repeatable every million, forever
+- A real party Pokémon that **rewrites its own species every ~5 seconds** — Ditto → Aerodactyl → Gastly → Marowak → Kabutops, never the same twice (the fossils and the ghost, as the original sprite corruption intended)
+- **Pure trophy**: it refuses all battles ("MissingNo. distorts the battlefield"), never shiny, nicknamed, and its glitch survives PC storage, trading, even Specimen Disks
+- The odometer counts only genuinely rendered eggs — no disk tricks, no shortcuts. ~87 hours of maxed 5-pasture uptime per million. Flex accordingly
 
 ## 🛡 Trust & QoL
 - **Sacred rule**: shiny/unreadable eggs NEVER auto-culled
