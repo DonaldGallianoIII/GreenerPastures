@@ -60,4 +60,18 @@ public record Composition(Map<String, Integer> typeCounts, Set<String> species, 
 
     /** The set of types present (lowercased) — what {@link TypeDropTable#forTypes} keys on. */
     public Set<String> types() { return typeCounts.keySet(); }
+
+    /** The combined composition of two pastures — spanning rituals (pastureSpan 2) evaluate against this:
+     *  type/species counts sum, species presence unions. Pure; either side null = the other unchanged. */
+    public static Composition union(Composition a, Composition b) {
+        if (a == null) return b == null ? EMPTY : b;
+        if (b == null) return a;
+        Map<String, Integer> t = new HashMap<>(a.typeCounts);
+        b.typeCounts.forEach((k, v) -> t.merge(k, v, Integer::sum));
+        Set<String> s = new HashSet<>(a.species);
+        s.addAll(b.species);
+        Map<String, Integer> sc = new HashMap<>(a.speciesCounts);
+        b.speciesCounts.forEach((k, v) -> sc.merge(k, v, Integer::sum));
+        return new Composition(t, s, sc);
+    }
 }

@@ -101,10 +101,12 @@ public final class NotebookNet {
     public static void onDisconnect(UUID player) {
         lastPush.remove(player);
         lastPrefetch.remove(player);
+        augTargetSlot.remove(player);
+        daemonTargetSlot.remove(player);
     }
 
     /** Reset per-server-session state — called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -300,6 +302,15 @@ public final class NotebookNet {
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
                 case NotebookActionC2S.RITUAL_PULL -> { ritualPull(player, p.arg(), p.amount()); pushRituals(player); }
                 case NotebookActionC2S.CORRUPT_KERNEL -> { corruptKernel(player); pushAugmenter(player); }
+                case NotebookActionC2S.SET_KERNEL_TARGET -> {
+                    if (kernelAt(player, p.amount()) != null) augTargetSlot.put(player.getUuid(), p.amount());
+                    pushAugmenter(player);
+                }
+                case NotebookActionC2S.SET_DAEMON_TARGET -> {
+                    if (!daemonAt(player, p.amount()).isEmpty()) daemonTargetSlot.put(player.getUuid(), p.amount());
+                    pushCompiler(player); pushAugmenter(player);
+                }
+                case NotebookActionC2S.RENAME_HELD_KERNEL -> { renameHeldKernel(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -391,7 +402,7 @@ public final class NotebookNet {
     public static void pushCompiler(ServerPlayerEntity player) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        ItemStack daemon = firstDaemon(player);
+        ItemStack daemon = targetDaemon(player);
         boolean has = !daemon.isEmpty();
         boolean on = has && DaemonItem.isOn(daemon);
         BuffConfig cfg = BuffSystem.config();
@@ -418,7 +429,7 @@ public final class NotebookNet {
     }
 
     private static void setBuff(ServerPlayerEntity player, String buffId, int tier) {
-        ItemStack daemon = firstDaemon(player);
+        ItemStack daemon = targetDaemon(player);
         if (daemon.isEmpty()) return;
         BuffId b = BuffId.byId(buffId);
         if (b == null || !DaemonBuffs.supported().contains(b)) return;
@@ -442,7 +453,7 @@ public final class NotebookNet {
     }
 
     private static void toggleDaemon(ServerPlayerEntity player) {
-        ItemStack daemon = firstDaemon(player);
+        ItemStack daemon = targetDaemon(player);
         if (daemon.isEmpty()) return;
         boolean next = !DaemonItem.isOn(daemon);
         DaemonItem.setOn(daemon, next);
@@ -547,6 +558,68 @@ public final class NotebookNet {
         return null;
     }
 
+    // ── Multi-item targeting (backlog #5): with 2+ Kernels/Daemons in the inventory, the tabs used to
+    // operate on whichever was found first. The client picks a target card; we remember the SLOT per player
+    // (session-scoped: cleared on disconnect + SERVER_STARTED) and re-validate it on EVERY use — if the slot
+    // no longer holds the right item we silently fall back to first-found (never operate on the wrong stack).
+    private static final Map<UUID, Integer> augTargetSlot = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> daemonTargetSlot = new java.util.concurrent.ConcurrentHashMap<>();
+    static final int OFFHAND_SLOT = 1000;   // wire encoding for the offhand slot in target selection
+
+    private static KernelRef kernelAt(ServerPlayerEntity player, int slot) {
+        PlayerInventory inv = player.getInventory();
+        if (slot == OFFHAND_SLOT) {
+            if (!inv.offHand.isEmpty() && inv.offHand.get(0).getItem() instanceof BreedingUpgradeItem)
+                return new KernelRef(inv.offHand.get(0), ns -> inv.offHand.set(0, ns));
+            return null;
+        }
+        if (slot < 0 || slot >= inv.main.size()) return null;
+        if (!(inv.main.get(slot).getItem() instanceof BreedingUpgradeItem)) return null;
+        final int idx = slot;
+        return new KernelRef(inv.main.get(idx), ns -> inv.main.set(idx, ns));
+    }
+
+    private static KernelRef targetKernel(ServerPlayerEntity player) {
+        Integer t = augTargetSlot.get(player.getUuid());
+        if (t != null) {
+            KernelRef r = kernelAt(player, t);
+            if (r != null) return r;
+            augTargetSlot.remove(player.getUuid());   // stale slot (kernel moved/slotted) → back to first-found
+        }
+        return firstKernel(player);
+    }
+
+    private static ItemStack daemonAt(ServerPlayerEntity player, int slot) {
+        PlayerInventory inv = player.getInventory();
+        if (slot == OFFHAND_SLOT)
+            return (!inv.offHand.isEmpty() && inv.offHand.get(0).getItem() instanceof DaemonItem) ? inv.offHand.get(0) : ItemStack.EMPTY;
+        if (slot < 0 || slot >= inv.main.size()) return ItemStack.EMPTY;
+        return inv.main.get(slot).getItem() instanceof DaemonItem ? inv.main.get(slot) : ItemStack.EMPTY;
+    }
+
+    private static ItemStack targetDaemon(ServerPlayerEntity player) {
+        Integer t = daemonTargetSlot.get(player.getUuid());
+        if (t != null) {
+            ItemStack s = daemonAt(player, t);
+            if (!s.isEmpty()) return s;
+            daemonTargetSlot.remove(player.getUuid());
+        }
+        return firstDaemon(player);
+    }
+
+    /** Right-click rename (QoL, Deuce 2026-07-04): label a Kernel so multi-kernel farms stay legible. Name
+     *  lands on CUSTOM_NAME (shows on tooltip, target cards, pasture KERNEL row); ≤32 chars; empty clears. */
+    private static void renameHeldKernel(ServerPlayerEntity player, String name) {
+        ItemStack held = player.getMainHandStack();
+        if (!(held.getItem() instanceof BreedingUpgradeItem)) return;
+        String clean = name == null ? "" : name.replaceAll("[\\p{Cntrl}]", "").trim();
+        if (clean.length() > 32) clean = clean.substring(0, 32);
+        if (clean.isEmpty()) held.remove(net.minecraft.component.DataComponentTypes.CUSTOM_NAME);
+        else held.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME,
+                Text.literal(clean).styled(st -> st.withItalic(false)));
+        GpLog.i("notebook", "kernel_rename", "player", player.getUuid().toString(), "name", clean);
+    }
+
     private static int slotCost(AugmentType at) {
         return 1;   // uniform 1 slot per augment for v1
     }
@@ -601,7 +674,7 @@ public final class NotebookNet {
     public static void pushAugmenter(ServerPlayerEntity player) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
-        KernelRef ref = firstKernel(player);
+        KernelRef ref = targetKernel(player);
         boolean has = ref != null;
         String tierLabel = "no Kernel";
         int slotCap = 0, used = 0;
@@ -617,13 +690,56 @@ public final class NotebookNet {
             }
         }
         sendGated(player, "augmenter", new NotebookAugmenterS2C(has, tierLabel, used, slotCap, catalog));
-        sendGated(player, "augmeta", new NotebookAugmenterMetaS2C(augmenterMetaJson(has ? ref.stack() : null)));
+        sendGated(player, "augmeta", new NotebookAugmenterMetaS2C(augmenterMetaJson(player, has ? ref.stack() : null)));
     }
 
     /** The picker meta (#34/#35) riding beside the augmenter push: the Kernel's current selector values +
      *  EV spread, and the server-authoritative nature/ball catalogs (the React pickers can never drift). */
-    private static String augmenterMetaJson(ItemStack kernel) {
+    /** Every Kernel in the inventory as a target card: slot · tier · augment count · ⛧; target = the one
+     *  the tab currently operates on (the resolved stack, so first-found fallback marks correctly). */
+    private static JsonArray kernelCandidatesJson(ServerPlayerEntity player, ItemStack resolved) {
+        JsonArray arr = new JsonArray();
+        PlayerInventory inv = player.getInventory();
+        for (int i = 0; i <= inv.main.size(); i++) {
+            boolean off = i == inv.main.size();
+            ItemStack st = off ? (inv.offHand.isEmpty() ? ItemStack.EMPTY : inv.offHand.get(0)) : inv.main.get(i);
+            if (!(st.getItem() instanceof BreedingUpgradeItem bu)) continue;
+            JsonObject o = new JsonObject();
+            o.addProperty("slot", off ? OFFHAND_SLOT : i);
+            o.addProperty("tier", bu.tier().name());
+            if (st.contains(net.minecraft.component.DataComponentTypes.CUSTOM_NAME))
+                o.addProperty("name", st.getName().getString());
+            Augments a = st.get(GpComponents.AUGMENTS);
+            o.addProperty("augs", a == null ? 0 : a.toLevels().size());
+            if (Boolean.TRUE.equals(st.get(GpComponents.CORRUPTED))) o.addProperty("corrupted", true);
+            if (st == resolved) o.addProperty("target", true);
+            arr.add(o);
+        }
+        return arr;
+    }
+
+    private static JsonArray daemonCandidatesJson(ServerPlayerEntity player) {
+        JsonArray arr = new JsonArray();
+        ItemStack resolved = targetDaemon(player);
+        PlayerInventory inv = player.getInventory();
+        for (int i = 0; i <= inv.main.size(); i++) {
+            boolean off = i == inv.main.size();
+            ItemStack st = off ? (inv.offHand.isEmpty() ? ItemStack.EMPTY : inv.offHand.get(0)) : inv.main.get(i);
+            if (!(st.getItem() instanceof DaemonItem)) continue;
+            JsonObject o = new JsonObject();
+            o.addProperty("slot", off ? OFFHAND_SLOT : i);
+            o.addProperty("on", DaemonItem.isOn(st));
+            o.addProperty("buffs", DaemonItem.loadoutOf(st).toLevels().size());
+            if (st == resolved) o.addProperty("target", true);
+            arr.add(o);
+        }
+        return arr;
+    }
+
+    private static String augmenterMetaJson(ServerPlayerEntity player, ItemStack kernel) {
         JsonObject root = new JsonObject();
+        root.add("kernels", kernelCandidatesJson(player, kernel));
+        root.add("daemons", daemonCandidatesJson(player));
         JsonObject values = new JsonObject();
         if (kernel != null) {
             root.addProperty("corrupted", Boolean.TRUE.equals(kernel.get(GpComponents.CORRUPTED)));
@@ -685,7 +801,7 @@ public final class NotebookNet {
      *  {@code "NATURE:7"} / {@code "BALL:12"} (1-based catalog index) · {@code "EV:hp,atk,def,spa,spd,spe"}.
      *  A parameterized augment that's ALREADY installed may re-pick its value in place (no extra slot). */
     private static void applyAugment(ServerPlayerEntity player, String rawArg) {
-        KernelRef ref = firstKernel(player);
+        KernelRef ref = targetKernel(player);
         if (ref == null) return;
         AugmentArg arg = AugmentArg.parse(rawArg);
         AugmentType at = arg == null ? null : augmentType(arg.type());
@@ -738,7 +854,7 @@ public final class NotebookNet {
     }
 
     private static void removeAugment(ServerPlayerEntity player, String typeName) {
-        KernelRef ref = firstKernel(player);
+        KernelRef ref = targetKernel(player);
         if (ref == null) return;
         AugmentType at = augmentType(typeName);
         if (at == null || !at.appliesTo(ref.stack()) || !at.installedOn(ref.stack())) return;
@@ -833,6 +949,16 @@ public final class NotebookNet {
             }
             if (a != null && a.level(com.greenerpastures.economy.AugmentFunction.ABILITY) > 0) k.addProperty("ha", true);
             if (a != null && a.level(com.greenerpastures.economy.AugmentFunction.EGG_MOVE) > 0) k.addProperty("moves", true);
+            // Full augment map + corruption — the client dresses its DISPLAY stack with these so hovering the
+            // slotted kernel shows the real tooltip, not a default-born one (Deuce, 2026-07-04).
+            if (kernel.contains(net.minecraft.component.DataComponentTypes.CUSTOM_NAME))
+                k.addProperty("name", kernel.getName().getString());
+            JsonObject augs = new JsonObject();
+            if (a != null) a.levels().forEach(augs::addProperty);
+            k.add("augs", augs);
+            if (Boolean.TRUE.equals(kernel.get(GpComponents.CORRUPTED))) k.addProperty("corrupted", true);
+            Integer kcp = kernel.get(GpComponents.CORRUPT_PAIRS);
+            if (kcp != null && kcp > 0) k.addProperty("corruptPairs", kcp);
             root.add("kernel", k);
         }
         return root.toString();
@@ -1049,6 +1175,8 @@ public final class NotebookNet {
             o.addProperty("output", r.outputItem());
             o.addProperty("qty", r.outputQty());
             o.addProperty("hits", ledger.hitsOf(player.getUuid(), r.id()));
+            o.addProperty("pulls", ledger.pullsOf(player.getUuid(), r.id()));
+            if (r.pastureSpan() > 1) o.addProperty("span", r.pastureSpan());
             arr.add(o);
         }
         root.add("learned", arr);
@@ -1109,7 +1237,7 @@ public final class NotebookNet {
     /** The Vaal roll (Deuce 2026-07-04): consume ONE Illicit Data Disk, corrupt the first held Kernel with
      *  {@link com.greenerpastures.pasture.breeding.compiler.KernelCorruption}'s baked table. Irreversible. */
     private static void corruptKernel(ServerPlayerEntity player) {
-        KernelRef ref = firstKernel(player);
+        KernelRef ref = targetKernel(player);
         if (ref == null) return;
         if (Boolean.TRUE.equals(ref.stack().get(GpComponents.CORRUPTED))) {
             player.sendMessage(Text.literal("§5⛧§r Already corrupted — the disk finds nothing left to take."), false);

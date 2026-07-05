@@ -2,16 +2,19 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "ccc",
-    "cRc",
-    "ccc"
+    "cqc",
+    "qbq",
+    "cqc"
   ],
   "key": {
     "c": {
       "item": "minecraft:copper_block"
     },
-    "R": {
-      "item": "minecraft:redstone_block"
+    "q": {
+      "item": "minecraft:quartz_block"
+    },
+    "b": {
+      "item": "greenerpastures:data_disk_blank"
     }
   },
   "result": {

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "gig",
+    "gwg",
+    "gig"
+  ],
+  "key": {
+    "g": {
+      "item": "minecraft:glass"
+    },
+    "i": {
+      "item": "minecraft:iron_ingot"
+    },
+    "w": {
+      "item": "minecraft:nether_wart"
+    }
+  },
+  "result": {
+    "id": "greenerpastures:snack_repel",
+    "count": 2
+  }
+}

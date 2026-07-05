@@ -116,7 +116,9 @@ public final class NotebookState {
     }
 
     public static boolean applyPastureConfig(NotebookPastureConfigS2C p) {
-        pastureConfigCache.put(posKey(p.pos()), p);
+        String key = posKey(p.pos());
+        p = withStatsBackfill(p, pastureConfigCache.get(key));
+        pastureConfigCache.put(key, p);
         NotebookPastureConfigS2C cur = pastureConfig;
         if (cur != null && cur.pos() == p.pos()) {   // only the FOCUSED pasture updates the live view —
             pastureConfig = p;                        // a background prefetch must never hijack the open screen
@@ -124,6 +126,35 @@ public final class NotebookState {
             return true;
         }
         return false;
+    }
+
+    /** Stale-while-revalidate, done properly (BUG-012): the 1-min prefetch sweep sends the SAME pasture with a
+     *  stats-less roster shape, and it used to overwrite the focused view — genders vanished and every 2-parent
+     *  line read "this pair can't breed". A stats-less incoming entry keeps the cached entry's stats; entries
+     *  that arrive WITH stats always win (a real full push still refreshes everything). */
+    private static NotebookPastureConfigS2C withStatsBackfill(NotebookPastureConfigS2C p,
+                                                              NotebookPastureConfigS2C prev) {
+        if (prev == null || p.roster() == null || p.roster().isEmpty()) return p;
+        boolean upgraded = false;
+        java.util.List<com.greenerpastures.pasture.breeding.gui.MonEntry> merged = new java.util.ArrayList<>(p.roster().size());
+        for (com.greenerpastures.pasture.breeding.gui.MonEntry m : p.roster()) {
+            if (m.stats() == null || m.stats().isEmpty()) {
+                com.greenerpastures.pasture.breeding.gui.MonEntry old = null;
+                for (com.greenerpastures.pasture.breeding.gui.MonEntry o : prev.roster()) {
+                    if (o.id().equals(m.id())) { old = o; break; }
+                }
+                if (old != null && old.stats() != null && !old.stats().isEmpty()) {
+                    merged.add(new com.greenerpastures.pasture.breeding.gui.MonEntry(
+                            m.id(), m.species(), m.label(), m.bucket(), old.stats()));
+                    upgraded = true;
+                    continue;
+                }
+            }
+            merged.add(m);
+        }
+        return upgraded
+                ? new NotebookPastureConfigS2C(p.pos(), p.name(), p.tier(), p.linked(), p.maxPairs(), merged)
+                : p;
     }
 
     /** The focused pasture's Daemon graph JSON (filter/sink nodes + flow edges + mon-node positions), or "" when

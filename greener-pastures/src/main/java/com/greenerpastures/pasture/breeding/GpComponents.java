@@ -51,6 +51,20 @@ public final class GpComponents {
                     .packetCodec(net.minecraft.network.codec.PacketCodecs.VAR_INT)
                     .build());
 
+    /** {@code greenerpastures:repel_types} — an Ultra Compressed Snack's REPEL payload (Snack Overdrive pt.1):
+     *  type → summed magnitude; our spawn influence DIVIDES matching types' weight by it. Flipped seasonings
+     *  are removed from Cobblemon's bait component entirely (firstOrNull TYPING quirk — see RepelFold). */
+    public static final ComponentType<java.util.Map<String, Integer>> REPEL_TYPES = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(GreenerPastures.MOD_ID, "repel_types"),
+            ComponentType.<java.util.Map<String, Integer>>builder()
+                    .codec(com.mojang.serialization.Codec.unboundedMap(com.mojang.serialization.Codec.STRING,
+                            com.mojang.serialization.Codec.INT))
+                    .packetCodec(net.minecraft.network.codec.PacketCodecs.map(java.util.HashMap::new,
+                            net.minecraft.network.codec.PacketCodecs.STRING,
+                            net.minecraft.network.codec.PacketCodecs.VAR_INT, 32))
+                    .build());
+
     /** Force class-load so the static registration above runs. Call once from module init. */
     public static void init() {}
 }

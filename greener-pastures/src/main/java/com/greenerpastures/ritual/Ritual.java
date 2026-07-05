@@ -7,12 +7,21 @@ package com.greenerpastures.ritual;
  * off a single ritual without deleting it. Pure data; the rolling lives in {@link Gacha}.
  */
 public record Ritual(String id, String name, boolean enabled, Requirement requirement,
-                     String outputItem, int outputQty, double baseChancePercent, int hardPity, int softPityStart) {
+                     String outputItem, int outputQty, double baseChancePercent, int hardPity, int softPityStart,
+                     int pastureSpan) {
 
     public Ritual {
         outputQty = Math.max(1, outputQty);
         baseChancePercent = Math.max(0.0, Math.min(100.0, baseChancePercent));
         hardPity = Math.max(1, hardPity);
         softPityStart = Math.max(0, softPityStart);   // 0 = no soft pity
+        pastureSpan = Math.max(1, Math.min(4, pastureSpan));   // 1 = classic single-pasture; 2 = union of two
+        // (missing in old JSON → Gson gives 0 → clamps to 1: every pre-span config reads back unchanged)
+    }
+
+    /** Compat shape (pre-span era): single-pasture ritual. */
+    public Ritual(String id, String name, boolean enabled, Requirement requirement,
+                  String outputItem, int outputQty, double baseChancePercent, int hardPity, int softPityStart) {
+        this(id, name, enabled, requirement, outputItem, outputQty, baseChancePercent, hardPity, softPityStart, 1);
     }
 }

@@ -112,8 +112,36 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
                 ritual("black_market", "Black Market",
                         new Requirement(Map.of(), 0, List.of(),
                                 Map.of("koffing", 4, "ekans", 4, "meowth", 1)),
-                        "greenerpastures:data_disk_rocket", 1, 2.5, 100, 50)
+                        "greenerpastures:data_disk_rocket", 1, 2.5, 100, 50),
+                // #3 — "Professor's Summit" (Deuce, 2026-07-04): every starter from every generation, at least
+                // once, across the UNION of TWO pastures (27 starters > 16 slots — the span is mechanically
+                // forced, not flavor). Starters are ultra-rare overworld spawns here, so the collection IS the
+                // grind; the payout is the only farmable Rare Candy source.
+                spanRitual("professors_summit", "Professor's Summit",
+                        new Requirement(Map.of(), 0, List.of(), ALL_STARTERS),
+                        "cobblemon:rare_candy", 1, 3.0, 80, 40, 2)
         ));
+    }
+
+    /** All 27 starters, Gens 1–9, one each — the Professor's Summit roster. */
+    private static final Map<String, Integer> ALL_STARTERS = Map.ofEntries(
+            e("bulbasaur"), e("charmander"), e("squirtle"),          // Kanto
+            e("chikorita"), e("cyndaquil"), e("totodile"),           // Johto
+            e("treecko"), e("torchic"), e("mudkip"),                 // Hoenn
+            e("turtwig"), e("chimchar"), e("piplup"),                // Sinnoh
+            e("snivy"), e("tepig"), e("oshawott"),                   // Unova
+            e("chespin"), e("fennekin"), e("froakie"),               // Kalos
+            e("rowlet"), e("litten"), e("popplio"),                  // Alola
+            e("grookey"), e("scorbunny"), e("sobble"),               // Galar
+            e("sprigatito"), e("fuecoco"), e("quaxly"));             // Paldea
+
+    private static Map.Entry<String, Integer> e(String species) {
+        return Map.entry(species, 1);
+    }
+
+    private static Ritual spanRitual(String id, String name, Requirement r, String item, int qty,
+                                     double pct, int hard, int soft, int span) {
+        return new Ritual(id, name, true, r, item, qty, pct, hard, soft, span);
     }
 
     private static TypeDrop td(String type, String item, double pct, int min, int max) {

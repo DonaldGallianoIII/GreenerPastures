@@ -87,6 +87,22 @@ public final class MultiPairBreeder {
                     (orphans != null ? orphans : (orphans = new java.util.ArrayList<>())).add(pos);
                     continue;
                 }
+                // Self-heal the pairing board: a mon untethered/released while this pasture is LOADED leaves a
+                // stale UUID in pd.pairings — harmless to breeding (pairs resolve against the live roster) but
+                // it renders as a hex-labelled ghost parent in the console graph (BUG-011). The roster here is
+                // authoritative (chunk loaded, BE present), so pruning is safe; never do this for unloaded pastures.
+                if (!pd.pairings.isEmpty()) {
+                    java.util.List<PokemonPastureBlockEntity.Tethering> live = pasture.getTetheredPokemon();
+                    if (live != null) {
+                        java.util.Set<java.util.UUID> ids = new java.util.HashSet<>();
+                        for (PokemonPastureBlockEntity.Tethering t : new java.util.ArrayList<>(live)) ids.add(t.getTetheringId());
+                        if (pd.pairings.keySet().removeIf(id -> !ids.contains(id))) {
+                            dirty = true;
+                            GpLog.d("breeder", "pairing_pruned", "pos", pos.toShortString(), "remaining", pd.pairings.size());
+                        }
+                    }
+                }
+
                 BreedingTier tier = pd.tier();
                 if (tier == null) continue;                                  // present but no Pasture Upgrade slotted
                 if (!CobbreedingBridge.isBreedingActivated(be.getCachedState())) continue;

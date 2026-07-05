@@ -19,6 +19,7 @@ public final class GpItems {
     private GpItems() {}
 
     public static Item GPU;
+    public static Item SNACK_REPEL;
     public static Item NOTEBOOK;
     public static Item FIELD_GUIDE;
     public static Item DISK_BLANK, DISK_BYTE, DISK_KILOBYTE, DISK_MEGABYTE, DISK_GIGABYTE, DISK_TERABYTE, DISK_ROCKET;
@@ -34,6 +35,8 @@ public final class GpItems {
 
     public static void init() {
         GPU           = item("gpu", new Item.Settings());
+        SNACK_REPEL   = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "snack_repel"),
+                new SnackRepelItem(new Item.Settings().maxCount(16)));
         NOTEBOOK      = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "notebook"),
                 new NotebookItem(new Item.Settings().maxCount(1)));
         FIELD_GUIDE   = Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "field_guide"),

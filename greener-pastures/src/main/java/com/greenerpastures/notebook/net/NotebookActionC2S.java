@@ -26,6 +26,9 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int WRITE_DISK = 9;      // Disks: arg = denomination item id — blank + balance → written disk
     public static final int RITUAL_PULL = 10;    // Rituals: arg = item id, amount = mode (0 one · 1 stack · 2 all)
     public static final int CORRUPT_KERNEL = 11; // Augmenter: consume an Illicit Data Disk → Vaal-roll the held Kernel
+    public static final int SET_KERNEL_TARGET = 12; // Augmenter: amount = inventory slot (1000 = offhand) to operate on
+    public static final int SET_DAEMON_TARGET = 13; // Compiler: amount = inventory slot of the Daemon to operate on
+    public static final int RENAME_HELD_KERNEL = 14; // arg = new display name for the MAIN-HAND Kernel (empty clears)
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

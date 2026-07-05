@@ -76,6 +76,61 @@ class RitualConfigTest {
     }
 
     @Test
+    void professorsSummitSpansTwoPastures() {
+        // Deuce's spanning ritual (2026-07-04): all 27 starters at least once across the UNION of two pastures.
+        Ritual summit = RitualConfig.defaults().rituals().byId("professors_summit");
+        assertNotNull(summit);
+        assertTrue(summit.pastureSpan() == 2 && summit.outputItem().equals("cobblemon:rare_candy"));
+
+        Map<String, Integer> gen1to5 = new java.util.HashMap<>();
+        for (String sp : List.of("bulbasaur", "charmander", "squirtle", "chikorita", "cyndaquil", "totodile",
+                "treecko", "torchic", "mudkip", "turtwig", "chimchar", "piplup", "snivy", "tepig", "oshawott"))
+            gen1to5.put(sp, 1);
+        Map<String, Integer> gen6to9 = new java.util.HashMap<>();
+        for (String sp : List.of("chespin", "fennekin", "froakie", "rowlet", "litten", "popplio",
+                "grookey", "scorbunny", "sobble", "sprigatito", "fuecoco", "quaxly"))
+            gen6to9.put(sp, 1);
+        Composition a = new Composition(Map.of(), Set.of(), gen1to5);   // 15 mons — fits a pasture
+        Composition b = new Composition(Map.of(), Set.of(), gen6to9);   // 12 mons — fits a pasture
+
+        assertFalse(summit.requirement().satisfiedBy(a), "one pasture alone can never hold 27 starters");
+        assertFalse(summit.requirement().satisfiedBy(b));
+        assertTrue(summit.requirement().satisfiedBy(Composition.union(a, b)), "the union completes the summit");
+
+        Map<String, Integer> missingOne = new java.util.HashMap<>(gen6to9);
+        missingOne.remove("quaxly");
+        assertFalse(summit.requirement().satisfiedBy(Composition.union(a, new Composition(Map.of(), Set.of(), missingOne))),
+                "26 of 27 is not a summit");
+    }
+
+    @Test
+    void spanDefaultsToOneAndSingleCompRitualsIgnoreSpanning() {
+        // Pre-span JSON deserializes with pastureSpan 0 → the record clamps to 1 (classic behavior unchanged).
+        Ritual legacy = new Ritual("x", "X", true, new Requirement(Map.of(), 0, List.of(), Map.of("meowth", 1)),
+                "minecraft:stone", 1, 5.0, 10, 0, 0);
+        assertTrue(legacy.pastureSpan() == 1);
+        // active(comp) never returns spanning rituals; spanning() never returns single-pasture ones.
+        RitualBook book = RitualConfig.defaults().rituals();
+        Composition all = new Composition(Map.of(), Set.of(), Map.of("meowth", 99, "kartana", 9, "xerneas", 9,
+                "koffing", 9, "ekans", 9));
+        assertTrue(book.active(all).stream().noneMatch(r -> r.pastureSpan() > 1));
+        assertTrue(book.spanning().stream().allMatch(r -> r.pastureSpan() > 1));
+        assertTrue(book.spanning().stream().anyMatch(r -> r.id().equals("professors_summit")));
+    }
+
+    @Test
+    void spanGateBanksExactlyOncePerSatisfiedPair() {
+        // Pair (100, 200) satisfied: 100 banks (has a larger partner), 200 does not — one pull per sweep total.
+        assertTrue(SpanGate.shouldBank(100L, List.of(200L)));
+        assertFalse(SpanGate.shouldBank(200L, List.of(100L)));
+        // Three-way (100 pairs with 200 AND 300): still exactly one banker (100), one pull per sweep.
+        assertTrue(SpanGate.shouldBank(100L, List.of(200L, 300L)));
+        assertFalse(SpanGate.shouldBank(200L, List.of(100L)));
+        assertFalse(SpanGate.shouldBank(300L, List.of(100L)));
+        assertFalse(SpanGate.shouldBank(100L, List.of()), "no satisfying partner → no bank");
+    }
+
+    @Test
     void speciesCountsAreCaseInsensitiveAndDefaultEmpty() {
         Composition c = new Composition(Map.of(), Set.of(), Map.of("Meowth", 8));
         assertTrue(c.countOfSpecies("meowth") == 8 && c.countOfSpecies("MEOWTH") == 8);

@@ -63,13 +63,17 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
                 Identifier.of(GreenerPastures.MOD_ID, "ultra_compressed_snack"), SERIALIZER);
     }
 
-    /** Every non-empty slot must be a poke snack; at least one present, nothing else in the grid. */
+    /** Every non-empty slot must be a poke snack OR a Snack Repel can; at least one snack present. */
     @Override
     public boolean matches(CraftingRecipeInput input, World world) {
         int snacks = 0;
         for (int i = 0; i < input.getSize(); i++) {
             ItemStack s = input.getStackInSlot(i);
             if (s.isEmpty()) continue;
+            if (s.isOf(com.greenerpastures.economy.GpItems.SNACK_REPEL)) {
+                if (!s.contains(com.greenerpastures.pasture.breeding.GpComponents.REPEL_TYPES)) return false;   // uncharged can — charge it with berries first
+                continue;
+            }
             if (!s.isOf(CobblemonItems.POKE_SNACK)) return false;
             snacks++;
         }
@@ -82,8 +86,14 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
         Map<Flavour, Integer> flavourSum = new EnumMap<>(Flavour.class);
         Map<Flavour, Integer> flavourMax = new EnumMap<>(Flavour.class);
         int snacks = 0;
+        List<Map.Entry<String, Integer>> cans = new ArrayList<>();
         for (int i = 0; i < input.getSize(); i++) {
             ItemStack s = input.getStackInSlot(i);
+            if (s.isOf(com.greenerpastures.economy.GpItems.SNACK_REPEL)) {
+                Map<String, Integer> payload = s.get(com.greenerpastures.pasture.breeding.GpComponents.REPEL_TYPES);
+                if (payload != null) payload.forEach((t, m) -> cans.add(Map.entry(t, m)));
+                continue;
+            }
             if (!s.isOf(CobblemonItems.POKE_SNACK)) continue;
             snacks++;
             BaitEffectsComponent bait = s.get(CobblemonItemComponents.BAIT_EFFECTS);
@@ -110,17 +120,29 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
         Map<Flavour, Integer> mergedFlavours = new EnumMap<>(Flavour.class);
         flavourSum.forEach((k, v) -> mergedFlavours.put(k, Math.min(v, 2 * flavourMax.getOrDefault(k, 0))));
 
+        // Snack Repel (Overdrive pt.1 rev 2 — Deuce's design): CHARGED cans carry their own {type → ÷magnitude}
+        // payload; here they simply merge onto the snack (per-type sums, capped at double the strongest single
+        // can — SnackRepelMath). Attract berries in the grid are untouched — the repel came pre-bottled.
+        Map<String, Integer> repelSums = SnackRepelMath.mergeCans(cans);
+
         ItemStack out = new ItemStack(CobblemonItems.POKE_SNACK);
+        if (!repelSums.isEmpty())
+            out.set(com.greenerpastures.pasture.breeding.GpComponents.REPEL_TYPES,
+                    new java.util.HashMap<>(repelSums));
         if (!merged.isEmpty()) out.set(CobblemonItemComponents.BAIT_EFFECTS, new BaitEffectsComponent(merged));
         if (!mergedFlavours.isEmpty()) out.set(CobblemonItemComponents.FLAVOUR, new FlavourComponent(mergedFlavours));
         out.set(DataComponentTypes.CUSTOM_NAME,
                 Text.translatable("item.greenerpastures.ultra_compressed_snack")
                         .formatted(Formatting.GOLD).styled(st -> st.withItalic(false)));
-        out.set(DataComponentTypes.LORE, new LoreComponent(List.of(
-                Text.literal("×" + snacks + " snacks · " + distinct + " effect" + (distinct == 1 ? "" : "s")
-                                + " · " + merged.size() + " stacks"
-                                + (compressed > 0 ? " · " + compressed + " compressed away" : ""))
-                        .formatted(Formatting.DARK_AQUA))));
+        List<Text> lore = new ArrayList<>();
+        lore.add(Text.literal("×" + snacks + " snacks · " + distinct + " effect" + (distinct == 1 ? "" : "s")
+                        + " · " + merged.size() + " stacks"
+                        + (compressed > 0 ? " · " + compressed + " compressed away" : ""))
+                .formatted(Formatting.DARK_AQUA));
+        repelSums.forEach((type, mag) -> lore.add(Text.literal(
+                "🚫 ÷" + mag + " " + Character.toUpperCase(type.charAt(0)) + type.substring(1) + " Types")
+                .formatted(Formatting.RED)));
+        out.set(DataComponentTypes.LORE, new LoreComponent(lore));
         return out;
     }
 

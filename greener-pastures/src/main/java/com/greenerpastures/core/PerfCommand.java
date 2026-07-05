@@ -44,7 +44,9 @@ public final class PerfCommand {
         try {
             Path dir = FabricLoader.getInstance().getGameDir().resolve("gp-logs");
             Files.createDirectories(dir);
-            Path out = dir.resolve("perf-flame.html");
+            String stamp = java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            Path out = dir.resolve("perf-flame-" + stamp + ".html");   // unique per run — back-to-back graphs must not clobber each other
             Files.writeString(out, GpProf.flameHtml());
             GpLog.i("perf", "flame_written", "path", out.toString(), "windowMs", GpProf.sinceMs());
             ctx.getSource().sendFeedback(() -> Text.literal(

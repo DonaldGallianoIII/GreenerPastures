@@ -52,6 +52,11 @@ public final class GreenerPasturesClient implements ClientModInitializer {
 
         // notebook/ console — client-side open hook for the Notebook item (air / non-pasture right-click).
         // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
+        // Kernel right-click → rename screen (QoL: label your kernels)
+        com.greenerpastures.pasture.breeding.BreedingUpgradeItem.renameScreenOpener =
+                stack -> net.minecraft.client.MinecraftClient.getInstance().setScreen(
+                        new com.greenerpastures.client.notebook.KernelRenameScreen(stack));
+
         NotebookItem.CONSOLE_OPENER = () -> {   // air → tabbed console
             if (NotebookState.pastureConfig != null) NotebookBrowserScreen.curtain();   // coming from a pasture view → curtain the switch
             NotebookState.pastureConfig = null; NotebookState.pastureGraphJson = ""; NotebookState.pastureExtraJson = ""; NotebookState.pastureConfigLoading = false;

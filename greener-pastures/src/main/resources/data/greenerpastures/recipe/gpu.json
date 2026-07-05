@@ -3,18 +3,18 @@
   "category": "misc",
   "pattern": [
     "qrq",
-    "cdc",
+    "idi",
     "qrq"
   ],
   "key": {
     "q": {
-      "item": "minecraft:quartz"
+      "item": "minecraft:quartz_block"
     },
     "r": {
-      "item": "minecraft:redstone"
+      "item": "minecraft:redstone_block"
     },
-    "c": {
-      "item": "minecraft:copper_ingot"
+    "i": {
+      "item": "minecraft:iron_block"
     },
     "d": {
       "item": "greenerpastures:data_disk_kilobyte"

@@ -115,7 +115,7 @@ public final class PastureHarvest {
                 // pity persist per pasture; catch-up banks the missed pulls too).
                 Map<String, Integer> typeDrops = com.greenerpastures.drops.RitualHarvest.roll(
                         server, pd.owner, pd.name.isEmpty() ? pos.toShortString() : pd.name,
-                        com.greenerpastures.drops.CompositionReader.read(pasture), pd, RNG, sweeps);
+                        com.greenerpastures.drops.CompositionReader.read(pasture), pd, RNG, sweeps, pos.asLong());
                 typeDrops.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
                 long stored = 0;
                 for (Map.Entry<String, Integer> d : harvested.entrySet()) {

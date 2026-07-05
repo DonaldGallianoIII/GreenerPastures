@@ -617,15 +617,38 @@ function Pastures() {
 const pairColor = (l) => (l.endsWith('Breeding') ? 'var(--cyan)' : l.endsWith('Ready') ? 'var(--green)' : l.endsWith('Incomplete') ? 'var(--dim)' : 'var(--text)')
 
 // ── Compiler (Daemon buff loadout) ───────────────────────────────────────────
+// Target selector (backlog #5): with 2+ Kernels/Daemons in the pack the tab operated on first-found.
+// Cards list every candidate by inventory slot; click = server-side target (re-validated on every use).
+function TargetCards({ items, kind, action }) {
+  if (!items || items.length < 2) return null
+  return (
+    <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+      <span className="dim" style={{ fontSize: 10 }}>{kind} target:</span>
+      {items.map((k) => (
+        <button key={k.slot} className={`btn${k.target ? ' go' : ''}`} style={{ fontSize: 10 }}
+          title={`inventory slot ${k.slot === 1000 ? 'offhand' : k.slot}`}
+          onClick={() => send('augmenter', action, { slot: k.slot })}>
+          {k.slot === 1000 ? '⬅' : `#${k.slot}`} {k.name ? k.name : k.tier ? cap(k.tier) : (k.on ? '● on' : '○ off')}
+          {' · '}{k.augs != null ? `${k.augs} aug${k.augs === 1 ? '' : 's'}` : `${k.buffs} buff${k.buffs === 1 ? '' : 's'}`}
+          {k.corrupted ? ' ⛧' : ''}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function Compiler() {
   const d = useChannel('compiler')
   const status = useChannel('status')
+  const meta = useChannel('augmenter')?.meta   // the augmeta blob (rides the augmenter channel) — carries the target-candidate lists
   if (!d) return <Empty title="…" msg="loading the Compiler channel" />
   if (!d.hasDaemon) return <Empty title="No Daemon in your inventory" msg="hold a Daemon (anywhere in your pack) to compile its buffs" />
   const installed = d.installed || {}
   const gpu = status?.gpu ?? 0
   const runtime = d.drainPerSec > 0 ? Math.floor((status?.data ?? 0) / d.drainPerSec) : null
   return (
+    <div>
+    <TargetCards items={meta?.daemons} kind="Daemon" action="SET_DAEMON_TARGET" />
     <div className="trip">
       <div className="tcol inset" style={{ width: 130 }}>
         <span className="h">Daemon</span>
@@ -662,6 +685,7 @@ function Compiler() {
         </button>
       </div>
     </div>
+    </div>
   )
 }
 
@@ -681,13 +705,13 @@ function Augmenter() {
   const d = useChannel('augmenter')
   const status = useChannel('status')
   const gpu = status?.gpu ?? 0
+  const inv = useChannel('inventory')          // hooks stay above the early returns — hook order must never change between renders
   const [picker, setPicker] = useState(null)   // 'NATURE' | 'BALL' | 'EV' | null
   if (!d) return <Empty title="…" msg="loading the Augmenter channel" />
   if (!d.hasKernel) return <Empty title="No Kernel in your inventory" msg="hold a Kernel (a Pasture Upgrade) to augment it" />
   const meta = d.meta || {}
   const values = meta.values || {}
   const corrupted = !!meta.corrupted
-  const inv = useChannel('inventory')
   const orbCount = (inv?.slots || []).reduce((a, s) => a + (s?.id === 'greenerpastures:data_disk_rocket' ? s.count : 0), 0)
   const valueChip = (t) => {
     if (t === 'NATURE') return values.NATURE ? cap(values.NATURE.label) : null
@@ -696,7 +720,9 @@ function Augmenter() {
     return null
   }
   return (
-    <div className="trip" style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }}>
+    <TargetCards items={meta.kernels} kind="Kernel" action="SET_KERNEL_TARGET" />
+    <div className="trip">
       <div className="tcol inset" style={{ width: 150 }}>
         <span className="h">Kernel</span>
         <span className="grn" style={{ fontWeight: 600 }}>{d.tier}{corrupted && <span style={{ color: '#a06bd4' }}> ⛧</span>}</span>
@@ -737,6 +763,7 @@ function Augmenter() {
       {picker === 'NATURE' && <NaturePicker natures={meta.natures || []} current={values.NATURE?.value || 0} onClose={() => setPicker(null)} />}
       {picker === 'BALL' && <BallPicker balls={meta.balls || []} current={values.BALL?.value || 0} onClose={() => setPicker(null)} />}
       {picker === 'EV' && <EvAllocator initial={values.EV?.spread} onClose={() => setPicker(null)} />}
+    </div>
     </div>
   )
 }
@@ -1426,7 +1453,7 @@ function PastureConfig({ cfg }) {
         <span className="dim" style={{ fontSize: 10, letterSpacing: 1 }}>KERNEL</span>
         <span style={{ flex: 1 }} />
         {hasKernel
-          ? <span className="cyn mono" style={{ fontSize: 12 }}>{cap(cfg.tier.toLowerCase())} · {maxPairs} pairs</span>
+          ? <span className="cyn mono" style={{ fontSize: 12 }}>{cfg.kernel?.name ? `“${cfg.kernel.name}” · ` : ''}{cap(cfg.tier.toLowerCase())} · {maxPairs} pairs</span>
           : <span className="amb" style={{ fontSize: 11 }}>none — slot a Kernel for multi-pair breeding</span>}
         <button className="btn" style={{ marginLeft: 8 }} onClick={() => send('pasture', 'KERNEL', { pos: cfg.pos })}>
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
@@ -1465,6 +1492,7 @@ function RitualsTab() {
     Object.entries(r.species || {}).forEach(([sp, n]) => chips.push(`${n}× ${cap(sp)}`))
     Object.entries(r.types || {}).forEach(([t, n]) => chips.push(`${n}× ${cap(t)}-type`))
     if (r.minDistinct > 0) chips.push(`${r.minDistinct}+ distinct types`)
+    if (r.span > 1) chips.push(`🏟 across ${r.span} pastures`)
     ;(r.signature || []).forEach((sp) => chips.push(`⭑ ${cap(sp)}`))
     return chips
   }
@@ -1483,27 +1511,37 @@ function RitualsTab() {
             inside a single linked pasture, and its ritual will reveal itself here… along with what it yields.
           </div>
         </div>
-      ) : learned.map((r) => (
-        <div key={r.id} className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8 }}>
-          <div className="row">
-            <span className="amb" style={{ fontWeight: 700, fontSize: 12 }}>🗡 {r.name}</span>
-            <span style={{ flex: 1 }} />
-            <span className="dim mono" style={{ fontSize: 10 }}>{r.hits} hit{r.hits === 1 ? '' : 's'} lifetime</span>
+      ) : learned.map((r) => { const n = loot[r.output] || 0; const ok = canTake(r.output); return (
+        <div key={r.id} className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8, display: 'flex', gap: 10 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="row">
+              <span className="amb" style={{ fontWeight: 700, fontSize: 12 }}>🗡 {r.name}</span>
+              <span style={{ flex: 1 }} />
+              <span className="dim mono" style={{ fontSize: 10 }} title="lifetime gacha pulls — climbing means the ritual is live">⟳ {r.pulls || 0} pulls</span>
+              <span className="dim mono" style={{ fontSize: 10 }}>{r.hits} hit{r.hits === 1 ? '' : 's'} lifetime</span>
+            </div>
+            <div className="row" style={{ gap: 4, flexWrap: 'wrap', margin: '6px 0' }}>
+              {recipeChips(r).map((c) => <span key={c} className="kchip">{c}</span>)}
+              <span className="dim" style={{ fontSize: 10 }}>— in {r.span > 1 ? `${r.span} pastures combined` : 'one pasture'} →</span>
+              <span className="kchip" style={{ color: 'var(--amber)' }}>{r.qty}× {cap(shortId(r.output))}</span>
+            </div>
           </div>
-          <div className="row" style={{ gap: 4, flexWrap: 'wrap', margin: '6px 0' }}>
-            {recipeChips(r).map((c) => <span key={c} className="kchip">{c}</span>)}
-            <span className="dim" style={{ fontSize: 10 }}>— in one pasture →</span>
-            <span className="kchip" style={{ color: 'var(--amber)' }}>{r.qty}× {cap(shortId(r.output))}</span>
+          <div className={`cell${n > 0 ? (ok ? '' : ' cell-full') : ''}`} style={{ width: 74, alignSelf: 'stretch', opacity: n > 0 ? 1 : 0.35 }}
+            title={n > 0 ? (ok ? `${r.output} · L: one · ⇧: stack · R: all` : `${r.output} · inventory full`) : 'no spoils banked yet'}
+            onClick={(ev) => { if (n > 0 && ok) send('storage', 'RITUAL_PULL', { item: r.output, mode: shiftHeld(ev) ? 1 : 0 }) }}
+            onContextMenu={(ev) => { ev.preventDefault(); if (n > 0 && ok) send('storage', 'RITUAL_PULL', { item: r.output, mode: 2 }) }}>
+            <span className="ct">{compact(n)}</span>
+            <span className="nm">{shortId(r.output)}</span>
           </div>
         </div>
-      ))}
+      )})}
+      {(() => { const covered = new Set(learned.map((r) => r.output)); const orphans = lootList.filter(([id]) => !covered.has(id)); return orphans.length === 0 ? null : (<>
       <div className="row" style={{ margin: '10px 0 6px' }}>
-        <span className="h">Ritual spoils</span>
-        <span className="dim" style={{ fontSize: 10, marginLeft: 8 }}>rewards land HERE, not in Storage · L: one · ⇧: stack · R: all</span>
+        <span className="h">Unclaimed spoils</span>
+        <span className="dim" style={{ fontSize: 10, marginLeft: 8 }}>from sources you haven't discovered yet · L: one · ⇧: stack · R: all</span>
       </div>
-      {!lootList.length ? <div className="dim" style={{ fontSize: 11 }}>nothing claimed by the rituals yet</div> : (
         <div className="grid">
-          {lootList.map(([id, n]) => { const ok = canTake(id); return (
+          {orphans.map(([id, n]) => { const ok = canTake(id); return (
             <div key={id} className={`cell${ok ? '' : ' cell-full'}`} title={ok ? `${id} · L: one · ⇧: stack · R: all` : `${id} · inventory full`}
               onClick={(ev) => { if (ok) send('storage', 'RITUAL_PULL', { item: id, mode: shiftHeld(ev) ? 1 : 0 }) }}
               onContextMenu={(ev) => { ev.preventDefault(); if (ok) send('storage', 'RITUAL_PULL', { item: id, mode: 2 }) }}>
@@ -1512,7 +1550,7 @@ function RitualsTab() {
             </div>
           )})}
         </div>
-      )}
+      </>) })()}
     </div>
   )
 }

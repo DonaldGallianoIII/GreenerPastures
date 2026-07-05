@@ -42,7 +42,7 @@ public final class RitualHarvest {
      */
     public static Map<String, Integer> roll(net.minecraft.server.MinecraftServer server, java.util.UUID owner,
                                             String pastureName, CompositionReader.PastureMons mons,
-                                            PastureData pd, Random rng, int sweeps) {
+                                            PastureData pd, Random rng, int sweeps, long posKey) {
         Map<String, Integer> out = new LinkedHashMap<>();
         RitualConfig cfg = RitualSystem.config();
         if (!cfg.enabled() || mons == null || sweeps <= 0) return out;
@@ -83,6 +83,7 @@ public final class RitualHarvest {
             }
             int[] st = pd.ritualState.computeIfAbsent(r.id(), k -> new int[]{0, 0});
             Gacha.PullState state = new Gacha.PullState(st[0], st[1]).bank(sweeps);
+            int bankedBeforeRoll = state.bankedPulls();
             int hits = 0;
             if (cfg.autoPull()) {
                 Gacha.Session session = Gacha.pullAll(state, r.baseChancePercent(), r.hardPity(), r.softPityStart(), rng::nextDouble);
@@ -91,6 +92,8 @@ public final class RitualHarvest {
             }
             st[0] = state.bankedPulls();
             st[1] = state.pity();
+            int rolled = bankedBeforeRoll - state.bankedPulls();   // lifetime pulls counter (Rituals-tab QoL: proof the gacha is alive)
+            if (rolled > 0 && ledger != null && owner != null) ledger.addPulls(owner, r.id(), rolled);
             if (hits > 0) {
                 if (ledger != null && owner != null) {
                     ledger.addLoot(owner, r.outputItem(), r.outputQty() * hits);
@@ -104,6 +107,78 @@ public final class RitualHarvest {
                 GpLog.d("ritual", "pulls", "ritual", r.id(), "banked", st[0], "pity", st[1], "sweeps", sweeps);
             }
         }
+
+        // Tier 3 — SPANNING rituals (v3, Deuce 2026-07-04): the requirement evaluates against the UNION of
+        // this pasture + any OTHER pasture of the same owner (Professor's Summit: 27 starters > 16 slots, so
+        // one pasture can never do it alone). Compositions come only from REAL sweeps (a snapshot per swept
+        // pasture, ≤5 min fresh — never guess an unloaded roster); pity/banked live on the PLAYER ledger (a
+        // pair has no single home pasture); a satisfied pair banks only on the SMALLER pos's sweep so the two
+        // pastures never double-bank the same ritual.
+        if (owner != null && ledger != null) {
+            Map<Long, long[]> mine = snapshotsTime.computeIfAbsent(owner, k -> new java.util.concurrent.ConcurrentHashMap<>());
+            Map<Long, Composition> comps = snapshots.computeIfAbsent(owner, k -> new java.util.concurrent.ConcurrentHashMap<>());
+            long nowMs = System.currentTimeMillis();
+            comps.put(posKey, comp);
+            mine.put(posKey, new long[]{nowMs});
+            for (Ritual r : cfg.activeRituals().spanning()) {
+                java.util.List<Long> partners = new java.util.ArrayList<>();
+                for (Map.Entry<Long, Composition> other : comps.entrySet()) {
+                    if (other.getKey() == posKey) continue;
+                    long[] ts = mine.get(other.getKey());
+                    if (ts == null || nowMs - ts[0] > SNAPSHOT_FRESH_MS) continue;   // stale (unloaded/destroyed) → not a partner
+                    if (r.requirement().satisfiedBy(Composition.union(comp, other.getValue()))) partners.add(other.getKey());
+                }
+                if (partners.isEmpty()) continue;
+                if (ledger.learn(owner, r.id())) {
+                    com.greenerpastures.notify.Inbox.push(owner, "🗡",
+                            "RITUAL DISCOVERED — " + r.name() + " · the recipe is recorded in your Rituals tab");
+                    var online = server.getPlayerManager().getPlayer(owner);
+                    if (online != null) {
+                        online.sendMessage(net.minecraft.text.Text.literal(
+                                "§6✦ Ritual discovered: §e" + r.name() + "§6 ✦§r — its recipe is now in your Notebook."), false);
+                    }
+                    GpLog.i("ritual", "discovered", "ritual", r.id(), "owner", owner.toString(),
+                            "pasture", pastureName == null ? "?" : pastureName);
+                }
+                if (!com.greenerpastures.ritual.SpanGate.shouldBank(posKey, partners)) continue;   // the partner's sweep banks
+                int[] st = ledger.spanStateOf(owner, r.id());
+                Gacha.PullState state = new Gacha.PullState(st[0], st[1]).bank(sweeps);
+                int bankedBeforeRoll = state.bankedPulls();
+                int hits = 0;
+                if (cfg.autoPull()) {
+                    Gacha.Session session = Gacha.pullAll(state, r.baseChancePercent(), r.hardPity(), r.softPityStart(), rng::nextDouble);
+                    hits = session.hits();
+                    state = session.state();
+                }
+                st[0] = state.bankedPulls();
+                st[1] = state.pity();
+                ledger.markSpanDirty();
+                int rolled = bankedBeforeRoll - state.bankedPulls();
+                if (rolled > 0) ledger.addPulls(owner, r.id(), rolled);
+                if (hits > 0) {
+                    ledger.addLoot(owner, r.outputItem(), r.outputQty() * hits);
+                    ledger.addHits(owner, r.id(), hits);
+                    com.greenerpastures.notify.Inbox.push(owner, "🗡",
+                            r.name() + " granted " + (r.outputQty() * hits) + "× " + r.outputItem().replace("minecraft:", "").replace("cobblemon:", ""));
+                    GpLog.i("ritual", "hit", "ritual", r.id(), "hits", hits,
+                            "item", r.outputItem(), "qty", r.outputQty() * hits, "pity", st[1]);
+                } else if (GpLog.on(GpLog.Level.DEBUG)) {
+                    GpLog.d("ritual", "pulls", "ritual", r.id(), "banked", st[0], "pity", st[1], "sweeps", sweeps);
+                }
+            }
+        }
         return out;
+    }
+
+    /** Owner → (pasture pos → last-swept composition). Snapshots exist ONLY from real sweeps and expire in
+     *  {@link #SNAPSHOT_FRESH_MS} — an unloaded / destroyed / unlinked pasture silently drops out of pairing. */
+    private static final Map<java.util.UUID, Map<Long, Composition>> snapshots = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<java.util.UUID, Map<Long, long[]>> snapshotsTime = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long SNAPSHOT_FRESH_MS = 5 * 60_000L;
+
+    /** SP-statics hygiene: one JVM hosts many worlds — clear on SERVER_STARTED like every session store. */
+    public static void resetSession() {
+        snapshots.clear();
+        snapshotsTime.clear();
     }
 }

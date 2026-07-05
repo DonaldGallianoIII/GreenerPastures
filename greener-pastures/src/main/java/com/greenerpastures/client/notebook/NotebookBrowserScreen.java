@@ -305,8 +305,44 @@ public class NotebookBrowserScreen extends Screen {
 
     private ItemStack kernelStack(String tier) {
         if (tier == null || tier.isEmpty()) return ItemStack.EMPTY;
-        try { return new ItemStack(BetterPasture.ITEMS.get(BreedingTier.valueOf(tier))); }
+        try {
+            ItemStack st = new ItemStack(BetterPasture.ITEMS.get(BreedingTier.valueOf(tier)));
+            dressKernelDisplay(st);
+            return st;
+        }
         catch (Exception e) { return ItemStack.EMPTY; }
+    }
+
+    /** The slot cell is a DISPLAY stack rebuilt from the tier name — by default it'd tooltip as a fresh
+     *  kernel ("1 augment installed") while the real slotted item carries 5 (Deuce, 2026-07-04). Dress it
+     *  with the extras channel's augment map + corruption so the hover tooltip tells the truth. */
+    private static void dressKernelDisplay(ItemStack st) {
+        try {
+            String json = com.greenerpastures.client.notebook.NotebookState.pastureExtraJson;
+            if (json == null || json.isEmpty()) return;
+            var root = com.google.gson.JsonParser.parseString(json).getAsJsonObject();
+            if (!root.has("kernel")) return;
+            var k = root.getAsJsonObject("kernel");
+            if (k.has("augs")) {
+                java.util.Map<String, Integer> m = new java.util.LinkedHashMap<>();
+                for (var e : k.getAsJsonObject("augs").entrySet()) m.put(e.getKey(), e.getValue().getAsInt());
+                if (!m.isEmpty()) st.set(com.greenerpastures.pasture.breeding.GpComponents.AUGMENTS,
+                        new com.greenerpastures.pasture.breeding.Augments(m));
+            }
+            if (k.has("ev")) {
+                String[] p = k.get("ev").getAsString().split("/");
+                if (p.length == 6) st.set(com.greenerpastures.pasture.breeding.GpComponents.EV_SPREAD,
+                        new com.greenerpastures.pasture.breeding.EvSpread(
+                                Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2]),
+                                Integer.parseInt(p[3]), Integer.parseInt(p[4]), Integer.parseInt(p[5])));
+            }
+            if (k.has("corrupted") && k.get("corrupted").getAsBoolean())
+                st.set(com.greenerpastures.pasture.breeding.GpComponents.CORRUPTED, true);
+            if (k.has("corruptPairs"))
+                st.set(com.greenerpastures.pasture.breeding.GpComponents.CORRUPT_PAIRS, k.get("corruptPairs").getAsInt());
+        } catch (Throwable ignored) {
+            // display dressing must never break the overlay — worst case the tooltip shows tier defaults
+        }
     }
 
     /** Returns true if the click landed inside the panel (consume it — don't pass to the browser). Also starts a

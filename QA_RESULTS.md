@@ -161,6 +161,43 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Build path (logic-first):** the **link store + harvest-from-links backend + a `/gp harvester link|unlink|list` no-UI command** are buildable NOW (functional + testable), exactly like `/gp daemon`. The **linking GUI + linked-coords view → web-dev UI pass** (joins the deferred-UI backlog).
 - **Status:** 🗓️ design agreed — backend buildable now; GUI → web pass
 
+### BUG-009 · 🔴 CRITICAL (console bricked) · Q42–48/Q74 · Notebook black-screens once a Kernel enters the inventory
+- **Repro:** with the console previously opened kernel-less, pick up a Kernel (Daemon coincidental) → open Notebook → permanent black screen every open until MC relaunch.
+- **Root cause:** React hooks-order violation — batch 6's ⛧ CORRUPT button added `useChannel('inventory')` in `Augmenter()` AFTER the `!d`/`!d.hasKernel` early returns. Kernel-less renders = 3 hooks, first kernel render = 4 → React throws, app unmounts; the preloaded MCEF page persists across opens, so the dead root stays dead.
+- **Evidence:** no Java-side exception (JS-only crash); audit swept App.jsx — this was the sole hook-after-early-return instance.
+- **Fix:** hoisted the hook above the early returns (App.jsx:684); rebuilt UI + jar, 270 tests green; jar `74c7f3b1` deployed 2026-07-04 (replaces `60f95467`).
+- **Status:** 🚀 fix deployed — pending Deuce's in-game re-check (open console, pick up Kernel, Augmenter tab must render)
+
+### BUG-010 · 🟠 MAJOR (breeding quality) · Q21/Q44 · IV Floor always perfects HP/Atk/Def — not random
+- **Repro:** IV Floor 3 on a Kernel → every floored egg lands perfect HP/Atk/Def (Deuce noticed the pattern live, 2026-07-04).
+- **Root cause:** `CobbreedingBridge.applyIvFloor` promoted the first N non-perfect stats iterating `Stats.PERMANENT` in fixed declaration order (HP→Atk→Def→SpA→SpD→Spe) — deterministic, junk for special-attacker builds.
+- **Fix:** collect non-perfect stats → `Collections.shuffle` → promote N; still a true raise-only floor (inherited 31s count, never lowers). New DEBUG line `breeding iv_floor already:N promoted:spa,spe,…` per egg. In jar `26cac147`.
+- **Status:** 🚀 built — deploys at next exit window; verify a few floored eggs show varied perfect stats + the new log line
+
+### BUG-011 · 🟡 MINOR (UI ghost) · Q3/Q50 · Untethered mon leaves a hex-labelled ghost parent on the line graph
+- **Repro:** take a mon out of a pasture that's on a breeding line → its parent node/chip stays, labelled with a UUID fragment (e.g. "E531ec"), pair shows "can't breed" (screenshot 680, 2026-07-04).
+- **Root cause:** `PastureData.pairings` keeps the removed mon's tetheringId; the breeder skips unresolvable pairs (no gameplay harm) but nothing ever pruned the stale entry, and the UI label falls back to the raw id.
+- **Fix:** breeder scan self-heals — for LOADED pastures (authoritative roster) any pairing key not in the live tether list is dropped (`breeder pairing_pruned` DEBUG line); ghost vanishes within ~2s of removal. Unloaded pastures are never pruned (no roster-guessing). In jar `f9b38134`.
+- **Status:** 🚀 built — verify: untether a paired mon → node disappears within a couple seconds; relog persists the cleaned board
+
+### BUG-012 · 🟠 MAJOR (UI false alarm) · Q3/Q50 · All lines flip to "this pair can't breed" after ~1 min on a pasture view
+- **Repro:** stay on a pasture view >60s (Deuce hit it via a kernel unslot→augment→reslot dance) → every 2-parent line shows the ♂+♀/Ditto warning despite valid pairs; refocusing fixes it for another minute.
+- **Root cause:** the 1-min prefetch re-warm (`prefetchConfigs`, stats-less roster shape by design) includes the FOCUSED pasture; `applyPastureConfig`'s guard only blocked cross-pasture hijacks, so the same-pos prefetch replaced the live config → `MonEntry.stats` (gender) blank → `pairValid` false on every line. Not kernel-related — kernel cycling just kept him on the view past the sweep boundary.
+- **Fix:** client stale-while-revalidate backfill — a stats-less incoming roster entry inherits the cached entry's stats (by tethering id); entries arriving WITH stats always win. Cache and live view both upgraded. In jar `47f0909d`.
+- **Status:** 🚀 built — verify: sit on a pasture view 2+ min → warnings never appear on valid pairs; kernel out→edit→in keeps lines intact
+
+### BUG-013 · 🔴 CRITICAL (economy exploit) · Q80/Q57 · Kernels stack — one augment payment upgrades the whole stack
+- **Repro:** hold a stack of same-tier kernels → Augmenter APPLY → the component write lands on the ItemStack = ALL N kernels augmented for one GPU fee (Deuce caught it testing the target selector, 2026-07-04). Same holds for corruption.
+- **Root cause:** `BreedingUpgradeItem` registered `maxCount(16)`; augments/corruption are stack-wide data-component writes.
+- **Fix:** `maxCount(1)` — kernels can never stack (matches Notebook/Daemon). Pre-existing stacks in a world split on first interaction (vanilla behavior); their shared components were already identical so nothing is lost. In jar `8a723694`.
+- **Status:** 🚀 built — verify post-swap: kernels refuse to stack (craft 2 coppers → 2 slots); augment applies to exactly the one targeted kernel
+
+### BUG-014 · 🟡 MINOR (display lie) · Q77/Q48 · Slotted kernel's hover tooltip shows tier defaults, not its real augments
+- **Repro:** slot an augmented kernel → hover its cell in the pasture view's inventory overlay → "1 augment installed · +1.50% drop rate" (fresh-kernel tooltip) while the real item carries 5 (screenshots 684/685, Deuce 2026-07-04).
+- **Root cause:** the overlay's kernel cell is a display stack rebuilt client-side from just the TIER name (`new ItemStack(tier item)`) — default components. Server-side stack (and breeding) always had the real augments; remove returned them intact.
+- **Fix:** extras channel now carries the slotted kernel's full augment map + EV spread + corruption; the client dresses the display stack with those components, so `appendTooltip` renders truth. Fail-soft (dressing errors → tier defaults, never a broken overlay). In jar `9300b866`.
+- **Status:** 🚀 built — verify post-swap: hover slotted augmented kernel → same tooltip as when held
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …

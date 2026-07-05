@@ -24,5 +24,6 @@
   "item.greenerpastures.data_disk_rocket": "Illicit Data Disk",
   "item.greenerpastures.field_guide": "Field Guide — A Data Science Mod",
   "itemGroup.greenerpastures": "Greener Pastures",
-  "item.greenerpastures.ultra_compressed_snack": "Ultra Compressed Snack"
+  "item.greenerpastures.ultra_compressed_snack": "Ultra Compressed Snack",
+  "item.greenerpastures.snack_repel": "Snack Repel"
 }

@@ -40,10 +40,24 @@ public final class GpLog {
 
     public enum Level { TRACE, DEBUG, INFO, WARN, ERROR }
 
-    /** True when the one dev/QA switch is on ({@code -Dgreenerpastures.qa=true} or env {@code GP_QA=true}):
-     *  enables the QA commands AND defaults the log to DEBUG — one flag for a test instance. */
-    public static final boolean QA_MODE =
-            Boolean.getBoolean("greenerpastures.qa") || "true".equalsIgnoreCase(System.getenv("GP_QA"));
+    /** True when the one dev/QA switch is on: {@code -Dgreenerpastures.qa=true}, env {@code GP_QA=true},
+     *  or a {@code config/greenerpastures/qa.flag} marker file in the game dir. Enables the QA commands
+     *  AND defaults the log to DEBUG — one flag for a test instance. The marker file exists because
+     *  CurseForge rewrites {@code minecraftinstance.json} from its internal DB at launch, silently
+     *  discarding JVM args set any way other than its own UI. */
+    public static final boolean QA_MODE = computeQaMode();
+
+    private static boolean computeQaMode() {
+        if (Boolean.getBoolean("greenerpastures.qa")) return true;
+        if ("true".equalsIgnoreCase(System.getenv("GP_QA"))) return true;
+        try {
+            return java.nio.file.Files.exists(
+                    net.fabricmc.loader.api.FabricLoader.getInstance().getGameDir()
+                            .resolve("config").resolve("greenerpastures").resolve("qa.flag"));
+        } catch (Throwable headlessOrNoLoader) {
+            return false;
+        }
+    }
 
     /** Calls below this level are dropped cheaply. RELEASE default is INFO (players shouldn't pay for our
      *  per-sweep DEBUG trail); QA mode or {@code -Dgp.log.level} restores DEBUG. */

@@ -76,6 +76,7 @@ public final class GreenerPastures implements ModInitializer {
         // ritual/ — load the custom-drop config (type-drops + gacha rituals) the Harvester reads
         RitualSystem.init();
         com.greenerpastures.ritual.UltraCompressedSnackRecipe.init();   // N poke snacks → one merged mega-bait (Deuce spec)
+        com.greenerpastures.ritual.SnackRepelChargeRecipe.init();       // can + typed berries → charged Snack Repel (Overdrive pt.1)
 
         // notebook/ — block-free harvest: owned (Notebook-linked) pastures roll drops → owner's Notebook storage
         // (replaces the Harvester block for owned pastures; the block stands down for them to avoid double-dip).
@@ -102,6 +103,7 @@ public final class GreenerPastures implements ModInitializer {
             com.greenerpastures.notebook.PastureHarvest.testIntervalTicks = 0L;             // QA harvest override
             com.greenerpastures.notify.Inbox.clearAll();                                     // console Inbox notes
             com.greenerpastures.core.GpProf.reset();                                          // fresh perf window per world
+            com.greenerpastures.drops.RitualHarvest.resetSession();                            // spanning-ritual pasture snapshots
         });
 
         // DISCONNECT pruning (perf-audit R3 #5): session maps stay bounded by ONLINE players on a 24/7 server.

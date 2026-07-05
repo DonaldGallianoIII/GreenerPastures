@@ -31,7 +31,9 @@ public final class RitualLedger extends PersistentState {
     private static final class Entry {
         final Set<String> learned = new HashSet<>();
         final Map<String, Long> hits = new HashMap<>();
+        final Map<String, Long> pulls = new HashMap<>();   // lifetime gacha pulls rolled — the "it's still working" counter
         final Map<String, Long> loot = new LinkedHashMap<>();
+        final Map<String, int[]> spanState = new HashMap<>();   // spanning rituals: {banked, pity} per ritual — PLAYER-level (a pasture pair has no single home)
     }
 
     private Entry of(UUID player) {
@@ -65,6 +67,25 @@ public final class RitualLedger extends PersistentState {
         Entry e = players.get(player);
         return e == null ? 0L : e.hits.getOrDefault(ritualId, 0L);
     }
+
+    public void addPulls(UUID player, String ritualId, int n) {
+        if (n <= 0) return;
+        of(player).pulls.merge(ritualId, (long) n, Long::sum);
+        markDirty();
+    }
+
+    public long pullsOf(UUID player, String ritualId) {
+        Entry e = players.get(player);
+        return e == null ? 0L : e.pulls.getOrDefault(ritualId, 0L);
+    }
+
+    /** Mutable {banked, pity} for a SPANNING ritual — caller mutates in place then {@link #markDirty()}s
+     *  (same contract as {@code PastureData.ritualState}, just player-scoped). */
+    public int[] spanStateOf(UUID player, String ritualId) {
+        return of(player).spanState.computeIfAbsent(ritualId, k -> new int[]{0, 0});
+    }
+
+    public void markSpanDirty() { markDirty(); }
 
     public void addLoot(UUID player, String itemId, int n) {
         if (n <= 0) return;
@@ -101,6 +122,12 @@ public final class RitualLedger extends PersistentState {
             NbtCompound hits = new NbtCompound();
             e.hits.forEach(hits::putLong);
             c.put("hits", hits);
+            NbtCompound pulls = new NbtCompound();
+            e.pulls.forEach(pulls::putLong);
+            c.put("pulls", pulls);
+            NbtCompound span = new NbtCompound();
+            e.spanState.forEach(span::putIntArray);
+            c.put("spanState", span);
             NbtCompound loot = new NbtCompound();
             e.loot.forEach(loot::putLong);
             c.put("loot", loot);
@@ -121,6 +148,13 @@ public final class RitualLedger extends PersistentState {
                 for (NbtElement el : c.getList("learned", NbtElement.STRING_TYPE)) e.learned.add(el.asString());
                 NbtCompound hits = c.getCompound("hits");
                 for (String id : hits.getKeys()) e.hits.put(id, hits.getLong(id));
+                NbtCompound pulls = c.getCompound("pulls");   // absent on pre-pulls saves → empty → 0 (back-compat)
+                for (String id : pulls.getKeys()) e.pulls.put(id, pulls.getLong(id));
+                NbtCompound span = c.getCompound("spanState");
+                for (String id : span.getKeys()) {
+                    int[] st = span.getIntArray(id);
+                    if (st.length == 2) e.spanState.put(id, st);
+                }
                 NbtCompound loot = c.getCompound("loot");
                 for (String id : loot.getKeys()) e.loot.put(id, loot.getLong(id));
             } catch (IllegalArgumentException ignored) { }

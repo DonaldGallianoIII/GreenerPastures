@@ -297,16 +297,23 @@ public final class CobbreedingBridge {
                 return;
             }
             int already = 0;
+            List<Stat> candidates = new ArrayList<>();      // the not-yet-perfect stats, promotion pool
             for (Stat s : Stats.Companion.getPERMANENT()) {
                 Integer v = ivs.get(s);
                 if (v != null && v >= 31) already++;
+                else candidates.add(s);
             }
             int need = count - already;                     // inheritance may already satisfy the floor
-            for (Stat s : Stats.Companion.getPERMANENT()) {
+            if (need <= 0) return;
+            java.util.Collections.shuffle(candidates);      // WHICH stats hit 31 must be random — fixed PERMANENT order made every floored egg HP/Atk/Def (Deuce, QA 2026-07-04)
+            List<String> promoted = new ArrayList<>();
+            for (Stat s : candidates) {
                 if (need <= 0) break;
-                Integer v = ivs.get(s);
-                if (v == null || v < 31) { ivs.set(s, 31); need--; }
+                ivs.set(s, 31); need--;
+                promoted.add(s.getShowdownId());
             }
+            GpLog.d("breeding", "iv_floor", "species", String.valueOf(eggData.getSpecies()),
+                    "already", already, "promoted", String.join(",", promoted));
         } catch (Throwable t) {
             // egg-shaping must never abort egg-gen
         }
@@ -329,6 +336,9 @@ public final class CobbreedingBridge {
             setEv(evs, Stats.SPECIAL_ATTACK, spread.spa());
             setEv(evs, Stats.SPECIAL_DEFENCE, spread.spd());
             setEv(evs, Stats.SPEED, spread.spe());
+            GpLog.d("breeding", "ev_spread", "species", String.valueOf(eggData.getSpecies()),
+                    "evs", spread.hp() + "/" + spread.atk() + "/" + spread.def() + "/"
+                            + spread.spa() + "/" + spread.spd() + "/" + spread.spe());
         } catch (Throwable t) {
             // egg-shaping must never abort egg-gen
         }

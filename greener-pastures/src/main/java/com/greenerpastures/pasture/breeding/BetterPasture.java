@@ -56,7 +56,9 @@ public final class BetterPasture {
         for (BreedingTier tier : BreedingTier.values()) {
             Augments kernelBase = Augments.NONE.withLevel(AugmentFunction.DROP_RATE, tier.baseDropRateCentipercent());
             BreedingUpgradeItem item = new BreedingUpgradeItem(tier,
-                    new Item.Settings().maxCount(16).component(GpComponents.AUGMENTS, kernelBase));
+                    // maxCount 1 — NEVER stackable (BUG-013): augments/corruption are stack-wide component
+                    // writes, so a stack of 16 kernels would all get augmented for one GPU payment.
+                    new Item.Settings().maxCount(1).component(GpComponents.AUGMENTS, kernelBase));
             Registry.register(Registries.ITEM, Identifier.of(GreenerPastures.MOD_ID, "breeding_upgrade_" + tier.id()), item);
             ITEMS.put(tier, item);
         }

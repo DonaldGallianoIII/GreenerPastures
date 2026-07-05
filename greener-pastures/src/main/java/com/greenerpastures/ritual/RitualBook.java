@@ -18,7 +18,17 @@ public record RitualBook(boolean enabled, List<Ritual> rituals) {
         if (!enabled) return List.of();
         List<Ritual> out = new ArrayList<>();
         for (Ritual r : rituals) {
-            if (r != null && r.enabled() && r.requirement().satisfiedBy(composition)) out.add(r);
+            if (r != null && r.enabled() && r.pastureSpan() == 1 && r.requirement().satisfiedBy(composition)) out.add(r);
+        }
+        return out;
+    }
+
+    /** The enabled spanning rituals (pastureSpan > 1) — evaluated against pasture-pair UNIONS, not one composition. */
+    public List<Ritual> spanning() {
+        if (!enabled) return List.of();
+        List<Ritual> out = new ArrayList<>();
+        for (Ritual r : rituals) {
+            if (r != null && r.enabled() && r.pastureSpan() > 1) out.add(r);
         }
         return out;
     }
