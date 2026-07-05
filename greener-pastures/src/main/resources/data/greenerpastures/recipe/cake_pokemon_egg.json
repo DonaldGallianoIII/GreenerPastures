@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "food",
+  "group": "cake",
+  "pattern": [
+    "mmm",
+    "ses",
+    "www"
+  ],
+  "key": {
+    "m": {
+      "item": "minecraft:milk_bucket"
+    },
+    "s": {
+      "item": "minecraft:sugar"
+    },
+    "e": {
+      "tag": "c:eggs"
+    },
+    "w": {
+      "item": "minecraft:wheat"
+    }
+  },
+  "result": {
+    "id": "minecraft:cake",
+    "count": 1
+  }
+}
