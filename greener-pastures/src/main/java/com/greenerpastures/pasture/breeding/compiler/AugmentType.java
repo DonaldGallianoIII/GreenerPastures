@@ -90,7 +90,7 @@ public enum AugmentType {
         if (a == null) return 0;
         int stored = a.level(function);
         if (function.selector) return stored > 0 ? 1 : 0;
-        return levelOf(stored - baseOf(kernel), value, valueAt(2), maxLevel());
+        return levelOf(stored - baseOf(kernel), value, valueAt(2), valueAt(3), maxLevel());
     }
 
     /** The Kernel's born-with magnitude for this function (only DROP_RATE has one). */
@@ -99,16 +99,29 @@ public enum AugmentType {
         return kernel.getItem() instanceof BreedingUpgradeItem bu ? bu.tier().baseDropRateCentipercent() : 0;
     }
 
-    /** PURE level math (headless-tested): effective magnitude → 0/1/2 against the two tier values. */
-    public static int levelOf(int effectiveMagnitude, int v1, int v2, int maxLevel) {
+    /** PURE level math (headless-tested): effective magnitude → 0/1/2/3. Level III is CORRUPTION-ONLY
+     *  (Deuce 2026-07-05): {@code maxLevel} stays 2 for the Augmenter, but a Vaal-blessed kernel can carry
+     *  III - detection must still read it. */
+    public static int levelOf(int effectiveMagnitude, int v1, int v2, int v3, int maxLevel) {
+        if (maxLevel > 1 && effectiveMagnitude >= v3) return 3;
         if (maxLevel > 1 && effectiveMagnitude >= v2) return 2;
         return effectiveMagnitude >= v1 ? 1 : 0;
     }
+
+    /** The absolute ceiling INCLUDING the corruption-only tier III. */
+    public static final int CORRUPT_MAX_LEVEL = 3;
 
     /** Level-II magnitude: 1.5× level I (Deuce 2026-07-05). Speed/Hatch use their native level curves;
      *  IV Floor rounds DOWN (4, not 5) so perfection stays a chase. */
     public int valueAt(int level) {
         if (level <= 1) return value;
+        if (level >= 3) {                               // TIER III - corruption-only (2× base; the glitch pays)
+            return switch (this) {
+                case SPEED, HATCH -> 3;                 // native curves: ×3 cadence · ×0.1 hatch time
+                case IV_FLOOR     -> 5;                 // never 6 - perfection stays a chase even corrupted
+                default           -> value * 2;         // shiny 60 · drop_rate +4.00% · yield 2×... see note
+            };
+        }
         return switch (this) {
             case SPEED, HATCH -> 2;                     // native curves: ×2 cadence · ×0.25 hatch time
             case IV_FLOOR     -> 4;                     // 4.5 floored

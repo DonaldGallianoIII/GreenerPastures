@@ -57,6 +57,7 @@ public class DataDiskItem extends Item {
         if (value > 0) {
             tooltip.add(Text.literal("Holds " + String.format("%,d", value) + " Data").formatted(Formatting.AQUA));
             tooltip.add(Text.literal("Right-click to load it onto your balance").formatted(Formatting.DARK_GRAY));
+            tooltip.add(Text.literal("drops on death - Data is safer in your account").formatted(Formatting.DARK_GRAY));
         } else {
             tooltip.add(Text.literal("Blank media").formatted(Formatting.GRAY));
             tooltip.add(Text.literal("Write Data onto it from the Notebook's Dashboard").formatted(Formatting.DARK_GRAY));

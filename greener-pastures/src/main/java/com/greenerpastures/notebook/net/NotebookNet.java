@@ -98,15 +98,18 @@ public final class NotebookNet {
     }
 
     /** Player left - drop their gate/prefetch state (unbounded-per-player maps on 24/7 servers, R3 #5/F11). */
+    private static final Map<UUID, Long> lastBiobankFlatten = new java.util.concurrent.ConcurrentHashMap<>();
+
     public static void onDisconnect(UUID player) {
         lastPush.remove(player);
         lastPrefetch.remove(player);
         augTargetSlot.remove(player);
         daemonTargetSlot.remove(player);
+        lastBiobankFlatten.remove(player);
     }
 
     /** Reset per-server-session state - called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -584,14 +587,16 @@ public final class NotebookNet {
                 return;
             }
             com.cobblemon.mod.common.pokemon.Pokemon mon = com.greenerpastures.glitch.Missingno.create();
-            boolean accepted = com.cobblemon.mod.common.util.PlayerExtensionsKt.party(player).add(mon);
-            if (!accepted) accepted = com.cobblemon.mod.common.util.PlayerExtensionsKt.pc(player).add(mon);
+            boolean toParty = com.cobblemon.mod.common.util.PlayerExtensionsKt.party(player).add(mon);
+            boolean accepted = toParty || com.cobblemon.mod.common.util.PlayerExtensionsKt.pc(player).add(mon);
             if (!accepted) {
                 player.sendMessage(Text.literal("§c[Greener Pastures]§r Party and PC are full - the glitch has nowhere to manifest."), false);
                 return;
             }
             ds.claimMissingno(player.getUuid());
-            player.sendMessage(Text.literal("§d§kAB§r §5M̸i̷s̶s̴i̵n̷g̸N̵o̶. joins you.§r §d§kAB§r"), false);
+            player.sendMessage(Text.literal(toParty
+                    ? "§d§kAB§r §5M̸i̷s̶s̴i̵n̷g̸N̵o̶. joins your party.§r §d§kAB§r"
+                    : "§d§kAB§r §5M̸i̷s̶s̴i̵n̷g̸N̵o̶. manifested in your PC§r §7(party was full)§r. §d§kAB§r"), false);
             com.greenerpastures.notify.Inbox.push(player.getUuid(), "▓", "MissingNo. manifested - one million rendered.");
             GpLog.i("missingno", "summon", "player", player.getUuid().toString(),
                     "lifetime", Long.toString(ds.lifetimeEarnedOf(player.getUuid())),
@@ -767,14 +772,15 @@ public final class NotebookNet {
         return at.function.cls == com.greenerpastures.economy.TetherClass.QUALITY ? GPU_QUALITY : GPU_THROUGHPUT;
     }
 
-    /** Consume {@code n} GPUs from the player's main+offhand (manual decrement - never trust insertStack-style
-     *  seams; mirrors pull()). Returns false (and consumes nothing) if they hold fewer than {@code n}. */
+    /** Consume {@code n} GPUs from the player's MAIN inventory only (review u9: the offhand is a deliberate
+     *  parking spot - spending from it surprised players). Manual decrement - never trust insertStack-style
+     *  seams; mirrors pull(). Returns false (and consumes nothing) if they hold fewer than {@code n}. */
     private static boolean consumeGpu(ServerPlayerEntity player, int n) {
         if (n <= 0) return true;
         if (countGpu(player) < n) return false;
         PlayerInventory inv = player.getInventory();
         int left = n;
-        for (var list : java.util.List.of(inv.main, inv.offHand)) {
+        for (var list : java.util.List.of(inv.main)) {
             for (int i = 0; i < list.size() && left > 0; i++) {
                 ItemStack st = list.get(i);
                 if (!st.isOf(GpItems.GPU)) continue;
@@ -1231,6 +1237,12 @@ public final class NotebookNet {
         // Rev gate BEFORE assembly: flattening a hoard-scale bank (thousands of eggs → cards + entries) every
         // second was the single biggest per-viewer cost (R3 F1/F2). Unchanged bank → nothing at all happens.
         if (!changed(player, "biobank_rev", bank == null ? -1L : bank.rev())) return;
+        // 5s floor on top of the rev gate (review M2): during ACTIVE breeding the rev bumps every second,
+        // re-flattening a hoard-scale bank per second per viewer. Freshness within 5s is plenty for a tab.
+        long nowMs = System.currentTimeMillis();
+        Long lastFlat = lastBiobankFlatten.get(player.getUuid());
+        if (lastFlat != null && nowMs - lastFlat < 5_000L) return;
+        lastBiobankFlatten.put(player.getUuid(), nowMs);
         List<NotebookBioBankS2C.Entry> entries = new ArrayList<>();
         try (var span = com.greenerpastures.core.GpProf.begin("net.biobank_flatten")) {
             if (bank != null) {
@@ -1332,6 +1344,23 @@ public final class NotebookNet {
             o.addProperty("qty", r.outputQty());
             o.addProperty("hits", ledger.hitsOf(player.getUuid(), r.id()));
             o.addProperty("pulls", ledger.pullsOf(player.getUuid(), r.id()));
+            // Pity is the whole APEX safety net - surface it (review: it was invisible). Single-pasture
+            // rituals report the MAX pity across the player's pastures; spanning ones read the ledger.
+            int pity = 0;
+            if (r.pastureSpan() > 1) {
+                pity = ledger.spanStateOf(player.getUuid(), r.id())[1];
+            } else {
+                for (var w : server.getWorlds()) {
+                    for (var pdEntry : com.greenerpastures.pasture.breeding.PastureRegistry.get(server).inWorld(w).entrySet()) {
+                        var pd = pdEntry.getValue();
+                        if (!player.getUuid().equals(pd.owner)) continue;
+                        int[] st = pd.ritualState.get(r.id());
+                        if (st != null && st.length == 2) pity = Math.max(pity, st[1]);
+                    }
+                }
+            }
+            o.addProperty("pity", pity);
+            o.addProperty("hardPity", r.hardPity());
             if (r.pastureSpan() > 1) o.addProperty("span", r.pastureSpan());
             if (!r.outputPool().isEmpty()) o.addProperty("pool", true);
             if (!r.requirement().groupMinCounts().isEmpty()) {
@@ -1413,10 +1442,10 @@ public final class NotebookNet {
             player.sendMessage(Text.literal("§5⛧§r Already corrupted - the disk finds nothing left to take."), false);
             return;
         }
-        // consume exactly one Illicit Data Disk from main+offhand
+        // consume exactly one Illicit Data Disk from the MAIN inventory (offhand = parking spot, review u9)
         var inv = player.getInventory();
         boolean paid = false;
-        for (var list : java.util.List.of(inv.main, inv.offHand)) {
+        for (var list : java.util.List.of(inv.main)) {
             for (int i = 0; i < list.size() && !paid; i++) {
                 if (list.get(i).isOf(GpItems.DISK_ROCKET)) { list.get(i).decrement(1); paid = true; }
             }
@@ -1445,13 +1474,15 @@ public final class NotebookNet {
                 for (int i = 0; i < pool.length; i++) {
                     AugmentType cand = pool[(start + i) % pool.length];
                     int cur = cand.installedLevelOn(out);
-                    if (cur < cand.maxLevel()) { gift = cand; giftLevel = cur + 1; break; }
+                    if (cur < AugmentType.CORRUPT_MAX_LEVEL && cand.maxLevel() > 1) { gift = cand; giftLevel = cur + 1; break; }
+                    if (cur < 1) { gift = cand; giftLevel = 1; break; }   // binaries: install if absent
                 }
                 if (gift == null) {
                     detail = "the blessing found nothing left to improve";
                 } else {
                     out = gift.apply(out, gift.storedValueFor(out, giftLevel));
-                    detail = gift.effectSummary() + (giftLevel > 1 ? " §7(upgraded to II beyond capacity)§r"
+                    detail = gift.effectSummary() + (giftLevel >= 3 ? " §7(TIER III - the glitch's gift)§r"
+                            : giftLevel == 2 ? " §7(upgraded to II beyond capacity)§r"
                             : " §7(installed beyond capacity)§r");
                 }
             }
@@ -1464,9 +1495,37 @@ public final class NotebookNet {
                             .withLevel(com.greenerpastures.economy.AugmentFunction.DROP_RATE, doubled));
                     detail = "its drop-rate mod DOUBLED (" + String.format("%.2f", doubled / 100.0) + "%)";
                 } else {
-                    Integer bonus = out.get(GpComponents.CORRUPT_PAIRS);
-                    out.set(GpComponents.CORRUPT_PAIRS, (bonus == null ? 0 : bonus) + 1);
-                    detail = "+1 breeding pair - beyond its tier";
+                    BreedingTier wildTier = ((BreedingUpgradeItem) out.getItem()).tier();
+                    if (wildTier == BreedingTier.GREENER) {
+                        // +1 pair is IMPOSSIBLE on a Greener (8-pair board cap, 16-mon roster - review M3).
+                        // Deuce's replacement: WILD pushes one installed augment a tier past the mortal
+                        // ceiling instead (up to the corruption-only III).
+                        AugmentType pushed = null;
+                        int pushedTo = 0;
+                        for (AugmentType cand : AugmentType.values()) {
+                            if (cand.maxLevel() <= 1) continue;
+                            int cur = cand.installedLevelOn(out);
+                            if (cur >= 1 && cur < AugmentType.CORRUPT_MAX_LEVEL
+                                    && (pushed == null || cur > pushed.installedLevelOn(out))) {
+                                pushed = cand; pushedTo = cur + 1;
+                            }
+                        }
+                        if (pushed != null) {
+                            out = pushed.apply(out, pushed.storedValueFor(out, pushedTo));
+                            detail = pushed.effectSummary() + " §7(WILD - pushed to tier " + pushedTo + ")§r";
+                        } else {
+                            Augments aw = out.get(GpComponents.AUGMENTS);
+                            int curDr = aw == null ? 0 : aw.level(com.greenerpastures.economy.AugmentFunction.DROP_RATE);
+                            int doubledDr = Math.max(1, curDr) * 2;
+                            out.set(GpComponents.AUGMENTS, (aw == null ? Augments.NONE : aw)
+                                    .withLevel(com.greenerpastures.economy.AugmentFunction.DROP_RATE, doubledDr));
+                            detail = "its drop-rate mod DOUBLED (" + String.format("%.2f", doubledDr / 100.0) + "%)";
+                        }
+                    } else {
+                        Integer bonus = out.get(GpComponents.CORRUPT_PAIRS);
+                        out.set(GpComponents.CORRUPT_PAIRS, (bonus == null ? 0 : bonus) + 1);
+                        detail = "+1 breeding pair - beyond its tier";
+                    }
                 }
             }
             case NOTHING -> detail = "";
@@ -1480,7 +1539,7 @@ public final class NotebookNet {
                     BreedingTier tier = ((BreedingUpgradeItem) out.getItem()).tier();
                     BreedingTier lower = tier.ordinal() == 0 ? tier : BreedingTier.values()[tier.ordinal() - 1];
                     out = new ItemStack(com.greenerpastures.pasture.breeding.BetterPasture.ITEMS.get(lower));
-                    detail = "the Kernel DEGRADED to " + lower.name();
+                    detail = "the Kernel DEGRADED to " + lower.name() + " - its augments went with it";
                 }
             }
         }
@@ -1499,8 +1558,7 @@ public final class NotebookNet {
     private static int countGpu(ServerPlayerEntity player) {
         PlayerInventory inv = player.getInventory();
         int n = 0;
-        for (ItemStack s : inv.main) if (s.isOf(GpItems.GPU)) n += s.getCount();
-        for (ItemStack s : inv.offHand) if (s.isOf(GpItems.GPU)) n += s.getCount();
+        for (ItemStack s : inv.main) if (s.isOf(GpItems.GPU)) n += s.getCount();   // main only - the offhand is a parking spot (review u9)
         return n;
     }
 

@@ -272,7 +272,13 @@ const shortId = (id) => (id || '').split(':').pop().replace(/_/g, ' ')
 const fmtTime = (s) => (s < 60 ? `${s}s` : s < 3600 ? `${(s / 60) | 0}m` : s < 86400 ? `${(s / 3600) | 0}h` : `${(s / 86400) | 0}d`)
 
 export default function App() {
-  const [tab, setTab] = useState('biobank')
+  const [tab, setTab] = useState(() => {
+    try {   // a brand-new player's FIRST-ever open lands on the Guide (review C1: the old landing was an
+            // empty BioBank full of undefined jargon); every later open goes straight to work.
+      if (!localStorage.getItem('gp_seen_guide')) { localStorage.setItem('gp_seen_guide', '1'); return 'guide' }
+    } catch (e) { /* storage unavailable - fall through */ }
+    return 'biobank'
+  })
   const active = TABS.find((t) => t.id === tab)
   const pcfg = useChannel('pastureConfig')      // set when a pasture is right-clicked with the Notebook
   const focused = pcfg?.present
@@ -582,7 +588,7 @@ function Pastures() {
   const list = d?.pastures || []
   const health = d?.health || {}
   const flagsOf = (x) => { const csv = health[`${x.dim}|${x.pos}`]; return csv ? csv.split(',') : [] }
-  if (!list.length) return <Empty title="No pastures tracked" msg="open a pasture in-world (right-click with the wand) to monitor it here" />
+  if (!list.length) return <Empty title="No pastures tracked" msg="right-click a pasture in-world with your Notebook to monitor it here" />
   const p = list[Math.min(sel, list.length - 1)]
   const pFlags = flagsOf(p)
   return (
@@ -754,7 +760,7 @@ function Augmenter() {
           return (
             <div key={a.type} className={`brow${lvl > 0 ? ' on' : ''}`}>
               <span style={{ color: lvl > 0 ? 'var(--text)' : 'var(--muted)', flex: 1 }}>
-                {a.label}{lvl >= 2 && <span className="cyn mono" style={{ fontSize: 10 }} title="level II - 1.5× effect · 3 slots"> II</span>}
+                {a.label}{lvl === 2 && <span className="cyn mono" style={{ fontSize: 10 }} title="level II - 1.5× effect · 3 slots"> II</span>}{lvl >= 3 && <span className="mono" style={{ fontSize: 10, color: '#c77dff' }} title="TIER III - corruption-only"> ⛧III</span>}
               </span>
               {chip && <span className="augval" title="current setting">{chip}</span>}
               <span className="dim mono" style={{ fontSize: 10 }} title={lvl === 1 && canUpgrade ? 'level II occupies 3 slots total' : ''}>{a.slotCost} slot{a.slotCost !== 1 ? 's' : ''}</span>
@@ -890,6 +896,7 @@ function MissingnoCard() {
   const d = useChannel('dashboard')
   const life = d?.lifetimeEarned ?? 0
   const claimable = d?.mnClaimable ?? 0
+  if (life <= 0 && claimable <= 0) return null   // zalgo noise means nothing to a day-one player (review U8)
   const prog = Math.max(0, Math.min(1, d?.mnProgress ?? 0))
   return (
     <div className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 10 }}>
@@ -1286,8 +1293,16 @@ function DaemonGraph({ cfg }) {
     commit({ ...doc, threads: threads.map((t) => {
       if (t.id === active.id) {
         // a pair shares its egg stream - auto-wire the new parent to whatever the existing parent already feeds
-        const targets = [...new Map((t.edges || []).filter((e) => { const fn = (t.nodes || []).find((n) => n.id === e.from); return fn && fn.type === 'MON' && e.fromPort === 'eggs' }).map((e) => [e.to + '/' + e.toPort, { to: e.to, toPort: e.toPort }])).values()]
-        return { ...t, nodes: [...(t.nodes || []), { id: mid, type: 'MON', monId, x: 26, y: 20 + cnt * 76 }], edges: [...(t.edges || []), ...targets.map((s) => ({ from: mid, fromPort: 'eggs', to: s.to, toPort: s.toPort }))] }
+        let targets = [...new Map((t.edges || []).filter((e) => { const fn = (t.nodes || []).find((n) => n.id === e.from); return fn && fn.type === 'MON' && e.fromPort === 'eggs' }).map((e) => [e.to + '/' + e.toPort, { to: e.to, toPort: e.toPort }])).values()]
+        let extraNodes = []
+        if (targets.length === 0) {
+          // review M3: an unwired line silently stalled eggs in the tray. First parent auto-creates a
+          // BioBank sink and wires to it - the safe default (keep everything); reroute freely after.
+          let sink = (t.nodes || []).find((n) => n.type === 'SINK_BIOBANK')
+          if (!sink) { sink = { id: 'sink:auto', type: 'SINK_BIOBANK', x: 320, y: 60 }; extraNodes.push(sink) }
+          targets = [{ to: sink.id, toPort: 'in' }]
+        }
+        return { ...t, nodes: [...(t.nodes || []), ...extraNodes, { id: mid, type: 'MON', monId, x: 26, y: 20 + cnt * 76 }], edges: [...(t.edges || []), ...targets.map((s) => ({ from: mid, fromPort: 'eggs', to: s.to, toPort: s.toPort }))] }
       }
       if ((t.nodes || []).some((n) => n.id === mid)) return { ...t, nodes: t.nodes.filter((n) => n.id !== mid), edges: (t.edges || []).filter((e) => e.from !== mid && e.to !== mid) }
       return t
@@ -1668,6 +1683,17 @@ silently: shiny or unreadable eggs are ALWAYS kept, and the void log shows every
   ['🏦 BioBank & the Graph', `The BioBank holds 256 eggs per species as data - sort by IVs, shininess, stats.
 The node graph (per breeding line) decides each egg's fate: IV/EV/nature/shiny filters → keep or render.
 Withdrawing checks your inventory first; the bank never deletes.`],
+  ['🍰 Snack Science', `ULTRA COMPRESSED SNACK: craft several poke snacks together - up to 9 effects, 6 copies
+each. SNACK REPEL: craft a can (6 glass + 2 iron ingots + nether wart), charge it with 1-6 berries of the type
+you DON'T want, then bake the charged can into an Ultra snack - that type's snack spawns divide by the charge.
+The snack's lore always tells the true spawn speed.`],
+  ['📦 Key recipes', `NOTEBOOK: 5 copper + book + 2 redstone + amethyst (one is gifted on first join; extras share
+the SAME storage and Data - it's an account, not a container).  COPPER KERNEL: 4 copper blocks corners + 4 quartz
+blocks + blank Data Disk center; wrap a kernel in iron/gold/diamond blocks to upgrade it.  BLANK DATA DISK:
+2 iron + quartz block + redstone + paper.  GPU: 4 quartz blocks + 2 redstone blocks + 2 iron blocks + kilobyte
+disk.  DAEMON: echo shard + 2 amethyst + GPU + megabyte disk.  SOUL TETHER: 3 amethyst + echo shard + string.
+SPECIMEN DISK: blank disk + amethyst shard + echo shard. Echo + amethyst drop from Ghost/Dark and
+Fairy/Psychic/Rock pastures.`],
   ['⛏ Harvest & Rituals', `Linked pastures trickle each mon's own Cobblemon drop table on a one-minute clock -
 no combat needed. Type-drops and gacha rituals (composition-gated, with pity) make a Cobblemon-only world fully
 farmable. Rates are baked into the mod ON PURPOSE: no server config can zero your drops and sell them back.`],
@@ -1680,7 +1706,7 @@ function GuideTab() {
   return (
     <div className="pane" style={{ overflow: 'auto' }}>
       <div className="h" style={{ marginBottom: 4 }}>Field Guide</div>
-      <div className="dim" style={{ fontSize: 11, marginBottom: 10 }}>everything the Notebook does, in one page - right-click the Field Guide item to come back here</div>
+      <div className="dim" style={{ fontSize: 11, marginBottom: 10 }}>the Notebook's core loops, in one page - this tab is always here when you need it</div>
       {GUIDE.map(([title, body]) => (
         <div key={title} className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8 }}>
           <div className="grn" style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>{title}</div>

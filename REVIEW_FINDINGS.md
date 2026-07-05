@@ -10,7 +10,20 @@ Full agent reports summarized + deduped. Status column tracks fixes.
 | C3 | BLESSED corruption overwrote installed augments with level I - could DOWNGRADE a level-II (today's leveling regression). | Gift is now never-worse: picks an improvable augment, upgrades I to II beyond cap; all-maxed = fizzle. |
 | C4 | MissingNo tethered into a pasture froze (ticker scans parties only) and, frozen on Ditto, became an immortal universal breeding parent. | Tether refused at source (mixin, with message) + breeder pair-filter excludes flagged mons. |
 
-## MAJOR - needs Deuce's call or a dedicated batch
+## MAJOR - ALL FIXED 2026-07-05 round 2 (jar 665e9e84) with Deuce's design calls
+Deuce's decisions: TIER III augments exist and CORRUPTION IS THE ONLY DOOR (BLESSED climbs
+I->II->III at 2x base values, IV floor capped 5); WILD on a Greener pushes an installed augment
+one tier past the mortal ceiling instead of the impossible +1 pair.
+- SpanGate: banks only as the GLOBAL MIN of the satisfying clique (exactly 1 bank per clique; disjoint pairs still independent). Test updated.
+- Catch-up amplification: paid PER BROOD; wallet runs dry mid-burst -> rest runs starved. No more free shiny batches.
+- Pause exploit: loaded-but-not-breeding pastures advance lastBreedTick - toggling can't bank fake catch-up.
+- autoPull=false: IGNORED with a load-time warn until the manual-pull screen ships.
+- Repel payload now SURVIVES re-compression (input snacks' REPEL_TYPES merge like cans).
+- Overdrive: cancel-first compute/commit split - a throw can never double-drive vanilla; only executed spawns are paid.
+- Perf: GraphEval parsed-JSON LRU (catch-up = 1 parse not thousands) · BioBank flatten 5s floor per viewer · GpRepelInfluence species->types memo.
+- Pity now VISIBLE: learned ritual cards show "pity N/hard" (max across owner pastures; ledger for spanning).
+
+## PREVIOUS TRIAGE (original findings, kept for history)
 - **SpanGate banks at (N-1)x with 3+ mutually-satisfying pastures** (SpanGate only dedupes pairs). Fix: bank only when self is the GLOBAL min of the satisfying clique.
 - **Free amplified catch-up broods**: tether affordability checked for ONE cycle, then a lump all-or-nothing debit fails and the whole amplified batch is free. Fix: per-brood debit or cap amplified broods to affordable count.
 - **Pause exploit**: toggling breeding off (chunk loaded) banks catch-up; re-enable = ~288-brood dump. Fix: advance lastBreedTick while skipped-but-loaded.
@@ -22,7 +35,17 @@ Full agent reports summarized + deduped. Status column tracks fixes.
 - **pushBiobank re-flattens/resends the whole bank ~1x/s to every open console during active breeding.** Fix: per-tab pushes or coarser rev-gate.
 - **GpRepelInfluence resolves species+form per spawn CANDIDATE uncached.** Fix: small species->types memo.
 
-## UX BATCH (launch-reputation; mostly copy + small server messages)
+## UX BATCH - SHIPPED 2026-07-05 round 2 (items below marked [x] done, [ ] deferred)
+[x] wand/Field Guide stale copy · [x] first-join chat line + FIRST-ever open lands on Guide ·
+[x] auto-wired BioBank sink on first parent (the tray-stall trap) · [x] queue-full Inbox note ·
+[x] "Inventory [E]" header · [x] Guide gains Key Recipes + Snack Science + shared-account note ·
+[x] pity chips · [x] MissingnoCard hidden at 0 · [x] PC-aware summon message · [x] GPU/Illicit
+never consumed from offhand · [x] battle refusal messages BOTH sides · [x] 7th berry refuses ·
+[x] BRICKED degrade names the augment loss · [x] written-disk death warning ·
+[ ] deferred: verb unification, ghost pastures in Pastures tab, speed-on-floored-kernel warning,
+dashboard time-scope labels, dead React-fallback deposit hint, Cobblenav re-place notice.
+
+## ORIGINAL UX NOTES (history)
 - STALE COPY: "right-click with the wand" (Pastures empty state) and "right-click the Field Guide item" (Guide/Specimens footer) - items that no longer exist. EMBARRASSING, trivial fix.
 - First 30 seconds: silent gift (no chat line), lands on empty BioBank jargon, Guide tab buried last. Fix: gift chat line + first-open lands on Guide.
 - Node graph: no default sink wired -> eggs stall in tray with no in-UI warning; egglog hint appears only after the fact. Fix: auto-wire pair->BioBank on line creation (or a loud unwired warning).

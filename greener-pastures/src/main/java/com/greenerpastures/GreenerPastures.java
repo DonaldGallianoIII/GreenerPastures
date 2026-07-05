@@ -105,6 +105,7 @@ public final class GreenerPastures implements ModInitializer {
             com.greenerpastures.notify.Inbox.clearAll();                                     // console Inbox notes
             com.greenerpastures.core.GpProf.reset();                                          // fresh perf window per world
             com.greenerpastures.drops.RitualHarvest.resetSession();                            // spanning-ritual pasture snapshots
+            com.greenerpastures.pasture.breeding.MultiPairBreeder.resetSession();               // full-pasture nag dedupe
         });
 
         // DISCONNECT pruning (perf-audit R3 #5): session maps stay bounded by ONLINE players on a 24/7 server.

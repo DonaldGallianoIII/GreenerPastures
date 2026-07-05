@@ -273,7 +273,7 @@ public class NotebookBrowserScreen extends Screen {
         int pw = panelW(), ph = panelH();
         ctx.fill(invX, invY, invX + pw, invY + ph, 0xE60E131A);
         ctx.drawBorder(invX, invY, pw, ph, 0xFF2A3543);
-        ctx.drawText(textRenderer, Text.literal("Inventory"), invX + INV_PAD, invY + 4, 0xFF8593A4, false);
+        ctx.drawText(textRenderer, Text.literal("Inventory [E]"), invX + INV_PAD, invY + 4, 0xFF8593A4, false);
         ctx.drawText(textRenderer, Text.literal(invCollapsed ? "▢" : "-"), invX + pw - 13, invY + 4, 0xFF8593A4, false);
         if (invCollapsed) return;
 

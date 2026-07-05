@@ -71,13 +71,14 @@ public class SnackRepelChargeRecipe extends SpecialCraftingRecipe {
     public boolean matches(CraftingRecipeInput input, World world) {
         Scan sc = scan(input);
         if (sc.junk() || sc.cans() != 1 || sc.berries() < 1) return false;
+        if (sc.berries() > SnackRepelMath.COPY_CAP) return false;   // a 7th berry would be silently wasted - refuse instead (review u1)
         return typingOf(sc.berry()) != null && SnackRepelMath.chargeMagnitude(sc.berries(), typingOf(sc.berry()).perCopyValue()) > 0;
     }
 
     @Override
     public ItemStack craft(CraftingRecipeInput input, RegistryWrapper.WrapperLookup lookup) {
         Scan sc = scan(input);
-        if (sc.junk() || sc.cans() != 1 || sc.berries() < 1) return ItemStack.EMPTY;
+        if (sc.junk() || sc.cans() != 1 || sc.berries() < 1 || sc.berries() > SnackRepelMath.COPY_CAP) return ItemStack.EMPTY;
         TypeValue tv = typingOf(sc.berry());
         if (tv == null) return ItemStack.EMPTY;
         int mag = SnackRepelMath.chargeMagnitude(sc.berries(), tv.perCopyValue());

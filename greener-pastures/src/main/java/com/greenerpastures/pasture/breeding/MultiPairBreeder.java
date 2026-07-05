@@ -61,6 +61,20 @@ public final class MultiPairBreeder {
         ServerTickEvents.END_WORLD_TICK.register(MultiPairBreeder::onWorldTick);
     }
 
+    /** Pastures already nagged about being full this session - one Inbox note per fill episode, not per brood. */
+    private static final Set<Long> fullNotified = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /** SP-statics hygiene - clear with the other session stores. */
+    public static void resetSession() { fullNotified.clear(); }
+
+    /** The silent-stop fix (review u6): breeding pausing on a full bank/tray/queue was a log line only. */
+    private static void notifyFull(PastureData pd, BlockPos pos) {
+        if (pd.owner == null || !fullNotified.add(pos.asLong())) return;
+        com.greenerpastures.notify.Inbox.push(pd.owner, "⚠",
+                (pd.name.isEmpty() ? pos.toShortString() : pd.name)
+                + " is FULL - egg production paused. Pull from the BioBank or empty the tray to resume.");
+    }
+
     private static void onWorldTick(ServerWorld world) {
         if (!CobbreedingBridge.isAvailable()) return;
         if (world.getTime() % SCAN_INTERVAL != 0L) return;
@@ -104,8 +118,13 @@ public final class MultiPairBreeder {
                 }
 
                 BreedingTier tier = pd.tier();
-                if (tier == null) continue;                                  // present but no Pasture Upgrade slotted
-                if (!CobbreedingBridge.isBreedingActivated(be.getCachedState())) continue;
+                if (tier == null || !CobbreedingBridge.isBreedingActivated(be.getCachedState())) {
+                    // LOADED but not breeding (no kernel / toggle off): advance the anchor so flipping the
+                    // toggle can't bank a fake "catch-up" burst (review: the pause exploit - off overnight,
+                    // on at dawn, ~288 broods dumped). Real catch-up only accrues while the CHUNK is away.
+                    if (pd.lastBreedTick > 0 && now > pd.lastBreedTick) pd.lastBreedTick = now;
+                    continue;
+                }
 
                 // Only our configured pairs should breed - keep Cobbreeding's native ticker from laying
                 // a rogue random egg by holding its timer open every scan (not just on our breed ticks).
@@ -143,11 +162,27 @@ public final class MultiPairBreeder {
                     // (the chunk was unloaded), and a 12h catch-up is up to ~288 broods (perf-audit R3 tick #8).
                     java.util.List<java.util.List<PokemonPastureBlockEntity.Tethering>> pairs = buildPairs(pasture, tier, pd);
                     String mode = pd.pairings.isEmpty() ? "auto" : "buckets";
+                    // Amplification is paid PER BROOD (review: the old lump debit was all-or-nothing, so a
+                    // long catch-up amplified every egg then failed to pay - free shinies). Each productive
+                    // brood debits its burn up front; the moment the wallet can't pay, the REST of the
+                    // catch-up runs starved (free base mods) - exactly the fed/starved contract, per cycle.
+                    TetherRuntime.Resolution starved = res.drain() > 0
+                            ? TetherRuntime.resolveFor(pd.baseAugmentLevels(), pd.slottedTethers(), 0L, BREEDING_FUNCTIONS)
+                            : res;
+                    boolean fed = true;
+                    long drained = 0L;
                     int productiveBroods = 0;
                     for (int b = 0; b < broods && !pairs.isEmpty(); b++) {
-                        int got = breedPairs(world, pos, tier, pd, now, res.effective(), pairs, mode);
+                        EffectiveAugments eff = fed ? res.effective() : starved.effective();
+                        int got = breedPairs(world, pos, tier, pd, now, eff, pairs, mode);
                         if (got == 0 && laid == 0 && b > 2) break;   // sterile pasture - don't grind 288 no-op broods
-                        if (got > 0) productiveBroods++;
+                        if (got > 0) {
+                            productiveBroods++;
+                            if (fed && res.drain() > 0 && pd.owner != null) {
+                                if (DataStore.get(server).tryDebit(pd.owner, res.drain())) drained += res.drain();
+                                else fed = false;                    // broke mid-catch-up: rest of the burst is base-rate
+                            }
+                        }
                         laid += got;
                     }
                     pd.nextBreedTick = now + interval;
@@ -157,10 +192,9 @@ public final class MultiPairBreeder {
                                 (pd.name.isEmpty() ? pos.toShortString() : pd.name)
                                 + " caught up " + broods + " broods while away → " + laid + " eggs");
                     }
-                    if (laid > 0 && res.drain() > 0 && pd.owner != null) {   // tethers earned their burn - per productive brood
-                        DataStore.get(server).tryDebit(pd.owner, res.drain() * Math.max(1, productiveBroods));
+                    if (drained > 0) {                                       // tethers earned their burn - paid per productive brood
                         GpLog.d("tether", "drain", "pos", pos.toShortString(),
-                                "data", res.drain() * Math.max(1, productiveBroods), "owner", pd.owner.toString());
+                                "data", drained, "owner", pd.owner.toString(), "starvedMidway", !fed);
                     }
                     moved += drainQueueToTray(pos, pd);                      // top the tray straight up
                 }
@@ -247,10 +281,12 @@ public final class MultiPairBreeder {
                 if (!EggIngest.ingest(world, pd.owner, egg.stack(), pd, pos, pairs.get(i).get(0).getTetheringId())
                         && !pd.eggQueue.offer(egg.stack())) {       // BioBank full → tray fallback → tray full → pause
                     GpLog.w("breeder", "queue_full", "pos", pos.toShortString(), "cap", pd.eggQueue.cap());
+                    notifyFull(pd, pos);
                     break;
                 }
             } else if (!pd.eggQueue.offer(egg.stack())) {           // unlinked → physical eggs in the tray (unchanged)
                 GpLog.w("breeder", "queue_full", "pos", pos.toShortString(), "cap", pd.eggQueue.cap());
+                notifyFull(pd, pos);
                 break;
             }
             laid++;

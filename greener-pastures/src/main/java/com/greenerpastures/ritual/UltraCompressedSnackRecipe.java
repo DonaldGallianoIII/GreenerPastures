@@ -96,6 +96,8 @@ public class UltraCompressedSnackRecipe extends SpecialCraftingRecipe {
             }
             if (!s.isOf(CobblemonItems.POKE_SNACK)) continue;
             snacks++;
+            Map<String, Integer> carried = s.get(com.greenerpastures.pasture.breeding.GpComponents.REPEL_TYPES);
+            if (carried != null) carried.forEach((t, m) -> cans.add(Map.entry(t, m)));   // re-compression keeps the repel (review M1: it was silently destroyed)
             BaitEffectsComponent bait = s.get(CobblemonItemComponents.BAIT_EFFECTS);
             if (bait != null) for (Identifier id : bait.getEffects()) copies.merge(id, 1, Integer::sum);
             FlavourComponent fl = s.get(CobblemonItemComponents.FLAVOUR);

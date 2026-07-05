@@ -28,12 +28,22 @@ public final class GraphEval {
     private static final Gson GSON = new Gson();
     private static final String[] STATS = {"HP", "Atk", "Def", "SpA", "SpD", "Spe"};
 
+    /** Parsed-graph LRU (review M1: a 12h catch-up routed thousands of eggs, each re-parsing the SAME
+     *  ≤64KB graph JSON in one tick). Keyed by the exact json string; 32 pastures' worth is plenty. */
+    private static final java.util.Map<String, JsonObject> PARSED =
+            java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>(16, 0.75f, true) {
+                @Override protected boolean removeEldestEntry(java.util.Map.Entry<String, JsonObject> e) { return size() > 32; }
+            });
+
     public static Result route(String graphJson, UUID monId, EggCard card) {
         if (card == null || card.shiny() || !card.ivsKnown()) return keep(null);   // SACRED - never lose a shiny OR an egg we couldn't READ (a failed decrypt zero-fills the card; filtering zeros would void hidden shinies - review C1/C2)
         if (graphJson == null || graphJson.isEmpty()) return keep(null);
-        JsonObject g;
-        try { g = GSON.fromJson(graphJson, JsonObject.class); } catch (Exception e) { return keep(null); }
-        if (g == null) return keep(null);
+        JsonObject g = PARSED.get(graphJson);
+        if (g == null) {
+            try { g = GSON.fromJson(graphJson, JsonObject.class); } catch (Exception e) { return keep(null); }
+            if (g == null) return keep(null);
+            PARSED.put(graphJson, g);
+        }
         JsonObject thread = findThread(g, monId);                      // the breeding line that owns this egg's parent
         if (thread == null) return keep(null);                         // parent not in any wired line → keep
         JsonArray nodes = thread.getAsJsonArray("nodes"), edges = thread.getAsJsonArray("edges");

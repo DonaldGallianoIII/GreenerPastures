@@ -22,6 +22,9 @@ public final class RitualSystem {
         GreenerPastures.LOG.info("[rituals] {} - {} rituals, {} type-drops (auto-pull {})",
                 c.enabled() ? "enabled" : "disabled",
                 c.rituals().rituals().size(), c.typeDrops().drops().size(), c.autoPull());
+        if (!c.autoPull()) {
+            GreenerPastures.LOG.warn("[rituals] autoPull=false is IGNORED - the manual-pull screen doesn't exist yet; pulls roll automatically so rituals keep producing.");
+        }
     }
 
     public static void reload() {

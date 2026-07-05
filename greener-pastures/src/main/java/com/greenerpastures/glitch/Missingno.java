@@ -60,7 +60,10 @@ public final class Missingno {
                         Pokemon mon = party.get(i);
                         if (mon != null && isMissingno(mon)) {
                             event.cancel();
-                            p.sendMessage(Text.literal("§d§kAB§r§5 MissingNo. distorts the battlefield - box it to battle. §d§kAB§r"), false);
+                            for (ServerPlayerEntity everyone : event.getBattle().getPlayers()) {   // BOTH sides see why (review u10)
+                                everyone.sendMessage(Text.literal("§d§kAB§r§5 MissingNo. distorts the battlefield - " +
+                                        (everyone == p ? "box it to battle." : "your opponent carries the glitch.") + " §d§kAB§r"), false);
+                            }
                             return kotlin.Unit.INSTANCE;
                         }
                     }

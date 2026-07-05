@@ -58,30 +58,50 @@ public class PokeSnackOverdriveMixin implements com.greenerpastures.drops.GpRepe
      *  straight through to vanilla randomTick. */
     @Inject(method = "randomTick", at = @At("HEAD"), cancellable = true, remap = false)
     private void gp$creditedRandomTick(org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
-        try {
-            PokeSnackBlockEntity self = (PokeSnackBlockEntity) (Object) this;
+        double mult;
+        PlayerEntity near;
+        PokeSnackBlockEntity self;
+        try {   // COMPUTE phase - any failure falls through to untouched vanilla (nothing mutated yet)
+            self = (PokeSnackBlockEntity) (Object) this;
             net.minecraft.world.World world = self.getWorld();
-            if (world == null) return;   // vanilla path
-            double mult = com.greenerpastures.ritual.SnackSpeed.trueMultiplier(gp$biteValues(self));
-            PlayerEntity near = world.getClosestPlayer(
+            if (world == null) return;
+            mult = com.greenerpastures.ritual.SnackSpeed.trueMultiplier(gp$biteValues(self));
+            near = world.getClosestPlayer(
                     self.getPos().getX(), self.getPos().getY(), self.getPos().getZ(),
                     com.cobblemon.mod.common.Cobblemon.INSTANCE.getConfig().getMaximumSpawningZoneDistanceFromPlayer(),
                     false);
-            com.greenerpastures.ritual.SnackSpeed.CreditRoll roll =
-                    com.greenerpastures.ritual.SnackSpeed.onRandomTick(gp$credits, mult, near != null);
-            gp$credits = roll.remaining();
-            for (int i = 0; i < roll.spawns(); i++) self.attemptSpawn(near);
-            self.markDirty();
-            if (roll.spawns() > 0 && com.greenerpastures.core.GpLog.on(com.greenerpastures.core.GpLog.Level.DEBUG)) {
-                com.greenerpastures.core.GpLog.d("snack", "speed_tick", "pos", self.getPos().toShortString(),
-                        "mult", String.format("%.3f", mult), "spawns", roll.spawns(),
-                        "banked", String.format("%.2f", roll.remaining()));
+        } catch (Throwable computeFailed) {
+            return;   // vanilla randomTick proceeds untouched
+        }
+        // COMMIT phase (review M2: the old order spent credits + spawned BEFORE cancelling, so a mid-loop
+        // throw double-drove with vanilla). Cancel FIRST, then pay credits one executed spawn at a time.
+        ci.cancel();
+        double credits = Math.min(com.greenerpastures.ritual.SnackSpeed.CREDIT_CAP,
+                Math.max(0, gp$credits) + 1.0 / (com.greenerpastures.ritual.SnackSpeed.BASE_TICKS
+                        * Math.max(com.greenerpastures.ritual.SnackSpeed.MIN_MULTIPLIER, mult)));
+        int spawned = 0;
+        if (near != null) {
+            while (credits >= 1.0 && spawned < com.greenerpastures.ritual.SnackSpeed.BURST_CAP) {
+                try {
+                    self.attemptSpawn(near);
+                } catch (Throwable spawnFailed) {
+                    break;   // stop the burst; only executed spawns were paid
+                }
+                credits -= 1.0;
+                spawned++;
             }
-            ci.cancel();
-        } catch (Throwable ignored) {
-            // computed nothing → vanilla randomTick proceeds untouched
+        }
+        if (credits != gp$credits) {
+            gp$credits = credits;
+            try { self.markDirty(); } catch (Throwable ignored) { }
+        }
+        if (spawned > 0 && com.greenerpastures.core.GpLog.on(com.greenerpastures.core.GpLog.Level.DEBUG)) {
+            com.greenerpastures.core.GpLog.d("snack", "speed_tick", "pos", self.getPos().toShortString(),
+                    "mult", String.format("%.3f", mult), "spawns", spawned,
+                    "banked", String.format("%.2f", credits));
         }
     }
+
 
     @Inject(method = "initializeFromItemStack", at = @At("TAIL"), remap = false)
     private void gp$captureRepels(ItemStack stack, CallbackInfo ci) {

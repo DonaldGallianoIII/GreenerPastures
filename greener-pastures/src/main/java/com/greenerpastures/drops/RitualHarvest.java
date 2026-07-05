@@ -85,7 +85,8 @@ public final class RitualHarvest {
             Gacha.PullState state = new Gacha.PullState(st[0], st[1]).bank(sweeps);
             int bankedBeforeRoll = state.bankedPulls();
             int hits = 0;
-            if (cfg.autoPull()) {
+            {   // autoPull=false is IGNORED until the manual-pull screen ships (review: the knob silently
+                // killed all ritual output - banked pulls had no spend path). Warned once at config load.
                 Gacha.Session session = Gacha.pullAll(state, r.baseChancePercent(), r.hardPity(), r.softPityStart(), rng::nextDouble);
                 hits = session.hits();
                 state = session.state();
@@ -145,7 +146,7 @@ public final class RitualHarvest {
                 Gacha.PullState state = new Gacha.PullState(st[0], st[1]).bank(sweeps);
                 int bankedBeforeRoll = state.bankedPulls();
                 int hits = 0;
-                if (cfg.autoPull()) {
+                {   // autoPull=false ignored - see the tier-2 note
                     Gacha.Session session = Gacha.pullAll(state, r.baseChancePercent(), r.hardPity(), r.softPityStart(), rng::nextDouble);
                     hits = session.hits();
                     state = session.state();

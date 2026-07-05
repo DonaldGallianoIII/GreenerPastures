@@ -121,15 +121,18 @@ class RitualConfigTest {
     }
 
     @Test
-    void spanGateBanksExactlyOncePerSatisfiedPair() {
-        // Pair (100, 200) satisfied: 100 banks (has a larger partner), 200 does not - one pull per sweep total.
+    void spanGateBanksExactlyOncePerClique() {
+        // Pair (100, 200): 100 banks, 200 does not - one pull per sweep total.
         assertTrue(SpanGate.shouldBank(100L, List.of(200L)));
         assertFalse(SpanGate.shouldBank(200L, List.of(100L)));
-        // Three-way (100 pairs with 200 AND 300): still exactly one banker (100), one pull per sweep.
+        // CLIQUE of three (review fix): the old pair-rule let 100 AND 200 both bank ((N-1)x rate).
+        // Now only the global minimum banks.
         assertTrue(SpanGate.shouldBank(100L, List.of(200L, 300L)));
-        assertFalse(SpanGate.shouldBank(200L, List.of(100L)));
-        assertFalse(SpanGate.shouldBank(300L, List.of(100L)));
+        assertFalse(SpanGate.shouldBank(200L, List.of(100L, 300L)), "200 has a smaller partner - never banks");
+        assertFalse(SpanGate.shouldBank(300L, List.of(100L, 200L)));
         assertFalse(SpanGate.shouldBank(100L, List.of()), "no satisfying partner → no bank");
+        // disjoint pairs bank independently: (100,200) and (500,600) = two complete setups = two pulls
+        assertTrue(SpanGate.shouldBank(500L, List.of(600L)));
     }
 
     @Test

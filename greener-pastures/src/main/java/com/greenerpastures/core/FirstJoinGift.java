@@ -34,6 +34,8 @@ public final class FirstJoinGift extends PersistentState {
             g.greeted.add(id);
             g.markDirty();
             handler.player.getInventory().offerOrDrop(new ItemStack(GpItems.NOTEBOOK));
+            handler.player.sendMessage(net.minecraft.text.Text.literal(
+                    "§a[Greener Pastures]§r A §bNotebook§r has been tucked into your pack - §eright-click§r to open it. The Guide tab has the whole loop."), false);
             GpLog.i("guide", "first_join_gift", "player", id.toString());
         }));
     }

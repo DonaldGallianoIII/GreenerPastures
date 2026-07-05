@@ -38,16 +38,28 @@ class AugmentLevelTest {
 
     @Test
     void levelDetectionIsBaseRelative() {
-        // pure levelOf: effective magnitude vs the two tier values
-        assertEquals(0, AugmentType.levelOf(0, 30, 45, 2));
-        assertEquals(1, AugmentType.levelOf(30, 30, 45, 2));
-        assertEquals(1, AugmentType.levelOf(44, 30, 45, 2));
-        assertEquals(2, AugmentType.levelOf(45, 30, 45, 2));
-        assertEquals(2, AugmentType.levelOf(99, 30, 45, 2), "QA-set overshoot still reads II");
-        assertEquals(1, AugmentType.levelOf(99, 30, 45, 1), "single-level types never report II");
+        // pure levelOf: effective magnitude vs the three tier values (III = corruption-only)
+        assertEquals(0, AugmentType.levelOf(0, 30, 45, 60, 2));
+        assertEquals(1, AugmentType.levelOf(30, 30, 45, 60, 2));
+        assertEquals(1, AugmentType.levelOf(44, 30, 45, 60, 2));
+        assertEquals(2, AugmentType.levelOf(45, 30, 45, 60, 2));
+        assertEquals(3, AugmentType.levelOf(60, 30, 45, 60, 2), "a blessed kernel reads TIER III");
+        assertEquals(3, AugmentType.levelOf(99, 30, 45, 60, 2), "QA-set overshoot reads the corrupt ceiling");
+        assertEquals(1, AugmentType.levelOf(99, 30, 45, 60, 1), "single-level types never report II+");
         // the Greener birth-quirk: base 500cp drop rate is 0 EFFECTIVE magnitude → not installed, no phantom slots
-        assertEquals(0, AugmentType.levelOf(500 - 500, 200, 300, 2));
-        assertEquals(1, AugmentType.levelOf(700 - 500, 200, 300, 2), "base + one install = level I");
-        assertEquals(2, AugmentType.levelOf(800 - 500, 200, 300, 2), "base + upgrade = level II");
+        assertEquals(0, AugmentType.levelOf(500 - 500, 200, 300, 400, 2));
+        assertEquals(1, AugmentType.levelOf(700 - 500, 200, 300, 400, 2), "base + one install = level I");
+        assertEquals(2, AugmentType.levelOf(800 - 500, 200, 300, 400, 2), "base + upgrade = level II");
+    }
+
+    @Test
+    void tierThreeIsCorruptionOnlyAndDoubleBase() {
+        assertEquals(60, AugmentType.SHINY.valueAt(3), "III = 2× base");
+        assertEquals(400, AugmentType.DROP_RATE.valueAt(3));
+        assertEquals(5, AugmentType.IV_FLOOR.valueAt(3), "even the glitch never grants a 6th perfect");
+        assertEquals(3, AugmentType.SPEED.valueAt(3), "native curve: ×3 cadence");
+        assertEquals(3, AugmentType.HATCH.valueAt(3), "native curve: ×0.1 hatch");
+        assertEquals(2, AugmentType.SHINY.maxLevel(), "the Augmenter can NEVER reach III - corruption only");
+        assertEquals(3, AugmentType.CORRUPT_MAX_LEVEL);
     }
 }
