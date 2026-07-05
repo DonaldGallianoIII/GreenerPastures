@@ -198,6 +198,12 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fix:** extras channel now carries the slotted kernel's full augment map + EV spread + corruption; the client dresses the display stack with those components, so `appendTooltip` renders truth. Fail-soft (dressing errors → tier defaults, never a broken overlay). In jar `9300b866`.
 - **Status:** 🚀 built — verify post-swap: hover slotted augmented kernel → same tooltip as when held
 
+### BUG-015 · 🟡 MINOR (UI) · Q92/Q80 · Augmenter (and Compiler) tab can't scroll
+- **Repro:** open Augmenter with the grown catalog (Hatch Haste + UPGRADE rows) → content past the viewport is clipped, wheel does nothing (Deuce, live QA 2026-07-05).
+- **Root cause:** the Q80 target-card wrapper div broke the height chain into `gp-body` (overflow:hidden) - wrapper height went auto, the `.tcol` columns thought they had infinite height, their own `overflow:auto` never engaged. Compiler had the identical wrapper bug.
+- **Fix:** wrappers are full-height flex columns, triptych = flex:1 + minHeight:0 (commit `66e4023`). In jar `ab6cad16`.
+- **Status:** 🚀 built — verify post-swap: Augmenter catalog wheel-scrolls with 12+ rows; Compiler ditto
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …
