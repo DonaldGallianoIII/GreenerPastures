@@ -1668,7 +1668,8 @@ your Daemon's buffs and your Soul Tethers, which make the next generation faster
 everything else in this mod is a lever on it.`],
   ['📓 Getting started', `1 · Craft a Notebook and right-click a pasture with it, then press LINK - an unlinked
 pasture collects nothing (watch the amber warnings).  2 · Slot a Kernel (Copper → Greener: more pairs, more
-augment slots).  3 · Open Threads and put two parents on a line (♂+♀, or a Ditto).  4 · Wire the line through
+augment slots).  3 · Open Threads and put two parents on a line (♂+♀, or a Ditto) - lines are the ONLY thing that breeds; an
+unwired pasture stays quiet.  4 · Wire the line through
 filters into the BioBank or Data.  5 · Walk away - drops and eggs keep accruing while the chunk is loaded, and
 catch up the moment you return (12h cap, online time only).`],
   ['🧬 Kernels & the Augmenter', `Hold a Kernel near the Augmenter tab. Installs cost GPU (quality 2 ◈ ·

@@ -5,8 +5,8 @@ import java.util.List;
 
 /**
  * The pasture <b>health strip</b> (#37) - the "why is my farm quiet?" warnings the console shows on a pasture
- * view and as ⚠ markers on the Pastures tab: not linked · no Kernel · too few parents · egg tray full ·
- * BioBank full for a species. <b>Minecraft-free</b>: {@link #evaluate} is pure (booleans/counts in, flags out)
+ * view and as ⚠ markers on the Pastures tab: not linked · no Kernel · too few parents · no breeding lines
+ * wired · egg tray full · BioBank full for a species. <b>Minecraft-free</b>: {@link #evaluate} is pure (booleans/counts in, flags out)
  * so the whole warning matrix is unit-tested headless; the MC layer ({@code NotebookNet}) gathers the inputs.
  *
  * <p>Ordering is severity-ish: link state first (nothing collects while unlinked), then the breeding blockers.
@@ -18,7 +18,7 @@ public final class PastureHealth {
     /** One warning chip: stable {@code id} (+ species suffix for bank_full), an icon, and the player-facing text. */
     public record Flag(String id, String icon, String text) {}
 
-    public static List<Flag> evaluate(boolean linked, boolean hasKernel, int monCount,
+    public static List<Flag> evaluate(boolean linked, boolean hasKernel, int monCount, boolean hasLines,
                                       boolean queueFull, List<String> fullSpecies) {
         List<Flag> out = new ArrayList<>();
         if (!linked) {
@@ -29,6 +29,11 @@ public final class PastureHealth {
         }
         if (hasKernel && monCount >= 0 && monCount < 2) {
             out.add(new Flag("no_parents", "👥", "Fewer than 2 parents - nothing to breed"));
+        }
+        // Lines are registry state - known even with the chunk unloaded (monCount -1). Skipped below
+        // 2 parents so the more fundamental chip leads; breeding never runs without wired lines.
+        if (hasKernel && !hasLines && (monCount >= 2 || monCount == -1)) {
+            out.add(new Flag("no_lines", "🧵", "No breeding lines - wire a pair in this pasture's graph"));
         }
         if (queueFull) {
             out.add(new Flag("tray_full", "🥚", "Egg tray full - breeding is paused"));

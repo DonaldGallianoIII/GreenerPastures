@@ -563,7 +563,8 @@ public final class NotebookNet {
                 }
             }
         }
-        return PastureHealth.evaluate(pd.owner != null, pd.tier() != null, monCount, pd.eggQueue.isFull(), fullSpecies);
+        return PastureHealth.evaluate(pd.owner != null, pd.tier() != null, monCount, !pd.pairings.isEmpty(),
+                pd.eggQueue.isFull(), fullSpecies);
     }
 
     // ── Kernel Augmenter (slot model; GPU/Data cost DEFERRED per §7.5) ──────────────────────────────────

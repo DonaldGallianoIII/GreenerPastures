@@ -10,8 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** Headless tests for the pure pasture-health matrix (#37) - the console's warning strip + tab badges. */
 class PastureHealthTest {
 
+    // lines=true in the legacy helper - every pre-limiter case assumed a wired pasture
     private static List<String> ids(boolean linked, boolean kernel, int mons, boolean full, List<String> bank) {
-        return PastureHealth.evaluate(linked, kernel, mons, full, bank).stream().map(PastureHealth.Flag::id).toList();
+        return PastureHealth.evaluate(linked, kernel, mons, true, full, bank).stream().map(PastureHealth.Flag::id).toList();
+    }
+
+    private static List<String> idsNoLines(boolean linked, boolean kernel, int mons) {
+        return PastureHealth.evaluate(linked, kernel, mons, false, false, null).stream().map(PastureHealth.Flag::id).toList();
     }
 
     @Test
@@ -61,8 +66,33 @@ class PastureHealthTest {
 
     @Test
     void idsCsvJoinsAndStaysEmptyWhenHealthy() {
-        assertEquals("", PastureHealth.idsCsv(PastureHealth.evaluate(true, true, 6, false, null)));
+        assertEquals("", PastureHealth.idsCsv(PastureHealth.evaluate(true, true, 6, true, false, null)));
         assertEquals("unlinked,no_kernel",
-                PastureHealth.idsCsv(PastureHealth.evaluate(false, false, 6, false, null)));
+                PastureHealth.idsCsv(PastureHealth.evaluate(false, false, 6, true, false, null)));
+    }
+
+    // ── the visual-scripting limiter (Deuce, live QA 2026-07-05): no lines = no breeding, and the strip says so ──
+
+    @Test
+    void unwiredPastureFlagsNoLines() {
+        assertEquals(List.of("no_lines"), idsNoLines(true, true, 6));
+    }
+
+    @Test
+    void noLinesSkippedBelowTwoParents() {
+        // the parents chip is the more fundamental problem - never stack the lines nag on top
+        assertEquals(List.of("no_parents"), idsNoLines(true, true, 1));
+        assertEquals(List.of("no_parents"), idsNoLines(true, true, 0));
+    }
+
+    @Test
+    void noLinesStillFlagsWhenChunkUnloaded() {
+        // pairings are registry state - known truth even at monCount -1; an unwired pasture never breeds
+        assertEquals(List.of("no_lines"), idsNoLines(true, true, -1));
+    }
+
+    @Test
+    void noLinesNeedsAKernel() {
+        assertEquals(List.of("no_kernel"), idsNoLines(true, false, 6));
     }
 }

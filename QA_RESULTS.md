@@ -204,6 +204,12 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fix:** wrappers are full-height flex columns, triptych = flex:1 + minHeight:0 (commit `66e4023`). In jar `ab6cad16`.
 - **Status:** 🚀 built — verify post-swap: Augmenter catalog wheel-scrolls with 12+ rows; Compiler ditto
 
+### BUG-016 · 🔴 MAJOR (design) · Q93-adjacent · Kernel-slotted pastures bred with ZERO scripting (adjacency fallback)
+- **Repro:** slot a kernel, tether a roster, wire nothing → `breeder brood` starts pairing slot-adjacent mons (Deuce, live QA 2026-07-05: gastly/murkrow/clefairy rosters bred + banked eggs uninvited).
+- **Root cause:** intentional-at-the-time "zero-config" adjacencyPairs fallback in MultiPairBreeder when `pd.pairings` was empty. Eggs still routed safe (default keep → BioBank, sacred rule held) - but breeding ran without consent, and pairs were unmonitorable.
+- **Fix (design change, Deuce's call):** the visual script IS the limiter - `buildPairs` now returns bucket pairs only; no wired lines = no breeding, ever. New health chip `🧵 no_lines` ("No breeding lines - wire a pair in this pasture's graph") shows on kerneled+populated+unwired pastures, registry-known even with the chunk unloaded. Guide copy sharpened. +4 tests (309). Commit pending this entry; in jar `769ce853`.
+- **Status:** 🚀 built — verify post-swap: unwired kerneled pasture NEVER broods + shows 🧵; wire a line → breeding starts; unwire → stops
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …

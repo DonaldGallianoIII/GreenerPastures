@@ -31,9 +31,9 @@ import java.util.Set;
  * pasture with a Pasture Upgrade slotted lays one egg in parallel - same per-egg rate as Cobbreeding,
  * just N pairs at once. Per-pasture timers are in-memory; a missed interval after a restart is harmless.
  *
- * <p>Pairing comes from the wand's Breeding Arrangement board ({@link PastureData#pairings}: tethering
- * id → bucket 1..maxPairs, two mons per bucket). If no pairing has been set, it falls back to
- * slot-adjacency so a freshly-upgraded pasture breeds with zero configuration.
+ * <p>Pairing comes EXCLUSIVELY from the Notebook's breeding lines ({@link PastureData#pairings}: tethering
+ * id → bucket 1..maxPairs, two mons per bucket). No lines wired = NO breeding - the visual script is the
+ * limiter, by design (Deuce, live QA 2026-07-05: a kernel alone must never silently pair the roster).
  */
 public final class MultiPairBreeder {
     private MultiPairBreeder() {}
@@ -254,9 +254,7 @@ public final class MultiPairBreeder {
         }
         if (tethered.size() < 2) return List.of();
         int cap = pd.maxPairs();   // tier pairs + any WILD-corruption bonus
-        return pd.pairings.isEmpty()
-                ? adjacencyPairs(tethered, cap)
-                : bucketPairs(tethered, pd, cap);
+        return bucketPairs(tethered, pd, cap);   // empty pairings → no pairs: unwired pastures never breed
     }
 
     /** Lay one egg per compatible configured pair (up to the tier's cap) into the FIFO egg-queue.
@@ -315,15 +313,6 @@ public final class MultiPairBreeder {
         }
         if (moved > 0) GpLog.d("breeder", "drain", "pos", pos.toShortString(), "moved", moved, "queued", pd.eggQueue.size());
         return moved;
-    }
-
-    /** Zero-config default: pair tether slots (2k, 2k+1), up to the tier's cap. */
-    private static List<List<PokemonPastureBlockEntity.Tethering>> adjacencyPairs(
-            List<PokemonPastureBlockEntity.Tethering> tethered, int maxPairs) {
-        int n = Math.min(maxPairs, tethered.size() / 2);
-        List<List<PokemonPastureBlockEntity.Tethering>> out = new ArrayList<>(n);
-        for (int p = 0; p < n; p++) out.add(List.of(tethered.get(2 * p), tethered.get(2 * p + 1)));
-        return out;
     }
 
     /** Explicit pairing: group tethered mons by their assigned bucket (1..maxPairs); a pair needs two. */
