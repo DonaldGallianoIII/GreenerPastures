@@ -61,6 +61,7 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
     it.options.release = 21
+    it.options.encoding = "UTF-8"   // ritual names carry non-ASCII (Séance) - never trust platform default
 }
 
 java {
