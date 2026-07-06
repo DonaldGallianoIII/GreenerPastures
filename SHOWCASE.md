@@ -25,6 +25,7 @@ _Compiled from a full code survey; rev 2026-07-06 - 310 tests, post-adversarial-
 - **Kernel rename + target cards** - name rigs; choose which kernel/daemon a tab edits
 - **Ghost pastures** - one toggle de-renders a pasture's roamers: mons keep breeding as pure data, **zero entities in-world** - stack pastures into towers without the TPS bill
 - **IV Floor shuffles WHICH stats** land perfect - never the fixed HP/Atk/Def rut (a floored special attacker actually gets SpA/Spe days)
+- **Crystal, guaranteed**: Cobbreeding ships the shiny-parent Crystal bonus OFF and most servers never notice - GP breeding floors it at **×2** (a server-configured higher value always wins)
 - 2.5-min brood floor; shiny proc mathematically bounded; corrupted kernels locked forever
 
 ## ⛏ Harvest Economy (mobless-world friendly)

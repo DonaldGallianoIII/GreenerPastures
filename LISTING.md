@@ -48,7 +48,9 @@ Nature Lock (all 25, stat hints), Ball Lock, targeted **EV spreads** (full 510 a
 hidden-ability splice, egg moves, **hatch acceleration** - installed onto Kernels through the
 **Augmenter** for GPU, upgradeable to level II (1.5× power, triple the slots - choices matter),
 re-configured free. Name your Kernels; multi-kernel target cards; Masuda/Crystal-aware shiny
-indicators; parent inspection down to OT.
+indicators; parent inspection down to OT. And because Cobbreeding ships the shiny-parent Crystal
+bonus silently OFF, GP guarantees at least **×2** on eggs bred through its lines - server-tuned
+higher values always win.
 
 📸 *the EV allocator + nature picker*
 

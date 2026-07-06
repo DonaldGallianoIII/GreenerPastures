@@ -79,4 +79,30 @@ class ShinyOddsTest {
         assertFalse(ShinyOdds.procMakesShiny(false, 1.0, odds, 0.0, 0.0),
                 "with shinies disabled, a firing proc must NOT force a guaranteed shiny");
     }
+
+    // ── the Crystal floor (Deuce 2026-07-06): server off/low → ×2; server higher → server wins ──
+
+    @Test
+    void crystalFloorLiftsOffAndLowValues() {
+        assertEquals(2.0f, ShinyOdds.flooredCrystal(null));      // unconfigured
+        assertEquals(2.0f, ShinyOdds.flooredCrystal(1.0f));      // Cobbreeding's shipped default (off)
+        assertEquals(2.0f, ShinyOdds.flooredCrystal(0f));        // "no crystal" of any flavour
+        assertEquals(2.0f, ShinyOdds.flooredCrystal(1.5f));
+    }
+
+    @Test
+    void crystalFloorRespectsGenerousServers() {
+        assertEquals(2.0f, ShinyOdds.flooredCrystal(2.0f));
+        assertEquals(4.0f, ShinyOdds.flooredCrystal(4.0f));
+    }
+
+    @Test
+    void flooredCrystalFeedsOddsExactly() {
+        // shiny parent + floored crystal on a crystal-off server: 8192 / 2 = 4096
+        assertEquals(4096.0, ShinyOdds.effectiveOdds(8192, null, ShinyOdds.flooredCrystal(1.0f), null,
+                true, false, false), 1e-9);
+        // two shiny parents divide twice: 8192 / 2 / 2 = 2048
+        assertEquals(2048.0, ShinyOdds.effectiveOdds(8192, null, ShinyOdds.flooredCrystal(null), null,
+                true, true, false), 1e-9);
+    }
 }

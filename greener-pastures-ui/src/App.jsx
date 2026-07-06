@@ -1408,7 +1408,7 @@ function DaemonGraph({ cfg }) {
             {!pairValid ? <span className="sb-bad" title="A pair needs one male + one female, or exactly one Ditto (Ditto can't breed Ditto).">⚠ this pair can't breed - need ♂ + ♀, or exactly one Ditto</span> : <>
               <span className="dim">shiny breeding:</span>
               <span className={masuda ? 'sb-on' : 'sb-off'} title={methods.masuda > 1 ? 'parents have different original trainers → boosted shiny odds' : 'Masuda not enabled on this server'}>✨ Masuda {masuda ? '✓' : '-'}</span>
-              <span className={crystal ? 'sb-on' : 'sb-off'} title={methods.crystal > 1 ? 'a parent is shiny → boosted shiny odds' : 'Crystal not enabled on this server'}>💎 Crystal {crystal ? '✓' : '-'}</span>
+              <span className={crystal ? 'sb-on' : 'sb-off'} title={methods.crystal > 1 ? `shiny parent → ×${methods.crystal} shiny odds (GP guarantees ×2 even if the server ships Crystal off; higher server values win)` : 'add a shiny parent to boost odds'}>💎 Crystal {crystal ? '✓' : '-'}</span>
             </>}
           </div>
         )}

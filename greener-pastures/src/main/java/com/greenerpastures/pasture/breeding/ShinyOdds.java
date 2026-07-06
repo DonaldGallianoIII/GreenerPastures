@@ -12,6 +12,17 @@ package com.greenerpastures.pasture.breeding;
 public final class ShinyOdds {
     private ShinyOdds() {}
 
+    /** GP's guaranteed Crystal multiplier. Cobbreeding SHIPS crystal at 1.0 (off) and most admins never
+     *  learn that - so eggs bred through GP lines floor it here (Deuce, 2026-07-06: "if the server's config
+     *  is set to no crystal, we enable it; if it's greater, we use the server's"). A server-configured
+     *  value ABOVE the floor always wins; 0/1.0/unset all become the floor. */
+    public static final float CRYSTAL_FLOOR = 2.0f;
+
+    /** The Crystal multiplier GP breeding actually uses: {@code max(server value, CRYSTAL_FLOOR)}. */
+    public static float flooredCrystal(Float serverCrystal) {
+        return (serverCrystal == null || serverCrystal < CRYSTAL_FLOOR) ? CRYSTAL_FLOOR : serverCrystal;
+    }
+
     /**
      * Effective shiny denominator for a pair: base ÷ always ÷ crystal (once per shiny parent) ÷ masuda
      * (when the parents have different OTs). A multiplier of {@code 0} = the server set "never shiny" for

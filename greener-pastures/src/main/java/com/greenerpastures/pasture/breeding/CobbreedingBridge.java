@@ -479,7 +479,7 @@ public final class CobbreedingBridge {
         try {
             Map<String, Float> m = Cobbreeding.INSTANCE.getConfig().getShinyMethod();
             Float always  = (m != null && m.containsKey("always"))  ? m.get("always")  : null;
-            Float crystal = (m != null && m.containsKey("crystal")) ? m.get("crystal") : null;
+            Float crystal = ShinyOdds.flooredCrystal((m != null && m.containsKey("crystal")) ? m.get("crystal") : null);
             Float masuda  = (m != null && m.containsKey("masuda"))  ? m.get("masuda")  : null;
             // Pure math (unit-tested in ShinyOddsTest); replicates Cobbreeding's calcShiny.
             return ShinyOdds.effectiveOdds(baseRate, always, crystal, masuda,
@@ -559,7 +559,14 @@ public final class CobbreedingBridge {
 
     /** The server's shiny-method multipliers (always / crystal / masuda) - for the console's shiny-breeding indicator. */
     public static java.util.Map<String, Float> shinyMethods() {
-        try { java.util.Map<String, Float> m = Cobbreeding.INSTANCE.getConfig().getShinyMethod(); return m == null ? java.util.Map.of() : m; }
+        // Crystal is FLOORED here too, so the console badge and the odds math can never disagree
+        // about what an egg actually experiences.
+        try {
+            java.util.Map<String, Float> m = Cobbreeding.INSTANCE.getConfig().getShinyMethod();
+            java.util.Map<String, Float> out = new java.util.HashMap<>(m == null ? java.util.Map.of() : m);
+            out.put("crystal", ShinyOdds.flooredCrystal(out.get("crystal")));
+            return out;
+        }
         catch (Throwable t) { return java.util.Map.of(); }
     }
 
