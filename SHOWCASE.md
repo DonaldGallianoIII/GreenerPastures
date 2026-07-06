@@ -67,3 +67,16 @@ _Compiled 2026-07-05 from a full code survey; current as of jar ceb9fb9a, 305 te
 - /gp perf self-profiling (flame graphs), JSONL observability log, 305 unit tests
 - **Adversarially reviewed pre-release**: six independent system audits (edge cases / perf / new-player UX); every finding fixed or consciously accepted (REVIEW_FINDINGS.md)
 - New players land on the **Guide tab** first, new breeding lines come **pre-wired to the BioBank**, and full pastures send an Inbox warning - the sharp edges got sanded
+
+## 🧩 Requirements & Compatibility
+| Mod | Version | Side | Role |
+|---|---|---|---|
+| Cobblemon | **1.7.3** (1.7.x pinned) | both | required - pastures, snacks, spawning integration |
+| Fabric API | any recent | both | required |
+| owo-lib | 0.12.15+ | client-facing | required - fallback console UI |
+| Cobbreeding | 2.2.x | both | recommended - unlocks multi-pair breeding + egg reads; self-disables cleanly without it |
+| MCEF | 2.1.6+ | client only | recommended - the full React console; basic UI without it |
+
+- Minecraft 1.21.1 · Fabric Loader 0.16+ · Java 21. Nothing jar-in-jar bundled.
+- Version discipline: the Cobblemon dependency is **range-pinned in fabric.mod.json** so an incompatible Cobblemon gives a clean loader message, never a cryptic mixin crash.
+- Optional integrations degrade gracefully by design - missing Cobbreeding/MCEF logs one line and moves on.

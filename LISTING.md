@@ -80,10 +80,16 @@ cores. Eggs are bagged and tagged: every voided egg is listed with the exact fil
 - **All data stays local.** The analytics are yours, on your machine. Nothing phones home.
 
 ### Requirements
-- Fabric 1.21.1 · Java 21 · Fabric API
-- **Cobblemon** (required) · **Cobbreeding** (strongly recommended - breeding features activate with it)
-- **MCEF** (strongly recommended - the full console; without it a basic fallback UI is used)
-- owo-lib
+**Required** (client & server):
+- Minecraft **1.21.1** · Fabric Loader **0.16+** · **Java 21** · Fabric API
+- **Cobblemon 1.7.3** (we integrate deeply with pastures, snacks and spawning - 1.7.x only, the mod refuses to load on other majors rather than crash mid-game)
+- **owo-lib 0.12.15+** (the console's fallback UI)
+
+**Strongly recommended**:
+- **Cobbreeding 2.2.x** - the breeding half of the mod activates with it (multi-pair Kernels, egg IV/nature reads). Without it, Greener Pastures self-disables those features with a friendly log line instead of crashing.
+- **MCEF 2.1.6+** (client only) - renders the full Notebook console. Without it you get a simpler built-in UI; everything still works.
+
+Nothing is bundled - install each as its own mod. Works in singleplayer and on dedicated servers (MCEF is only ever needed on clients).
 
 *MIT licensed. Built by Deuce222XX.*
 
