@@ -54,14 +54,6 @@ higher values always win.
 
 📸 *the EV allocator + nature picker*
 
-### The Game Corner
-The Notebook ships a full **Voltorb Flip** machine - the HGSS deduction classic, server-authoritative
-(the client literally never receives a face-down tile, so it cannot be cheated). Read the row chips,
-flip the multipliers, push your luck through 7 levels. Winnings are real Data - and the house's ledger
-closes at exactly one kilobyte a day, so it's a rainy-day faucet, not the meta.
-
-📸 *the Game Corner mid-round, three flips deep*
-
 ### The hunter's toolkit (bundled)
 Shiny eggs **gold-glow in any container** - no more hover-checking a full box. A lifetime tally keeps
 your real "1 in N" shiny rate. And **EggOracle**, the built-in odds planner, answers the only question
