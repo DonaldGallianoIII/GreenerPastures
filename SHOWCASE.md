@@ -55,7 +55,7 @@ _Compiled 2026-07-05 from a full code survey; current as of jar ceb9fb9a, 305 te
 
 ## ▓▒░ MissingNo. - the endgame trophy
 - Render **one million lifetime Data** → the Dashboard's glitch card lets you **summon MissingNo.** - repeatable every million, forever
-- A real party Pokémon that **rewrites its own species every ~5 seconds** - Ditto → Aerodactyl → Gastly → Marowak → Kabutops, never the same twice (the fossils and the ghost, as the original sprite corruption intended)
+- A real party Pokémon that **rewrites its own species every ~5 seconds** - Ditto → Aerodactyl → Haunter → Marowak → Kabutops, never the same twice (the fossils and the ghost, as the original sprite corruption intended)
 - **Pure trophy**: it refuses all battles ("MissingNo. distorts the battlefield"), never shiny, nicknamed, and its glitch survives PC storage, trading, even Specimen Disks
 - The odometer counts only genuinely rendered eggs - no disk tricks, no shortcuts. ~87 hours of maxed 5-pasture uptime per million. Flex accordingly
 

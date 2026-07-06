@@ -17,7 +17,7 @@ import java.util.Random;
 /**
  * <b>MissingNo.</b> - the capstone cosmetic (Deuce, 2026-07-05): earned once per MILLION lifetime Data
  * rendered, summoned from the Notebook Dashboard. It is a real party Pokémon whose species GLITCHES every
- * ~5 seconds among the classic five (Ditto · Aerodactyl · Gastly · Marowak · Kabutops - the fossils and the
+ * ~5 seconds among the classic five (Ditto · Aerodactyl · Haunter · Marowak · Kabutops - the fossils and the
  * ghost, as the original sprite corruption intended), never landing on the same one twice. Deliberately
  * NOT battleable: any battle whose players carry one is refused ("it distorts the battlefield") - box it
  * or Specimen-Disk it to fight. Flag + true identity live in the mon's persistentData, so it survives
@@ -27,7 +27,10 @@ public final class Missingno {
     private Missingno() {}
 
     public static final String FLAG = "gp_missingno";
-    public static final List<String> SPECIES = List.of("ditto", "aerodactyl", "gastly", "marowak", "kabutops");
+    // Canon pool: Red/Blue MissingNo.'s real forms - the Lavender ghost (Haunter-shaped; Discord catch,
+    // 2026-07-06, was gastly) + the Aerodactyl/Kabutops fossils - plus Marowak for the Lavender story
+    // and Ditto for the glitch itself.
+    public static final List<String> SPECIES = List.of("ditto", "aerodactyl", "haunter", "marowak", "kabutops");
     private static final int ROTATE_TICKS = 100;   // ~5 s
     private static final Random RNG = new Random();
     private static int tick = 0;
