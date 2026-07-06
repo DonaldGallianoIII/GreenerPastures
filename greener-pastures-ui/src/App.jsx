@@ -7,6 +7,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
 import { HAPPY, SAD, VOLTORB_ANGRY, HAPPY_KEYS, SAD_KEYS } from './pmdsprites.js'
+import { SCORBUNNY_SHEET } from './treelinesprites.js'
 
 // MCEF forwards key events but NOT mouse-click modifiers, so ev.shiftKey is always false in-game. Track Shift via
 // key events (which DO come through) and OR it into click handlers, so ⇧-click works both in-game and in a browser.
@@ -101,6 +102,90 @@ const CSS = `
 .cell-full{ opacity:.42; cursor:not-allowed; }
 .tab-badge{ display:inline-block; margin-left:5px; background:var(--cyan); color:#04222b; border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; vertical-align:1px; }
 .hstrip{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+.tl-cab{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; width:240px; padding:16px 14px;
+  border:1px solid #8a6432; border-radius:10px; background:linear-gradient(180deg,#221809,#1c1307);
+  color:#f0a12e; cursor:pointer; transition:all .15s; text-align:left; }
+.tl-cab:hover{ border-color:#ffd489; box-shadow:0 0 14px rgba(240,161,46,.35); transform:translateY(-2px); }
+.tl-cab-name{ font-size:17px; font-weight:700; letter-spacing:2px; color:#ffd489; }
+.tl-cab-sub{ font-size:10px; color:#8a6432; }
+.tl-console{ --u: min(1.05vw, 0.72vh); width:calc(var(--u)*74); margin:0 auto; padding:calc(var(--u)*1.6);
+  border:calc(var(--u)*0.14) solid #8a6432; border-radius:calc(var(--u)*0.8);
+  background:linear-gradient(180deg,#221809 0%,#1c1307 100%);
+  box-shadow:0 0 calc(var(--u)*3) rgba(240,161,46,0.12), inset 0 0 calc(var(--u)*4) rgba(0,0,0,0.55);
+  display:flex; flex-direction:column; gap:calc(var(--u)*1); color:#f0a12e; }
+.tl-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:calc(var(--u)*1);
+  border-bottom:1px solid #8a6432; padding-bottom:calc(var(--u)*0.8); }
+.tl-title{ display:flex; flex-direction:column; line-height:1; }
+.tl-title-main{ font-size:calc(var(--u)*2.6); font-weight:700; letter-spacing:calc(var(--u)*0.22); color:#ffd489;
+  text-shadow:0 0 calc(var(--u)*1.1) rgba(240,161,46,0.55); }
+.tl-title-sub{ font-size:calc(var(--u)*0.95); color:#8a6432; letter-spacing:calc(var(--u)*0.1); margin-top:calc(var(--u)*0.3); }
+.tl-meters{ display:flex; gap:calc(var(--u)*1.6); align-items:flex-end; }
+.tl-meter{ display:flex; flex-direction:column; align-items:flex-end; line-height:1; }
+.tl-meter-label{ font-size:calc(var(--u)*0.8); color:#8a6432; margin-bottom:calc(var(--u)*0.3); }
+.tl-meter-val{ font-size:calc(var(--u)*2); font-weight:700; color:#ffd489; font-variant-numeric:tabular-nums; }
+.tl-pips{ display:flex; gap:calc(var(--u)*0.3); }
+.tl-pip{ width:calc(var(--u)*1); height:calc(var(--u)*1.6); background:#2c1f0d; border:1px solid #8a6432; border-radius:calc(var(--u)*0.15); }
+.tl-pip-on{ background:#f0a12e; box-shadow:0 0 calc(var(--u)*0.6) rgba(240,161,46,0.6); }
+.tl-screen{ width:100%; aspect-ratio:16/9; overflow:hidden; border:1px solid #8a6432; border-radius:calc(var(--u)*0.5);
+  background:#0e0903; position:relative; }
+.tl-strip{ display:flex; width:200%; height:100%; transform:translateX(0); transition:transform 1.25s cubic-bezier(0.55,0.05,0.25,1); }
+.tl-strip-panned{ transform:translateX(-50%); }
+.tl-map{ width:50%; height:100%; position:relative; overflow:hidden; }
+.tl-meadow{ background:linear-gradient(180deg,#14100a 0%,#1b1408 100%); }
+.tl-grass{ position:absolute; inset:0; }
+.tl-blade{ position:absolute; color:#8a6432; font-size:calc(var(--u)*1.4); opacity:0.6; line-height:1; }
+.tl-edge-fade{ position:absolute; top:0; right:0; bottom:0; width:12%;
+  background:linear-gradient(90deg, rgba(240,161,46,0) 0%, rgba(240,161,46,0.07) 100%); border-right:2px dashed #8a6432; }
+.tl-critter-pos{ position:absolute; width:calc(var(--u)*3.4); height:calc(var(--u)*4.2); transform:translate(-50%,-50%);
+  transition:left 1.35s cubic-bezier(0.5,0,0.9,0.6), top 1.35s ease-in; }
+.tl-idle{ animation:tlIdle 2.6s ease-in-out infinite; }
+@keyframes tlIdle{ 0%,100%{ margin-top:0; } 50%{ margin-top:calc(var(--u)*-0.25); } }
+.tl-flee{ left:112% !important; top:var(--exitY) !important; }
+.tl-bun{ display:block; width:100%; aspect-ratio:24/40; background-repeat:no-repeat; background-size:400% 800%;
+  background-position:0% calc(var(--row,0) * 14.2857%); image-rendering:pixelated;
+  filter:drop-shadow(0 0 calc(var(--u)*0.5) rgba(255,190,80,0.75)); }
+.tl-bun-walk{ animation:tlWalk var(--spd,0.6s) steps(4) infinite; }
+@keyframes tlWalk{ from{ background-position-x:0%; } to{ background-position-x:133.3333%; } }
+.tl-bun-dim{ filter:saturate(0.15) brightness(0.72); }
+.tl-forest{ background:linear-gradient(180deg,#100c06 0%,#171008 100%); }
+.tl-tree{ position:absolute; width:calc(var(--u)*5.4 * var(--sc)); height:calc(var(--u)*7 * var(--sc));
+  transform:translate(-50%,-78%); background:transparent; border:none; padding:0; cursor:pointer; }
+.tl-tree:disabled{ cursor:default; }
+.tl-tree-inner{ display:block; width:100%; height:100%; transition:filter 0.15s; }
+.tl-tree:not(:disabled):hover .tl-tree-inner{ filter:drop-shadow(0 0 calc(var(--u)*0.7) rgba(240,161,46,0.55)) brightness(1.25); }
+.tl-tree:not(:disabled):active .tl-tree-inner{ animation:tlRustle 0.35s linear; }
+.tl-searched .tl-tree-inner{ opacity:0.32; }
+@keyframes tlRustle{ 0%,100%{ transform:rotate(0);} 25%{ transform:rotate(-4deg);} 50%{ transform:rotate(3.5deg);} 75%{ transform:rotate(-2.5deg);} }
+.tl-puff{ position:absolute; top:12%; left:50%; transform:translateX(-50%); color:#8a6432; font-size:calc(var(--u)*1.6);
+  animation:tlFade 0.9s ease-out forwards; }
+@keyframes tlFade{ from{ opacity:1; } to{ opacity:0.35; } }
+.tl-popout{ position:absolute; top:-18%; left:50%; width:60%; height:52%; transform:translateX(-50%);
+  animation:tlPop 0.35s cubic-bezier(0.3,1.6,0.5,1); }
+@keyframes tlPop{ from{ transform:translateX(-50%) translateY(60%) scale(0.4); opacity:0; }
+  to{ transform:translateX(-50%) translateY(0) scale(1); opacity:1; } }
+.tl-arrow{ position:absolute; top:-55%; left:50%; transform:translateX(-50%); font-size:calc(var(--u)*2.2); font-weight:700;
+  color:#ffd489; text-shadow:0 0 calc(var(--u)*1) rgba(240,161,46,0.8); animation:tlArrowPulse 0.9s ease-in-out infinite; }
+@keyframes tlArrowPulse{ 0%,100%{ opacity:1; margin-top:0; } 50%{ opacity:0.55; margin-top:calc(var(--u)*-0.3); } }
+.tl-found{ filter:drop-shadow(0 0 calc(var(--u)*1.4) rgba(255,212,137,0.9)); }
+.tl-taunt{ animation:tlTaunt 1.1s ease-in forwards; }
+@keyframes tlTaunt{ 0%{ transform:translateX(-50%) translateY(60%) scale(0.4); opacity:0; }
+  30%{ transform:translateX(-50%) translateY(0) scale(1); opacity:1; }
+  60%{ transform:translateX(-50%) translateY(calc(var(--u)*-1)) scale(1); }
+  100%{ transform:translateX(300%) translateY(calc(var(--u)*-1.5)) scale(0.8); opacity:0; } }
+.tl-log{ min-height:calc(var(--u)*2.4); padding:calc(var(--u)*0.5) calc(var(--u)*0.9); border:1px solid #8a6432;
+  border-radius:calc(var(--u)*0.4); background:#120c05; font-size:calc(var(--u)*1.15); display:flex; align-items:center; gap:calc(var(--u)*0.5); }
+.tl-log-prompt{ color:#8a6432; }
+.tl-log-win{ color:#ffd489; text-shadow:0 0 calc(var(--u)*0.7) rgba(255,212,137,0.5); }
+.tl-log-lose{ color:#ff2e63; border-color:#6e1730; }
+.tl-controls{ display:flex; align-items:center; gap:calc(var(--u)*0.9); }
+.tl-btn{ font-weight:600; font-size:calc(var(--u)*1.15); padding:calc(var(--u)*0.65) calc(var(--u)*1.2);
+  border:1px solid #8a6432; border-radius:calc(var(--u)*0.4); background:#2c1f0d; color:#f0a12e; cursor:pointer; transition:all .15s; }
+.tl-btn:hover{ border-color:#f0a12e; color:#ffd489; }
+.tl-btn-go{ background:#f0a12e; color:#1c1307; border-color:#ffd489; font-size:calc(var(--u)*1.3); animation:tlPulse 1.6s ease-in-out infinite; }
+@keyframes tlPulse{ 0%,100%{ box-shadow:0 0 calc(var(--u)*0.6) rgba(240,161,46,0.4); } 50%{ box-shadow:0 0 calc(var(--u)*1.8) rgba(240,161,46,0.75); } }
+.tl-watch{ font-size:calc(var(--u)*1.5); font-weight:700; color:#ffd489; letter-spacing:calc(var(--u)*0.12); animation:tlBlink 0.9s steps(2) infinite; }
+.tl-watch-dim{ color:#8a6432; animation:none; font-size:calc(var(--u)*1.1); font-weight:400; }
+@keyframes tlBlink{ 50%{ opacity:0.35; } }
 .vf-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:6px; }
 .vf-board{ display:grid; grid-template-columns:repeat(6, 56px); grid-template-rows:repeat(6, 56px); gap:6px; }
 .vf-tile{ position:relative; width:56px; height:56px; border-radius:8px; border:1px solid var(--line2);
@@ -1600,7 +1685,7 @@ const happySpecies = (i, level) => HAPPY_KEYS[(i * 13 + (level || 1) * 7) % HAPP
 const sadSpecies = (i, level) => SAD_KEYS[(i * 11 + (level || 1) * 5) % SAD_KEYS.length]
 const SadIcon = () => <img src={VOLTORB_ANGRY} alt="voltorbs" title="hidden Voltorbs in this line" />
 
-function GameCorner() {
+function VoltorbCabinet({ onBack }) {
   const d = useChannel('arcade')
   if (!d) return <Empty title="…" msg="loading the Game Corner channel" />
   const tiles = d.tiles || []
@@ -1636,7 +1721,8 @@ function GameCorner() {
     <div className="pane" style={{ overflow: 'auto' }}>
       <div className="vf-wrap">
         <div className="row" style={{ gap: 14, alignItems: 'baseline' }}>
-          <span className="h">🎰 Game Corner · Lv.{d.level}</span>
+          <button className="btn" onClick={onBack} title="back to the Game Corner lobby">‹</button>
+          <span className="h">DAEMON FLIP · Lv.{d.level}</span>
           <span className="grn" style={{ fontWeight: 600 }}>pot {fmt(d.coins)}</span>
           {d.dailyLeft >= 0 && <span className="dim" style={{ fontSize: 11 }} title="the house's daily ledger">house pays {fmt(d.dailyLeft)} more today</span>}
         </div>
@@ -1653,6 +1739,177 @@ function GameCorner() {
           Flip a sad one and the pot is gone. Winnings are Data - straight to your account.
         </span>}
         <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
+      </div>
+    </div>
+  )
+}
+
+// ── Game Corner lobby: two cabinets (DAEMON FLIP · TREELINE) ──
+function GameCorner() {
+  const [cabinet, setCabinet] = useState(null)
+  if (cabinet === 'vf') return <VoltorbCabinet onBack={() => setCabinet(null)} />
+  if (cabinet === 'tl') return <TreelineCabinet onBack={() => setCabinet(null)} />
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="vf-wrap">
+        <span className="h">🎰 Game Corner</span>
+        <div className="row" style={{ gap: 12 }}>
+          <button className="tl-cab" onClick={() => setCabinet('vf')}>
+            <span className="tl-cab-name">DAEMON FLIP</span>
+            <span className="tl-cab-sub">cabinet 01 · deduction · flip the happy ones</span>
+          </button>
+          <button className="tl-cab" onClick={() => setCabinet('tl')}>
+            <span className="tl-cab-name">TREELINE</span>
+            <span className="tl-cab-sub">cabinet 02 · scorbunny recovery · decoys snitch</span>
+          </button>
+        </div>
+        <span className="dim" style={{ fontSize: 9 }}>art · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
+      </div>
+    </div>
+  )
+}
+
+// ── TREELINE (Deuce's artifact, server-authoritative port). Scorbunny sheet: 4 frames × 8 dirs. ──
+const TL_DIR = { S: 0, SE: 1, E: 2, NE: 3, N: 4, NW: 5, W: 6, SW: 7 }
+function Bunny({ dir = 'S', walking = false, dim = false, speed = 0.6 }) {
+  return (
+    <span className={`tl-bun${walking ? ' tl-bun-walk' : ''}${dim ? ' tl-bun-dim' : ''}`}
+      style={{ '--row': TL_DIR[dir], '--spd': `${speed}s`, backgroundImage: `url(${SCORBUNNY_SHEET})` }} />
+  )
+}
+function TlTree() {
+  return (
+    <svg viewBox="0 0 60 80" style={{ width: '100%', height: '100%' }}>
+      <rect x="26" y="58" width="8" height="16" fill="#8a6432" />
+      <path d="M30 4 L52 34 L42 34 L56 56 L4 56 L18 34 L8 34 Z" fill="none"
+        stroke="#f0a12e" strokeWidth="2.2" strokeLinejoin="round" opacity="0.85" />
+      <path d="M30 12 L44 32 L38 32 L48 50 L12 50 L22 32 L16 32 Z" fill="rgba(240,161,46,0.10)" />
+    </svg>
+  )
+}
+
+function TreelineCabinet({ onBack }) {
+  const d = useChannel('treeline')
+  const [phase, setPhase] = useState('meadow')   // meadow | scatter | pan | hunt | won | lost
+  const [log, setLog] = useState('critters grazing · press RUN THEM OFF when ready')
+  const [hintTree, setHintTree] = useState(null)
+  const [cache, setCache] = useState(0)
+  const seenRef = useRef(new Set())
+  const timers = useRef([])
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+  useEffect(() => {   // no live round on the server (fresh session / relog) → deal one
+    if (d && !d.active) { send('treeline', 'TREELINE_NEW', {}); seenRef.current = new Set(); setPhase('meadow') }
+  }, [d && d.active])
+  useEffect(() => {   // server truth drives the log + end states
+    if (!d || !d.active) return
+    for (const t of d.trees || []) {
+      if (t.searched && !seenRef.current.has(t.id)) {
+        seenRef.current.add(t.id)
+        if (t.reveal === 'decoy') { setHintTree(t.id); setLog(`just a critter · it saw the bright one head ${t.arrow} of here`) }
+        else if (!t.reveal) setLog('nothing but leaves')
+      }
+    }
+    if (d.over && (phase === 'hunt')) {
+      if (d.won) { setCache((c) => c + d.payout); setLog(`SCORBUNNY RECOVERED · ${fmt(d.payout)} Data banked`); setPhase('won') }
+      else { setLog('out of sweeps · she bolts deeper into the woods · 0 Data'); setPhase('lost') }
+    }
+  }, [d, phase])
+  if (!d) return <Empty title="…" msg="loading the TREELINE channel" />
+  const later = (fn, ms) => timers.current.push(setTimeout(fn, ms))
+  const startScatter = () => {
+    if (phase !== 'meadow' || !d.active) return
+    setPhase('scatter'); setLog('SPOOKED · watch where they enter the treeline -')
+    later(() => setPhase('pan'), 1500)
+    later(() => { setPhase('hunt'); setLog(`they're in there somewhere · ${d.budget ?? 10} sweeps authorized`) }, 2800)
+  }
+  const newRound = () => {
+    timers.current.forEach(clearTimeout)
+    seenRef.current = new Set(); setHintTree(null)
+    send('treeline', 'TREELINE_NEW', {})
+    setPhase('meadow'); setLog('fresh meadow · press RUN THEM OFF when ready')
+  }
+  const panned = phase === 'pan' || phase === 'hunt' || phase === 'won' || phase === 'lost'
+  const scattering = phase === 'scatter' || panned
+  const budget = d.budget ?? 10
+  const clicks = d.clicksLeft ?? budget
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="tl-console">
+        <header className="tl-head">
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn" onClick={onBack} title="back to the Game Corner lobby">‹</button>
+            <div className="tl-title">
+              <span className="tl-title-main">TREELINE</span>
+              <span className="tl-title-sub">game corner · cabinet 02 · scorbunny recovery</span>
+            </div>
+          </div>
+          <div className="tl-meters">
+            <div className="tl-meter">
+              <span className="tl-meter-label">SWEEPS</span>
+              <span className="tl-pips">{Array.from({ length: budget }).map((_, i) =>
+                <i key={i} className={`tl-pip${i < clicks ? ' tl-pip-on' : ''}`} />)}</span>
+            </div>
+            <div className="tl-meter">
+              <span className="tl-meter-label">SESSION HAUL</span>
+              <span className="tl-meter-val">{fmt(cache)}</span>
+            </div>
+          </div>
+        </header>
+        <div className="tl-screen">
+          <div className={`tl-strip${panned ? ' tl-strip-panned' : ''}`}>
+            <div className="tl-map tl-meadow">
+              <div className="tl-grass">{Array.from({ length: 14 }).map((_, i) =>
+                <span key={i} className="tl-blade" style={{ left: `${6 + i * 6.8}%`, bottom: `${4 + ((i * 37) % 10)}%` }}>ᨏ</span>)}</div>
+              {(d.critters || []).map((c, i) => (
+                <div key={i} className={`tl-critter-pos ${scattering ? 'tl-flee' : 'tl-idle'}`}
+                  style={{ left: `${c.startX}%`, top: `${c.startY}%`, '--exitY': `${c.exitY}%`, transitionDelay: scattering ? `${i * 140}ms` : '0ms' }}>
+                  <Bunny dir={scattering ? 'E' : 'S'} walking={phase === 'meadow' || phase === 'scatter'}
+                    dim={!c.isTarget} speed={phase === 'scatter' ? 0.3 : 1.1} />
+                </div>
+              ))}
+              <div className="tl-edge-fade" />
+            </div>
+            <div className="tl-map tl-forest">
+              {(d.trees || []).map((t) => {
+                const revealDecoy = t.reveal === 'decoy'
+                const revealTarget = t.reveal === 'target'
+                const missedTarget = phase === 'lost' && d.targetTreeId === t.id && !t.searched
+                return (
+                  <button key={t.id} className={`tl-tree${t.searched ? ' tl-searched' : ''}`}
+                    style={{ left: `${t.x}%`, top: `${t.y}%`, '--sc': t.scale, zIndex: Math.round(t.y) }}
+                    onClick={() => { if (phase === 'hunt' && !t.searched && !d.over) send('treeline', 'TREELINE_SEARCH', { tree: t.id }) }}
+                    disabled={phase !== 'hunt' || t.searched}>
+                    <span className="tl-tree-inner"><TlTree /></span>
+                    {t.searched && !revealDecoy && !revealTarget && <span className="tl-puff">…</span>}
+                    {revealDecoy && (
+                      <span className="tl-popout">
+                        <Bunny dim walking speed={0.9} />
+                        {hintTree === t.id && <span className="tl-arrow">{t.arrow}</span>}
+                      </span>
+                    )}
+                    {(revealTarget || missedTarget) && (
+                      <span className={`tl-popout ${missedTarget ? 'tl-taunt' : 'tl-found'}`}>
+                        <Bunny dir={missedTarget ? 'E' : 'S'} walking speed={missedTarget ? 0.28 : 0.55} />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+        <div className={`tl-log${phase === 'won' ? ' tl-log-win' : ''}${phase === 'lost' ? ' tl-log-lose' : ''}`}>
+          <span className="tl-log-prompt">&gt;</span> {log}
+        </div>
+        <footer className="tl-controls">
+          {phase === 'meadow' && <button className="tl-btn tl-btn-go" onClick={startScatter}>RUN THEM OFF ▸</button>}
+          {(phase === 'won' || phase === 'lost') && (
+            <button className="tl-btn tl-btn-go" onClick={newRound}>
+              {phase === 'won' ? `NEW ROUND · +${fmt(d.payout)}` : 'NEW ROUND'}</button>
+          )}
+          {(phase === 'scatter' || phase === 'pan') && <span className="tl-watch">▶ WATCH THE TREELINE</span>}
+          {phase === 'hunt' && <span className="tl-watch tl-watch-dim">sweep the trees · decoys snitch · payout falls with every sweep</span>}
+        </footer>
       </div>
     </div>
   )

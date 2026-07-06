@@ -104,6 +104,8 @@ public final class NotebookNet {
      *  the same level (also closes "peek then relog" save-scum). Ledger (level + daily cap) persists. */
     private static final Map<UUID, com.greenerpastures.arcade.VoltorbFlip.Board> arcadeBoards =
             new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<UUID, com.greenerpastures.arcade.Treeline.Round> treelineRounds =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     public static void onDisconnect(UUID player) {
         lastPush.remove(player);
@@ -112,10 +114,11 @@ public final class NotebookNet {
         daemonTargetSlot.remove(player);
         lastBiobankFlatten.remove(player);
         arcadeBoards.remove(player);
+        treelineRounds.remove(player);
     }
 
     /** Reset per-server-session state - called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -141,6 +144,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookRitualsS2C.ID, NotebookRitualsS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookSpecimensS2C.ID, NotebookSpecimensS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookArcadeS2C.ID, NotebookArcadeS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookTreelineS2C.ID, NotebookTreelineS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -194,6 +198,7 @@ public final class NotebookNet {
                 pushRituals(player);
                 pushSpecimens(player);
                 pushArcade(player);
+                pushTreeline(player);
                 long nowMs = System.currentTimeMillis();
                 Long last = lastPrefetch.get(player.getUuid());
                 if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -337,6 +342,8 @@ public final class NotebookNet {
                 case NotebookActionC2S.ARCADE_NEW -> { arcadeNew(player); pushArcade(player); }
                 case NotebookActionC2S.ARCADE_FLIP -> { arcadeFlip(player, p.amount()); pushArcade(player); pushStatus(player); }
                 case NotebookActionC2S.ARCADE_CASHOUT -> { arcadeCashout(player); pushArcade(player); pushStatus(player); }
+                case NotebookActionC2S.TREELINE_NEW -> { treelineNew(player); pushTreeline(player); }
+                case NotebookActionC2S.TREELINE_SEARCH -> { treelineSearch(player, p.amount()); pushTreeline(player); pushStatus(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1226,6 +1233,77 @@ public final class NotebookNet {
             root.add("flipped", flippedArr);
         }
         sendGated(player, "arcade", new NotebookArcadeS2C(GSON.toJson(root)));
+    }
+
+    // ── TREELINE (Game Corner cabinet #2 - Deuce's artifact, 2026-07-06). Same house rules as
+    // Voltorb Flip: server owns the secrets, payouts are credit() (odometer-neutral), uncapped era. ──
+
+    private static void treelineNew(ServerPlayerEntity player) {
+        treelineRounds.put(player.getUuid(), com.greenerpastures.arcade.Treeline.generate(new java.util.Random()));
+        GpLog.d("arcade", "tl_new", "player", player.getUuid().toString());
+    }
+
+    private static void treelineSearch(ServerPlayerEntity player, int treeId) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var round = treelineRounds.get(player.getUuid());
+        if (round == null || round.over) return;
+        var sweep = com.greenerpastures.arcade.Treeline.search(round, treeId);
+        switch (sweep.outcome()) {
+            case FOUND -> {
+                com.greenerpastures.economy.DataStore.get(server).credit(player.getUuid(), sweep.payout());
+                com.greenerpastures.arcade.ArcadeStore.get(server).record(player.getUuid(), arcadeToday(), sweep.payout(),
+                        com.greenerpastures.arcade.ArcadeStore.get(server).of(player.getUuid(), arcadeToday()).level);
+                GpLog.i("arcade", "tl_found", "player", player.getUuid().toString(),
+                        "sweepsUsed", com.greenerpastures.arcade.Treeline.CLICK_BUDGET - sweep.clicksLeft(), "paid", sweep.payout());
+            }
+            case LOST -> GpLog.i("arcade", "tl_lost", "player", player.getUuid().toString());
+            default -> { }
+        }
+    }
+
+    /** TREELINE state: layout always; contents only where swept; the target's tree only once over. */
+    public static void pushTreeline(ServerPlayerEntity player) {
+        var round = treelineRounds.get(player.getUuid());
+        JsonObject root = new JsonObject();
+        root.addProperty("active", round != null);
+        if (round != null) {
+            root.addProperty("over", round.over);
+            root.addProperty("won", round.won);
+            root.addProperty("payout", round.payout);
+            root.addProperty("clicksLeft", round.clicksLeft);
+            root.addProperty("budget", com.greenerpastures.arcade.Treeline.CLICK_BUDGET);
+            if (round.over) root.addProperty("targetTreeId", round.targetTreeId);
+            JsonArray trees = new JsonArray();
+            var target = round.tree(round.targetTreeId);
+            for (var t : round.trees) {
+                JsonObject o = new JsonObject();
+                o.addProperty("id", t.id);
+                o.addProperty("x", Math.round(t.x * 100.0) / 100.0);
+                o.addProperty("y", Math.round(t.y * 100.0) / 100.0);
+                o.addProperty("scale", Math.round(t.scale * 1000.0) / 1000.0);
+                o.addProperty("searched", t.searched);
+                if (t.searched && t.contains != null) {
+                    o.addProperty("reveal", "target".equals(t.contains) ? "target" : "decoy");
+                    if (!"target".equals(t.contains) && target != null) {
+                        o.addProperty("arrow", com.greenerpastures.arcade.Treeline.arrowToward(target.x - t.x, target.y - t.y));
+                    }
+                }
+                trees.add(o);
+            }
+            root.add("trees", trees);
+            JsonArray critters = new JsonArray();
+            for (var c : round.critters) {
+                JsonObject o = new JsonObject();
+                o.addProperty("isTarget", c.isTarget());
+                o.addProperty("startX", Math.round(c.startX() * 100.0) / 100.0);
+                o.addProperty("startY", Math.round(c.startY() * 100.0) / 100.0);
+                o.addProperty("exitY", Math.round(c.exitY() * 100.0) / 100.0);
+                critters.add(o);
+            }
+            root.add("critters", critters);
+        }
+        sendGated(player, "treeline", new NotebookTreelineS2C(GSON.toJson(root)));
     }
 
     /** The focused pasture's extras blob: health strip (#37) + the slotted Kernel's breeding-meta loadout. */

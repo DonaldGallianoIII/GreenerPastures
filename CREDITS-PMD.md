@@ -1,13 +1,13 @@
-# PMD Sprite Collab - Portrait Credits
+# PMD Sprite Collab - Portrait & Sprite Credits
 
-The Game Corner's Pokémon portraits come from the community-run **PMD Sprite Collab**
-(https://sprites.pmdcollab.org) and are used with credit per the collab's reuse terms.
-Every portrait bundled here is **fan-made**, verified per-emotion - no assets ripped from
-the PMD games are included.
+The Game Corner's Pokémon art comes from the community-run **PMD Sprite Collab**
+(https://sprites.pmdcollab.org) and is used with credit per the collab's reuse terms.
+Everything bundled is **fan-made**, verified per-emotion/per-animation - no assets ripped
+from the PMD games are included.
 
 Artists: baronessfaron, Caitemis, Cloudy, Deeshura, Emmuffin, Fable, G〜, JFain, JustAGunk, MilesFarber, mixy:3, mucrush, NeroIntruder, Noivern, NOLASMOR, Noo, RacieB, Top_Kec, ◥θ┴θ◤
 
-| Species | Portrait artists |
+| Art | Artists |
 |---|---|
 | Axew | G〜 |
 | Blitzle | Emmuffin, mucrush |
@@ -29,6 +29,7 @@ Artists: baronessfaron, Caitemis, Cloudy, Deeshura, Emmuffin, Fable, G〜, JFain
 | Quaxly | Caitemis, Emmuffin |
 | Rowlet | Emmuffin |
 | Scorbunny | Emmuffin, NeroIntruder |
+| Scorbunny (walk sprite) | Emmuffin, NeroIntruder |
 | Snivy | Emmuffin |
 | Sobble | Emmuffin, G〜 |
 | Sprigatito | Emmuffin |

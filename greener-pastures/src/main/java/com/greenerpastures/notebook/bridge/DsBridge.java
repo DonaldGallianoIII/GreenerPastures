@@ -130,6 +130,8 @@ public final class DsBridge {
             case "ARCADE_NEW"     -> new NotebookActionC2S(NotebookActionC2S.ARCADE_NEW, "", 0);
             case "ARCADE_FLIP"    -> new NotebookActionC2S(NotebookActionC2S.ARCADE_FLIP, "", (int) num(p, "tile", -1));
             case "ARCADE_CASHOUT" -> new NotebookActionC2S(NotebookActionC2S.ARCADE_CASHOUT, "", 0);
+            case "TREELINE_NEW"    -> new NotebookActionC2S(NotebookActionC2S.TREELINE_NEW, "", 0);
+            case "TREELINE_SEARCH" -> new NotebookActionC2S(NotebookActionC2S.TREELINE_SEARCH, "", (int) num(p, "tree", -1));
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }
@@ -224,6 +226,7 @@ public final class DsBridge {
         push("rituals", jsonChannel(NotebookState.ritualsJson));
         push("specimens", jsonChannel(NotebookState.specimensJson));
         push("arcade", jsonChannel(NotebookState.arcadeJson));
+        push("treeline", jsonChannel(NotebookState.treelineJson));
         push("nav", navData());
     }
 

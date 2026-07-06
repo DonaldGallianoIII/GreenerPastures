@@ -1,5 +1,5 @@
-Greener Pastures - Game Corner portraits: PMD Sprite Collab (sprites.pmdcollab.org)
-Fan-made art used with credit (verified per-emotion; no game rips). Artists:
+Greener Pastures - Game Corner art: PMD Sprite Collab (sprites.pmdcollab.org)
+Fan-made art used with credit (verified per-emotion/per-animation; no game rips). Artists:
   axew: G〜
   blitzle: Emmuffin, mucrush
   bounsweet: NOLASMOR, baronessfaron
@@ -20,6 +20,7 @@ Fan-made art used with credit (verified per-emotion; no game rips). Artists:
   quaxly: Caitemis, Emmuffin
   rowlet: Emmuffin
   scorbunny: Emmuffin, NeroIntruder
+  scorbunny (walk sprite): Emmuffin, NeroIntruder
   snivy: Emmuffin
   sobble: Emmuffin, G〜
   sprigatito: Emmuffin

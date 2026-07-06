@@ -13,7 +13,7 @@ _Compiled from a full code survey; rev 2026-07-06 - 310 tests, post-adversarial-
 - **Inbox** - dismissible away-progress + event feed with unread badge
 - **Rituals** - hidden-recipe puzzle board + per-ritual spoils tiles
 - **Specimens** - archive party mons onto disks
-- **Game Corner** - Voltorb Flip with PMD Sprite Collab portraits (happy flips, devastated bombs; fan-made art, fully credited); server-authoritative, never moves the MissingNo odometer (payout tuning in progress)
+- **Game Corner** - a two-cabinet arcade: DAEMON FLIP (Voltorb Flip with PMD Collab portraits - happy flips, devastated bombs) and TREELINE (chase a Scorbunny into the forest; decoys snitch with arrows; payout falls with every sweep). Fan-made art only, fully credited; server-authoritative; never moves the MissingNo odometer
 - **Guide** - full onboarding manual in-game
 
 ## 🧬 Breeding Engine

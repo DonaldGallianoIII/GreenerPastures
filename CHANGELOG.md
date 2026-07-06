@@ -54,10 +54,11 @@ system-by-system pre-release; live-QA'd in singleplayer and on a dedicated serve
   stacks to ÷120) and bake it in - sculpt your spawn pool.
 
 ### Game Corner
-- A full **Voltorb Flip** machine in the Notebook - server-authoritative (face-down tiles never
-  leave the server), 7 levels, persisted machine level, PMD Sprite Collab portraits (fan-made
-  art only, credited in CREDITS-PMD.md). Winnings are Data via the neutral path (never the
-  MissingNo odometer).
+- Two arcade cabinets, both server-authoritative (hidden tiles/trees never leave the server),
+  both paying Data via the neutral path (never the MissingNo odometer). **DAEMON FLIP**: full
+  Voltorb Flip, 7 levels, persisted machine level. **TREELINE**: find the Scorbunny in ten
+  sweeps; decoys snitch with 8-way arrows; payout falls per sweep. PMD Sprite Collab art,
+  fan-made only, credited in CREDITS-PMD.md.
 
 ### Trophies
 - **Specimen Disks**: archive party mons losslessly onto reusable media; release by

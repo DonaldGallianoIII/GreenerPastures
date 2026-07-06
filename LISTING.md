@@ -55,11 +55,13 @@ higher values always win.
 📸 *the EV allocator + nature picker*
 
 ### The Game Corner
-A full **Voltorb Flip** machine in the Notebook - deduction, push-your-luck, seven levels. Flip a
-multiplier and a *delighted* Pokémon portrait greets you; flip a bomb and someone is devastated
-(portraits from the community-run **PMD Sprite Collab** - fan-made art only, every artist credited
-in the mod). Server-authoritative: the client literally never receives a face-down tile, so it cannot
-be cheated. Winnings are real Data, straight to your account.
+Two arcade cabinets inside the Notebook. **DAEMON FLIP** is full Voltorb Flip - deduction,
+push-your-luck, seven levels; flip a multiplier and a *delighted* Pokémon portrait greets you, flip a
+bomb and someone is devastated. **TREELINE** spooks a Scorbunny into the woods - Zelda-pan to the
+forest, ten sweeps to find her, decoys snitch with arrows, and the pot shrinks with every tree you
+rustle. All art from the community-run **PMD Sprite Collab** (fan-made only, every artist credited in
+the mod). Server-authoritative: the client never receives a hidden tile or tree, so neither cabinet
+can be cheated. Winnings are real Data, straight to your account.
 
 📸 *the Game Corner mid-round - two happy flips and a nervous board*
 
