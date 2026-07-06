@@ -311,7 +311,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.TOGGLE_DAEMON -> { toggleDaemon(player); pushCompiler(player); }
                 case NotebookActionC2S.APPLY_AUGMENT -> { applyAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
-                case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player); }
+                case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player, true); }
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
                 case NotebookActionC2S.RITUAL_PULL -> { ritualPull(player, p.arg(), p.amount()); pushRituals(player); }
                 case NotebookActionC2S.CORRUPT_KERNEL -> { corruptKernel(player); pushAugmenter(player); }
@@ -1261,17 +1261,26 @@ public final class NotebookNet {
 
     /** Send the player's BioBank contents: one entry per stored egg (species · shiny · IV total · # perfect). */
     public static void pushBiobank(ServerPlayerEntity player) {
+        pushBiobank(player, false);
+    }
+
+    /** {@code force} skips the 5s flatten floor - user-initiated actions (withdraw) get instant feedback. */
+    public static void pushBiobank(ServerPlayerEntity player, boolean force) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         BioBankData bank = BioBankStore.get(server).get(player.getUuid());
-        // Rev gate BEFORE assembly: flattening a hoard-scale bank (thousands of eggs → cards + entries) every
+        // 5s floor FIRST (review M2): during ACTIVE breeding the rev bumps every second - re-flattening a
+        // hoard-scale bank per second per viewer was the cost. The floor must run BEFORE the rev gate:
+        // changed() records the rev it sees, so gating first EATS the change signal on a throttled call and
+        // the UI freezes on stale state forever (BUG-017 - Deuce's ghost abra, live QA 2026-07-06).
+        long nowMs = System.currentTimeMillis();
+        if (!force) {
+            Long lastFlat = lastBiobankFlatten.get(player.getUuid());
+            if (lastFlat != null && nowMs - lastFlat < 5_000L) return;   // rev signal stays unconsumed - the 1s poll retries
+        }
+        // Rev gate before assembly: flattening a hoard-scale bank (thousands of eggs → cards + entries) every
         // second was the single biggest per-viewer cost (R3 F1/F2). Unchanged bank → nothing at all happens.
         if (!changed(player, "biobank_rev", bank == null ? -1L : bank.rev())) return;
-        // 5s floor on top of the rev gate (review M2): during ACTIVE breeding the rev bumps every second,
-        // re-flattening a hoard-scale bank per second per viewer. Freshness within 5s is plenty for a tab.
-        long nowMs = System.currentTimeMillis();
-        Long lastFlat = lastBiobankFlatten.get(player.getUuid());
-        if (lastFlat != null && nowMs - lastFlat < 5_000L) return;
         lastBiobankFlatten.put(player.getUuid(), nowMs);
         List<NotebookBioBankS2C.Entry> entries = new ArrayList<>();
         try (var span = com.greenerpastures.core.GpProf.begin("net.biobank_flatten")) {
