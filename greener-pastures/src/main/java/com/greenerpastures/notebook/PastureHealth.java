@@ -19,7 +19,7 @@ public final class PastureHealth {
     public record Flag(String id, String icon, String text) {}
 
     public static List<Flag> evaluate(boolean linked, boolean hasKernel, int monCount, boolean hasLines,
-                                      boolean queueFull, List<String> fullSpecies) {
+                                      boolean brokenLine, boolean queueFull, List<String> fullSpecies) {
         List<Flag> out = new ArrayList<>();
         if (!linked) {
             out.add(new Flag("unlinked", "🔗", "Not linked - drops & eggs are not being collected"));
@@ -34,6 +34,12 @@ public final class PastureHealth {
         // 2 parents so the more fundamental chip leads; breeding never runs without wired lines.
         if (hasKernel && !hasLines && (monCount >= 2 || monCount == -1)) {
             out.add(new Flag("no_lines", "🧵", "No breeding lines - wire a pair in this pasture's graph"));
+        }
+        // A wired line with only ONE live parent (the other escaped/was released and its stale id pruned):
+        // pairings aren't empty so no_lines stays quiet, but the bucket can't pair - it must SAY so
+        // (Deuce's sandile, live QA 2026-07-06: copper pasture silently dead for 20 minutes).
+        if (hasKernel && brokenLine) {
+            out.add(new Flag("line_incomplete", "🧵", "A breeding line lost a parent - re-add the mon to its line"));
         }
         if (queueFull) {
             out.add(new Flag("tray_full", "🥚", "Egg tray full - breeding is paused"));

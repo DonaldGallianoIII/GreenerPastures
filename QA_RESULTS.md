@@ -216,6 +216,12 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fix:** floor checked FIRST (throttled call leaves the rev signal unconsumed - next poll retries, ≤5s staleness by design, never forever); WITHDRAW now pushes with `force=true` (user actions get instant feedback). Commit with this entry; in jar `9fb51cf3`.
 - **Status:** ✅ verified 2026-07-06 (Deuce, live) — withdraw reflects instantly mid-breeding
 
+### BUG-018 · 🟠 NORMAL (silent state) · Q95-adjacent · A breeding line that loses a parent goes silently dead
+- **Repro:** parent escapes/gets released → stale pairing id pruned (BUG-011 self-heal) → the line keeps ONE member. Pairings non-empty → no 🧵 no_lines chip; bucket can't pair → zero broods. Copper pasture sat dead 20 min (Deuce's sandile, live QA 2026-07-06) - only visible because the new brood intervalTicks logging made the ABSENCE obvious.
+- **Root cause:** health model only knew empty-vs-non-empty pairings; a half-line is non-empty but unbreedable.
+- **Fix:** health now reads bucket occupancy - `hasLines` = any bucket with 2 live members; NEW `line_incomplete` chip ("A breeding line lost a parent - re-add the mon to its line") whenever any bucket has exactly 1. Both chips can stack (half-line only → no_lines + line_incomplete). +1 test (310). In jar `c1434749`.
+- **Status:** 🚀 built — verify post-swap: pull one parent of a wired pair out of the pasture → 🧵 line_incomplete chip appears; re-add → clears + breeding resumes
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …

@@ -563,7 +563,13 @@ public final class NotebookNet {
                 }
             }
         }
-        return PastureHealth.evaluate(pd.owner != null, pd.tier() != null, monCount, !pd.pairings.isEmpty(),
+        // Bucket occupancy decides the line chips: a line is only REAL with two live members; exactly one
+        // member = a broken line (partner escaped/released, stale id pruned) - surfaced, never silent.
+        java.util.Map<Integer, Integer> occ = new java.util.HashMap<>();
+        for (Integer b : pd.pairings.values()) occ.merge(b, 1, Integer::sum);
+        boolean completeLine = occ.values().stream().anyMatch(c -> c >= 2);
+        boolean brokenLine = occ.values().stream().anyMatch(c -> c == 1);
+        return PastureHealth.evaluate(pd.owner != null, pd.tier() != null, monCount, completeLine, brokenLine,
                 pd.eggQueue.isFull(), fullSpecies);
     }
 

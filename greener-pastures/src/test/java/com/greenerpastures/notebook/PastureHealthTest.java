@@ -12,11 +12,11 @@ class PastureHealthTest {
 
     // lines=true in the legacy helper - every pre-limiter case assumed a wired pasture
     private static List<String> ids(boolean linked, boolean kernel, int mons, boolean full, List<String> bank) {
-        return PastureHealth.evaluate(linked, kernel, mons, true, full, bank).stream().map(PastureHealth.Flag::id).toList();
+        return PastureHealth.evaluate(linked, kernel, mons, true, false, full, bank).stream().map(PastureHealth.Flag::id).toList();
     }
 
     private static List<String> idsNoLines(boolean linked, boolean kernel, int mons) {
-        return PastureHealth.evaluate(linked, kernel, mons, false, false, null).stream().map(PastureHealth.Flag::id).toList();
+        return PastureHealth.evaluate(linked, kernel, mons, false, false, false, null).stream().map(PastureHealth.Flag::id).toList();
     }
 
     @Test
@@ -66,9 +66,9 @@ class PastureHealthTest {
 
     @Test
     void idsCsvJoinsAndStaysEmptyWhenHealthy() {
-        assertEquals("", PastureHealth.idsCsv(PastureHealth.evaluate(true, true, 6, true, false, null)));
+        assertEquals("", PastureHealth.idsCsv(PastureHealth.evaluate(true, true, 6, true, false, false, null)));
         assertEquals("unlinked,no_kernel",
-                PastureHealth.idsCsv(PastureHealth.evaluate(false, false, 6, true, false, null)));
+                PastureHealth.idsCsv(PastureHealth.evaluate(false, false, 6, true, false, false, null)));
     }
 
     // ── the visual-scripting limiter (Deuce, live QA 2026-07-05): no lines = no breeding, and the strip says so ──
@@ -89,6 +89,16 @@ class PastureHealthTest {
     void noLinesStillFlagsWhenChunkUnloaded() {
         // pairings are registry state - known truth even at monCount -1; an unwired pasture never breeds
         assertEquals(List.of("no_lines"), idsNoLines(true, true, -1));
+    }
+
+    @Test
+    void brokenLineFlagsEvenWithACompleteLinePresent() {
+        // one complete line + one half-line: breeding runs but the dead line must still surface
+        assertEquals(List.of("line_incomplete"),
+                PastureHealth.evaluate(true, true, 6, true, true, false, null).stream().map(PastureHealth.Flag::id).toList());
+        // the sandile case: ONLY a half-line left - both chips tell the story
+        assertEquals(List.of("no_lines", "line_incomplete"),
+                PastureHealth.evaluate(true, true, 6, false, true, false, null).stream().map(PastureHealth.Flag::id).toList());
     }
 
     @Test
