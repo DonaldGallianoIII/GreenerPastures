@@ -227,6 +227,11 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fix:** predicate is now `path contains "pokemon_egg"` OR the conventional `c:eggs` tag (same tag the egg cake trusts) minus the `minecraft` namespace - no bare "egg" substring anywhere. In jar `49b5eebf`.
 - **Status:** 🚀 built — verify post-swap: Lucky Egg no longer glows/counts; shiny cobbreeding eggs still gold
 
+### BUG-020 · 🟠 NORMAL (spoils invisible) · Q72/Q88 · Pool-ritual winnings never show on their card
+- **Repro:** The Pasture Band, 8 hits lifetime → its spoils tile reads 0 (Deuce screenshot, live QA 2026-07-06). The tile keyed to the ritual's nominal output (pool[0] = music_disc_13); random-rolled discs landed under their own ids → shunted to "Unclaimed spoils" as if from an undiscovered source.
+- **Fix:** the card now ships its full `poolItems` list; the tile aggregates the whole pool (total + 🎲 spoils label, click pulls first-available) and each banked disc gets its own clickable 🎵 chip (L/⇧/R pull semantics); the Unclaimed filter counts pool items as claimed. In jar `f95abde0`.
+- **Status:** 🚀 built — verify post-swap: Band card shows 8 across itemized disc chips; Unclaimed section no longer lists discs
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …

@@ -1544,7 +1544,12 @@ public final class NotebookNet {
             o.addProperty("pity", pity);
             o.addProperty("hardPity", r.hardPity());
             if (r.pastureSpan() > 1) o.addProperty("span", r.pastureSpan());
-            if (!r.outputPool().isEmpty()) o.addProperty("pool", true);
+            if (!r.outputPool().isEmpty()) {
+                o.addProperty("pool", true);
+                JsonArray poolItems = new JsonArray();   // the card's spoils tile aggregates the WHOLE pool
+                r.outputPool().forEach(poolItems::add);  // (BUG-020: 8 discs banked, tile read 0 - it only knew pool[0])
+                o.add("poolItems", poolItems);
+            }
             if (!r.requirement().groupMinCounts().isEmpty()) {
                 JsonArray groups = new JsonArray();
                 for (var g : r.requirement().groupMinCounts()) {

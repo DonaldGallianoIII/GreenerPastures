@@ -1610,7 +1610,7 @@ function RitualsTab() {
             inside a single linked pasture, and its ritual will reveal itself here… along with what it yields.
           </div>
         </div>
-      ) : learned.map((r) => { const n = loot[r.output] || 0; const ok = canTake(r.output); return (
+      ) : learned.map((r) => { const poolCounts = (r.poolItems || []).map((it) => [it, loot[it] || 0]).filter(([, c]) => c > 0); const n = r.pool ? poolCounts.reduce((a, [, c]) => a + c, 0) : (loot[r.output] || 0); const pullItem = r.pool ? (poolCounts[0] ? poolCounts[0][0] : r.output) : r.output; const ok = canTake(pullItem); return (
         <div key={r.id} className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8, display: 'flex', gap: 10 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="row">
@@ -1624,13 +1624,24 @@ function RitualsTab() {
               <span className="dim" style={{ fontSize: 10 }}>- in {r.span > 1 ? `${r.span} pastures combined` : 'one pasture'} →</span>
               <span className="kchip" style={{ color: 'var(--amber)' }}>{r.pool ? '🎲 a random music disc' : `${r.qty}× ${cap(shortId(r.output))}`}</span>
             </div>
+            {r.pool && poolCounts.length > 0 && (
+              <div className="row" style={{ gap: 4, flexWrap: 'wrap', marginTop: 2 }}>
+                {poolCounts.map(([it, c]) => (
+                  <span key={it} className="kchip" style={{ cursor: 'pointer' }}
+                    title={`${it} · L: one · ⇧: stack · R: all`}
+                    onClick={(ev) => { if (canTake(it)) send('storage', 'RITUAL_PULL', { item: it, mode: shiftHeld(ev) ? 1 : 0 }) }}
+                    onContextMenu={(ev) => { ev.preventDefault(); if (canTake(it)) send('storage', 'RITUAL_PULL', { item: it, mode: 2 }) }}>
+                    🎵 {cap(shortId(it))} ×{c}</span>
+                ))}
+              </div>
+            )}
           </div>
           <div className={`cell${n > 0 ? (ok ? '' : ' cell-full') : ''}`} style={{ width: 74, alignSelf: 'stretch', opacity: n > 0 ? 1 : 0.35 }}
-            title={n > 0 ? (ok ? `${r.output} · L: one · ⇧: stack · R: all` : `${r.output} · inventory full`) : 'no spoils banked yet'}
-            onClick={(ev) => { if (n > 0 && ok) send('storage', 'RITUAL_PULL', { item: r.output, mode: shiftHeld(ev) ? 1 : 0 }) }}
-            onContextMenu={(ev) => { ev.preventDefault(); if (n > 0 && ok) send('storage', 'RITUAL_PULL', { item: r.output, mode: 2 }) }}>
+            title={n > 0 ? (ok ? `${pullItem} · L: one · ⇧: stack · R: all` : `${pullItem} · inventory full`) : 'no spoils banked yet'}
+            onClick={(ev) => { if (n > 0 && ok) send('storage', 'RITUAL_PULL', { item: pullItem, mode: shiftHeld(ev) ? 1 : 0 }) }}
+            onContextMenu={(ev) => { ev.preventDefault(); if (n > 0 && ok) send('storage', 'RITUAL_PULL', { item: pullItem, mode: 2 }) }}>
             <span className="ct">{compact(n)}</span>
-            <span className="nm">{shortId(r.output)}</span>
+            <span className="nm">{r.pool ? '🎲 spoils' : shortId(r.output)}</span>
           </div>
         </div>
       )})}
@@ -1642,7 +1653,7 @@ function RitualsTab() {
           <div className="dim" style={{ fontSize: 11, fontStyle: 'italic', marginTop: 4 }}>“{l.hint}”</div>
         </div>
       ))}
-      {(() => { const covered = new Set(learned.map((r) => r.output)); const orphans = lootList.filter(([id]) => !covered.has(id)); return orphans.length === 0 ? null : (<>
+      {(() => { const covered = new Set(learned.flatMap((r) => [r.output, ...(r.poolItems || [])])); const orphans = lootList.filter(([id]) => !covered.has(id)); return orphans.length === 0 ? null : (<>
       <div className="row" style={{ margin: '10px 0 6px' }}>
         <span className="h">Unclaimed spoils</span>
         <span className="dim" style={{ fontSize: 10, marginLeft: 8 }}>from sources you haven't discovered yet · L: one · ⇧: stack · R: all</span>
