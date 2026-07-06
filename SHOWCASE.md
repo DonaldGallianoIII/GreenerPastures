@@ -3,7 +3,7 @@ _Compiled from a full code survey; rev 2026-07-06 - 310 tests, post-adversarial-
 
 **One item is the whole mod: the Notebook.** Right-click → a real web app (React via MCEF/Chromium) running inside Minecraft. Every player gets one on first join.
 
-## 📓 The Notebook Console - 10 tabs
+## 📓 The Notebook Console - 11 tabs
 - **BioBank** - eggs as searchable data: grouped by species, sortable by ΣIV/stat/shiny; egg cards (IVs/EVs/nature/gender); pull any egg back as a real hatchable item
 - **Harvester** - auto-collected drops from linked pastures; L/⇧/R withdrawal, space-aware
 - **Pastures** - network overview: tier, eggs, pairs, ⚠ health badges per pasture
@@ -13,6 +13,7 @@ _Compiled from a full code survey; rev 2026-07-06 - 310 tests, post-adversarial-
 - **Inbox** - dismissible away-progress + event feed with unread badge
 - **Rituals** - hidden-recipe puzzle board + per-ritual spoils tiles
 - **Specimens** - archive party mons onto disks
+- **Game Corner** - real Voltorb Flip, server-authoritative; win Data (house pays ≤1 kB/day, never moves the MissingNo odometer)
 - **Guide** - full onboarding manual in-game
 
 ## 🧬 Breeding Engine

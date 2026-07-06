@@ -100,16 +100,22 @@ public final class NotebookNet {
     /** Player left - drop their gate/prefetch state (unbounded-per-player maps on 24/7 servers, R3 #5/F11). */
     private static final Map<UUID, Long> lastBiobankFlatten = new java.util.concurrent.ConcurrentHashMap<>();
 
+    /** Live Game Corner boards - deliberately in-memory only: a relog mid-round deals a fresh board at
+     *  the same level (also closes "peek then relog" save-scum). Ledger (level + daily cap) persists. */
+    private static final Map<UUID, com.greenerpastures.arcade.VoltorbFlip.Board> arcadeBoards =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     public static void onDisconnect(UUID player) {
         lastPush.remove(player);
         lastPrefetch.remove(player);
         augTargetSlot.remove(player);
         daemonTargetSlot.remove(player);
         lastBiobankFlatten.remove(player);
+        arcadeBoards.remove(player);
     }
 
     /** Reset per-server-session state - called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -134,6 +140,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookAugmenterMetaS2C.ID, NotebookAugmenterMetaS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookRitualsS2C.ID, NotebookRitualsS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookSpecimensS2C.ID, NotebookSpecimensS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookArcadeS2C.ID, NotebookArcadeS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -186,6 +193,7 @@ public final class NotebookNet {
                 pushNotifs(player);
                 pushRituals(player);
                 pushSpecimens(player);
+                pushArcade(player);
                 long nowMs = System.currentTimeMillis();
                 Long last = lastPrefetch.get(player.getUuid());
                 if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -326,6 +334,9 @@ public final class NotebookNet {
                 case NotebookActionC2S.RENAME_HELD_KERNEL -> { renameHeldKernel(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.COMPRESS_MON -> { compressMon(player, p.amount()); pushSpecimens(player); }
                 case NotebookActionC2S.SUMMON_MISSINGNO -> { summonMissingno(player); pushDashboard(player); }
+                case NotebookActionC2S.ARCADE_NEW -> { arcadeNew(player); pushArcade(player); }
+                case NotebookActionC2S.ARCADE_FLIP -> { arcadeFlip(player, p.amount()); pushArcade(player); pushStatus(player); }
+                case NotebookActionC2S.ARCADE_CASHOUT -> { arcadeCashout(player); pushArcade(player); pushStatus(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1109,6 +1120,111 @@ public final class NotebookNet {
             sendGated(player, "graph:" + key, new NotebookGraphS2C(key, pd.graphJson == null ? "" : pd.graphJson));
             sendGated(player, "extra:" + key, new NotebookPastureExtraS2C(key, pastureExtraJson(server, pd, pasture)));
         }
+    }
+
+    // ── Game Corner (Voltorb Flip - Deuce, 2026-07-06). Server-authoritative; payouts NEVER touch
+    // the MissingNo odometer (DataStore.credit, the neutral path); the house pays ≤1 kB/day. ─────────
+
+    private static String arcadeToday() {
+        return java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString();
+    }
+
+    private static void arcadeNew(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var ledger = com.greenerpastures.arcade.ArcadeStore.get(server).of(player.getUuid(), arcadeToday());
+        var board = com.greenerpastures.arcade.VoltorbFlip.generate(ledger.level, new java.util.Random());
+        arcadeBoards.put(player.getUuid(), board);
+        GpLog.d("arcade", "new", "player", player.getUuid().toString(), "level", board.level);
+    }
+
+    private static void arcadeFlip(ServerPlayerEntity player, int tile) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var board = arcadeBoards.get(player.getUuid());
+        if (board == null || board.over) return;
+        var store = com.greenerpastures.arcade.ArcadeStore.get(server);
+        var ledger = store.of(player.getUuid(), arcadeToday());
+        var flip = com.greenerpastures.arcade.VoltorbFlip.flip(board, tile);
+        if (!flip.wasNew()) return;
+        if (flip.bust()) {
+            int next = com.greenerpastures.arcade.VoltorbFlip.nextLevel(board.level, false, true);
+            store.record(player.getUuid(), arcadeToday(), 0, next);
+            GpLog.i("arcade", "bust", "player", player.getUuid().toString(), "level", board.level, "to", next);
+        } else if (flip.cleared()) {
+            settleArcade(player, server, board, true);
+        } else {
+            GpLog.d("arcade", "flip", "player", player.getUuid().toString(), "value", flip.value(), "coins", board.coins);
+        }
+    }
+
+    private static void arcadeCashout(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var board = arcadeBoards.get(player.getUuid());
+        if (board == null || board.over || board.coins <= 0) return;
+        board.over = true;
+        settleArcade(player, server, board, false);
+    }
+
+    /** Bank the pot: clamp into the day's kB, credit (NEUTRAL - never the odometer), move the level. */
+    private static void settleArcade(ServerPlayerEntity player, MinecraftServer server,
+                                     com.greenerpastures.arcade.VoltorbFlip.Board board, boolean cleared) {
+        var store = com.greenerpastures.arcade.ArcadeStore.get(server);
+        var ledger = store.of(player.getUuid(), arcadeToday());
+        long pay = com.greenerpastures.arcade.VoltorbFlip.payable(board.coins, ledger.earnedToday);
+        if (pay > 0) com.greenerpastures.economy.DataStore.get(server).credit(player.getUuid(), pay);
+        int next = com.greenerpastures.arcade.VoltorbFlip.nextLevel(board.level, cleared, false);
+        store.record(player.getUuid(), arcadeToday(), pay, next);
+        boolean capped = pay < board.coins;
+        GpLog.i("arcade", cleared ? "clear" : "cashout", "player", player.getUuid().toString(),
+                "level", board.level, "coins", board.coins, "paid", pay, "capped", capped, "to", next);
+        if (capped) {
+            player.sendMessage(net.minecraft.text.Text.literal(
+                    "\u00a76[Game Corner]\u00a7r the house's ledger closes at one kilobyte a day - "
+                    + pay + " of " + board.coins + " paid. Come back tomorrow."), false);
+        }
+    }
+
+    /** The Game Corner tab: chips + flipped tiles only mid-round; the full board once it's over. */
+    public static void pushArcade(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var ledger = com.greenerpastures.arcade.ArcadeStore.get(server).of(player.getUuid(), arcadeToday());
+        var board = arcadeBoards.get(player.getUuid());
+        JsonObject root = new JsonObject();
+        root.addProperty("level", board != null ? board.level : ledger.level);
+        root.addProperty("dailyLeft", Math.max(0, com.greenerpastures.arcade.VoltorbFlip.DAILY_CAP - ledger.earnedToday));
+        root.addProperty("playing", board != null && !board.over);
+        root.addProperty("over", board != null && board.over);
+        root.addProperty("cleared", board != null && board.cleared);
+        root.addProperty("coins", board == null ? 0 : board.coins);
+        if (board != null) {
+            JsonArray rows = new JsonArray();
+            JsonArray cols = new JsonArray();
+            for (int i = 0; i < com.greenerpastures.arcade.VoltorbFlip.SIZE; i++) {
+                JsonObject r = new JsonObject();
+                r.addProperty("sum", board.rowSum(i));
+                r.addProperty("volts", board.rowVoltorbs(i));
+                rows.add(r);
+                JsonObject c = new JsonObject();
+                c.addProperty("sum", board.colSum(i));
+                c.addProperty("volts", board.colVoltorbs(i));
+                cols.add(c);
+            }
+            root.add("rows", rows);
+            root.add("cols", cols);
+            JsonArray tiles = new JsonArray();
+            for (int i = 0; i < com.greenerpastures.arcade.VoltorbFlip.TILES; i++) {
+                // mid-round: flipped values only, -1 for face-down. Over: reveal everything (HGSS style).
+                tiles.add(board.isFlipped(i) || board.over ? board.tile(i) : -1);
+            }
+            root.add("tiles", tiles);
+            JsonArray flippedArr = new JsonArray();
+            for (int i = 0; i < com.greenerpastures.arcade.VoltorbFlip.TILES; i++) flippedArr.add(board.isFlipped(i));
+            root.add("flipped", flippedArr);
+        }
+        sendGated(player, "arcade", new NotebookArcadeS2C(GSON.toJson(root)));
     }
 
     /** The focused pasture's extras blob: health strip (#37) + the slotted Kernel's breeding-meta loadout. */

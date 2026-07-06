@@ -31,6 +31,9 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int RENAME_HELD_KERNEL = 14; // arg = new display name for the MAIN-HAND Kernel (empty clears)
     public static final int COMPRESS_MON = 15;      // Specimens: amount = party slot → archive onto a blank Specimen Disk
     public static final int SUMMON_MISSINGNO = 16;  // Dashboard: claim one owed MissingNo. (1 per million lifetime Data)
+    public static final int ARCADE_NEW = 17;        // Game Corner: deal a fresh board at the player's level
+    public static final int ARCADE_FLIP = 18;       // Game Corner: amount = tile index 0..24
+    public static final int ARCADE_CASHOUT = 19;    // Game Corner: bank the pot (level holds), end the round
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

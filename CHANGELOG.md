@@ -53,6 +53,11 @@ system-by-system pre-release; live-QA'd in singleplayer and on a dedicated serve
 - **Snack Repel**: charge a can with the berries of the type you DON'T want (÷10..÷60,
   stacks to ÷120) and bake it in - sculpt your spawn pool.
 
+### Game Corner
+- A full **Voltorb Flip** machine in the Notebook - server-authoritative (face-down tiles never
+  leave the server), 7 levels, persisted machine level. Winnings are Data via the neutral path
+  (never the MissingNo odometer) and the house pays at most **1,024 Data a day**.
+
 ### Trophies
 - **Specimen Disks**: archive party mons losslessly onto reusable media; release by
   right-click; dupe-proof rails; trade them like cartridges.

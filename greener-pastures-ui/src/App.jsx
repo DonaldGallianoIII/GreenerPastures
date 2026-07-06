@@ -100,6 +100,20 @@ const CSS = `
 .cell-full{ opacity:.42; cursor:not-allowed; }
 .tab-badge{ display:inline-block; margin-left:5px; background:var(--cyan); color:#04222b; border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; vertical-align:1px; }
 .hstrip{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+.vf-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:6px; }
+.vf-board{ display:grid; grid-template-columns:repeat(6, 52px); grid-template-rows:repeat(6, 52px); gap:6px; }
+.vf-tile{ width:52px; height:52px; border-radius:8px; border:1px solid var(--line2); background:linear-gradient(145deg,#1c2a22,#12201a);
+  display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; cursor:pointer; user-select:none;
+  transition: transform .12s ease, background .12s ease; }
+.vf-tile:hover{ transform:scale(1.06); border-color:var(--grn); }
+.vf-tile.flip{ cursor:default; background:var(--inset); transform:none; }
+.vf-tile.flip:hover{ transform:none; border-color:var(--line2); }
+.vf-tile.volt{ background:linear-gradient(145deg,#3a1620,#26101a); color:#ff6b81; }
+.vf-tile.reveal{ opacity:.45; }
+.vf-chip{ width:52px; height:52px; border-radius:8px; background:var(--inset); border:1px dashed var(--line2);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; line-height:1.2; cursor:default; }
+.vf-chip b{ color:var(--text); font-size:13px; }
+.vf-chip span{ color:#ff6b81; }
 .hflag{ display:flex; align-items:center; gap:5px; background:rgba(122,92,30,.16); border:1px solid #5a4a2e; color:var(--amber); border-radius:6px; padding:3px 8px; font-size:10px; }
 .pbadge{ background:rgba(122,92,30,.3); border:1px solid #5a4a2e; color:var(--amber); border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; }
 .kload{ display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
@@ -262,6 +276,7 @@ const TABS = [
   { id: 'inbox',     label: 'Inbox',     path: 'gp://inbox' },
   { id: 'rituals',   label: 'Rituals',   path: 'gp://rituals' },
   { id: 'specimens', label: 'Specimens', path: 'gp://specimens' },
+  { id: 'gamecorner', label: 'Game Corner', path: 'gp://gamecorner' },
   { id: 'guide',     label: 'Guide',     path: 'gp://guide' },
 ]
 const STAT_NAMES = ['HP', 'At', 'Df', 'SA', 'SD', 'Sp']
@@ -333,6 +348,7 @@ export default function App() {
           {tab === 'inbox' && <InboxTab />}
           {tab === 'rituals' && <RitualsTab />}
           {tab === 'specimens' && <SpecimensTab />}
+          {tab === 'gamecorner' && <GameCorner />}
           {tab === 'guide' && <GuideTab />}
         </div>
         </>)}
@@ -1571,6 +1587,60 @@ function SpecimensTab() {
   )
 }
 
+// ── Game Corner: Voltorb Flip (server-authoritative - the client never sees a face-down tile) ──
+function GameCorner() {
+  const d = useChannel('arcade')
+  if (!d) return <Empty title="…" msg="loading the Game Corner channel" />
+  const tiles = d.tiles || []
+  const rows = d.rows || []
+  const cols = d.cols || []
+  const cells = []
+  if (d.playing || d.over) {
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        const i = r * 5 + c
+        const v = tiles[i]
+        const revealed = v != null && v >= 0
+        cells.push(
+          <div key={i}
+            className={`vf-tile${revealed ? ' flip' : ''}${revealed && v === 0 ? ' volt' : ''}${d.over && revealed && !(d.flipped || [])[i] ? ' reveal' : ''}`}
+            title={revealed ? (v === 0 ? 'Voltorb!' : `×${v}`) : d.playing ? 'flip' : ''}
+            onClick={() => { if (!revealed && d.playing) send('arcade', 'ARCADE_FLIP', { tile: i }) }}>
+            {revealed ? (v === 0 ? '💥' : v) : ''}
+          </div>)
+      }
+      const rc = rows[r] || {}
+      cells.push(<div key={`r${r}`} className="vf-chip"><b>{rc.sum ?? '?'}</b><span>💥{rc.volts ?? '?'}</span></div>)
+    }
+    for (let c = 0; c < 5; c++) {
+      const cc = cols[c] || {}
+      cells.push(<div key={`c${c}`} className="vf-chip"><b>{cc.sum ?? '?'}</b><span>💥{cc.volts ?? '?'}</span></div>)
+    }
+    cells.push(<div key="corner" />)
+  }
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="vf-wrap">
+        <div className="row" style={{ gap: 14, alignItems: 'baseline' }}>
+          <span className="h">🎰 Game Corner · Lv.{d.level}</span>
+          <span className="grn" style={{ fontWeight: 600 }}>pot {fmt(d.coins)}</span>
+          <span className="dim" style={{ fontSize: 11 }} title="the house's ledger closes at one kilobyte a day">house pays {fmt(d.dailyLeft)} more today</span>
+        </div>
+        {(d.playing || d.over) && <div className="vf-board">{cells}</div>}
+        {d.over && <span className={d.cleared ? 'grn' : ''} style={{ fontSize: 12, color: d.cleared ? undefined : '#ff6b81' }}>
+          {d.cleared ? `CLEAR! the board pays ${fmt(d.coins)} - the machine levels up` : 'Voltorb. The pot is gone - the machine takes pity and eases up a level.'}</span>}
+        <div className="row" style={{ gap: 8 }}>
+          <button className="btn go" onClick={() => send('arcade', 'ARCADE_NEW', {})}>{d.playing ? 'FORFEIT · NEW BOARD' : 'NEW BOARD'}</button>
+          {d.playing && d.coins > 0 && <button className="btn" onClick={() => send('arcade', 'ARCADE_CASHOUT', {})}>CASH OUT {fmt(d.coins)}</button>}
+        </div>
+        {!d.playing && !d.over && <span className="dim" style={{ fontSize: 12, maxWidth: 420, textAlign: 'center' }}>
+          Each line's chip shows its value sum and 💥 count. Flip ×2s and ×3s to multiply the pot; cash out any time;
+          find every ×2 and ×3 to clear. A 💥 busts the round. Winnings are Data - straight to your account.
+        </span>}
+      </div>
+    </div>
+  )
+}
 // ── Rituals (v2): HIDDEN recipes - compositions are secret until you first assemble one ──
 function RitualsTab() {
   const d = useChannel('rituals')

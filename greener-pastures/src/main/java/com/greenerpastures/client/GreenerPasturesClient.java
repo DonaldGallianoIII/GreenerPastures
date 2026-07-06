@@ -153,6 +153,10 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 context.client().execute(() -> {
                     if (NotebookState.applySpecimens(payload)) DsBridge.pushNow();
                 }));
+        ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookArcadeS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyArcade(payload)) DsBridge.pushNow();
+                }));
 
         // notebook/ console - poll the server ~1×/s while the console is open so the status bar + tabs tick live.
         // Change-detection in NotebookState means an unchanged push does NOT repaint (no flicker / scroll-reset).
