@@ -231,19 +231,15 @@ public final class EggReader {
     }
 
     private static boolean shinyByName(ItemStack stack) {
-        // MinecraftClient is client-only; on a dedicated server this method must never touch it. Guard first
-        // so read()/species() stay server-safe even if a future caller invokes them off the client (bug-hunt #6).
+        // Client classes live in EggTooltipProbe, NOT here: an in-method guard is useless because the
+        // verifier resolves a method's class refs at first CALL (BUG-021 - the env check below ran too
+        // late to matter when the client code shared this method's body; dedicated ingest threw
+        // NoClassDefFoundError and every egg trayed). The probe class only loads inside this branch.
         if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT) return false;
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null) return false;
         try {
-            List<Text> lines = stack.getTooltip(Item.TooltipContext.DEFAULT, mc.player, TooltipType.BASIC);
-            for (Text t : lines) {
-                if (t.getString().indexOf(SHINY_STAR) >= 0) return true;
-            }
-        } catch (Exception ignored) {
-            // some modded tooltips can throw; treat as non-shiny
+            return EggTooltipProbe.tooltipHasStar(stack, SHINY_STAR);
+        } catch (Throwable t) {
+            return false;   // belt + suspenders: a classloading surprise must never kill ingest
         }
-        return false;
     }
 }

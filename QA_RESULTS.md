@@ -232,6 +232,13 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fix:** the card now ships its full `poolItems` list; the tile aggregates the whole pool (total + 🎲 spoils label, click pulls first-available) and each banked disc gets its own clickable 🎵 chip (L/⇧/R pull semantics); the Unclaimed filter counts pool items as claimed. In jar `f95abde0`.
 - **Status:** 🚀 built — verify post-swap: Band card shows 8 across itemized disc chips; Unclaimed section no longer lists discs
 
+### BUG-021 · 🔴 MAJOR (dedicated-only) · Egg ingest dead on dedicated servers - every egg trayed
+- **Repro:** dedicated server, any egg ingest → `egg_ingest err NoClassDefFoundError: net/minecraft/class_746` (ClientPlayerEntity), egg falls back to the tray → `queue_full` at cap 24 (caught live 2026-07-06 17:43 by the GP-log monitor; eggs banked never, trayed all session). Sacred rule HELD - the outer catch trays eggs, nothing was lost.
+- **Root cause:** bug-hunt #6's fix put an EnvType guard INSIDE `EggReader.shinyByName` - but the method body still referenced MinecraftClient/mc.player, and the JVM verifier resolves a method's class refs at its first CALL, before any branch runs. Classic Fabric side-safety trap; invisible in singleplayer (client classes always present).
+- **Fix:** client code quarantined into `EggTooltipProbe` (its own class, loaded only inside the CLIENT branch) + Throwable belt-and-suspenders. Swept the rest of the codebase: every other net.minecraft.client user is client-entrypoint-only. In jar `c70585c7`.
+- **Status:** 🚀 built — verify: dedicated server, breed → `egg_ingest bank` events return, no err, tray drains
+- **Lesson (a real one):** in-method env guards do NOT make client refs server-safe - quarantine in a separate class, always. Today's dedicated-server QA session existing at all is what caught this before launch.
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …
