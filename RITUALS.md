@@ -150,5 +150,4 @@ Tier grid @1 pull/min: LOW 5%/15/30 · MID 2.5%/40/80 · HIGH 1.2%/80/160 · APE
 Engine additions this batch: `Requirement.GroupCount` (N total across any-of species) · form-qualified
 composition keys (`meowth:alolan` - reader emits them alongside base species) · `Ritual.hint` (locked
 teaser cards) · `Ritual.outputPool` (per-hit random output). Rejected list per spec (dragon egg parked,
-ghast tear/ender pearl/etc. already covered elsewhere). Pre-batch rituals untouched (Kartana feast -
-NB spec said "Tropius", shipped config says Kartana, left as shipped).
+ghast tear/ender pearl/etc. already covered elsewhere). Pre-batch rituals: the feast is now SHAYMIN (any form) + Xerneas + 8 Meowth, display name "Feast of the Bloom" (2026-07-06: Kartana has no model in Cobblemon 1.7.3 - a ritual must never demand an invisible mon).

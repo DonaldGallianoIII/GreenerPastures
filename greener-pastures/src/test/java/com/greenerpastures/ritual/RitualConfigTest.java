@@ -57,19 +57,19 @@ class RitualConfigTest {
 
     @Test
     void feastOfTheBladeNeedsTheExactRetinue() {
-        // Deuce's first hand-designed hidden ritual: Kartana + Xerneas + 8 Meowth in ONE pasture.
+        // Deuce's first hand-designed hidden ritual: Shaymin + Xerneas + 8 Meowth in ONE pasture (Kartana swapped out 2026-07-06 - no model in Cobblemon 1.7.3).
         Ritual feast = RitualConfig.defaults().rituals().byId("feast_of_the_blade");
         assertNotNull(feast);
         assertTrue(feast.outputItem().equals("minecraft:enchanted_golden_apple"));
 
         Composition sevenMeowths = new Composition(Map.of(), Set.of(),
-                Map.of("kartana", 1, "xerneas", 1, "meowth", 7));
+                Map.of("shaymin", 1, "xerneas", 1, "meowth", 7));
         Composition exact = new Composition(Map.of(), Set.of(),
-                Map.of("kartana", 1, "xerneas", 1, "meowth", 8));
+                Map.of("shaymin", 1, "xerneas", 1, "meowth", 8));
         Composition noXerneas = new Composition(Map.of(), Set.of(),
-                Map.of("kartana", 1, "meowth", 8));
+                Map.of("shaymin", 1, "meowth", 8));
         Composition overfilled = new Composition(Map.of(), Set.of(),
-                Map.of("kartana", 2, "xerneas", 1, "meowth", 9, "ditto", 3));
+                Map.of("shaymin", 2, "xerneas", 1, "meowth", 9, "ditto", 3));
 
         assertFalse(feast.requirement().satisfiedBy(sevenMeowths), "7 Meowth is not 8");
         assertFalse(feast.requirement().satisfiedBy(noXerneas), "no Xerneas ⇒ no feast");
@@ -113,7 +113,7 @@ class RitualConfigTest {
         assertTrue(legacy.pastureSpan() == 1);
         // active(comp) never returns spanning rituals; spanning() never returns single-pasture ones.
         RitualBook book = RitualConfig.defaults().rituals();
-        Composition all = new Composition(Map.of(), Set.of(), Map.of("meowth", 99, "kartana", 9, "xerneas", 9,
+        Composition all = new Composition(Map.of(), Set.of(), Map.of("meowth", 99, "shaymin", 9, "xerneas", 9,
                 "koffing", 9, "ekans", 9));
         assertTrue(book.active(all).stream().noneMatch(r -> r.pastureSpan() > 1));
         assertTrue(book.spanning().stream().allMatch(r -> r.pastureSpan() > 1));

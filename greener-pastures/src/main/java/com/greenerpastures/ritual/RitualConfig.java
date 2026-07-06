@@ -108,14 +108,17 @@ public record RitualConfig(boolean enabled, boolean autoPull, double rarityFacto
      *  first assembles one; see RitualLedger). The launch book ships exactly one; more land here per design. */
     private static RitualBook defaultRituals() {
         return new RitualBook(true, List.of(
-                // #1 - "Feast of the Blade": Kartana (the living katana) + Xerneas (the life-giver) + 8 Meowth
-                // (the hoard) in ONE pasture → a chance per sweep at an enchanted golden apple. The ONLY
-                // e-gapple source in the mod, deliberately locked behind two legendaries + a full retinue.
-                hinted("feast_of_the_blade", "Feast of the Blade",
+                // #1 - "Feast of the Bloom": Shaymin (the Gratitude mon - bare key matches Land AND Sky
+                // form, Deuce: "either or") + Xerneas (the life-giver) + 8 Meowth (the hoard) in ONE
+                // pasture → a chance per sweep at an enchanted golden apple. The ONLY e-gapple source in
+                // the mod, deliberately locked behind two mythic-tier mons + a full retinue. (Was Kartana -
+                // swapped 2026-07-06: Cobblemon 1.7.3 ships no Kartana model; a ritual must never demand
+                // an invisible mon. Id kept so any learned ledgers survive.)
+                hinted("feast_of_the_blade", "Feast of the Bloom",
                         new Requirement(Map.of(), 0, List.of(),
-                                Map.of("kartana", 1, "xerneas", 1, "meowth", 8)),
+                                Map.of("shaymin", 1, "xerneas", 1, "meowth", 8)),
                         "minecraft:enchanted_golden_apple", 1, 2.0, 120, 60,
-                        "A living blade, a giver of life, and eight greedy mouths at the feast."),
+                        "A grateful bloom, a giver of life, and eight greedy mouths at the feast."),
                 // #2 - "Black Market": the classic Team Rocket lineup fences ILLICIT data. Sole farmable
                 // source of the corruption orb (the Renderer breadcrumb at 1/2000 is the discovery hint).
                 hinted("black_market", "Black Market",
