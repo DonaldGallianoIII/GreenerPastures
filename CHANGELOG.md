@@ -2,14 +2,14 @@
 
 ## 1.0.0-beta.1 (first public release)
 
-Everything below ships in the first public beta. 313 unit tests; adversarially reviewed
+Everything below ships in the first public beta. 321 unit tests; adversarially reviewed
 system-by-system pre-release; live-QA'd in singleplayer and on a dedicated server.
 
 ### The Notebook
 - One item is the whole mod: a real web-app console rendered in-game (MCEF/Chromium, with a
   built-in fallback UI when MCEF isn't installed). Gifted on first join; craftable for more.
-- 10 tabs: BioBank · Harvester · Pastures · Compiler · Augmenter · Dashboard · Inbox ·
-  Rituals · Specimens · Guide. New players land on the Guide; all recipes are in the recipe
+- 11 tabs: BioBank · Harvester · Pastures · Compiler · Augmenter · Dashboard · Inbox ·
+  Rituals · Specimens · Game Corner · Guide. New players land on the Guide; all recipes are in the recipe
   book from join #1.
 
 ### Breeding
