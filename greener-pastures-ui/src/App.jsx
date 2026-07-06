@@ -113,7 +113,7 @@ const CSS = `
 .vf-chip{ width:52px; height:52px; border-radius:8px; background:var(--inset); border:1px dashed var(--line2);
   display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; line-height:1.2; cursor:default; }
 .vf-chip b{ color:var(--text); font-size:13px; }
-.vf-chip span{ color:#ff6b81; }
+.vf-chip span{ font-weight:600; }
 .hflag{ display:flex; align-items:center; gap:5px; background:rgba(122,92,30,.16); border:1px solid #5a4a2e; color:var(--amber); border-radius:6px; padding:3px 8px; font-size:10px; }
 .pbadge{ background:rgba(122,92,30,.3); border:1px solid #5a4a2e; color:var(--amber); border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; }
 .kload{ display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
@@ -1587,6 +1587,20 @@ function SpecimensTab() {
   )
 }
 
+// A Voltorb, drawn (Cobblemon only ships 3D UV atlases - no flat sprite to borrow; Deuce 2026-07-06).
+const Voltorb = ({ s = 12 }) => (
+  <svg width={s} height={s} viewBox="0 0 20 20" style={{ flex: 'none', display: 'inline-block', verticalAlign: '-2px' }}>
+    <circle cx="10" cy="10" r="8.8" fill="#f2f0ea" stroke="#15181c" strokeWidth="1.8" />
+    <path d="M1.2 10 a8.8 8.8 0 0 1 17.6 0 z" fill="#e33b3b" />
+    <line x1="1.2" y1="10" x2="18.8" y2="10" stroke="#15181c" strokeWidth="1.8" />
+    <circle cx="6.6" cy="7" r="1.5" fill="#fff" stroke="#15181c" strokeWidth="0.9" />
+    <circle cx="13.4" cy="7" r="1.5" fill="#fff" stroke="#15181c" strokeWidth="0.9" />
+  </svg>
+)
+// Voltorb-count danger ramp (Deuce's 0=silver, 1=blue, 2=green... continued to taste)
+const VOLT_COLORS = ['#9aa4ab', '#5ab0ff', '#6fd66f', '#ffce4f', '#ff8c42', '#ff5c5c']
+const voltColor = (n) => VOLT_COLORS[Math.max(0, Math.min(5, n ?? 0))]
+
 // ── Game Corner: Voltorb Flip (server-authoritative - the client never sees a face-down tile) ──
 function GameCorner() {
   const d = useChannel('arcade')
@@ -1606,15 +1620,15 @@ function GameCorner() {
             className={`vf-tile${revealed ? ' flip' : ''}${revealed && v === 0 ? ' volt' : ''}${d.over && revealed && !(d.flipped || [])[i] ? ' reveal' : ''}`}
             title={revealed ? (v === 0 ? 'Voltorb!' : `×${v}`) : d.playing ? 'flip' : ''}
             onClick={() => { if (!revealed && d.playing) send('arcade', 'ARCADE_FLIP', { tile: i }) }}>
-            {revealed ? (v === 0 ? '💥' : v) : ''}
+            {revealed ? (v === 0 ? <Voltorb s={26} /> : v) : ''}
           </div>)
       }
       const rc = rows[r] || {}
-      cells.push(<div key={`r${r}`} className="vf-chip"><b>{rc.sum ?? '?'}</b><span>💥{rc.volts ?? '?'}</span></div>)
+      cells.push(<div key={`r${r}`} className="vf-chip"><b>{rc.sum ?? '?'}</b><span style={{ color: voltColor(rc.volts), display: 'flex', alignItems: 'center', gap: 2 }}><Voltorb s={10} />{rc.volts ?? '?'}</span></div>)
     }
     for (let c = 0; c < 5; c++) {
       const cc = cols[c] || {}
-      cells.push(<div key={`c${c}`} className="vf-chip"><b>{cc.sum ?? '?'}</b><span>💥{cc.volts ?? '?'}</span></div>)
+      cells.push(<div key={`c${c}`} className="vf-chip"><b>{cc.sum ?? '?'}</b><span style={{ color: voltColor(cc.volts), display: 'flex', alignItems: 'center', gap: 2 }}><Voltorb s={10} />{cc.volts ?? '?'}</span></div>)
     }
     cells.push(<div key="corner" />)
   }
@@ -1634,8 +1648,8 @@ function GameCorner() {
           {d.playing && d.coins > 0 && <button className="btn" onClick={() => send('arcade', 'ARCADE_CASHOUT', {})}>CASH OUT {fmt(d.coins)}</button>}
         </div>
         {!d.playing && !d.over && <span className="dim" style={{ fontSize: 12, maxWidth: 420, textAlign: 'center' }}>
-          Each line's chip shows its value sum and 💥 count. Flip ×2s and ×3s to multiply the pot; cash out any time;
-          find every ×2 and ×3 to clear. A 💥 busts the round. Winnings are Data - straight to your account.
+          Each line's chip shows its value sum and Voltorb count (silver = a clean line). Flip ×2s and ×3s to multiply the pot; cash out any time;
+          find every ×2 and ×3 to clear. A Voltorb busts the round. Winnings are Data - straight to your account.
         </span>}
       </div>
     </div>
