@@ -202,7 +202,7 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Repro:** open Augmenter with the grown catalog (Hatch Haste + UPGRADE rows) → content past the viewport is clipped, wheel does nothing (Deuce, live QA 2026-07-05).
 - **Root cause:** the Q80 target-card wrapper div broke the height chain into `gp-body` (overflow:hidden) - wrapper height went auto, the `.tcol` columns thought they had infinite height, their own `overflow:auto` never engaged. Compiler had the identical wrapper bug.
 - **Fix:** wrappers are full-height flex columns, triptych = flex:1 + minHeight:0 (commit `66e4023`). In jar `ab6cad16`.
-- **Status:** 🚀 built — verify post-swap: Augmenter catalog wheel-scrolls with 12+ rows; Compiler ditto
+- **Status:** ✅ verified 2026-07-06 (Deuce checklist) — both tabs scroll
 
 ### BUG-016 · 🔴 MAJOR (design) · Q93-adjacent · Kernel-slotted pastures bred with ZERO scripting (adjacency fallback)
 - **Repro:** slot a kernel, tether a roster, wire nothing → `breeder brood` starts pairing slot-adjacent mons (Deuce, live QA 2026-07-05: gastly/murkrow/clefairy rosters bred + banked eggs uninvited).
