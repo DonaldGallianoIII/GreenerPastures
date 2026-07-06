@@ -17,9 +17,10 @@ import java.util.UUID;
  * the Daemon is <i>fed</i> (balance &gt; 0), so testing them straight from a fresh world is impossible without a
  * grant. This mints/sets a balance directly. <b>Op-gated (level 2)</b> since it creates currency. Usage:
  * <pre>
- *   /gp data            show your Data balance
- *   /gp data set &lt;n&gt;    set your balance to exactly n
- *   /gp data add &lt;n&gt;    add n to your balance
+ *   /gp data                 show your Data balance
+ *   /gp data set &lt;n&gt;         set your balance to exactly n
+ *   /gp data add &lt;n&gt;         add n to your balance
+ *   /gp data lifetime &lt;n&gt;    add n to LIFETIME earned too (the MissingNo. odometer - QA for the summon)
  * </pre>
  * Writes through {@link DataStore} (the same persistent store a Renderer credits), so the balance survives relog.
  */
@@ -36,7 +37,23 @@ public final class DataCommand {
                         .executes(ctx -> setTo(ctx, IntegerArgumentType.getInteger(ctx, "amount")))))
                 .then(CommandManager.literal("add")
                     .then(CommandManager.argument("amount", IntegerArgumentType.integer(1))
-                        .executes(ctx -> add(ctx, IntegerArgumentType.getInteger(ctx, "amount"))))))));
+                        .executes(ctx -> add(ctx, IntegerArgumentType.getInteger(ctx, "amount")))))
+                .then(CommandManager.literal("lifetime")
+                    .then(CommandManager.argument("amount", IntegerArgumentType.integer(1))
+                        .executes(ctx -> lifetime(ctx, IntegerArgumentType.getInteger(ctx, "amount"))))))));
+    }
+
+    /** QA lever for the MissingNo. odometer: credits through {@link DataStore#creditEarned} - the exact
+     *  path a Renderer uses - so the dashboard card, summon gating and claim math see a real earn. */
+    private static int lifetime(CommandContext<ServerCommandSource> ctx, int amount) {
+        ServerPlayerEntity p = ctx.getSource().getPlayer();
+        if (p == null) { ctx.getSource().sendError(Text.literal("Only a player has a Data balance.")); return 0; }
+        DataStore store = DataStore.get(ctx.getSource().getServer());
+        store.creditEarned(p.getUuid(), amount);
+        long life = store.lifetimeEarnedOf(p.getUuid());
+        GpLog.i("data", "debug_lifetime", "player", p.getName().getString(), "added", amount, "lifetime", life);
+        ctx.getSource().sendFeedback(() -> Text.literal("💾 +" + amount + " lifetime → " + life + " (odometer moved)"), false);
+        return 1;
     }
 
     private static int show(CommandContext<ServerCommandSource> ctx) {
