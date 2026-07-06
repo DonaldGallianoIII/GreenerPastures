@@ -6,7 +6,7 @@
    ============================================================ */
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
-import { PMD, PMD_KEYS } from './pmdsprites.js'
+import { HAPPY, SAD, VOLTORB_ANGRY, HAPPY_KEYS, SAD_KEYS } from './pmdsprites.js'
 
 // MCEF forwards key events but NOT mouse-click modifiers, so ev.shiftKey is always false in-game. Track Shift via
 // key events (which DO come through) and OR it into click handlers, so ⇧-click works both in-game and in a browser.
@@ -1596,8 +1596,9 @@ function SpecimensTab() {
 // Server-authoritative - the client never receives a face-down tile's value. ──
 const VOLT_COLORS = ['#9aa4ab', '#5ab0ff', '#6fd66f', '#ffce4f', '#ff8c42', '#ff5c5c']
 const voltColor = (n) => VOLT_COLORS[Math.max(0, Math.min(5, n ?? 0))]
-const tileSpecies = (i, level) => PMD_KEYS[(i * 13 + (level || 1) * 7) % PMD_KEYS.length]
-const SadIcon = () => <img src={PMD.wooloo.s} alt="bombs" title="hidden bombs in this line" />
+const happySpecies = (i, level) => HAPPY_KEYS[(i * 13 + (level || 1) * 7) % HAPPY_KEYS.length]
+const sadSpecies = (i, level) => SAD_KEYS[(i * 11 + (level || 1) * 5) % SAD_KEYS.length]
+const SadIcon = () => <img src={VOLTORB_ANGRY} alt="voltorbs" title="hidden Voltorbs in this line" />
 
 function GameCorner() {
   const d = useChannel('arcade')
@@ -1612,13 +1613,13 @@ function GameCorner() {
         const i = r * 5 + c
         const v = tiles[i]
         const revealed = v != null && v >= 0
-        const sp = tileSpecies(i, d.level)
+        const sp = v === 0 ? sadSpecies(i, d.level) : happySpecies(i, d.level)
         cells.push(
           <div key={i}
             className={`vf-tile${revealed ? ' flip' : ''}${revealed && v === 0 ? ' volt' : ''}${d.over && revealed && !(d.flipped || [])[i] ? ' reveal' : ''}`}
             title={revealed ? (v === 0 ? `${cap(sp)} is devastated.` : `${cap(sp)}! ×${v}`) : d.playing ? 'flip' : ''}
             onClick={() => { if (!revealed && d.playing) send('arcade', 'ARCADE_FLIP', { tile: i }) }}>
-            {revealed && <img src={v === 0 ? PMD[sp].s : PMD[sp].h} alt={v === 0 ? 'sad' : 'happy'} />}
+            {revealed && <img src={v === 0 ? SAD[sp] : HAPPY[sp]} alt={v === 0 ? 'sad' : 'happy'} />}
             {revealed && v >= 2 && <span className="vf-badge">×{v}</span>}
           </div>)
       }
@@ -1647,8 +1648,8 @@ function GameCorner() {
           {d.playing && d.coins > 0 && <button className="btn" onClick={() => send('arcade', 'ARCADE_CASHOUT', {})}>CASH OUT {fmt(d.coins)}</button>}
         </div>
         {!d.playing && !d.over && <span className="dim" style={{ fontSize: 12, maxWidth: 440, textAlign: 'center' }}>
-          Each line's chip shows its value sum and how many hidden bombs it holds (silver = a clean line).
-          Flip happy ×2s and ×3s to multiply the pot; cash out any time; find every ×2 and ×3 to clear.
+          Each line's chip shows its value sum and how many hidden Voltorbs it holds (silver = a clean line).
+          Flip happy starters (×2/×3) to multiply the pot; cash out any time; find every ×2 and ×3 to clear.
           Flip a sad one and the pot is gone. Winnings are Data - straight to your account.
         </span>}
         <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>

@@ -1,10 +1,13 @@
 Greener Pastures - Game Corner portraits: PMD Sprite Collab (sprites.pmdcollab.org)
-Fan-made art used with credit. Artists:
+Fan-made art used with credit (verified per-emotion; no game rips). Artists:
   axew: G〜
   blitzle: Emmuffin, mucrush
   bounsweet: NOLASMOR, baronessfaron
+  chespin: Emmuffin, Noo
   cutiefly: NOLASMOR, baronessfaron
   dreepy: Deeshura, G〜, NOLASMOR, Top_Kec
+  fennekin: G〜
+  froakie: Cloudy, Emmuffin, G〜, baronessfaron, ◥θ┴θ◤
   fuecoco: G〜
   goomy: RacieB
   grookey: G〜, JustAGunk
@@ -20,6 +23,8 @@ Fan-made art used with credit. Artists:
   snivy: Emmuffin
   sobble: Emmuffin, G〜
   sprigatito: Emmuffin
+  tepig: Emmuffin, Noivern
   togedemaru: Emmuffin
+  voltorb: JFain
   wooloo: Emmuffin
   zorua: MilesFarber, baronessfaron
