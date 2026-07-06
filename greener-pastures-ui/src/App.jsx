@@ -1524,6 +1524,7 @@ function PastureConfig({ cfg }) {
           {cfg.kernel.ev && <span className="kchip">EV {cfg.kernel.ev}</span>}
           {cfg.kernel.ha && <span className="kchip">✦ hidden ability</span>}
           {cfg.kernel.moves && <span className="kchip">📖 egg moves</span>}
+          {(cfg.kernel.chips || []).map((c) => <span className="kchip" key={c}>{c}</span>)}
         </div>
       )}
       <div className="dim" style={{ fontSize: 11, marginBottom: 6 }}>

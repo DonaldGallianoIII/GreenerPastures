@@ -1131,6 +1131,27 @@ public final class NotebookNet {
             }
             if (a != null && a.level(com.greenerpastures.economy.AugmentFunction.ABILITY) > 0) k.addProperty("ha", true);
             if (a != null && a.level(com.greenerpastures.economy.AugmentFunction.EGG_MOVE) > 0) k.addProperty("moves", true);
+            // Magnitude chips (Deuce, live QA 2026-07-06: drop chance / hatch / IV floor were invisible in
+            // LOADOUT). Server-formatted, mirroring BreedingUpgradeItem's tooltip switch - one truth.
+            JsonArray chips = new JsonArray();
+            int v;
+            if (a != null && (v = a.level(com.greenerpastures.economy.AugmentFunction.SHINY)) > 0)
+                chips.add("✦ +" + v + "% shiny");
+            int drop = a == null ? 0 : a.level(com.greenerpastures.economy.AugmentFunction.DROP_RATE);
+            if (drop == 0 && kernel.getItem() instanceof BreedingUpgradeItem bu)
+                drop = bu.tier().baseDropRateCentipercent();   // bare kernel still shows its born-with drop chance
+            if (drop > 0) chips.add("⛏ +" + String.format("%.2f", drop / 100.0) + "% drops");
+            if (a != null && (v = a.level(com.greenerpastures.economy.AugmentFunction.DROP_YIELD)) > 0)
+                chips.add("⛏ +" + v + " drop yield");
+            if (a != null && (v = a.level(com.greenerpastures.economy.AugmentFunction.IV_FLOOR)) > 0)
+                chips.add("▲ IV floor " + v);
+            if (a != null && (v = a.level(com.greenerpastures.economy.AugmentFunction.SPEED)) > 0)
+                chips.add("⚡ speed " + (v == 1 ? "×1.5" : v == 2 ? "×2" : v == 3 ? "×3" : "lvl " + v));
+            if (a != null && (v = a.level(com.greenerpastures.economy.AugmentFunction.HATCH)) > 0)
+                chips.add("🐣 hatch ×" + com.greenerpastures.pasture.breeding.HatchHaste.factorLabel(v));
+            if (a != null && (v = a.level(com.greenerpastures.economy.AugmentFunction.ENRICHMENT)) > 0)
+                chips.add("◈ enrichment +" + v + "%");
+            if (!chips.isEmpty()) k.add("chips", chips);
             // Full augment map + corruption - the client dresses its DISPLAY stack with these so hovering the
             // slotted kernel shows the real tooltip, not a default-born one (Deuce, 2026-07-04).
             if (kernel.contains(net.minecraft.component.DataComponentTypes.CUSTOM_NAME))
