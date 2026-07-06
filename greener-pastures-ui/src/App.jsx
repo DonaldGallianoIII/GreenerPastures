@@ -6,6 +6,7 @@
    ============================================================ */
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
+import { PMD, PMD_KEYS } from './pmdsprites.js'
 
 // MCEF forwards key events but NOT mouse-click modifiers, so ev.shiftKey is always false in-game. Track Shift via
 // key events (which DO come through) and OR it into click handlers, so ⇧-click works both in-game and in a browser.
@@ -100,6 +101,24 @@ const CSS = `
 .cell-full{ opacity:.42; cursor:not-allowed; }
 .tab-badge{ display:inline-block; margin-left:5px; background:var(--cyan); color:#04222b; border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; vertical-align:1px; }
 .hstrip{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+.vf-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:6px; }
+.vf-board{ display:grid; grid-template-columns:repeat(6, 56px); grid-template-rows:repeat(6, 56px); gap:6px; }
+.vf-tile{ position:relative; width:56px; height:56px; border-radius:8px; border:1px solid var(--line2);
+  background:linear-gradient(145deg,#1c2a22,#12201a); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; user-select:none; transition: transform .12s ease, background .12s ease; }
+.vf-tile:hover{ transform:scale(1.06); border-color:var(--grn); }
+.vf-tile.flip{ cursor:default; background:var(--inset); transform:none; }
+.vf-tile.flip:hover{ transform:none; border-color:var(--line2); }
+.vf-tile.volt{ background:linear-gradient(145deg,#3a1620,#26101a); border-color:#6e2635; }
+.vf-tile.reveal{ opacity:.42; }
+.vf-tile img{ width:44px; height:44px; image-rendering:pixelated; }
+.vf-badge{ position:absolute; right:2px; bottom:2px; background:#0e1512e0; border:1px solid var(--amber);
+  color:var(--amber); font-size:11px; font-weight:700; border-radius:5px; padding:0 3px; line-height:1.35; }
+.vf-chip{ width:56px; height:56px; border-radius:8px; background:var(--inset); border:1px dashed var(--line2);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; line-height:1.25; cursor:default; }
+.vf-chip b{ color:var(--text); font-size:13px; }
+.vf-chip span{ font-weight:600; display:flex; align-items:center; gap:2px; }
+.vf-chip span img{ width:12px; height:12px; image-rendering:pixelated; }
 .hflag{ display:flex; align-items:center; gap:5px; background:rgba(122,92,30,.16); border:1px solid #5a4a2e; color:var(--amber); border-radius:6px; padding:3px 8px; font-size:10px; }
 .pbadge{ background:rgba(122,92,30,.3); border:1px solid #5a4a2e; color:var(--amber); border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; }
 .kload{ display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
@@ -262,6 +281,7 @@ const TABS = [
   { id: 'inbox',     label: 'Inbox',     path: 'gp://inbox' },
   { id: 'rituals',   label: 'Rituals',   path: 'gp://rituals' },
   { id: 'specimens', label: 'Specimens', path: 'gp://specimens' },
+  { id: 'gamecorner', label: 'Game Corner', path: 'gp://gamecorner' },
   { id: 'guide',     label: 'Guide',     path: 'gp://guide' },
 ]
 const STAT_NAMES = ['HP', 'At', 'Df', 'SA', 'SD', 'Sp']
@@ -333,6 +353,7 @@ export default function App() {
           {tab === 'inbox' && <InboxTab />}
           {tab === 'rituals' && <RitualsTab />}
           {tab === 'specimens' && <SpecimensTab />}
+          {tab === 'gamecorner' && <GameCorner />}
           {tab === 'guide' && <GuideTab />}
         </div>
         </>)}
@@ -1567,6 +1588,71 @@ function SpecimensTab() {
             onClick={() => send('specimens', 'COMPRESS_MON', { slot: m.slot })}>ARCHIVE</button>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ── Game Corner: Voltorb Flip with PMD Collab portraits (fan-made only; CREDITS-PMD.md).
+// Server-authoritative - the client never receives a face-down tile's value. ──
+const VOLT_COLORS = ['#9aa4ab', '#5ab0ff', '#6fd66f', '#ffce4f', '#ff8c42', '#ff5c5c']
+const voltColor = (n) => VOLT_COLORS[Math.max(0, Math.min(5, n ?? 0))]
+const tileSpecies = (i, level) => PMD_KEYS[(i * 13 + (level || 1) * 7) % PMD_KEYS.length]
+const SadIcon = () => <img src={PMD.wooloo.s} alt="bombs" title="hidden bombs in this line" />
+
+function GameCorner() {
+  const d = useChannel('arcade')
+  if (!d) return <Empty title="…" msg="loading the Game Corner channel" />
+  const tiles = d.tiles || []
+  const rows = d.rows || []
+  const cols = d.cols || []
+  const cells = []
+  if (d.playing || d.over) {
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        const i = r * 5 + c
+        const v = tiles[i]
+        const revealed = v != null && v >= 0
+        const sp = tileSpecies(i, d.level)
+        cells.push(
+          <div key={i}
+            className={`vf-tile${revealed ? ' flip' : ''}${revealed && v === 0 ? ' volt' : ''}${d.over && revealed && !(d.flipped || [])[i] ? ' reveal' : ''}`}
+            title={revealed ? (v === 0 ? `${cap(sp)} is devastated.` : `${cap(sp)}! ×${v}`) : d.playing ? 'flip' : ''}
+            onClick={() => { if (!revealed && d.playing) send('arcade', 'ARCADE_FLIP', { tile: i }) }}>
+            {revealed && <img src={v === 0 ? PMD[sp].s : PMD[sp].h} alt={v === 0 ? 'sad' : 'happy'} />}
+            {revealed && v >= 2 && <span className="vf-badge">×{v}</span>}
+          </div>)
+      }
+      const rc = rows[r] || {}
+      cells.push(<div key={`r${r}`} className="vf-chip"><b>{rc.sum ?? '?'}</b><span style={{ color: voltColor(rc.volts) }}><SadIcon />{rc.volts ?? '?'}</span></div>)
+    }
+    for (let c = 0; c < 5; c++) {
+      const cc = cols[c] || {}
+      cells.push(<div key={`c${c}`} className="vf-chip"><b>{cc.sum ?? '?'}</b><span style={{ color: voltColor(cc.volts) }}><SadIcon />{cc.volts ?? '?'}</span></div>)
+    }
+    cells.push(<div key="corner" />)
+  }
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="vf-wrap">
+        <div className="row" style={{ gap: 14, alignItems: 'baseline' }}>
+          <span className="h">🎰 Game Corner · Lv.{d.level}</span>
+          <span className="grn" style={{ fontWeight: 600 }}>pot {fmt(d.coins)}</span>
+          <span className="dim" style={{ fontSize: 11 }} title="the house's ledger closes at one kilobyte a day">house pays {fmt(d.dailyLeft)} more today</span>
+        </div>
+        {(d.playing || d.over) && <div className="vf-board">{cells}</div>}
+        {d.over && <span className={d.cleared ? 'grn' : ''} style={{ fontSize: 12, color: d.cleared ? undefined : '#ff6b81' }}>
+          {d.cleared ? `CLEAR! Everyone's happy - ${fmt(d.coins)} paid, the machine levels up.` : 'Oh no. The pot is gone - the machine takes pity and eases up a level.'}</span>}
+        <div className="row" style={{ gap: 8 }}>
+          <button className="btn go" onClick={() => send('arcade', 'ARCADE_NEW', {})}>{d.playing ? 'FORFEIT · NEW BOARD' : 'NEW BOARD'}</button>
+          {d.playing && d.coins > 0 && <button className="btn" onClick={() => send('arcade', 'ARCADE_CASHOUT', {})}>CASH OUT {fmt(d.coins)}</button>}
+        </div>
+        {!d.playing && !d.over && <span className="dim" style={{ fontSize: 12, maxWidth: 440, textAlign: 'center' }}>
+          Each line's chip shows its value sum and how many hidden bombs it holds (silver = a clean line).
+          Flip happy ×2s and ×3s to multiply the pot; cash out any time; find every ×2 and ×3 to clear.
+          Flip a sad one and the pot is gone. Winnings are Data - straight to your account.
+        </span>}
+        <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
+      </div>
     </div>
   )
 }

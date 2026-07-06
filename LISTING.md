@@ -54,6 +54,15 @@ higher values always win.
 
 📸 *the EV allocator + nature picker*
 
+### The Game Corner
+A full **Voltorb Flip** machine in the Notebook - deduction, push-your-luck, seven levels. Flip a
+multiplier and a *delighted* Pokémon portrait greets you; flip a bomb and someone is devastated
+(portraits from the community-run **PMD Sprite Collab** - fan-made art only, every artist credited
+in the mod). Server-authoritative: the client literally never receives a face-down tile, so it cannot
+be cheated. Winnings are real Data - and the house's ledger closes at exactly **one kilobyte a day**.
+
+📸 *the Game Corner mid-round - two happy flips and a nervous board*
+
 ### The hunter's toolkit (bundled)
 Shiny eggs **gold-glow in any container** - no more hover-checking a full box. A lifetime tally keeps
 your real "1 in N" shiny rate. And **EggOracle**, the built-in odds planner, answers the only question
@@ -106,7 +115,7 @@ Eggs are bagged and tagged: every voided egg is listed with the exact filter tha
 
 Nothing is bundled - install each as its own mod. Works in singleplayer and on dedicated servers (MCEF is only ever needed on clients).
 
-*MIT licensed. Built by Deuce222XX.*
+*MIT licensed. Built by Deuce222XX. Game Corner portraits: PMD Sprite Collab (fan-made, credited - CREDITS-PMD.md).*
 
 ---
 
