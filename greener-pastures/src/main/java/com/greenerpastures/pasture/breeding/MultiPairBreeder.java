@@ -174,7 +174,7 @@ public final class MultiPairBreeder {
                     int productiveBroods = 0;
                     for (int b = 0; b < broods && !pairs.isEmpty(); b++) {
                         EffectiveAugments eff = fed ? res.effective() : starved.effective();
-                        int got = breedPairs(world, pos, tier, pd, now, eff, pairs, mode);
+                        int got = breedPairs(world, pos, tier, pd, now, eff, pairs, mode, interval);
                         if (got == 0 && laid == 0 && b > 2) break;   // sterile pasture - don't grind 288 no-op broods
                         if (got > 0) {
                             productiveBroods++;
@@ -263,7 +263,7 @@ public final class MultiPairBreeder {
      *  {@link #buildPairs} (reused across catch-up broods). */
     private static int breedPairs(ServerWorld world, BlockPos pos, BreedingTier tier, PastureData pd, long now,
                                   EffectiveAugments eff,
-                                  List<List<PokemonPastureBlockEntity.Tethering>> pairs, String mode) {
+                                  List<List<PokemonPastureBlockEntity.Tethering>> pairs, String mode, long intervalTicks) {
         int laid = 0;
         for (int i = 0; i < pairs.size(); i++) {
             EggShape shape = new EggShape(
@@ -297,7 +297,8 @@ public final class MultiPairBreeder {
             EggLog.recordLaid(pd.owner, tier.name(), egg.shiny(), egg.procShiny(), now);   // dashboard totals + sparkline
         }
         if (laid > 0) {
-            GpLog.d("breeder", "brood", "pos", pos.toShortString(), "laid", laid, "queued", pd.eggQueue.size());
+            GpLog.d("breeder", "brood", "pos", pos.toShortString(), "laid", laid, "queued", pd.eggQueue.size(),
+                    "intervalTicks", intervalTicks, "tier", tier.name());   // Q73 verifies from ONE line per pasture
         }
         return laid;
     }
