@@ -214,7 +214,7 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Repro:** withdraw an egg while breeding is actively banking → bank view keeps showing the withdrawn egg; count "never updates" (Deuce, live QA 2026-07-06, the ghost abra). Server side was always correct - both withdraw clicks delivered eggs to inventory.
 - **Root cause:** pushBiobank ran the rev gate BEFORE the 5s flatten floor (both mine, perf round R3/M2). `changed()` records the rev it sees - so a throttled call consumed the change signal and sent nothing; every later 1s poll then read "unchanged" and the UI froze on stale state until an unrelated rev bump landed outside a throttle window.
 - **Fix:** floor checked FIRST (throttled call leaves the rev signal unconsumed - next poll retries, ≤5s staleness by design, never forever); WITHDRAW now pushes with `force=true` (user actions get instant feedback). Commit with this entry; in jar `9fb51cf3`.
-- **Status:** 🚀 built — verify post-swap: withdraw mid-breeding → row disappears immediately; passive banking still ≤5s lag max
+- **Status:** ✅ verified 2026-07-06 (Deuce, live) — withdraw reflects instantly mid-breeding
 
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
