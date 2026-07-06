@@ -314,6 +314,38 @@ public final class CobbreedingBridge {
      * not-yet-perfect stats to reach {@code count}. Mutates {@code eggData.getIvs()} in place (Cobbreeding
      * applies it at hatch via {@code PokemonProperties.apply → setIV}). Never throws - egg-gen must not break.
      */
+    /** Game Corner <b>Mystery Egg</b> (Deuce's spec, 2026-07-06): a random implemented species - no
+     *  legendary/mythical/ultra-beast/paradox - with random IVs of which AT LEAST 2 are perfect
+     *  ({@code IVs.createRandomIVs(2)} guarantees exactly that) and the species' hidden ability ALWAYS
+     *  (species without a hidden ability are skipped so the promise holds). Null = build unavailable;
+     *  the shop refuses BEFORE debiting. */
+    public static ItemStack shopMysteryEgg(java.util.Random rng) {
+        if (!available) return null;
+        try {
+            List<Species> pool = new ArrayList<>();
+            for (Species sp : PokemonSpecies.INSTANCE.getImplemented()) {
+                var labels = sp.getLabels();
+                if (labels.contains("legendary") || labels.contains("mythical")
+                        || labels.contains("ultra_beast") || labels.contains("paradox")) continue;
+                boolean hasHidden = false;
+                for (PotentialAbility pa : sp.getAbilities()) {
+                    if (pa.getType() != CommonAbilityType.INSTANCE) { hasHidden = true; break; }
+                }
+                if (hasHidden) pool.add(sp);
+            }
+            if (pool.isEmpty()) return null;
+            Species sp = pool.get(rng.nextInt(pool.size()));
+            PokemonProperties props = new PokemonProperties();
+            props.setSpecies(sp.showdownId());
+            props.setIvs(IVs.createRandomIVs(2));
+            applyHiddenAbility(props, true);
+            return assembleEgg(props);
+        } catch (Throwable t) {
+            GreenerPastures.LOG.warn("[game-corner] mystery egg build failed", t);
+            return null;
+        }
+    }
+
     private static void applyIvFloor(PokemonProperties eggData, int count) {
         if (count <= 0) return;
         try {

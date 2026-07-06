@@ -1209,7 +1209,8 @@ public final class NotebookNet {
         long nowMs = System.currentTimeMillis();
         shop.addProperty("endsAt", com.greenerpastures.arcade.GameShop.windowEndsAt(nowMs));
         JsonArray offers = new JsonArray();
-        for (var w : com.greenerpastures.arcade.GameShop.offersFor(player.getUuid(), nowMs)) {
+        boolean eggOk = com.greenerpastures.pasture.breeding.CobbreedingBridge.isAvailable();
+        for (var w : com.greenerpastures.arcade.GameShop.offersFor(player.getUuid(), nowMs, eggOk)) {
             JsonObject o = new JsonObject();
             o.addProperty("name", w.name());
             o.addProperty("price", w.price());
@@ -1284,14 +1285,24 @@ public final class NotebookNet {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         long nowMs = System.currentTimeMillis();
-        var ware = com.greenerpastures.arcade.GameShop.wareAt(player.getUuid(), nowMs, slot);
+        boolean eggOk = com.greenerpastures.pasture.breeding.CobbreedingBridge.isAvailable();
+        var ware = com.greenerpastures.arcade.GameShop.wareAt(player.getUuid(), nowMs, slot, eggOk);
         if (ware == null) return;
-        Item item = Registries.ITEM.get(Identifier.tryParse(ware.itemId()));
-        if (item == net.minecraft.item.Items.AIR) {
-            GpLog.w("arcade", "shop_unknown_item", "id", ware.itemId());
-            return;
+        ItemStack stack;
+        if (com.greenerpastures.arcade.GameShop.MYSTERY_EGG_ID.equals(ware.itemId())) {
+            stack = com.greenerpastures.pasture.breeding.CobbreedingBridge.shopMysteryEgg(new java.util.Random());
+            if (stack == null) {
+                player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r the egg machine jammed - your Coins are safe."), false);
+                return;
+            }
+        } else {
+            Item item = Registries.ITEM.get(Identifier.tryParse(ware.itemId()));
+            if (item == net.minecraft.item.Items.AIR) {
+                GpLog.w("arcade", "shop_unknown_item", "id", ware.itemId());
+                return;
+            }
+            stack = new ItemStack(item, ware.count());
         }
-        ItemStack stack = new ItemStack(item, ware.count());
         PlayerInventory inv = player.getInventory();
         int free = -1;
         for (int i = 0; i < inv.main.size(); i++) {

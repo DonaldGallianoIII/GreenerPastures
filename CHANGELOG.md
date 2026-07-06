@@ -59,8 +59,9 @@ system-by-system pre-release; live-QA'd in singleplayer and on a dedicated serve
   Scorbunny in ten sweeps; decoys snitch with 8-way arrows; payout falls per sweep.
 - Cabinets pay **Game Corner Coins** - the arcade's own currency, never convertible to Data -
   spent at the **Prize Counter**: six shelves per player, stock rotating every 15 real minutes
-  (balls, potions, revives, Destiny Knot, Rare Candy, Leftovers...). PMD Sprite Collab art,
-  fan-made only, credited in CREDITS-PMD.md.
+  from a 60-ware catalog - balls, potions, EVERY held item (type boosters, power items, choice
+  gear, Destiny Knot...) and the **Mystery Egg**: a random species with at least 2 perfect IVs
+  and its hidden ability, always. PMD Sprite Collab art, fan-made only, credited in CREDITS-PMD.md.
 
 ### Trophies
 - **Specimen Disks**: archive party mons losslessly onto reusable media; release by

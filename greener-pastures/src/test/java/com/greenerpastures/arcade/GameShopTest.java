@@ -53,9 +53,22 @@ class GameShopTest {
     void purchaseValidationReDerivesTheShelf() {
         long t = 9 * GameShop.WINDOW_MS + 500;
         List<GameShop.Ware> offers = GameShop.offersFor(A, t);
-        assertEquals(offers.get(3), GameShop.wareAt(A, t, 3));
-        assertNull(GameShop.wareAt(A, t, -1));
-        assertNull(GameShop.wareAt(A, t, GameShop.SLOTS), "forged slot index buys nothing");
+        assertEquals(offers.get(3), GameShop.wareAt(A, t, 3, true));
+        assertNull(GameShop.wareAt(A, t, -1, true));
+        assertNull(GameShop.wareAt(A, t, GameShop.SLOTS, true), "forged slot index buys nothing");
+    }
+
+    @Test
+    void eggFlagKeepsShelvesConsistentWhenCobbreedingIsAbsent() {
+        for (long w = 0; w < 30; w++) {
+            long t = w * GameShop.WINDOW_MS;
+            var noEgg = GameShop.offersFor(A, t, false);
+            assertTrue(noEgg.stream().noneMatch(x -> GameShop.MYSTERY_EGG_ID.equals(x.itemId())),
+                    "window " + w + " offered the egg without Cobbreeding");
+            for (int i = 0; i < GameShop.SLOTS; i++) {
+                assertEquals(noEgg.get(i), GameShop.wareAt(A, t, i, false), "derivation must match validation");
+            }
+        }
     }
 
     @Test
