@@ -132,6 +132,7 @@ public final class DsBridge {
             case "ARCADE_CASHOUT" -> new NotebookActionC2S(NotebookActionC2S.ARCADE_CASHOUT, "", 0);
             case "TREELINE_NEW"    -> new NotebookActionC2S(NotebookActionC2S.TREELINE_NEW, "", 0);
             case "TREELINE_SEARCH" -> new NotebookActionC2S(NotebookActionC2S.TREELINE_SEARCH, "", (int) num(p, "tree", -1));
+            case "SHOP_BUY"        -> new NotebookActionC2S(NotebookActionC2S.SHOP_BUY, "", (int) num(p, "slot", -1));
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }

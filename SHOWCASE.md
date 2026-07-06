@@ -13,7 +13,7 @@ _Compiled from a full code survey; rev 2026-07-06 - 310 tests, post-adversarial-
 - **Inbox** - dismissible away-progress + event feed with unread badge
 - **Rituals** - hidden-recipe puzzle board + per-ritual spoils tiles
 - **Specimens** - archive party mons onto disks
-- **Game Corner** - a two-cabinet arcade: DAEMON FLIP (Voltorb Flip with PMD Collab portraits - happy flips, devastated bombs) and TREELINE (chase a Scorbunny into the forest; decoys snitch with arrows; payout falls with every sweep). Fan-made art only, fully credited; server-authoritative; never moves the MissingNo odometer
+- **Game Corner** - a two-cabinet arcade paying **Game Corner Coins** (its own currency - never converts to Data): DAEMON FLIP (Voltorb Flip with PMD Collab portraits) and TREELINE (chase a Scorbunny into the forest; decoys snitch with arrows). Coins spend at the **Prize Counter** - a mobile-style shop whose stock rotates every 15 real minutes (balls, potions, Destiny Knot, Rare Candy...). Fan-made art only, fully credited; server-authoritative
 - **Guide** - full onboarding manual in-game
 
 ## 🧬 Breeding Engine

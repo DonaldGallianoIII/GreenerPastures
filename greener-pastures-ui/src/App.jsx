@@ -103,89 +103,89 @@ const CSS = `
 .tab-badge{ display:inline-block; margin-left:5px; background:var(--cyan); color:#04222b; border-radius:8px; padding:0 5px; font-size:9px; font-weight:800; line-height:14px; vertical-align:1px; }
 .hstrip{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
 .tl-cab{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; width:240px; padding:16px 14px;
-  border:1px solid #8a6432; border-radius:10px; background:linear-gradient(180deg,#221809,#1c1307);
-  color:#f0a12e; cursor:pointer; transition:all .15s; text-align:left; }
-.tl-cab:hover{ border-color:#ffd489; box-shadow:0 0 14px rgba(240,161,46,.35); transform:translateY(-2px); }
-.tl-cab-name{ font-size:17px; font-weight:700; letter-spacing:2px; color:#ffd489; }
-.tl-cab-sub{ font-size:10px; color:#8a6432; }
-.tl-console{ --u: min(1.05vw, 0.72vh); width:calc(var(--u)*74); margin:0 auto; padding:calc(var(--u)*1.6);
-  border:calc(var(--u)*0.14) solid #8a6432; border-radius:calc(var(--u)*0.8);
-  background:linear-gradient(180deg,#221809 0%,#1c1307 100%);
-  box-shadow:0 0 calc(var(--u)*3) rgba(240,161,46,0.12), inset 0 0 calc(var(--u)*4) rgba(0,0,0,0.55);
-  display:flex; flex-direction:column; gap:calc(var(--u)*1); color:#f0a12e; }
-.tl-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:calc(var(--u)*1);
-  border-bottom:1px solid #8a6432; padding-bottom:calc(var(--u)*0.8); }
+  border:1px solid var(--line2); border-radius:10px; background:var(--inset); color:var(--text);
+  cursor:pointer; transition:all .15s; text-align:left; }
+.tl-cab:hover{ border-color:var(--grn); box-shadow:0 0 14px rgba(70,200,120,.18); transform:translateY(-2px); }
+.tl-cab-name{ font-size:16px; font-weight:700; letter-spacing:2px; color:var(--grn); }
+.tl-cab-sub{ font-size:10px; color:var(--dim); }
+.gc-shop{ width:min(560px,96%); display:flex; flex-direction:column; gap:8px; }
+.gc-shop-head{ display:flex; align-items:baseline; gap:10px; }
+.gc-offers{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.gc-offer{ display:flex; flex-direction:column; gap:3px; padding:9px 10px; border:1px solid var(--line2);
+  border-radius:8px; background:var(--inset); }
+.gc-offer-name{ font-size:11px; color:var(--text); }
+.gc-offer-emoji{ font-size:18px; }
+.gc-offer-row{ display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
+.gc-price{ font-size:11px; font-weight:700; color:var(--amber); }
+.tl-console{ width:min(860px,97%); margin:0 auto; padding:12px; border:1px solid var(--line2); border-radius:10px;
+  background:var(--inset); display:flex; flex-direction:column; gap:8px; color:var(--text); }
+.tl-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px;
+  border-bottom:1px solid var(--line2); padding-bottom:7px; }
 .tl-title{ display:flex; flex-direction:column; line-height:1; }
-.tl-title-main{ font-size:calc(var(--u)*2.6); font-weight:700; letter-spacing:calc(var(--u)*0.22); color:#ffd489;
-  text-shadow:0 0 calc(var(--u)*1.1) rgba(240,161,46,0.55); }
-.tl-title-sub{ font-size:calc(var(--u)*0.95); color:#8a6432; letter-spacing:calc(var(--u)*0.1); margin-top:calc(var(--u)*0.3); }
-.tl-meters{ display:flex; gap:calc(var(--u)*1.6); align-items:flex-end; }
+.tl-title-main{ font-size:17px; font-weight:700; letter-spacing:3px; color:var(--grn); }
+.tl-title-sub{ font-size:9px; color:var(--dim); letter-spacing:1px; margin-top:3px; }
+.tl-meters{ display:flex; gap:16px; align-items:flex-end; }
 .tl-meter{ display:flex; flex-direction:column; align-items:flex-end; line-height:1; }
-.tl-meter-label{ font-size:calc(var(--u)*0.8); color:#8a6432; margin-bottom:calc(var(--u)*0.3); }
-.tl-meter-val{ font-size:calc(var(--u)*2); font-weight:700; color:#ffd489; font-variant-numeric:tabular-nums; }
-.tl-pips{ display:flex; gap:calc(var(--u)*0.3); }
-.tl-pip{ width:calc(var(--u)*1); height:calc(var(--u)*1.6); background:#2c1f0d; border:1px solid #8a6432; border-radius:calc(var(--u)*0.15); }
-.tl-pip-on{ background:#f0a12e; box-shadow:0 0 calc(var(--u)*0.6) rgba(240,161,46,0.6); }
-.tl-screen{ width:100%; aspect-ratio:16/9; overflow:hidden; border:1px solid #8a6432; border-radius:calc(var(--u)*0.5);
-  background:#0e0903; position:relative; }
+.tl-meter-label{ font-size:8px; color:var(--dim); margin-bottom:3px; letter-spacing:1px; }
+.tl-meter-val{ font-size:16px; font-weight:700; color:var(--amber); font-variant-numeric:tabular-nums; }
+.tl-pips{ display:flex; gap:3px; }
+.tl-pip{ width:9px; height:14px; background:var(--bg); border:1px solid var(--line2); border-radius:2px; }
+.tl-pip-on{ background:var(--grn); box-shadow:0 0 5px rgba(70,200,120,.5); }
+.tl-screen{ width:100%; aspect-ratio:16/8; overflow:hidden; border:1px solid var(--line2); border-radius:7px;
+  background:var(--bg); position:relative; }
 .tl-strip{ display:flex; width:200%; height:100%; transform:translateX(0); transition:transform 1.25s cubic-bezier(0.55,0.05,0.25,1); }
 .tl-strip-panned{ transform:translateX(-50%); }
 .tl-map{ width:50%; height:100%; position:relative; overflow:hidden; }
-.tl-meadow{ background:linear-gradient(180deg,#14100a 0%,#1b1408 100%); }
+.tl-meadow{ background:linear-gradient(180deg, #0d1512 0%, #101b14 100%); }
 .tl-grass{ position:absolute; inset:0; }
-.tl-blade{ position:absolute; color:#8a6432; font-size:calc(var(--u)*1.4); opacity:0.6; line-height:1; }
+.tl-blade{ position:absolute; color:var(--dim); font-size:13px; opacity:.55; line-height:1; }
 .tl-edge-fade{ position:absolute; top:0; right:0; bottom:0; width:12%;
-  background:linear-gradient(90deg, rgba(240,161,46,0) 0%, rgba(240,161,46,0.07) 100%); border-right:2px dashed #8a6432; }
-.tl-critter-pos{ position:absolute; width:calc(var(--u)*3.4); height:calc(var(--u)*4.2); transform:translate(-50%,-50%);
+  background:linear-gradient(90deg, rgba(70,200,120,0) 0%, rgba(70,200,120,.07) 100%); border-right:2px dashed var(--line2); }
+.tl-critter-pos{ position:absolute; width:30px; height:38px; transform:translate(-50%,-50%);
   transition:left 1.35s cubic-bezier(0.5,0,0.9,0.6), top 1.35s ease-in; }
 .tl-idle{ animation:tlIdle 2.6s ease-in-out infinite; }
-@keyframes tlIdle{ 0%,100%{ margin-top:0; } 50%{ margin-top:calc(var(--u)*-0.25); } }
+@keyframes tlIdle{ 0%,100%{ margin-top:0; } 50%{ margin-top:-2px; } }
 .tl-flee{ left:112% !important; top:var(--exitY) !important; }
 .tl-bun{ display:block; width:100%; aspect-ratio:24/40; background-repeat:no-repeat; background-size:400% 800%;
   background-position:0% calc(var(--row,0) * 14.2857%); image-rendering:pixelated;
-  filter:drop-shadow(0 0 calc(var(--u)*0.5) rgba(255,190,80,0.75)); }
+  filter:drop-shadow(0 0 4px rgba(120,255,170,.5)); }
 .tl-bun-walk{ animation:tlWalk var(--spd,0.6s) steps(4) infinite; }
 @keyframes tlWalk{ from{ background-position-x:0%; } to{ background-position-x:133.3333%; } }
-.tl-bun-dim{ filter:saturate(0.15) brightness(0.72); }
-.tl-forest{ background:linear-gradient(180deg,#100c06 0%,#171008 100%); }
-.tl-tree{ position:absolute; width:calc(var(--u)*5.4 * var(--sc)); height:calc(var(--u)*7 * var(--sc));
+.tl-bun-dim{ filter:saturate(.15) brightness(.7); }
+.tl-forest{ background:linear-gradient(180deg, #0a120e 0%, #0e1712 100%); }
+.tl-tree{ position:absolute; width:calc(46px * var(--sc)); height:calc(60px * var(--sc));
   transform:translate(-50%,-78%); background:transparent; border:none; padding:0; cursor:pointer; }
 .tl-tree:disabled{ cursor:default; }
-.tl-tree-inner{ display:block; width:100%; height:100%; transition:filter 0.15s; }
-.tl-tree:not(:disabled):hover .tl-tree-inner{ filter:drop-shadow(0 0 calc(var(--u)*0.7) rgba(240,161,46,0.55)) brightness(1.25); }
-.tl-tree:not(:disabled):active .tl-tree-inner{ animation:tlRustle 0.35s linear; }
-.tl-searched .tl-tree-inner{ opacity:0.32; }
+.tl-tree-inner{ display:block; width:100%; height:100%; transition:filter .15s; }
+.tl-tree:not(:disabled):hover .tl-tree-inner{ filter:drop-shadow(0 0 6px rgba(70,200,120,.5)) brightness(1.3); }
+.tl-tree:not(:disabled):active .tl-tree-inner{ animation:tlRustle .35s linear; }
+.tl-searched .tl-tree-inner{ opacity:.3; }
 @keyframes tlRustle{ 0%,100%{ transform:rotate(0);} 25%{ transform:rotate(-4deg);} 50%{ transform:rotate(3.5deg);} 75%{ transform:rotate(-2.5deg);} }
-.tl-puff{ position:absolute; top:12%; left:50%; transform:translateX(-50%); color:#8a6432; font-size:calc(var(--u)*1.6);
-  animation:tlFade 0.9s ease-out forwards; }
-@keyframes tlFade{ from{ opacity:1; } to{ opacity:0.35; } }
-.tl-popout{ position:absolute; top:-18%; left:50%; width:60%; height:52%; transform:translateX(-50%);
-  animation:tlPop 0.35s cubic-bezier(0.3,1.6,0.5,1); }
-@keyframes tlPop{ from{ transform:translateX(-50%) translateY(60%) scale(0.4); opacity:0; }
+.tl-puff{ position:absolute; top:12%; left:50%; transform:translateX(-50%); color:var(--dim); font-size:13px;
+  animation:tlFade .9s ease-out forwards; }
+@keyframes tlFade{ from{ opacity:1; } to{ opacity:.35; } }
+.tl-popout{ position:absolute; top:-16%; left:50%; width:56%; height:52%; transform:translateX(-50%);
+  animation:tlPop .35s cubic-bezier(0.3,1.6,0.5,1); }
+@keyframes tlPop{ from{ transform:translateX(-50%) translateY(60%) scale(.4); opacity:0; }
   to{ transform:translateX(-50%) translateY(0) scale(1); opacity:1; } }
-.tl-arrow{ position:absolute; top:-55%; left:50%; transform:translateX(-50%); font-size:calc(var(--u)*2.2); font-weight:700;
-  color:#ffd489; text-shadow:0 0 calc(var(--u)*1) rgba(240,161,46,0.8); animation:tlArrowPulse 0.9s ease-in-out infinite; }
-@keyframes tlArrowPulse{ 0%,100%{ opacity:1; margin-top:0; } 50%{ opacity:0.55; margin-top:calc(var(--u)*-0.3); } }
-.tl-found{ filter:drop-shadow(0 0 calc(var(--u)*1.4) rgba(255,212,137,0.9)); }
+.tl-arrow{ position:absolute; top:-55%; left:50%; transform:translateX(-50%); font-size:19px; font-weight:700;
+  color:var(--amber); text-shadow:0 0 7px rgba(240,180,80,.8); animation:tlArrowPulse .9s ease-in-out infinite; }
+@keyframes tlArrowPulse{ 0%,100%{ opacity:1; margin-top:0; } 50%{ opacity:.55; margin-top:-3px; } }
+.tl-found{ filter:drop-shadow(0 0 9px rgba(140,255,190,.9)); }
 .tl-taunt{ animation:tlTaunt 1.1s ease-in forwards; }
-@keyframes tlTaunt{ 0%{ transform:translateX(-50%) translateY(60%) scale(0.4); opacity:0; }
+@keyframes tlTaunt{ 0%{ transform:translateX(-50%) translateY(60%) scale(.4); opacity:0; }
   30%{ transform:translateX(-50%) translateY(0) scale(1); opacity:1; }
-  60%{ transform:translateX(-50%) translateY(calc(var(--u)*-1)) scale(1); }
-  100%{ transform:translateX(300%) translateY(calc(var(--u)*-1.5)) scale(0.8); opacity:0; } }
-.tl-log{ min-height:calc(var(--u)*2.4); padding:calc(var(--u)*0.5) calc(var(--u)*0.9); border:1px solid #8a6432;
-  border-radius:calc(var(--u)*0.4); background:#120c05; font-size:calc(var(--u)*1.15); display:flex; align-items:center; gap:calc(var(--u)*0.5); }
-.tl-log-prompt{ color:#8a6432; }
-.tl-log-win{ color:#ffd489; text-shadow:0 0 calc(var(--u)*0.7) rgba(255,212,137,0.5); }
-.tl-log-lose{ color:#ff2e63; border-color:#6e1730; }
-.tl-controls{ display:flex; align-items:center; gap:calc(var(--u)*0.9); }
-.tl-btn{ font-weight:600; font-size:calc(var(--u)*1.15); padding:calc(var(--u)*0.65) calc(var(--u)*1.2);
-  border:1px solid #8a6432; border-radius:calc(var(--u)*0.4); background:#2c1f0d; color:#f0a12e; cursor:pointer; transition:all .15s; }
-.tl-btn:hover{ border-color:#f0a12e; color:#ffd489; }
-.tl-btn-go{ background:#f0a12e; color:#1c1307; border-color:#ffd489; font-size:calc(var(--u)*1.3); animation:tlPulse 1.6s ease-in-out infinite; }
-@keyframes tlPulse{ 0%,100%{ box-shadow:0 0 calc(var(--u)*0.6) rgba(240,161,46,0.4); } 50%{ box-shadow:0 0 calc(var(--u)*1.8) rgba(240,161,46,0.75); } }
-.tl-watch{ font-size:calc(var(--u)*1.5); font-weight:700; color:#ffd489; letter-spacing:calc(var(--u)*0.12); animation:tlBlink 0.9s steps(2) infinite; }
-.tl-watch-dim{ color:#8a6432; animation:none; font-size:calc(var(--u)*1.1); font-weight:400; }
-@keyframes tlBlink{ 50%{ opacity:0.35; } }
+  60%{ transform:translateX(-50%) translateY(-9px) scale(1); }
+  100%{ transform:translateX(300%) translateY(-13px) scale(.8); opacity:0; } }
+.tl-log{ min-height:24px; padding:5px 9px; border:1px solid var(--line2); border-radius:6px; background:var(--bg);
+  font-size:11px; display:flex; align-items:center; gap:5px; color:var(--muted); }
+.tl-log-prompt{ color:var(--dim); }
+.tl-log-win{ color:var(--grn); }
+.tl-log-lose{ color:#ff6b81; border-color:#5a2432; }
+.tl-controls{ display:flex; align-items:center; gap:8px; }
+.tl-watch{ font-size:12px; font-weight:700; color:var(--grn); letter-spacing:1px; animation:tlBlink .9s steps(2) infinite; }
+.tl-watch-dim{ color:var(--dim); animation:none; font-weight:400; font-size:11px; }
+@keyframes tlBlink{ 50%{ opacity:.35; } }
 .vf-wrap{ display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:6px; }
 .vf-board{ display:grid; grid-template-columns:repeat(6, 56px); grid-template-rows:repeat(6, 56px); gap:6px; }
 .vf-tile{ position:relative; width:56px; height:56px; border-radius:8px; border:1px solid var(--line2);
@@ -1736,7 +1736,7 @@ function VoltorbCabinet({ onBack }) {
         {!d.playing && !d.over && <span className="dim" style={{ fontSize: 12, maxWidth: 440, textAlign: 'center' }}>
           Each line's chip shows its value sum and how many hidden Voltorbs it holds (silver = a clean line).
           Flip happy starters (×2/×3) to multiply the pot; cash out any time; find every ×2 and ×3 to clear.
-          Flip a sad one and the pot is gone. Winnings are Data - straight to your account.
+          Flip a sad one and the pot is gone. Winnings are Game Corner Coins - spend them at the lobby shop.
         </span>}
         <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
       </div>
@@ -1747,12 +1747,23 @@ function VoltorbCabinet({ onBack }) {
 // ── Game Corner lobby: two cabinets (DAEMON FLIP · TREELINE) ──
 function GameCorner() {
   const [cabinet, setCabinet] = useState(null)
+  const d = useChannel('arcade')
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
   if (cabinet === 'vf') return <VoltorbCabinet onBack={() => setCabinet(null)} />
   if (cabinet === 'tl') return <TreelineCabinet onBack={() => setCabinet(null)} />
+  const coins = d?.gcoins ?? 0
+  const shop = d?.shop
+  const left = shop ? Math.max(0, Math.floor((shop.endsAt - now) / 1000)) : 0
+  const mm = String(Math.floor(left / 60)).padStart(2, '0')
+  const ss = String(left % 60).padStart(2, '0')
   return (
     <div className="pane" style={{ overflow: 'auto' }}>
       <div className="vf-wrap">
-        <span className="h">🎰 Game Corner</span>
+        <div className="row" style={{ gap: 14, alignItems: 'baseline' }}>
+          <span className="h">🎰 Game Corner</span>
+          <span className="amb" style={{ fontWeight: 700 }}>🪙 {fmt(coins)} Coins</span>
+        </div>
         <div className="row" style={{ gap: 12 }}>
           <button className="tl-cab" onClick={() => setCabinet('vf')}>
             <span className="tl-cab-name">DAEMON FLIP</span>
@@ -1763,7 +1774,29 @@ function GameCorner() {
             <span className="tl-cab-sub">cabinet 02 · scorbunny recovery · decoys snitch</span>
           </button>
         </div>
-        <span className="dim" style={{ fontSize: 9 }}>art · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
+        {shop && (
+          <div className="gc-shop">
+            <div className="gc-shop-head">
+              <span className="h">Prize Counter</span>
+              <span className="dim" style={{ fontSize: 10 }}>your rotation · new stock in <span className="mono amb">{mm}:{ss}</span></span>
+            </div>
+            <div className="gc-offers">
+              {(shop.offers || []).map((o, i) => (
+                <div key={`${o.name}${i}`} className="gc-offer">
+                  <span className="gc-offer-emoji">{o.emoji}</span>
+                  <span className="gc-offer-name">{o.name}</span>
+                  <div className="gc-offer-row">
+                    <span className="gc-price">🪙 {fmt(o.price)}</span>
+                    <button className="btn go" disabled={coins < o.price}
+                      title={coins < o.price ? 'not enough Coins - the machines await' : 'redeem'}
+                      onClick={() => send('arcade', 'SHOP_BUY', { slot: i })}>REDEEM</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <span className="dim" style={{ fontSize: 9 }}>Coins never convert to Data - the arcade only pays in prizes · art: PMD Sprite Collab (fan-made, credited)</span>
       </div>
     </div>
   )
@@ -1810,8 +1843,8 @@ function TreelineCabinet({ onBack }) {
       }
     }
     if (d.over && (phase === 'hunt')) {
-      if (d.won) { setCache((c) => c + d.payout); setLog(`SCORBUNNY RECOVERED · ${fmt(d.payout)} Data banked`); setPhase('won') }
-      else { setLog('out of sweeps · she bolts deeper into the woods · 0 Data'); setPhase('lost') }
+      if (d.won) { setCache((c) => c + d.payout); setLog(`SCORBUNNY RECOVERED · ${fmt(d.payout)} Coins banked`); setPhase('won') }
+      else { setLog('out of sweeps · she bolts deeper into the woods · 0 Coins'); setPhase('lost') }
     }
   }, [d, phase])
   if (!d) return <Empty title="…" msg="loading the TREELINE channel" />
@@ -1902,10 +1935,10 @@ function TreelineCabinet({ onBack }) {
           <span className="tl-log-prompt">&gt;</span> {log}
         </div>
         <footer className="tl-controls">
-          {phase === 'meadow' && <button className="tl-btn tl-btn-go" onClick={startScatter}>RUN THEM OFF ▸</button>}
+          {phase === 'meadow' && <button className="btn go" onClick={startScatter}>RUN THEM OFF ▸</button>}
           {(phase === 'won' || phase === 'lost') && (
-            <button className="tl-btn tl-btn-go" onClick={newRound}>
-              {phase === 'won' ? `NEW ROUND · +${fmt(d.payout)}` : 'NEW ROUND'}</button>
+            <button className="btn go" onClick={newRound}>
+              {phase === 'won' ? `NEW ROUND · +${fmt(d.payout)} 🪙` : 'NEW ROUND'}</button>
           )}
           {(phase === 'scatter' || phase === 'pan') && <span className="tl-watch">▶ WATCH THE TREELINE</span>}
           {phase === 'hunt' && <span className="tl-watch tl-watch-dim">sweep the trees · decoys snitch · payout falls with every sweep</span>}

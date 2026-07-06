@@ -19,11 +19,13 @@ import java.util.UUID;
 public final class ArcadeStore extends PersistentState {
     private static final String ID = "greenerpastures_arcade";
 
-    /** Per-player ledger row. */
+    /** Per-player ledger row. {@code coins} = Game Corner Coins (Deuce 2026-07-06): the arcade's OWN
+     *  currency - never convertible to/from Data; spent only at the rotating shop. */
     public static final class Ledger {
         public int level = 1;
         public long earnedToday = 0;
         public String day = "";
+        public long coins = 0;
     }
 
     private final Map<UUID, Ledger> ledgers = new HashMap<>();
@@ -42,8 +44,18 @@ public final class ArcadeStore extends PersistentState {
     public void record(UUID player, String today, long paid, int newLevel) {
         Ledger l = of(player, today);
         l.earnedToday += Math.max(0, paid);
+        l.coins += Math.max(0, paid);
         l.level = newLevel;
         markDirty();
+    }
+
+    /** Spend coins at the shop; false (and no change) when the balance can't cover it. */
+    public boolean trysSpend(UUID player, String today, long price) {
+        Ledger l = of(player, today);
+        if (price < 0 || l.coins < price) return false;
+        l.coins -= price;
+        markDirty();
+        return true;
     }
 
     @Override
@@ -54,6 +66,7 @@ public final class ArcadeStore extends PersistentState {
             row.putInt("level", l.level);
             row.putLong("earned", l.earnedToday);
             row.putString("day", l.day);
+            row.putLong("coins", l.coins);
             all.put(u.toString(), row);
         });
         nbt.put("ledgers", all);
@@ -70,6 +83,7 @@ public final class ArcadeStore extends PersistentState {
                 l.level = Math.max(1, Math.min(VoltorbFlip.MAX_LEVEL, row.getInt("level")));
                 l.earnedToday = Math.max(0, row.getLong("earned"));
                 l.day = row.getString("day");
+                l.coins = Math.max(0, row.getLong("coins"));
                 s.ledgers.put(UUID.fromString(k), l);
             } catch (IllegalArgumentException ignored) { }
         }

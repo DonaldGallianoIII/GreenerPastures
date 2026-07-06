@@ -54,10 +54,12 @@ system-by-system pre-release; live-QA'd in singleplayer and on a dedicated serve
   stacks to ÷120) and bake it in - sculpt your spawn pool.
 
 ### Game Corner
-- Two arcade cabinets, both server-authoritative (hidden tiles/trees never leave the server),
-  both paying Data via the neutral path (never the MissingNo odometer). **DAEMON FLIP**: full
-  Voltorb Flip, 7 levels, persisted machine level. **TREELINE**: find the Scorbunny in ten
-  sweeps; decoys snitch with 8-way arrows; payout falls per sweep. PMD Sprite Collab art,
+- Two arcade cabinets, both server-authoritative (hidden tiles/trees never leave the server).
+  **DAEMON FLIP**: full Voltorb Flip, 7 levels, persisted machine level. **TREELINE**: find the
+  Scorbunny in ten sweeps; decoys snitch with 8-way arrows; payout falls per sweep.
+- Cabinets pay **Game Corner Coins** - the arcade's own currency, never convertible to Data -
+  spent at the **Prize Counter**: six shelves per player, stock rotating every 15 real minutes
+  (balls, potions, revives, Destiny Knot, Rare Candy, Leftovers...). PMD Sprite Collab art,
   fan-made only, credited in CREDITS-PMD.md.
 
 ### Trophies

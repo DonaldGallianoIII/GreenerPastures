@@ -344,6 +344,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.ARCADE_CASHOUT -> { arcadeCashout(player); pushArcade(player); pushStatus(player); }
                 case NotebookActionC2S.TREELINE_NEW -> { treelineNew(player); pushTreeline(player); }
                 case NotebookActionC2S.TREELINE_SEARCH -> { treelineSearch(player, p.amount()); pushTreeline(player); pushStatus(player); }
+                case NotebookActionC2S.SHOP_BUY -> { shopBuy(player, p.amount()); pushArcade(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1180,7 +1181,7 @@ public final class NotebookNet {
         var store = com.greenerpastures.arcade.ArcadeStore.get(server);
         var ledger = store.of(player.getUuid(), arcadeToday());
         long pay = com.greenerpastures.arcade.VoltorbFlip.payable(board.coins, ledger.earnedToday);
-        if (pay > 0) com.greenerpastures.economy.DataStore.get(server).credit(player.getUuid(), pay);
+        // Winnings are GAME CORNER COINS (Deuce 2026-07-06) - the arcade never mints Data.
         int next = com.greenerpastures.arcade.VoltorbFlip.nextLevel(board.level, cleared, false);
         store.record(player.getUuid(), arcadeToday(), pay, next);
         boolean capped = pay < board.coins;
@@ -1203,6 +1204,20 @@ public final class NotebookNet {
         root.addProperty("level", board != null ? board.level : ledger.level);
         root.addProperty("dailyLeft", com.greenerpastures.arcade.VoltorbFlip.DAILY_CAP <= 0
                 ? -1 : Math.max(0, com.greenerpastures.arcade.VoltorbFlip.DAILY_CAP - ledger.earnedToday));   // -1 = uncapped
+        root.addProperty("gcoins", ledger.coins);
+        JsonObject shop = new JsonObject();
+        long nowMs = System.currentTimeMillis();
+        shop.addProperty("endsAt", com.greenerpastures.arcade.GameShop.windowEndsAt(nowMs));
+        JsonArray offers = new JsonArray();
+        for (var w : com.greenerpastures.arcade.GameShop.offersFor(player.getUuid(), nowMs)) {
+            JsonObject o = new JsonObject();
+            o.addProperty("name", w.name());
+            o.addProperty("price", w.price());
+            o.addProperty("emoji", w.emoji());
+            offers.add(o);
+        }
+        shop.add("offers", offers);
+        root.add("shop", shop);
         root.addProperty("playing", board != null && !board.over);
         root.addProperty("over", board != null && board.over);
         root.addProperty("cleared", board != null && board.cleared);
@@ -1251,7 +1266,7 @@ public final class NotebookNet {
         var sweep = com.greenerpastures.arcade.Treeline.search(round, treeId);
         switch (sweep.outcome()) {
             case FOUND -> {
-                com.greenerpastures.economy.DataStore.get(server).credit(player.getUuid(), sweep.payout());
+                // coins, not Data (the arcade economy is a closed loop - only ITEMS leave the shop)
                 com.greenerpastures.arcade.ArcadeStore.get(server).record(player.getUuid(), arcadeToday(), sweep.payout(),
                         com.greenerpastures.arcade.ArcadeStore.get(server).of(player.getUuid(), arcadeToday()).level);
                 GpLog.i("arcade", "tl_found", "player", player.getUuid().toString(),
@@ -1260,6 +1275,42 @@ public final class NotebookNet {
             case LOST -> GpLog.i("arcade", "tl_lost", "player", player.getUuid().toString());
             default -> { }
         }
+    }
+
+    /** Redeem a shop shelf slot for Game Corner Coins. The ware is RE-DERIVED server-side from the
+     *  current window - a stale client can't buy last window's stock - and items land through the
+     *  manual capacity-aware path (never insertStack; full inventory refuses BEFORE the debit). */
+    private static void shopBuy(ServerPlayerEntity player, int slot) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        long nowMs = System.currentTimeMillis();
+        var ware = com.greenerpastures.arcade.GameShop.wareAt(player.getUuid(), nowMs, slot);
+        if (ware == null) return;
+        Item item = Registries.ITEM.get(Identifier.tryParse(ware.itemId()));
+        if (item == net.minecraft.item.Items.AIR) {
+            GpLog.w("arcade", "shop_unknown_item", "id", ware.itemId());
+            return;
+        }
+        ItemStack stack = new ItemStack(item, ware.count());
+        PlayerInventory inv = player.getInventory();
+        int free = -1;
+        for (int i = 0; i < inv.main.size(); i++) {
+            if (inv.main.get(i).isEmpty()) { free = i; break; }
+        }
+        if (free < 0) {
+            player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r no room in your pack - the counter holds your order."), false);
+            return;
+        }
+        var store = com.greenerpastures.arcade.ArcadeStore.get(server);
+        if (!store.trysSpend(player.getUuid(), arcadeToday(), ware.price())) {
+            player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r not enough Coins - the machines await."), false);
+            return;
+        }
+        inv.main.set(free, stack);
+        inv.markDirty();
+        GpLog.i("arcade", "shop_buy", "player", player.getUuid().toString(), "item", ware.itemId(),
+                "count", ware.count(), "price", ware.price(),
+                "coinsLeft", store.of(player.getUuid(), arcadeToday()).coins);
     }
 
     /** TREELINE state: layout always; contents only where swept; the target's tree only once over. */

@@ -61,7 +61,9 @@ bomb and someone is devastated. **TREELINE** spooks a Scorbunny into the woods -
 forest, ten sweeps to find her, decoys snitch with arrows, and the pot shrinks with every tree you
 rustle. All art from the community-run **PMD Sprite Collab** (fan-made only, every artist credited in
 the mod). Server-authoritative: the client never receives a hidden tile or tree, so neither cabinet
-can be cheated. Winnings are real Data, straight to your account.
+can be cheated. Winnings are **Game Corner Coins** - the arcade's own closed currency - and the
+**Prize Counter** redeems them mobile-style: six shelves, rotating stock every 15 real-time minutes,
+from Poké Balls to a Destiny Knot. Coins never convert to Data; the arcade only pays in prizes.
 
 📸 *the Game Corner mid-round - two happy flips and a nervous board*
 
