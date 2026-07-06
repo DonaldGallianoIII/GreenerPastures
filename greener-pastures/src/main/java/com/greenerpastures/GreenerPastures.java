@@ -93,6 +93,9 @@ public final class GreenerPastures implements ModInitializer {
         // core/ - the ship-with Field Guide: every player gets one on first join (#18).
         com.greenerpastures.core.FirstJoinGift.init();
 
+        // Every GP recipe rides the recipe book from join #1 - the loop must never hide behind first-craft.
+        com.greenerpastures.core.RecipeBookUnlock.init();
+
         // Session hygiene: statics survive across worlds in singleplayer (one JVM, integrated server restarts),
         // so wipe every per-session store on server start - a fresh world must never show the last world's stats
         // (Deuce hit exactly this: a brand-new world inheriting the old world's dashboard/goal numbers).
