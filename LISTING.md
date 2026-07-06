@@ -59,7 +59,7 @@ A full **Voltorb Flip** machine in the Notebook - deduction, push-your-luck, sev
 multiplier and a *delighted* Pokémon portrait greets you; flip a bomb and someone is devastated
 (portraits from the community-run **PMD Sprite Collab** - fan-made art only, every artist credited
 in the mod). Server-authoritative: the client literally never receives a face-down tile, so it cannot
-be cheated. Winnings are real Data - and the house's ledger closes at exactly **one kilobyte a day**.
+be cheated. Winnings are real Data, straight to your account.
 
 📸 *the Game Corner mid-round - two happy flips and a nervous board*
 

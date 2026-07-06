@@ -1638,7 +1638,7 @@ function GameCorner() {
         <div className="row" style={{ gap: 14, alignItems: 'baseline' }}>
           <span className="h">🎰 Game Corner · Lv.{d.level}</span>
           <span className="grn" style={{ fontWeight: 600 }}>pot {fmt(d.coins)}</span>
-          <span className="dim" style={{ fontSize: 11 }} title="the house's ledger closes at one kilobyte a day">house pays {fmt(d.dailyLeft)} more today</span>
+          {d.dailyLeft >= 0 && <span className="dim" style={{ fontSize: 11 }} title="the house's daily ledger">house pays {fmt(d.dailyLeft)} more today</span>}
         </div>
         {(d.playing || d.over) && <div className="vf-board">{cells}</div>}
         {d.over && <span className={d.cleared ? 'grn' : ''} style={{ fontSize: 12, color: d.cleared ? undefined : '#ff6b81' }}>

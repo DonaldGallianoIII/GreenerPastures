@@ -57,7 +57,7 @@ system-by-system pre-release; live-QA'd in singleplayer and on a dedicated serve
 - A full **Voltorb Flip** machine in the Notebook - server-authoritative (face-down tiles never
   leave the server), 7 levels, persisted machine level, PMD Sprite Collab portraits (fan-made
   art only, credited in CREDITS-PMD.md). Winnings are Data via the neutral path (never the
-  MissingNo odometer); the house pays at most **1,024 Data a day**.
+  MissingNo odometer).
 
 ### Trophies
 - **Specimen Disks**: archive party mons losslessly onto reusable media; release by

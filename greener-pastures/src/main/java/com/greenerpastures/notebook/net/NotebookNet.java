@@ -1194,7 +1194,8 @@ public final class NotebookNet {
         var board = arcadeBoards.get(player.getUuid());
         JsonObject root = new JsonObject();
         root.addProperty("level", board != null ? board.level : ledger.level);
-        root.addProperty("dailyLeft", Math.max(0, com.greenerpastures.arcade.VoltorbFlip.DAILY_CAP - ledger.earnedToday));
+        root.addProperty("dailyLeft", com.greenerpastures.arcade.VoltorbFlip.DAILY_CAP <= 0
+                ? -1 : Math.max(0, com.greenerpastures.arcade.VoltorbFlip.DAILY_CAP - ledger.earnedToday));   // -1 = uncapped
         root.addProperty("playing", board != null && !board.over);
         root.addProperty("over", board != null && board.over);
         root.addProperty("cleared", board != null && board.cleared);

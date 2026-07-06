@@ -13,8 +13,8 @@ import java.util.Random;
  * to fake (the WS port is localhost-open - a reflex game's "I scored N" would be a Data printer).
  *
  * <p>Economy fences (baked constants, no config): payouts go through {@code DataStore.credit} - the
- * NEUTRAL path, NEVER {@code creditEarned} - so arcade winnings cannot move the MissingNo. odometer;
- * and {@link #DAILY_CAP} caps a day's winnings at exactly one kilobyte of Data. A faucet, not a farm.
+ * NEUTRAL path, NEVER {@code creditEarned} - so arcade winnings cannot move the MissingNo. odometer.
+ * {@link #DAILY_CAP} is the daily fence (currently disarmed - see its javadoc).
  */
 public final class VoltorbFlip {
     private VoltorbFlip() {}
@@ -22,11 +22,13 @@ public final class VoltorbFlip {
     public static final int SIZE = 5;
     public static final int TILES = SIZE * SIZE;
     public static final int MAX_LEVEL = 7;
-    /** The house's ledger closes at one kB a day. */
-    public static final long DAILY_CAP = 1024;
+    /** Daily payout fence. {@code 0} = UNCAPPED (Deuce, 2026-07-06: "no cap until I know exactly what
+     *  I'm going to do with it completely") - the ledger still tracks earnedToday for telemetry, and the
+     *  fence returns by setting this back to a positive number (the old value was 1,024 - one kB a day). */
+    public static final long DAILY_CAP = 0;
 
     /** Per-level board mix {twos, threes, voltorbs} - a clear ramp; full-clear pots: 24 · 48 · 144 ·
-     *  288 · 864 · 1,728 · 5,184 (the top of the ladder caps the whole day in one clear, on purpose). */
+     *  288 · 864 · 1,728 · 5,184. */
     static final int[][] LEVELS = {
             {3, 1, 6},
             {4, 1, 7},
@@ -110,9 +112,15 @@ public final class VoltorbFlip {
         return Math.max(1, Math.min(MAX_LEVEL, next));
     }
 
-    /** What a cashout/clear actually pays today: the pot clamped into the day's remaining allowance. */
-    public static long payable(long coins, long earnedToday) {
-        long remaining = Math.max(0, DAILY_CAP - earnedToday);
+    /** What a cashout/clear actually pays today: the pot clamped into the day's remaining allowance
+     *  under {@code cap}; {@code cap <= 0} = uncapped. */
+    public static long payable(long coins, long earnedToday, long cap) {
+        if (cap <= 0) return Math.max(0, coins);
+        long remaining = Math.max(0, cap - earnedToday);
         return Math.max(0, Math.min(coins, remaining));
+    }
+
+    public static long payable(long coins, long earnedToday) {
+        return payable(coins, earnedToday, DAILY_CAP);
     }
 }

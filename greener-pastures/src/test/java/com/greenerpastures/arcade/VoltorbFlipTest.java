@@ -88,12 +88,20 @@ class VoltorbFlipTest {
     }
 
     @Test
-    void theHousePaysAtMostOneKilobyteADay() {
+    void uncappedEraPaysFullPots() {
+        // Deuce 2026-07-06: cap off until the Game Corner's role is settled - full pots, always
+        assertEquals(0, VoltorbFlip.DAILY_CAP);
         assertEquals(500, VoltorbFlip.payable(500, 0));
-        assertEquals(1024, VoltorbFlip.payable(5184, 0), "a level-7 clear caps the day in one pot");
-        assertEquals(24, VoltorbFlip.payable(500, 1000), "only the day's remainder is payable");
-        assertEquals(0, VoltorbFlip.payable(500, 1024), "capped day pays zero");
+        assertEquals(5184, VoltorbFlip.payable(5184, 999_999), "no cap, no clamp");
         assertEquals(0, VoltorbFlip.payable(0, 0));
+    }
+
+    @Test
+    void theFenceMathStaysReadyForItsReturn() {
+        // the 3-arg core keeps the old kB fence honest for whenever DAILY_CAP goes positive again
+        assertEquals(1024, VoltorbFlip.payable(5184, 0, 1024), "a level-7 clear caps the day in one pot");
+        assertEquals(24, VoltorbFlip.payable(500, 1000, 1024), "only the day's remainder is payable");
+        assertEquals(0, VoltorbFlip.payable(500, 1024, 1024), "capped day pays zero");
     }
 
     @Test
