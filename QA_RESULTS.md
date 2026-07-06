@@ -222,6 +222,11 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fix:** health now reads bucket occupancy - `hasLines` = any bucket with 2 live members; NEW `line_incomplete` chip ("A breeding line lost a parent - re-add the mon to its line") whenever any bucket has exactly 1. Both chips can stack (half-line only → no_lines + line_incomplete). +1 test (310). In jar `c1434749`.
 - **Status:** 🚀 built — verify post-swap: pull one parent of a wired pair out of the pasture → 🧵 line_incomplete chip appears; re-add → clears + breeding resumes
 
+### BUG-019 · 🟡 MINOR (false positive) · Shiny-egg highlighter scans Lucky Egg as an egg
+- **Repro:** hold/box a cobblemon:lucky_egg → it gets egg-scanned (and would count in the lifetime "1 in N" tally), because the fallback predicate was `namespace contains "cobb" AND path contains "egg"` (Deuce, live QA 2026-07-06 - "the only bug i havent complained about"). Chicken egg was safe (wrong namespace).
+- **Fix:** predicate is now `path contains "pokemon_egg"` OR the conventional `c:eggs` tag (same tag the egg cake trusts) minus the `minecraft` namespace - no bare "egg" substring anywhere. In jar `49b5eebf`.
+- **Status:** 🚀 built — verify post-swap: Lucky Egg no longer glows/counts; shiny cobbreeding eggs still gold
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …

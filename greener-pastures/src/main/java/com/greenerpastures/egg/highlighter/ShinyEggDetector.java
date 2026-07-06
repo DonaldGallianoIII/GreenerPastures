@@ -42,12 +42,21 @@ public final class ShinyEggDetector {
                 }
             });
 
-    /** Any Cobbreeding Pokémon egg (any type, shiny or not). */
+    private static final net.minecraft.registry.tag.TagKey<Item> EGGS_TAG =
+            net.minecraft.registry.tag.TagKey.of(net.minecraft.registry.RegistryKeys.ITEM, Identifier.of("c", "eggs"));
+
+    /** Any Cobbreeding Pokémon egg (any type, shiny or not). NEVER a bare "egg" substring match -
+     *  cobblemon:lucky_egg wore the gold glow for weeks (Deuce, live QA 2026-07-06). Fallback is the
+     *  conventional {@code c:eggs} tag (the same one the egg cake trusts), minus vanilla's chicken egg. */
     public static boolean isEgg(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         Identifier id = Registries.ITEM.getId(stack.getItem());
-        return id.getPath().contains("pokemon_egg")
-                || (id.getNamespace().contains("cobb") && id.getPath().contains("egg"));
+        if (id.getPath().contains("pokemon_egg")) return true;
+        try {
+            return !id.getNamespace().equals("minecraft") && stack.isIn(EGGS_TAG);
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /** Only a SHINY egg. Cached for big-bank performance. */
