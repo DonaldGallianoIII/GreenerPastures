@@ -24,6 +24,8 @@ hoppers, no lag-farm entity soup.
   blaze rod farm; Ghost/Dark trickle echo shards) so a Cobblemon-only world is fully farmable.
 - **Data** feeds your **Daemon** (16 buffs that go BEYOND vanilla enchant caps - Fortune past max,
   Vein Miner, Auto-Smelt, Magnet - rented per second) and **Soul Tethers** (amplifiers on your Kernel).
+- Going big? Flip a pasture to **ghost mode** - the mons de-render entirely and keep breeding as
+  pure data. Sixteen-pasture towers, zero entity soup, your TPS none the wiser.
 - Walk away: drops **and** eggs accrue while chunks are loaded and **catch up the instant you return**
   (12h cap, online-time only - verified to the exact sweep, and honestly billed).
 
@@ -50,10 +52,16 @@ indicators; parent inspection down to OT.
 
 📸 *the EV allocator + nature picker*
 
+### The hunter's toolkit (bundled)
+Shiny eggs **gold-glow in any container** - no more hover-checking a full box. A lifetime tally keeps
+your real "1 in N" shiny rate. And **EggOracle**, the built-in odds planner, answers the only question
+that matters: *at my egg rate, how many days to a shiny?* (eggs/hr → shinies/day → average-to-shiny,
+Masuda-aware).
+
 ### Snack science
 Merge whole Poké Snacks into one **Ultra Compressed Snack** - up to 9 bait effects, honest tooltips
-(including the REAL spawn speed - and yes, we fixed Cobblemon's hidden 2× speed cap: every bite-time
-berry now counts, up to 20× throughput). Charge a **Snack Repel** can with the berries of the type you
+(including the REAL spawn speed - the vanilla "Reduce Bite Time" tooltip lies; ours doesn't. And yes,
+we fixed Cobblemon's hidden 2× speed cap: every bite-time berry now counts, up to 20× throughput). Charge a **Snack Repel** can with the berries of the type you
 DON'T want and bake it in: that type's snack spawns divide by up to ÷60. Sculpt your spawn pool.
 
 ### Your mons, as data
@@ -68,13 +76,18 @@ that rewrites its own species every few seconds and refuses all battles. One per
 This mod **profiles itself** (`/gp perf flame` renders a browser-openable flame graph; measured idle
 cost: ~0.1% of wall time). It was also **adversarially reviewed system-by-system** before release -
 economy exploits, dupe surfaces, and edge cases hunted and closed, with 300+ unit tests on the pure
-cores. Eggs are bagged and tagged: every voided egg is listed with the exact filter that rejected it.
+cores. One example: review found that an unreadable egg could once slip past IV filters - now an egg
+that can't be decrypted is KEPT, enforced in four independent layers, because a shiny you can't read
+is still a shiny. Even the Daemon's mining buffs are tuned so no single buff breaks the game - but
+Mining Damage III + Haste III + your own pick, together, cross the deepslate instamine line. On purpose.
+Eggs are bagged and tagged: every voided egg is listed with the exact filter that rejected it.
 
 📸 *the /gp perf flame graph*
 
 ### The fine print (a.k.a. our promises)
-- **No pay-to-win surface.** Drop rates and costs are baked into the mod - there is deliberately
-  **no config** a server can zero-out and sell back to you.
+- **No pay-to-win surface.** Every rate a server could sell back - drop rates, augment power, Data
+  values - is baked into the mod, deliberately **no config**. (Buff availability and ritual tuning are
+  admin JSON so server owners can *balance*, but there's nothing to zero-out-and-charge-for.)
 - **Nothing is destroyed silently.** Shiny or unreadable eggs are ALWAYS kept - even if the egg data
   can't be decrypted, it's kept. Every render is logged in the void log. Full pastures pause, never discard.
 - **All data stays local.** The analytics are yours, on your machine. Nothing phones home.

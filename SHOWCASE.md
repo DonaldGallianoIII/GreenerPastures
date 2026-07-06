@@ -1,5 +1,5 @@
 # 🌱 Greener Pastures - Feature Showcase
-_Compiled 2026-07-05 from a full code survey; current as of jar ceb9fb9a, 305 tests, post-adversarial-review. The share-with-people list._
+_Compiled from a full code survey; rev 2026-07-06 - 310 tests, post-adversarial-review + superfan feature audit. The share-with-people list._
 
 **One item is the whole mod: the Notebook.** Right-click → a real web app (React via MCEF/Chromium) running inside Minecraft. Every player gets one on first join.
 
@@ -23,6 +23,8 @@ _Compiled 2026-07-05 from a full code survey; current as of jar ceb9fb9a, 305 te
 - **Soul Tethers** - rented +10/20/30% amplifiers burning Data per cycle while the Daemon is fed
 - **Away catch-up** - missed broods roll exactly on return (12h cap) → Inbox report
 - **Kernel rename + target cards** - name rigs; choose which kernel/daemon a tab edits
+- **Ghost pastures** - one toggle de-renders a pasture's roamers: mons keep breeding as pure data, **zero entities in-world** - stack pastures into towers without the TPS bill
+- **IV Floor shuffles WHICH stats** land perfect - never the fixed HP/Atk/Def rut (a floored special attacker actually gets SpA/Spe days)
 - 2.5-min brood floor; shiny proc mathematically bounded; corrupted kernels locked forever
 
 ## ⛏ Harvest Economy (mobless-world friendly)
@@ -41,8 +43,8 @@ _Compiled 2026-07-05 from a full code survey; current as of jar ceb9fb9a, 305 te
 - Rejected eggs **render into Data** (player-bound currency; Enrichment boosts value)
 - **Data disks**: byte 8 · kB 1,024 · MB 16,384 · GB 262,144 · TB 4,194,304 - write, trade, read back; media survives
 - **GPU** reagent (craft eats a kilobyte disk)
-- **Daemon**: 16 buffs beyond vanilla enchant caps - Fortune/Efficiency/Looting past max, Vein Miner (96 cap), Auto-Smelt, Magnet, XP +25%/tier, Mining Damage, Haste, Saturation, Potion Duration, more - rented per-second from Data; PvP-neutral (no combat enchants); never writes gear
-- Anti-p2w: all rates baked constants, deliberately no config knobs
+- **Daemon**: 16 delivered buffs (19-slot catalog) beyond vanilla limits - **Fortune boosted past max**, **Looting & Luck of the Sea granted from nothing**, Vein Miner (96 cap), Auto-Smelt, Magnet, XP +25%/tier, Mining Damage, Haste, Saturation, Potion Duration, more - rented per-second from Data; PvP-neutral (no combat enchants); never writes gear (thread-scoped read window - no dupe surface)
+- Anti-p2w: every rate a server could sell back (drop rates, augment power, Data values, disk denominations) is a **baked constant** - no knob exists. Buff availability/costs + ritual tuning ARE admin-editable JSON (a server lever, not a paywall - and off means off, not "pay to re-enable")
 
 ## 🍰 Snack Science
 - **Ultra Compressed Snack** - merge snacks into one mega-bait: up to 9 effects (3× the pot cap), double-additive (≤6 copies/effect), truthful lore incl. REAL spawn speed
@@ -64,7 +66,9 @@ _Compiled 2026-07-05 from a full code survey; current as of jar ceb9fb9a, 305 te
 - **Void log**: every rejected egg listed with the filter that rejected it
 - **Breeding goals**: /gp goal or Dashboard - live hunt progress + completion ping
 - Never-lose withdrawals; first-join Notebook gift; Pokémon-egg cake (community request 🎂)
-- /gp perf self-profiling (flame graphs), JSONL observability log, 305 unit tests
+- **Shiny-egg highlighter** (bundled): shiny eggs gold-glow in ANY container, a keybind dumps held-egg data, and a lifetime tally tracks your running "1 in N" shiny rate across everything you've ever scanned
+- **EggOracle** (bundled): in-game shiny-odds planner - eggs/hr, shinies/day, average-to-shiny from YOUR egg rate; Vanilla and Cobbreeding (Masuda ×4) presets
+- /gp perf self-profiling (flame graphs), JSONL observability log, 310 unit tests
 - **Adversarially reviewed pre-release**: six independent system audits (edge cases / perf / new-player UX); every finding fixed or consciously accepted (REVIEW_FINDINGS.md)
 - New players land on the **Guide tab** first, new breeding lines come **pre-wired to the BioBank**, and full pastures send an Inbox warning - the sharp edges got sanded
 
