@@ -23,7 +23,7 @@ public final class Treeline {
 
     public static final int CLICK_BUDGET = 10;
     public static final int DECOYS = 3;
-    public static final int PAY_PER_SWEEP = 60;   // max pot: 60 × 10 = 600
+    public static final int PAY_PER_SWEEP = 3;    // max pot: 3 × 10 = 30 (Deuce 2026-07-06: "cut a zero and half it again" - arrow-reading made 60 a money printer)
 
     /** Rows: {yCenter%, scale%, count} - the artifact's fake-depth grid. */
     static final double[][] ROWS = { {22, 0.72, 7}, {42, 0.85, 6}, {63, 1.00, 7}, {84, 1.12, 6} };

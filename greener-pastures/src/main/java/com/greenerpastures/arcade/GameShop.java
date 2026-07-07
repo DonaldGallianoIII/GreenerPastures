@@ -26,7 +26,7 @@ public final class GameShop {
     public record Ware(String itemId, String name, int price, String emoji, int count) {}
 
     /** The full catalog - every rotation draws SLOTS distinct entries from here. Prices scale off
-     *  cabinet pots (VF clears 24..5184 by level, TREELINE finds pay ≤600). */
+     *  cabinet pots (VF clears 24..5184 by level; TREELINE is pocket change by design). */
     public static final String MYSTERY_EGG_ID = "greenerpastures:mystery_egg";
 
     public static final List<Ware> CATALOG = List.of(

@@ -28,7 +28,7 @@ class TreelineTest {
         Treeline.Round r = Treeline.generate(new Random(7));
         Treeline.Sweep s = Treeline.search(r, r.targetTreeId);
         assertEquals(Treeline.Outcome.FOUND, s.outcome());
-        assertEquals(Treeline.PAY_PER_SWEEP * Treeline.CLICK_BUDGET, s.payout(), "first-sweep find = max pot 600");
+        assertEquals(Treeline.PAY_PER_SWEEP * Treeline.CLICK_BUDGET, s.payout(), "first-sweep find = max pot (3 x 10 = 30 in the nerfed era)");
         assertTrue(r.over && r.won);
     }
 
