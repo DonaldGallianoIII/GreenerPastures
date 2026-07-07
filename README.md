@@ -1,55 +1,68 @@
-# PokeSnack Analytics Engine
+<p align="center">
+  <img src="greener-pastures/design/icon/gp_icon_512.png" width="128" alt="Greener Pastures icon">
+</p>
 
-Predicts Cobblemon spawn odds and optimizes **PokeSnack** recipes (Bait Seasonings) for
-hunting a target species. Pure Python, no dependencies. See `DESIGN.md` for the full model
-and `data/spawn_pool.md` for the hand-captured spawn data.
+<h1 align="center">Greener Pastures - A Data Science Mod</h1>
 
-## Model in one breath
-Each bite is a two-stage roll: **(1)** pick a rarity bucket from the tier table (shifted by
-bucket-boost seasonings), **(2)** pick a mon inside that bucket weighted by `weight × boosts`
-(type/egg seasonings reweight here). A snack = up to 3 seasonings = 9 bites. Combination
-rules (reverse-engineered in-game): bucket tiers **add**, shiny is **bonus-additive**
-`1+Σ(m−1)`, type/egg weights are a **pure sum** `Σm`.
+<p align="center">
+  <b>Your Cobblemon breeding operation, run like a lab.</b><br>
+  Eggs as data · a real in-game console · a six-cabinet Game Corner<br><br>
+  Modrinth: under review (link lands here the moment it's approved) ·
+  <a href="https://ko-fi.com/donaldgallianoiii">Ko-fi</a> ·
+  MIT licensed
+</p>
 
-## Quick start
+---
+
+One item - the **Notebook** - is a real web app rendered inside Minecraft (via MCEF). Link your
+pastures to it and every egg becomes *data*: filtered by IVs, nature and shininess through a visual
+node graph you wire yourself, banked losslessly in the **BioBank**, or rendered into **Data** - the
+currency behind rented Daemon buffs, breeding augments, and 17 hidden rituals.
+
+- **Fabric 1.21.1 · Java 21** · requires [Cobblemon](https://modrinth.com/mod/cobblemon) + Fabric API
+- [MCEF](https://modrinth.com/mod/mcef) renders the console (client-only; without it you get a friendly install prompt)
+- [Cobbreeding](https://modrinth.com/mod/cobbreeding) activates the breeding half (multi-pair Kernels, egg IV reads)
+- 369 unit tests on MC-free cores · server-authoritative arcade · adversarially reviewed pre-release
+
+Full feature tour: the Modrinth page, or [`docs/dev/SHOWCASE.md`](docs/dev/SHOWCASE.md).
+Player-facing changelog: [`CHANGELOG.md`](CHANGELOG.md).
+
+## Repo layout
+
+This is a working monorepo - Greener Pastures is the headline, the rest is the workshop around it.
+
+| Path | What it is |
+|---|---|
+| **`greener-pastures/`** | The mod (Fabric, Java 21) - `src/main/java/com/greenerpastures/` |
+| **`greener-pastures-ui/`** | The Notebook console (React + Vite, built into the jar as one HTML file) |
+| `docs/dev/` | Design specs, QA boards, and working docs - the mod's paper trail |
+| `shedscope/`, `egg-oracle/`, `shiny-egg-*/`, `hydrogrid/`, `pasturekeeper/` | Sibling Cobblemon mods; several grew into Greener Pastures features |
+| `pokesnack/`, `pokesnack-planner/`, `analysis/`, `data/` | The origin story: the Python snack-odds engine this repo was named after |
+
+## Building from source
+
 ```bash
-python3 -m pokesnack biomes
-# best shiny-Ditto snack if you have no Enchanted Golden Apples:
-python3 -m pokesnack --biome mansion optimize ditto --exclude enchanted_golden_apple
-# what a real 68-snack run looks like:
-python3 -m pokesnack run --snack chilan,golden_apple,starf --snacks 68 --target ditto
-# how unlucky was that shiny Duraludon?
-python3 -m pokesnack versus duraludon ditto --snack chilan,golden_apple,starf
-# restrict the search to only what you actually own:
-python3 -m pokesnack optimize ditto --have chilan,starf,golden_apple,golden_carrot
+# 1) Build the console UI into the mod's resources
+cd greener-pastures-ui && npm install && npm run build
+
+# 2) Build the jar (Java 21)
+cd ../greener-pastures && ./gradlew build
+# -> build/libs/greenerpastures-<version>.jar
+
+# Run the headless test suite on its own
+./gradlew test
 ```
 
-As a library:
-```python
-from pokesnack import analytics, optimize
-from pokesnack.pool import load_pool
-pool = load_pool()
-print(analytics.outlook(pool, "mansion", "grounded", ["chilan","starf","starf"], "ditto"))
-print(optimize.best(pool, "mansion", "grounded", "ditto", available=["chilan","starf"]))
-```
+## Contributing / branches
 
-## Layout
-- `pokesnack/gamedata.py` — tier table + Bait Seasoning registry (fixed game data).
-- `pokesnack/pool.py` — loads `data/spawn_pool.json` (biome→context→bucket rosters).
-- `pokesnack/engine.py` — `combine()` (recipe) + `per_bite_distribution()` (probabilities).
-- `pokesnack/analytics.py` — outlook, run breakdown, head-to-head.
-- `pokesnack/optimize.py` — rank/best snack over the 3-seasoning design space.
-- `pokesnack/cli.py` — command line.
-- `tests/test_validation.py` — reproduces the hand-computed numbers from the design chat.
+`main` is the verified-release line; day-to-day work happens on `dev`. Bug reports welcome in
+[Issues](https://github.com/DonaldGallianoIII/GreenerPastures/issues) - it's a beta, and fixes ship fast.
 
-## Validation
-`python3 tests/test_validation.py` confirms the engine matches by-hand results:
-1 Chilan + 2 Starf ≈ 2,637 snacks/shiny Ditto; the 68-snack run (~34 Dittos, ~13 Duraludon,
-~0.025 shiny Ditto); shiny Dura-vs-Ditto = 28%/72%.
+## License & credits
 
-## Known data gaps
-- Common bucket: only 7 of 40 species captured (+ an untyped `common_remainder` lump), so
-  shiny-common-Normal estimates are a **lower bound**. Ditto/uncommon math is exact.
-- Cost model is qualitative (material notes only); add a real gold↔time rate to make the
-  "is it worth it?" verdict quantitative.
-- EV-yield filter seasonings are wired but species EV-yield tags aren't in the dataset yet.
+Code is [MIT](LICENSE). The Game Corner's portraits and walk sprites are fan-made art from the
+community-run [PMD Sprite Collab](https://sprites.pmdcollab.org/) - **not** covered by the MIT
+license, verified rip-free per emotion/animation, with all 45 artists credited in
+[`CREDITS-PMD.md`](CREDITS-PMD.md), inside the jar, and on the in-game About card.
+
+Built by **DonaldGalliano**, under the supervision of a small dog in a tie-dye bandana.
