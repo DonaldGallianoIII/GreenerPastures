@@ -2,7 +2,7 @@
 
 ## 1.0.0-beta.1 (first public release)
 
-Everything below ships in the first public beta. 321 unit tests; adversarially reviewed
+Everything below ships in the first public beta. 363 unit tests; adversarially reviewed
 system-by-system pre-release; live-QA'd in singleplayer and on a dedicated server.
 
 ### The Notebook
@@ -54,12 +54,13 @@ system-by-system pre-release; live-QA'd in singleplayer and on a dedicated serve
   stacks to ÷120) and bake it in - sculpt your spawn pool.
 
 ### Game Corner
-- Two arcade cabinets, both server-authoritative (hidden tiles/trees never leave the server).
+- Six arcade cabinets (DAEMON FLIP, TREELINE, TOP DECK, SLOTS, VIBE CHECK, QUICK CLAW), all
+  server-authoritative - hidden tiles, trees, decks, and reaction clocks never leave the server.
   **DAEMON FLIP**: full Voltorb Flip, 7 levels, persisted machine level. **TREELINE**: find the
   Scorbunny in ten sweeps; decoys snitch with 8-way arrows; payout falls per sweep.
 - Cabinets pay **Game Corner Coins** - the arcade's own currency, never convertible to Data -
   spent at the **Prize Counter**: six shelves per player, stock rotating every 15 real minutes
-  from a 60-ware catalog - balls, potions, EVERY held item (type boosters, power items, choice
+  from a catalog of nearly 70 wares - balls, potions, EVERY held item (type boosters, power items, choice
   gear, Destiny Knot...) and the **Mystery Egg**: a random species with at least 2 perfect IVs
   and its hidden ability, always. PMD Sprite Collab art, fan-made only, credited in CREDITS-PMD.md.
 
