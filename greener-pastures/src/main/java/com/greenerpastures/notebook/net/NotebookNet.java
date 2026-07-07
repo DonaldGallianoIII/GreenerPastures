@@ -390,6 +390,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.VIBE_CASH -> { vibeCash(player); pushVibe(player); pushArcade(player); }
                 case NotebookActionC2S.TAG_NEW -> { tagNew(player); pushTag(player); }
                 case NotebookActionC2S.TAG_CLICK -> { tagClick(player); pushTag(player); pushArcade(player); }
+                case NotebookActionC2S.HR_BUY -> { highRollerBuy(player, p.amount()); pushArcade(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1265,6 +1266,15 @@ public final class NotebookNet {
         }
         shop.add("offers", offers);
         root.add("shop", shop);
+        JsonArray hr = new JsonArray();
+        for (var w : com.greenerpastures.arcade.HighRoller.CATALOG) {
+            JsonObject o = new JsonObject();
+            o.addProperty("id", w.itemId());
+            o.addProperty("name", w.name());
+            o.addProperty("price", w.price());
+            hr.add(o);
+        }
+        root.add("highroller", hr);
         root.addProperty("playing", board != null && !board.over);
         root.addProperty("over", board != null && board.over);
         root.addProperty("cleared", board != null && board.cleared);
@@ -1376,6 +1386,69 @@ public final class NotebookNet {
         store.bumpRolls(player.getUuid(), arcadeToday());   // every buy turns the shelves (window turn still applies)
         GpLog.i("arcade", "shop_buy", "player", player.getUuid().toString(), "item", ware.itemId(),
                 "count", ware.count(), "price", ware.price(), "rolls", rolls + 1,
+                "coinsLeft", store.of(player.getUuid(), arcadeToday()).coins);
+    }
+
+    /** High Roller Room purchase: fixed shelves, capacity-refuse BEFORE debit, special builds for
+     *  the Prime Egg (Cobbreeding) and the Legend Disk (a legendary minted straight onto specimen
+     *  media - tradeable, which makes it server currency; that is a feature). */
+    private static void highRollerBuy(ServerPlayerEntity player, int slot) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var ware = com.greenerpastures.arcade.HighRoller.wareAt(slot);
+        if (ware == null) return;
+        ItemStack stack;
+        String legendSpecies = null;
+        switch (ware.itemId()) {
+            case com.greenerpastures.arcade.HighRoller.PRIME_EGG_ID -> {
+                stack = com.greenerpastures.pasture.breeding.CobbreedingBridge.shopMysteryEgg(
+                        new java.util.Random(), com.greenerpastures.arcade.HighRoller.PRIME_EGG_PERFECT_IVS);
+                if (stack == null) {
+                    player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r the incubator is offline (needs Cobbreeding) - your Coins are safe."), false);
+                    return;
+                }
+            }
+            case com.greenerpastures.arcade.HighRoller.LEGEND_DISK_ID -> {
+                var mon = com.greenerpastures.pasture.breeding.CobbreedingBridge.mintLegendMon(new java.util.Random());
+                if (mon == null) {
+                    player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r no legends answered the call - your Coins are safe."), false);
+                    return;
+                }
+                stack = new ItemStack(com.greenerpastures.economy.GpItems.SPECIMEN_DISK);
+                stack.set(GpComponents.SPECIMEN, mon.saveToNBT(player.getServerWorld().getRegistryManager(),
+                        new net.minecraft.nbt.NbtCompound()));
+                stack.set(GpComponents.SPECIMEN_SUMMARY, new com.greenerpastures.specimen.SpecimenSummary(
+                        mon.getSpecies().getName(), mon.getLevel(), mon.getShiny(),
+                        mon.getGender().name().toLowerCase(java.util.Locale.ROOT)));
+                legendSpecies = mon.getSpecies().getName();
+            }
+            default -> {
+                Item item = Registries.ITEM.get(Identifier.tryParse(ware.itemId()));
+                if (item == net.minecraft.item.Items.AIR) {
+                    GpLog.w("arcade", "hr_unknown_item", "id", ware.itemId());
+                    return;
+                }
+                stack = new ItemStack(item, 1);
+            }
+        }
+        PlayerInventory inv = player.getInventory();
+        int free = -1;
+        for (int i = 0; i < inv.main.size(); i++) {
+            if (inv.main.get(i).isEmpty()) { free = i; break; }
+        }
+        if (free < 0) {
+            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r no room in your pack - the counter holds your order."), false);
+            return;
+        }
+        var store = com.greenerpastures.arcade.ArcadeStore.get(server);
+        if (!store.trysSpend(player.getUuid(), arcadeToday(), ware.price())) {
+            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r not enough Coins - the High Roller Room can wait."), false);
+            return;
+        }
+        inv.main.set(free, stack);
+        inv.markDirty();
+        GpLog.i("arcade", "hr_buy", "player", player.getUuid().toString(), "item", ware.itemId(),
+                "price", ware.price(), "legend", legendSpecies == null ? "-" : legendSpecies,
                 "coinsLeft", store.of(player.getUuid(), arcadeToday()).coins);
     }
 

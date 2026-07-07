@@ -102,6 +102,8 @@ export const MOCK = {
     minBet: 5, maxBet: 100, paytable: [100, 15, 5, 1] },
   vibe: { deckSize: 12, sourTotal: 4, active: false },
   tag: { active: false },
+  // arcade mock gains the fixed High Roller shelf via the live channel; nothing extra needed here
+
   about: {
     version: '0.0.0-mock',
     author: 'DonaldGalliano',

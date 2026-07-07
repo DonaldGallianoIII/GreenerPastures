@@ -48,6 +48,7 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int VIBE_CASH = 31;        // Game Corner cabinet 5: bank the pot
     public static final int TAG_NEW = 32;          // Game Corner cabinet 6: release the crowd
     public static final int TAG_CLICK = 33;        // Game Corner cabinet 6: the player clicked the target
+    public static final int HR_BUY = 34;           // High Roller Room: amount = fixed shelf slot
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

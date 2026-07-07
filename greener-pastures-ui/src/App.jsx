@@ -209,6 +209,14 @@ const CSS = `
 .qc-flash{ position:absolute; z-index:40; font-size:18px; font-weight:800; color:var(--grn);
   text-shadow:0 0 8px rgba(70,200,120,.7); transform:translate(-50%,-50%); animation:tlFade 1s forwards; }
 .qc-lock{ animation:qcShake .3s; }
+.hr-room{ width:min(560px,96%); display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:10px;
+  border:1px solid #7a5a22; background:linear-gradient(180deg,rgba(38,28,12,.35) 0%,rgba(20,16,10,.2) 100%); }
+.hr-title{ font-size:12px; font-weight:800; letter-spacing:2px; color:var(--amber); }
+.hr-offer{ border-color:#7a5a22; }
+.hr-blurb{ font-size:9px; color:var(--dim); min-height:11px; }
+.hr-price{ color:var(--amber); font-weight:700; }
+.hr-go{ border-color:#7a5a22; color:var(--amber); }
+.hr-go:disabled{ opacity:.4; }
 @keyframes qcShake{ 25%{ transform:translateX(-4px);} 75%{ transform:translateX(4px);} }
 .gc-offer-row{ display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
 .gc-price{ font-size:11px; font-weight:700; color:var(--amber); }
@@ -1908,6 +1916,33 @@ function GameCorner() {
                     <button className="btn go" disabled={coins < o.price}
                       title={coins < o.price ? 'not enough Coins - the machines await' : 'redeem'}
                       onClick={() => send('arcade', 'SHOP_BUY', { slot: i, item: o.name })}>REDEEM</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {(d?.highroller || []).length > 0 && (
+          <div className="hr-room">
+            <div className="gc-shop-head">
+              <span className="hr-title">🥂 HIGH ROLLER ROOM</span>
+              <span className="dim" style={{ fontSize: 10 }}>fixed stock · no rotation · the goals you grind toward</span>
+            </div>
+            <div className="gc-offers">
+              {d.highroller.map((o, i) => (
+                <div key={o.id} className="gc-offer hr-offer">
+                  <span className="gc-offer-art">{icons?.[o.id]
+                    ? <img src={icons[o.id]} alt="" draggable={false} />
+                    : <span className="gc-offer-noart">◇</span>}</span>
+                  <span className="gc-offer-name">{o.name}</span>
+                  <span className="hr-blurb">{o.id.endsWith('prime_egg') ? '4 perfect IVs · hidden ability · random species'
+                    : o.id.endsWith('legend_disk') ? 'a random LEGENDARY on tradeable media'
+                    : 'catches anything · once'}</span>
+                  <div className="gc-offer-row">
+                    <span className="gc-price hr-price">🪙 {fmt(o.price)}</span>
+                    <button className="btn hr-go" disabled={coins < o.price}
+                      title={coins < o.price ? 'keep grinding - it will still be here' : 'redeem'}
+                      onClick={() => send('arcade', 'HR_BUY', { slot: i })}>REDEEM</button>
                   </div>
                 </div>
               ))}

@@ -144,6 +144,7 @@ public final class DsBridge {
             case "VIBE_CASH"       -> new NotebookActionC2S(NotebookActionC2S.VIBE_CASH, "", 0);
             case "TAG_NEW"         -> new NotebookActionC2S(NotebookActionC2S.TAG_NEW, "", 0);
             case "TAG_CLICK"       -> new NotebookActionC2S(NotebookActionC2S.TAG_CLICK, "", 0);
+            case "HR_BUY"          -> new NotebookActionC2S(NotebookActionC2S.HR_BUY, "", (int) num(p, "slot", -1));
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }
@@ -380,9 +381,14 @@ public final class DsBridge {
      *  item's MODEL json ({@code models/item/<path>.json}) and follow its declared layer0/first texture.
      *  Falls back to the flat vanilla path, then gives up to "" (the UI shows a neutral \u25c7). */
     private static String resolveItemIcon(String itemId) {
-        String[] candidates = com.greenerpastures.arcade.GameShop.MYSTERY_EGG_ID.equals(itemId)
-                ? new String[]{"cobbreeding:bug_dark_pokemon_egg", "cobbreeding:pokemon_egg", "cobblemon:poke_ball"}
-                : new String[]{itemId};
+        String[] candidates = switch (itemId) {
+            case com.greenerpastures.arcade.GameShop.MYSTERY_EGG_ID,
+                 com.greenerpastures.arcade.HighRoller.PRIME_EGG_ID ->
+                    new String[]{"cobbreeding:bug_dark_pokemon_egg", "cobbreeding:pokemon_egg", "cobblemon:poke_ball"};
+            case com.greenerpastures.arcade.HighRoller.LEGEND_DISK_ID ->
+                    new String[]{"greenerpastures:specimen_disk"};
+            default -> new String[]{itemId};
+        };
         for (String cand : candidates) {
             int colon = cand.indexOf(':');
             if (colon <= 0) continue;

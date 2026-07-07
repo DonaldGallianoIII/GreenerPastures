@@ -320,6 +320,11 @@ public final class CobbreedingBridge {
      *  (species without a hidden ability are skipped so the promise holds). Null = build unavailable;
      *  the shop refuses BEFORE debiting. */
     public static ItemStack shopMysteryEgg(java.util.Random rng) {
+        return shopMysteryEgg(rng, 2);
+    }
+
+    /** {@code perfectIvs} variant - the High Roller Prime Egg uses 4. */
+    public static ItemStack shopMysteryEgg(java.util.Random rng, int perfectIvs) {
         if (!available) return null;
         try {
             List<Species> pool = new ArrayList<>();
@@ -337,11 +342,34 @@ public final class CobbreedingBridge {
             Species sp = pool.get(rng.nextInt(pool.size()));
             PokemonProperties props = new PokemonProperties();
             props.setSpecies(sp.showdownId());
-            props.setIvs(IVs.createRandomIVs(2));
+            props.setIvs(IVs.createRandomIVs(Math.max(1, Math.min(6, perfectIvs))));
             applyHiddenAbility(props, true);
             return assembleEgg(props);
         } catch (Throwable t) {
             GreenerPastures.LOG.warn("[game-corner] mystery egg build failed", t);
+            return null;
+        }
+    }
+
+    /** High Roller <b>Legend Specimen Disk</b>: a random implemented legendary or mythical at
+     *  Lv.{@link com.greenerpastures.arcade.HighRoller#LEGEND_LEVEL}, standard random spread -
+     *  a caught-legend, not a raid boss. Pure Cobblemon API (no Cobbreeding needed). Null = no
+     *  implemented legends in this install; the shop refuses BEFORE debiting. */
+    public static com.cobblemon.mod.common.pokemon.Pokemon mintLegendMon(java.util.Random rng) {
+        try {
+            List<Species> pool = new ArrayList<>();
+            for (Species sp : PokemonSpecies.INSTANCE.getImplemented()) {
+                var labels = sp.getLabels();
+                if (labels.contains("legendary") || labels.contains("mythical")) pool.add(sp);
+            }
+            if (pool.isEmpty()) return null;
+            Species sp = pool.get(rng.nextInt(pool.size()));
+            PokemonProperties props = new PokemonProperties();
+            props.setSpecies(sp.showdownId());
+            props.setLevel(com.greenerpastures.arcade.HighRoller.LEGEND_LEVEL);
+            return props.create();
+        } catch (Throwable t) {
+            GreenerPastures.LOG.warn("[game-corner] legend mint failed", t);
             return null;
         }
     }
