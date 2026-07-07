@@ -43,6 +43,19 @@ public final class PastureHarvest {
      *  sweep means proportionally more rolls per minute - great for testing, silly for balance. */
     public static volatile long testIntervalTicks = 0L;
 
+    /** {@code /gp harvest interval}/{@code default} takes effect NOW: restamp every pasture's harvest anchor so
+     *  the accrued gap is discarded rather than replayed at the new rate (mirrors MultiPairBreeder.restampSchedules). */
+    public static void restampSchedules(MinecraftServer server) {
+        PastureRegistry reg = PastureRegistry.get(server);
+        for (ServerWorld w : server.getWorlds()) {
+            long now = w.getTime();
+            for (PastureData pd : reg.inWorld(w).values()) {
+                if (pd.lastHarvestTick > 0) pd.lastHarvestTick = now;
+            }
+        }
+        reg.markDirty();
+    }
+
     /** Offline-progress ceiling: how far back a catch-up may reach - config/greenerpastures/pastures.json
      *  maxCatchupHours (default 12h). Keeps a months-old save from rolling millions of sweeps, and bounds
      *  the idle yield like any respectable idle game. */
@@ -94,8 +107,10 @@ public final class PastureHarvest {
                 // so rolling the missed sweeps NOW with the current mons/Kernel is exact - capped at 12h so an
                 // ancient save doesn't roll millions. sweeps=1 is the normal loaded-chunk case.
                 long now = world.getTime();
+                // Under the QA override the gap must NOT be re-priced at the test rate (2026-07-07 audit:
+                // a 12h gap / 20-tick override = 43,200 sweeps in one tick - the breeder's exact bug, twinned).
                 int sweeps = 1;
-                if (pd.lastHarvestTick > 0 && now > pd.lastHarvestTick) {
+                if (testIntervalTicks <= 0 && pd.lastHarvestTick > 0 && now > pd.lastHarvestTick) {
                     long gap = Math.min(now - pd.lastHarvestTick, maxCatchupTicks());
                     sweeps = (int) Math.max(1, gap / interval);
                 }

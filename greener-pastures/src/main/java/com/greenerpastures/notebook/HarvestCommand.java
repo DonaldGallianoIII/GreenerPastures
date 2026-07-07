@@ -45,6 +45,7 @@ public final class HarvestCommand {
     private static int set(CommandContext<ServerCommandSource> ctx, int seconds) {
         long ticks = seconds * 20L;
         PastureHarvest.testIntervalTicks = ticks;
+        PastureHarvest.restampSchedules(ctx.getSource().getServer());
         GpLog.i("notebook_harvest", "test_interval", "seconds", seconds, "ticks", ticks);
         ctx.getSource().sendFeedback(() -> Text.literal("⛏ harvest override ON - sweep every " + seconds
                 + "s (" + ticks + " ticks). Procs are per sweep, so rates scale with speed. /gp harvest default to restore."), false);
@@ -53,6 +54,7 @@ public final class HarvestCommand {
 
     private static int clear(CommandContext<ServerCommandSource> ctx) {
         PastureHarvest.testIntervalTicks = 0L;
+        PastureHarvest.restampSchedules(ctx.getSource().getServer());
         GpLog.i("notebook_harvest", "test_interval", "seconds", 0, "ticks", 0L);
         ctx.getSource().sendFeedback(() -> Text.literal("⛏ harvest override cleared - back to one sweep per minute."), false);
         return 1;

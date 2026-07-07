@@ -2398,6 +2398,7 @@ function QuickClawCabinet({ onBack }) {
   const [seed, setSeed] = useState(1)
   const [msg, setMsg] = useState('a quiet meadow · someone in it is WANTED')
   const roundKey = useRef('')
+  const settledRef = useRef(false)   // true once the server settled the round (win/flinch) - see the escape timeout
   const timers = useRef([])
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms))
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
@@ -2429,15 +2430,17 @@ function QuickClawCabinet({ onBack }) {
     const key = `${d.species}|${d.spawnDelayMs}|${d.crossMs}|${d.yStart}`
     if (d.active && key !== roundKey.current) {          // fresh chase from the server
       roundKey.current = key
+      settledRef.current = false
       setPhase('wait'); setRunning(false); setFlash(null)
       setMsg(`WANTED: ${cap1(d.species)} · she'll make a break for it - don't blink`)
       later(() => { setRunning(true); setPhase('run') }, d.spawnDelayMs)
-      later(() => {   // she made it out (unless a click settled it first - push will correct us)
+      later(() => {   // she made it out (unless a click settled it first - the ref knows, the closure's d doesn't)
         setRunning(false)
         setPhase((p) => (p === 'run' ? 'done' : p))
-        setMsg((m) => (roundKey.current === key && !d.over ? 'she\u2019s gone · the meadow laughs · free retry' : m))
+        setMsg((m) => (roundKey.current === key && !settledRef.current ? 'she\u2019s gone · the meadow laughs · free retry' : m))
       }, d.spawnDelayMs + d.crossMs + 300)
     } else if (d.over && phase !== 'idle') {
+      settledRef.current = true                          // the server settled it - the escape timeout must not clobber this
       setRunning(false); setPhase('done')
       setMsg(d.escaped ? 'she\u2019s gone · the meadow laughs · free retry'
         : d.paid > 0 ? `TAGGED · +${fmt(d.paid)} Coins` : 'too early - the house saw you flinch')
