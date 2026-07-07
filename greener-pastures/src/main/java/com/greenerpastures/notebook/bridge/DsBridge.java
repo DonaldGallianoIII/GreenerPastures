@@ -368,27 +368,60 @@ public final class DsBridge {
         return iconsSnapshot.isEmpty() ? null : iconsSnapshot;
     }
 
-    /** Flat item texture → data URI. Tries the item's own namespace/path, plus known aliases. */
+    /** Flat item texture → data URI. Mods nest item textures freely (Cobblemon:
+     *  {@code textures/item/held_items/rocky_helmet.png}), so guessing paths fails - instead read the
+     *  item's MODEL json ({@code models/item/<path>.json}) and follow its declared layer0/first texture.
+     *  Falls back to the flat vanilla path, then gives up to "" (the UI shows a neutral \u25c7). */
     private static String resolveItemIcon(String itemId) {
         String[] candidates = com.greenerpastures.arcade.GameShop.MYSTERY_EGG_ID.equals(itemId)
-                ? new String[]{"cobbreeding:pokemon_egg", "cobbreeding:egg", "cobblemon:poke_ball"}
+                ? new String[]{"cobbreeding:bug_dark_pokemon_egg", "cobbreeding:pokemon_egg", "cobblemon:poke_ball"}
                 : new String[]{itemId};
         for (String cand : candidates) {
             int colon = cand.indexOf(':');
             if (colon <= 0) continue;
-            var texId = net.minecraft.util.Identifier.of(cand.substring(0, colon),
-                    "textures/item/" + cand.substring(colon + 1) + ".png");
-            try {
-                var res = MinecraftClient.getInstance().getResourceManager().getResource(texId);
-                if (res.isEmpty()) continue;
-                try (var in = res.get().getInputStream()) {
-                    byte[] png = in.readAllBytes();
-                    if (png.length == 0 || png.length > 256 * 1024) continue;   // sane flat-texture sizes only
-                    return "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(png);
-                }
-            } catch (Throwable ignored) { }
+            String ns = cand.substring(0, colon), path = cand.substring(colon + 1);
+            String fromModel = textureFromModel(ns, path);
+            String png = fromModel != null ? readTexturePng(fromModel) : null;
+            if (png == null) png = readTexturePng(ns + ":item/" + path);
+            if (png != null) return png;
         }
         return "";
+    }
+
+    /** The model's first declared texture ("ns:item/sub/name" form), or null. */
+    private static String textureFromModel(String ns, String path) {
+        try {
+            var modelId = net.minecraft.util.Identifier.of(ns, "models/item/" + path + ".json");
+            var res = MinecraftClient.getInstance().getResourceManager().getResource(modelId);
+            if (res.isEmpty()) return null;
+            try (var in = res.get().getInputStream()) {
+                var root = GSON.fromJson(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8),
+                        com.google.gson.JsonObject.class);
+                var textures = root == null ? null : root.getAsJsonObject("textures");
+                if (textures == null) return null;
+                if (textures.has("layer0")) return textures.get("layer0").getAsString();
+                for (var e : textures.entrySet()) return e.getValue().getAsString();
+            }
+        } catch (Throwable ignored) { }
+        return null;
+    }
+
+    /** "ns:item/sub/name" (model-texture form) → the PNG as a data URI, or null. */
+    private static String readTexturePng(String textureRef) {
+        try {
+            int colon = textureRef.indexOf(':');
+            String ns = colon > 0 ? textureRef.substring(0, colon) : "minecraft";
+            String rel = colon > 0 ? textureRef.substring(colon + 1) : textureRef;
+            var texId = net.minecraft.util.Identifier.of(ns, "textures/" + rel + ".png");
+            var res = MinecraftClient.getInstance().getResourceManager().getResource(texId);
+            if (res.isEmpty()) return null;
+            try (var in = res.get().getInputStream()) {
+                byte[] png = in.readAllBytes();
+                if (png.length == 0 || png.length > 256 * 1024) return null;   // sane flat-texture sizes only
+                return "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(png);
+            }
+        } catch (Throwable ignored) { }
+        return null;
     }
 
     /** Static mod facts for the Guide tab's About card. Version comes from the loader (so the release
