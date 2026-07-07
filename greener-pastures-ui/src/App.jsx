@@ -2276,6 +2276,41 @@ function Walker({ species, dir, walking = true, scale = 2, speedMs = 140, style 
 }
 
 const QC_DIRS = { S: 0, SE: 1, E: 2, NE: 3, N: 4, NW: 5, W: 6, SW: 7 }
+function qcDirFrom(dx, dy) {
+  const ang = Math.atan2(dy, dx)   // screen-space, +y down
+  const oct = Math.round(ang / (Math.PI / 4))
+  return [2, 1, 0, 7, 6, 5, 4, 3][(oct + 8) % 8]   // E SE S SW W NW N NE
+}
+
+// A bystander that actually GOES places: pick a waypoint, stroll to it, pick another. New DOM
+// nodes mount at their spawn point and move on the NEXT tick, so the CSS transition always fires.
+function Ambler({ species, x0, y0, spd, onClick }) {
+  const [leg, setLeg] = useState({ x: x0, y: y0, dur: 0, dir: 0 })
+  const timer = useRef(null)
+  useEffect(() => {
+    let alive = true
+    let cur = { x: x0, y: y0 }
+    const stroll = () => {
+      if (!alive) return
+      const nx = Math.max(4, Math.min(96, cur.x + (Math.random() * 34 - 17)))
+      const ny = Math.max(14, Math.min(92, cur.y + (Math.random() * 26 - 13)))
+      const dist = Math.hypot(nx - cur.x, ny - cur.y)
+      const dur = Math.max(1200, dist * 260)
+      setLeg({ x: nx, y: ny, dur, dir: qcDirFrom(nx - cur.x, ny - cur.y) })
+      cur = { x: nx, y: ny }
+      timer.current = setTimeout(stroll, dur + 250 + Math.random() * 900)
+    }
+    timer.current = setTimeout(stroll, 60 + Math.random() * 800)
+    return () => { alive = false; clearTimeout(timer.current) }
+  }, [])   // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="qc-walker qc-clickable" onClick={onClick}
+      style={{ left: `${leg.x}%`, top: `${leg.y}%`,
+        transition: `left ${leg.dur}ms linear, top ${leg.dur}ms linear` }}>
+      <Walker species={species} dir={leg.dir} speedMs={spd} />
+    </div>
+  )
+}
 function qcDecoys(seed) {   // deterministic-ish ambient crowd, pure theater
   const names = Object.keys(CROWD)
   const out = []
@@ -2369,20 +2404,15 @@ function QuickClawCabinet({ onBack }) {
             </div>
           )}
           {decoys.map((dc) => (dc.s !== d?.species || phase === 'idle') && (
-            <div key={`${seed}-${dc.id}`} className="qc-walker qc-clickable"
-              onClick={clickDecoy}
-              style={{ left: `${dc.x}%`, top: `${dc.y}%`,
-                transition: `left ${14 + dc.id}s linear, top ${14 + dc.id}s linear`,
-                ...(phase !== 'idle' ? { left: `${Math.max(4, Math.min(96, dc.x + dc.drift))}%`,
-                                         top: `${Math.max(14, Math.min(92, dc.y + dc.driftY))}%` } : {}) }}>
-              <Walker species={dc.s} dir={QC_DIRS[dc.dir]} speedMs={dc.spd} />
-            </div>
+            <Ambler key={`${seed}-${dc.id}`} species={dc.s} x0={dc.x} y0={dc.y} spd={dc.spd}
+              onClick={clickDecoy} />
           ))}
-          {d?.species && (phase === 'run' || (phase === 'wait' && false)) && (
-            <div className="qc-walker qc-clickable qc-runner" onClick={clickRunner}
+          {d?.species && (phase === 'wait' || phase === 'run') && (
+            <div className={`qc-walker qc-runner${phase === 'run' ? ' qc-clickable' : ''}`}
+              onClick={clickRunner}
               style={{ left: `${running ? toX : fromX}%`, top: `${running ? d.yEnd : d.yStart}%`,
                 transition: running ? `left ${d.crossMs}ms linear, top ${d.crossMs}ms linear` : 'none' }}>
-              <Walker species={d.species} dir={QC_DIRS[runDir]} speedMs={70} scale={2.4} />
+              <Walker species={d.species} dir={QC_DIRS[runDir]} walking={running} speedMs={70} scale={2.4} />
             </div>
           )}
           {flash && <span className="qc-flash" style={{ left: `${flash.x}%`, top: `${flash.y}%` }}>{flash.text}</span>}

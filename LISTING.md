@@ -1,4 +1,4 @@
-# 🌱 Greener Pastures - Modrinth/CurseForge listing draft (rev 2026-07-05, post-review)
+# 🌱 Greener Pastures - Modrinth/CurseForge listing draft (rev 2026-07-06, post-Game-Corner)
 
 > Paste-ready description for the mod page. Screenshots to capture during QA are marked 📸.
 
@@ -16,10 +16,12 @@ hoppers, no lag-farm entity soup.
 
 ### The loop
 - **Link** a pasture, slot a **Kernel** (Copper → Greener: up to **8 breeding pairs in parallel**,
-  each tier also faster and droppier), pair your parents on named breeding lines.
+  each tier also faster and droppier), pair your parents on named breeding lines. Lines ARE the
+  breeding switch: an unwired pasture idles, and a warning chip tells you why instead of leaving you
+  guessing.
 - Eggs flow through **your node graph** - IV / EV / nature / shiny filters → **BioBank** (256/species,
   sortable by any stat) or **→ Data**. New lines come pre-wired to the BioBank so nothing is ever lost
-  while you learn.
+  while you learn, and every mod recipe is in your recipe book from the moment you join.
 - Drops trickle in passively from each mon's own drop table - plus **type-drops** (Fire types are your
   blaze rod farm; Ghost/Dark trickle echo shards) so a Cobblemon-only world is fully farmable.
 - **Data** feeds your **Daemon** (16 buffs that go BEYOND vanilla enchant caps - Fortune past max,
@@ -36,7 +38,8 @@ hoppers, no lag-farm entity soup.
 Assemble the right Pokémon in one pasture and something happens. Every ritual is a **hidden recipe**
 teased only by a riddle - *"Say it out loud."* · *"Three heads. Three skulls. The restless dead."* -
 with gacha pulls, visible pity, and a dedicated spoils pool. Elytra from Shedinja's shed husk. A
-jukebox band that plays random discs. Two-pasture collection quests: **all 27 starters** print Rare
+jukebox band that plays random discs. A Shaymin-hosted feast that grows the mod's only enchanted
+golden apples. Two-pasture collection quests: **all 27 starters** print Rare
 Candies; **all 11 base fossils** wake a Sniffer Egg. And the **Black Market** fences Illicit Data
 Disks - a corruption orb that Vaal-rolls your Kernel: blessed (augments past every cap, up to a
 corruption-only **Tier III**), wild, nothing, or bricked. Forever.
@@ -55,17 +58,38 @@ higher values always win.
 📸 *the EV allocator + nature picker*
 
 ### The Game Corner
-Two arcade cabinets inside the Notebook. **DAEMON FLIP** is full Voltorb Flip - deduction,
-push-your-luck, seven levels; flip a multiplier and a *delighted* Pokémon portrait greets you, flip a
-bomb and someone is devastated. **TREELINE** spooks a Scorbunny into the woods - Zelda-pan to the
-forest, ten sweeps to find her, decoys snitch with arrows, and the pot shrinks with every tree you
-rustle. All art from the community-run **PMD Sprite Collab** (fan-made only, every artist credited in
-the mod). Server-authoritative: the client never receives a hidden tile or tree, so neither cabinet
-can be cheated. Winnings are **Game Corner Coins** - the arcade's own closed currency - and the
-**Prize Counter** redeems them mobile-style: six shelves, rotating stock every 15 real-time minutes,
-from Poké Balls to a Destiny Knot. Coins never convert to Data; the arcade only pays in prizes.
+Six arcade cabinets inside the Notebook, all server-authoritative: hidden tiles, decks, and trees
+never leave the server, so no cabinet can be client-cheated. **DAEMON FLIP** is full Voltorb Flip -
+deduction, push-your-luck, seven persistent levels; flip a multiplier and a *delighted* Pokémon
+portrait greets you, flip a bomb and someone is devastated. **TREELINE** spooks a Scorbunny into the
+woods - Zelda-pan to the forest, ten sweeps to find her, decoys snitch with arrows, and the pot
+shrinks with every tree you rustle (deliberately pocket-change; it's the chill one). **TOP DECK**
+fans twenty cards face-up, each wearing a random emotion portrait, slides them back, and hides ONE
+survivor among strangers - up to five flips to find it, then a 2x / 6x / 20x let-it-ride ladder at a
+fixed, auditable 25% per rung; lose, and *Mercy* offers a free one-shot memory check (which face was
+that card wearing?) that refunds the wager and nothing more. **SLOTS** is the classic: three portrait
+reels, triple angry Voltorb pays 100x, and the return-to-player is a fixed, enumerable **457/512**
+(about 89%) - no config, no rigging, pinned by a unit test. **VIBE CHECK** is free to play: twelve
+cards, four sour; every happy face doubles the pot (128 max) while a live odds panel shows exactly
+how sour the next draw could be, and the first frown torches everything. **QUICK CLAW** is also
+free: an ambient crowd of real walk-cycle sprites ambles by, one WANTED runner sprints across - tag
+her and the payout scales with your reaction time, judged by the server on the click packet's
+arrival against its own clock, so reaction time can't be spoofed.
 
-📸 *the Game Corner mid-round - two happy flips and a nervous board*
+All art comes from the community-run **PMD Sprite Collab**: 500+ portraits and 23 walk sheets, every
+single one verified fan-made per emotion and animation - zero game rips ship (the famous faces whose
+collab entries are CHUNSOFT rips got cut, Pikachu included), with 45 artists credited in the mod and
+on the About card. Winnings are **Game Corner Coins** - the arcade's own closed currency. Coins never
+convert to Data and Data never converts to Coins; the arcade only pays in prizes. The **Prize
+Counter** redeems them mobile-style: six shelves per player, stock rotating every 15 real-time
+minutes, plus every purchase refreshes all the shelves on the spot. Shelf art is the real Minecraft
+item texture, the catalog runs to nearly 70 wares (effectively every Cobblemon held item), and the
+crown jewel is the **Mystery Egg**: 1200 coins for a random species egg with at least two perfect
+IVs and its hidden ability. Always.
+
+📸 *the six-cabinet lobby (each cabinet is a screenshot in its own right)*
+📸 *DAEMON FLIP mid-round - two happy flips and a nervous board*
+📸 *the Prize Counter shelves + a Mystery Egg listing*
 
 ### The hunter's toolkit (bundled)
 Shiny eggs **gold-glow in any container** - no more hover-checking a full box. A lifetime tally keeps
@@ -119,7 +143,7 @@ Eggs are bagged and tagged: every voided egg is listed with the exact filter tha
 
 Nothing is bundled - install each as its own mod. Works in singleplayer and on dedicated servers (MCEF is only ever needed on clients).
 
-*MIT licensed. Built by DonaldGalliano. Game Corner portraits: PMD Sprite Collab (fan-made, credited - CREDITS-PMD.md).*
+*MIT licensed. Built by DonaldGalliano. Game Corner art: PMD Sprite Collab - 500+ fan-made portraits + 23 walk sheets, 45 artists, credited in CREDITS-PMD.md, in the jar, and on the in-game About card. Enjoying it? There's an optional Ko-fi (ko-fi.com/donaldgallianoiii) on the About card - it buys nothing in-game, ever.*
 
 ---
 
@@ -129,7 +153,7 @@ Nothing is bundled - install each as its own mod. Works in singleplayer and on d
 
 ## Publish checklist
 - [ ] Icon (128×128) - needs art (Notebook + leaf motif?)
-- [ ] 6-8 screenshots (marked 📸 above) - capture during the QA pass at 1080p+
+- [ ] 8-10 screenshots (marked 📸 above) - capture during the QA pass at 1080p+; the six Game Corner cabinets are prime material
 - [ ] Specimen Disk sprite (placeholder green disk in) + any MissingNo-era disk art
 - [ ] Modrinth: create project, slug `greener-pastures`, category Game Mechanics + Utility
 - [ ] CurseForge mirror
