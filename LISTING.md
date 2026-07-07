@@ -118,8 +118,11 @@ that rewrites its own species every few seconds and refuses all battles. One per
 ### Obsessively hardened - and it shows its work
 This mod **profiles itself** (`/gp perf flame` renders a browser-openable flame graph; measured idle
 cost: ~0.1% of wall time). It was also **adversarially reviewed system-by-system** before release -
-economy exploits, dupe surfaces, and edge cases hunted and closed, with 300+ unit tests on the pure
-cores. One example: review found that an unreadable egg could once slip past IV filters - now an egg
+economy exploits, dupe surfaces, and edge cases hunted and closed, with 369 unit tests on the pure
+cores - then a final pre-publish audit swept money paths, tick perf, dupes, thread-safety and
+client/server lifecycle, and every confirmed finding was fixed before this page went up. Claimed
+pastures are operator-locked: on multiplayer, only you can touch your Kernel, pairings, name, or
+routing graph. One example: review found that an unreadable egg could once slip past IV filters - now an egg
 that can't be decrypted is KEPT, enforced in four independent layers, because a shiny you can't read
 is still a shiny. Even the Daemon's mining buffs are tuned so no single buff breaks the game - but
 Mining Damage III + Haste III + your own pick, together, cross the deepslate instamine line. On purpose.

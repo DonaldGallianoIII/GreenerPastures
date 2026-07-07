@@ -1,11 +1,11 @@
 # 🌱 Greener Pastures - Feature Showcase
-_Compiled from a full code survey; rev 2026-07-06 - 363 tests, post-adversarial-review + superfan feature audit. The share-with-people list._
+_Compiled from a full code survey; rev 2026-07-07 - 369 tests, post-adversarial-review + superfan feature audit + final pre-publish multi-agent audit (money paths, dupes, tick perf, lifecycle - all confirmed findings fixed). Claimed pastures are operator-locked on multiplayer. The share-with-people list._
 
 **One item is the whole mod: the Notebook.** Right-click → a real web app (React via MCEF/Chromium) running inside Minecraft. Every player gets one on first join.
 
 ## 📓 The Notebook Console - 11 tabs
 - **BioBank** - eggs as searchable data: grouped by species, sortable by ΣIV/stat/shiny; egg cards (IVs/EVs/nature/gender); pull any egg back as a real hatchable item
-- **Harvester** - auto-collected drops from linked pastures; L/⇧/R withdrawal, space-aware
+- **Harvester** - auto-collected drops from linked pastures; every item shows its real in-game texture (model-resolved, blocks included); L/⇧/R withdrawal, space-aware
 - **Pastures** - network overview: tier, eggs, pairs, ⚠ health badges per pasture
 - **Compiler** - Daemon buff loadout: −/+ tier steppers, GPU costs, live drain + runtime math, power toggle
 - **Augmenter** - Kernel augment bench: pickers, slot pips, GPU gates, ⛧ CORRUPT button, target cards
