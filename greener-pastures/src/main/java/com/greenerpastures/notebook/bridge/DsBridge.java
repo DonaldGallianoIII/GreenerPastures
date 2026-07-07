@@ -229,6 +229,7 @@ public final class DsBridge {
         push("arcade", jsonChannel(NotebookState.arcadeJson));
         push("treeline", jsonChannel(NotebookState.treelineJson));
         push("nav", navData());
+        push("about", aboutData());
     }
 
     /** One-shot tab-navigation requests (Field Guide item → Guide tab); n bumps so the same tab re-fires. */
@@ -325,6 +326,34 @@ public final class DsBridge {
         frame.put("channel", channel);
         frame.put("data", data);
         server.broadcast(GSON.toJson(frame));
+    }
+
+    /** Static mod facts for the Guide tab's About card. Version comes from the loader (so the release
+     *  bump stays a one-file gradle.properties change) and the PMD artist roll from the SAME credits
+     *  file the jar ships - the card can never drift from what we actually bundle. Computed once. */
+    private static Map<String, Object> aboutCache;
+
+    private static Object aboutData() {
+        if (aboutCache != null) return aboutCache;
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("version", net.fabricmc.loader.api.FabricLoader.getInstance()
+                .getModContainer("greenerpastures")
+                .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("dev"));
+        m.put("author", "Deuce222XX");
+        m.put("license", "MIT");
+        m.put("pmdArtists", loadPmdArtists());
+        aboutCache = m;
+        return m;
+    }
+
+    private static String loadPmdArtists() {
+        try (var in = DsBridge.class.getResourceAsStream("/assets/greenerpastures/pmd_credits.txt")) {
+            if (in == null) return "";
+            return com.greenerpastures.core.PmdCredits.artistRoll(
+                    new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private static Object statusData() {

@@ -84,4 +84,10 @@ export const MOCK = {
       null, null, null, null, null, null, null, null, null,
     ],
   },
+  about: {
+    version: '0.0.0-mock',
+    author: 'Deuce222XX',
+    license: 'MIT',
+    pmdArtists: 'Emmuffin, G〜, JFain, NOLASMOR, baronessfaron',
+  },
 }

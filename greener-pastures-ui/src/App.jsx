@@ -2088,11 +2088,14 @@ Fairy/Psychic/Rock pastures.`],
 no combat needed. Type-drops and gacha rituals (composition-gated, with pity) make a Cobblemon-only world fully
 farmable. Rates are baked into the mod ON PURPOSE: no server config can zero your drops and sell them back.`],
   ['🔬 The fine print', `All analytics are local - your data never leaves your machine. The mod profiles itself:
-/gp perf prints live ms timings, /gp perf flame renders a flame graph. MIT licensed. Bred with Cobbreeding;
-rendered with MCEF. - A Data Science Mod`],
+/gp perf prints live ms timings, /gp perf flame renders a flame graph.`],
 ]
 
+// When Deuce sets up a donation page (Ko-fi etc.), paste the URL here and the About card grows a support line.
+const DONATE_URL = ''
+
 function GuideTab() {
+  const about = useChannel('about')
   return (
     <div className="pane" style={{ overflow: 'auto' }}>
       <div className="h" style={{ marginBottom: 4 }}>Field Guide</div>
@@ -2103,6 +2106,33 @@ function GuideTab() {
           <div style={{ fontSize: 11, lineHeight: 1.55, color: 'var(--text)', whiteSpace: 'pre-line' }}>{body}</div>
         </div>
       ))}
+      <AboutCard about={about} />
+    </div>
+  )
+}
+
+function AboutCard({ about }) {
+  const artists = about?.pmdArtists
+  return (
+    <div className="inset" style={{ padding: 10, borderRadius: 8, marginBottom: 8, borderLeft: '3px solid var(--grn)' }}>
+      <div className="grn" style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>📖 About</div>
+      <div style={{ fontSize: 11, lineHeight: 1.6, color: 'var(--text)' }}>
+        <b>Greener Pastures - A Data Science Mod</b> · v{about?.version || '?'}
+        <br />Made by <b>{about?.author || 'Deuce222XX'}</b>, bred on a live Cobblemon server. {about?.license || 'MIT'} licensed:
+        free forever, no paid tiers, and drop rates are baked in so no one can sell them back to you.
+        <br />Built on Cobblemon · breeding by Cobbreeding · UI rendered with MCEF.
+      </div>
+      {artists ? (
+        <div className="dim" style={{ fontSize: 10, marginTop: 6, lineHeight: 1.55 }}>
+          Game Corner art: fan-made portraits and sprites from the PMD Sprite Collab (sprites.pmdcollab.org),
+          used with credit and verified rip-free. Thank you {artists}.
+        </div>
+      ) : null}
+      {DONATE_URL ? (
+        <div className="dim" style={{ fontSize: 10, marginTop: 4 }}>
+          Enjoying the mod? You can support development at {DONATE_URL}
+        </div>
+      ) : null}
     </div>
   )
 }

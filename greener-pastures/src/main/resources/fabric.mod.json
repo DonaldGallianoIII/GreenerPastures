@@ -3,7 +3,7 @@
   "id": "greenerpastures",
   "version": "${version}",
   "name": "Greener Pastures",
-  "description": "A Data Science Mod for Cobblemon breeding — pasture & egg automation with deep, local analytics and charts that players and server admins can pull for themselves. Your data, your machine; nothing phones home.",
+  "description": "A Data Science Mod for Cobblemon breeding - pasture & egg automation with deep, local analytics and charts that players and server admins can pull for themselves. Your data, your machine; nothing phones home.",
   "authors": ["Deuce222XX"],
   "contact": {
     "homepage": "https://modrinth.com/mod/greenerpastures",
