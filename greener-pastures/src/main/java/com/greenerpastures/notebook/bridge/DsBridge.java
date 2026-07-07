@@ -421,17 +421,39 @@ public final class DsBridge {
 
     /** The model's first declared texture ("ns:item/sub/name" form), or null. */
     private static String textureFromModel(String ns, String path) {
+        return textureFromModelPath(ns, "item/" + path, 0);
+    }
+
+    /** Walk a model json for its first usable texture, following {@code parent} refs (block items like
+     *  pearlescent_froglight declare NO textures of their own - just a parent block model; Deuce 2026-07-07). */
+    private static String textureFromModelPath(String ns, String modelPath, int depth) {
+        if (depth > 4) return null;   // parent chains are short; anything deeper is a cycle or builtin
         try {
-            var modelId = net.minecraft.util.Identifier.of(ns, "models/item/" + path + ".json");
+            var modelId = net.minecraft.util.Identifier.of(ns, "models/" + modelPath + ".json");
             var res = MinecraftClient.getInstance().getResourceManager().getResource(modelId);
             if (res.isEmpty()) return null;
+            com.google.gson.JsonObject root;
             try (var in = res.get().getInputStream()) {
-                var root = GSON.fromJson(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8),
+                root = GSON.fromJson(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8),
                         com.google.gson.JsonObject.class);
-                var textures = root == null ? null : root.getAsJsonObject("textures");
-                if (textures == null) return null;
+            }
+            if (root == null) return null;
+            var textures = root.getAsJsonObject("textures");
+            if (textures != null) {
                 if (textures.has("layer0")) return textures.get("layer0").getAsString();
-                for (var e : textures.entrySet()) return e.getValue().getAsString();
+                for (var e : textures.entrySet()) {
+                    String v = e.getValue().getAsString();
+                    if (!v.startsWith("#")) return v;   // "#side"-style refs point at slots, not files
+                }
+            }
+            var parent = root.get("parent");
+            if (parent != null) {
+                String ref = parent.getAsString();      // "block/cube_column" or "minecraft:block/x"
+                if (ref.startsWith("builtin/")) return null;
+                int colon = ref.indexOf(':');
+                String pns = colon > 0 ? ref.substring(0, colon) : "minecraft";
+                String ppath = colon > 0 ? ref.substring(colon + 1) : ref;
+                return textureFromModelPath(pns, ppath, depth + 1);
             }
         } catch (Throwable ignored) { }
         return null;
