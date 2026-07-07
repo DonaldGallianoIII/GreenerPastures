@@ -60,7 +60,7 @@ public final class GameShop {
             new Ware("cobblemon:metal_coat",    "Metal Coat",    300, "⚙", 1),
             new Ware("cobblemon:silk_scarf",    "Silk Scarf",    300, "🧣", 1),
             new Ware("cobblemon:fairy_feather", "Fairy Feather", 300, "🪶", 1),
-            new Ware("minecraft:charcoal",      "Charcoal",      300, "🔥", 1),
+            new Ware("cobblemon:charcoal_stick","Charcoal Stick",300, "🔥", 1),
             // EV power items
             new Ware("cobblemon:power_band",   "Power Band",   450, "💪", 1),
             new Ware("cobblemon:power_bracer", "Power Bracer", 450, "💪", 1),
