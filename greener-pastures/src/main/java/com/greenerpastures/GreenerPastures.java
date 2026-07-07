@@ -56,6 +56,7 @@ public final class GreenerPastures implements ModInitializer {
             DataCommand.init();     // /gp data - grant/set Data balance
             DaemonCommand.init();   // /gp daemon - compile a Daemon loadout without the console
             BreedCommand.init();    // /gp breed - override breeding cadence
+            com.greenerpastures.arcade.ArcadeCommand.init();      // /gp coins - grant Game Corner Coins
             com.greenerpastures.notebook.HarvestCommand.init();   // /gp harvest - override the harvest-sweep cadence
             LOG.warn("Greener Pastures QA MODE - QA commands registered + DEBUG logging (do not ship a server like this)");
         }
