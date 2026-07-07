@@ -7,6 +7,7 @@
 import { useState, useEffect, useMemo, useRef, Fragment } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
 import { CARD_ART, cardArt } from './carddeck.js'
+import { CROWD } from './crowdsprites.js'
 import { HAPPY, SAD, VOLTORB_ANGRY, HAPPY_KEYS, SAD_KEYS } from './pmdsprites.js'
 import { SCORBUNNY_SHEET } from './treelinesprites.js'
 
@@ -195,6 +196,20 @@ const CSS = `
 .vc-history img.sour{ border-color:#ff6b81; filter:saturate(1.3); }
 .vc-odds{ font-size:11px; color:var(--dim); display:flex; gap:14px; }
 .vc-odds b{ color:var(--cyan); }
+.qc-field{ position:relative; width:100%; height:380px; border:1px solid var(--line2); border-radius:10px;
+  background:linear-gradient(180deg,#0b140e 0%,#0e1811 100%); overflow:hidden; cursor:crosshair; }
+.qc-walker{ position:absolute; transform:translate(-50%,-100%); image-rendering:pixelated; pointer-events:none; }
+.qc-walker.qc-clickable{ pointer-events:auto; cursor:pointer; }
+.qc-runner{ filter:drop-shadow(0 0 6px rgba(92,200,255,.6)); z-index:20; }
+.qc-poster{ position:absolute; top:10px; right:12px; z-index:30; display:flex; flex-direction:column; align-items:center;
+  gap:3px; padding:8px 12px; border:1px solid var(--amber); border-radius:8px; background:rgba(14,19,26,.92); }
+.qc-poster img{ width:40px; height:40px; image-rendering:pixelated; }
+.qc-poster-label{ font-size:9px; color:var(--amber); letter-spacing:2px; font-weight:700; }
+.qc-poster-name{ font-size:11px; color:var(--text); }
+.qc-flash{ position:absolute; z-index:40; font-size:18px; font-weight:800; color:var(--grn);
+  text-shadow:0 0 8px rgba(70,200,120,.7); transform:translate(-50%,-50%); animation:tlFade 1s forwards; }
+.qc-lock{ animation:qcShake .3s; }
+@keyframes qcShake{ 25%{ transform:translateX(-4px);} 75%{ transform:translateX(4px);} }
 .gc-offer-row{ display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
 .gc-price{ font-size:11px; font-weight:700; color:var(--amber); }
 .tl-console{ width:min(860px,97%); margin:0 auto; padding:12px; border:1px solid var(--line2); border-radius:10px;
@@ -1836,6 +1851,7 @@ function GameCorner() {
   if (cabinet === 'td') return <TopDeckCabinet onBack={() => setCabinet(null)} />
   if (cabinet === 'sl') return <SlotsCabinet onBack={() => setCabinet(null)} />
   if (cabinet === 'vc') return <VibeCheckCabinet onBack={() => setCabinet(null)} />
+  if (cabinet === 'qc') return <QuickClawCabinet onBack={() => setCabinet(null)} />
   const coins = d?.gcoins ?? 0
   const shop = d?.shop
   const left = shop ? Math.max(0, Math.floor((shop.endsAt - now) / 1000)) : 0
@@ -1868,6 +1884,10 @@ function GameCorner() {
           <button className="tl-cab" onClick={() => setCabinet('vc')}>
             <span className="tl-cab-name">VIBE CHECK</span>
             <span className="tl-cab-sub">cabinet 05 · free to play · happy doubles · one frown torches it</span>
+          </button>
+          <button className="tl-cab" onClick={() => setCabinet('qc')}>
+            <span className="tl-cab-name">QUICK CLAW</span>
+            <span className="tl-cab-sub">cabinet 06 · reflex · tag the runner before she's gone</span>
           </button>
         </div>
         {shop && (
@@ -2235,6 +2255,154 @@ function TopDeckCabinet({ onBack }) {
   )
 }
 
+// ── QUICK CLAW (cabinet 06): the sprint-clicker. Decoys are client theater; the target's path
+// and the payout judgment come from the server (click ARRIVAL time, unspoofable). ──
+function Walker({ species, dir, walking = true, scale = 2, speedMs = 140, style }) {
+  const c = CROWD[species]
+  const [frame, setFrame] = useState(0)
+  useEffect(() => {
+    if (!walking || !c) return
+    const t = setInterval(() => setFrame((f) => f + 1), speedMs)
+    return () => clearInterval(t)
+  }, [walking, speedMs, c])
+  if (!c) return null
+  return (
+    <span style={{ display: 'block', width: c.fw * scale, height: c.fh * scale,
+      backgroundImage: `url(${c.img})`, backgroundRepeat: 'no-repeat',
+      backgroundSize: `${c.fw * c.frames * scale}px ${c.fh * 8 * scale}px`,
+      backgroundPosition: `-${(frame % c.frames) * c.fw * scale}px -${dir * c.fh * scale}px`,
+      imageRendering: 'pixelated', ...style }} />
+  )
+}
+
+const QC_DIRS = { S: 0, SE: 1, E: 2, NE: 3, N: 4, NW: 5, W: 6, SW: 7 }
+function qcDecoys(seed) {   // deterministic-ish ambient crowd, pure theater
+  const names = Object.keys(CROWD)
+  const out = []
+  let x = seed * 7919 + 13
+  const rnd = () => { x = (x * 1103515245 + 12345) % 2147483648; return x / 2147483648 }
+  for (let i = 0; i < 9; i++) {
+    const dirs = ['S', 'SE', 'E', 'NE', 'N', 'NW', 'W', 'SW']
+    out.push({ id: i, s: names[Math.floor(rnd() * names.length)],
+      x: 8 + rnd() * 84, y: 18 + rnd() * 70,
+      dir: dirs[Math.floor(rnd() * 8)], drift: (rnd() - 0.5) * 26, driftY: (rnd() - 0.5) * 18,
+      spd: 110 + Math.floor(rnd() * 90) })
+  }
+  return out
+}
+
+function QuickClawCabinet({ onBack }) {
+  const d = useChannel('tag')
+  const a = useChannel('arcade')
+  const coins = a?.gcoins ?? 0
+  const [phase, setPhase] = useState('idle')     // idle | wait | run | done
+  const [running, setRunning] = useState(false)  // target visible + moving
+  const [locked, setLocked] = useState(false)
+  const [flash, setFlash] = useState(null)       // {x, y, text}
+  const [seed, setSeed] = useState(1)
+  const [msg, setMsg] = useState('a quiet meadow · someone in it is WANTED')
+  const roundKey = useRef('')
+  const timers = useRef([])
+  const later = (fn, ms) => timers.current.push(setTimeout(fn, ms))
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+
+  const decoys = useMemo(() => qcDecoys(seed), [seed])
+
+  useEffect(() => {
+    if (!d) return
+    const key = `${d.species}|${d.spawnDelayMs}|${d.crossMs}|${d.yStart}`
+    if (d.active && key !== roundKey.current) {          // fresh chase from the server
+      roundKey.current = key
+      setPhase('wait'); setRunning(false); setFlash(null)
+      setMsg(`WANTED: ${cap1(d.species)} · she'll make a break for it - don't blink`)
+      later(() => { setRunning(true); setPhase('run') }, d.spawnDelayMs)
+      later(() => {   // she made it out (unless a click settled it first - push will correct us)
+        setRunning(false)
+        setPhase((p) => (p === 'run' ? 'done' : p))
+        setMsg((m) => (roundKey.current === key && !d.over ? 'she\u2019s gone · the meadow laughs · free retry' : m))
+      }, d.spawnDelayMs + d.crossMs + 300)
+    } else if (d.over && phase !== 'idle') {
+      setRunning(false); setPhase('done')
+      setMsg(d.escaped ? 'she\u2019s gone · the meadow laughs · free retry'
+        : d.paid > 0 ? `TAGGED · +${fmt(d.paid)} Coins` : 'too early - the house saw you flinch')
+    }
+  }, [d])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  const start = () => { setSeed((z) => z + 1); send('tag', 'TAG_NEW', {}) }
+  const clickRunner = (e) => {
+    if (phase !== 'run' || locked) return
+    const rect = e.currentTarget.closest('.qc-field').getBoundingClientRect()
+    setFlash({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100, text: 'TAG!' })
+    setRunning(false)
+    send('tag', 'TAG_CLICK', {})
+  }
+  const clickDecoy = () => {
+    if (phase !== 'run' || locked) return
+    setLocked(true); later(() => setLocked(false), 500)
+  }
+
+  const fromX = d?.fromLeft ? -8 : 108
+  const toX = d?.fromLeft ? 108 : -8
+  const runDir = d?.fromLeft ? 'E' : 'W'
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="tl-console">
+        <header className="tl-head">
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn" onClick={onBack} title="back to the Game Corner lobby">‹</button>
+            <div className="tl-title">
+              <span className="tl-title-main">QUICK CLAW</span>
+              <span className="tl-title-sub">game corner · cabinet 06 · tag the runner</span>
+            </div>
+          </div>
+          <div className="tl-meters">
+            <div className="tl-meter"><span className="tl-meter-label">PURSE</span>
+              <span className="tl-meter-val">🪙 {fmt(coins)}</span></div>
+          </div>
+        </header>
+        <div className={`qc-field${locked ? ' qc-lock' : ''}`}>
+          {d?.species && (phase === 'wait' || phase === 'run') && (
+            <div className="qc-poster">
+              <span className="qc-poster-label">WANTED</span>
+              <img src={cardArt(d.species, 'normal')} alt="" draggable={false} />
+              <span className="qc-poster-name">{cap1(d.species)}</span>
+            </div>
+          )}
+          {decoys.map((dc) => (dc.s !== d?.species || phase === 'idle') && (
+            <div key={`${seed}-${dc.id}`} className="qc-walker qc-clickable"
+              onClick={clickDecoy}
+              style={{ left: `${dc.x}%`, top: `${dc.y}%`,
+                transition: `left ${14 + dc.id}s linear, top ${14 + dc.id}s linear`,
+                ...(phase !== 'idle' ? { left: `${Math.max(4, Math.min(96, dc.x + dc.drift))}%`,
+                                         top: `${Math.max(14, Math.min(92, dc.y + dc.driftY))}%` } : {}) }}>
+              <Walker species={dc.s} dir={QC_DIRS[dc.dir]} speedMs={dc.spd} />
+            </div>
+          ))}
+          {d?.species && (phase === 'run' || (phase === 'wait' && false)) && (
+            <div className="qc-walker qc-clickable qc-runner" onClick={clickRunner}
+              style={{ left: `${running ? toX : fromX}%`, top: `${running ? d.yEnd : d.yStart}%`,
+                transition: running ? `left ${d.crossMs}ms linear, top ${d.crossMs}ms linear` : 'none' }}>
+              <Walker species={d.species} dir={QC_DIRS[runDir]} speedMs={70} scale={2.4} />
+            </div>
+          )}
+          {flash && <span className="qc-flash" style={{ left: `${flash.x}%`, top: `${flash.y}%` }}>{flash.text}</span>}
+        </div>
+        <div className={`tl-log${phase === 'done' && d?.paid > 0 ? ' tl-log-win' : ''}${phase === 'done' && d?.paid === 0 ? ' tl-log-lose' : ''}`}>
+          <span className="tl-log-prompt">&gt;</span> {msg}
+        </div>
+        <footer className="tl-controls">
+          {(phase === 'idle' || phase === 'done') && (
+            <button className="btn go" onClick={start}>RELEASE THE CROWD · free</button>
+          )}
+          {phase === 'wait' && <span className="tl-watch">▶ EYES ON THE EDGES</span>}
+          {phase === 'run' && <span className="tl-watch tl-watch-dim">TAG HER · payout falls as she runs</span>}
+        </footer>
+        <span className="dim" style={{ fontSize: 9 }}>sprites · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
+      </div>
+    </div>
+  )
+}
+
 // ── VIBE CHECK (cabinet 05): the free press-your-luck deck. 12 cards, 4 sour, pot doubles per
 // happy face. Server owns the shuffle; drawn cards are all the client ever sees. ──
 function VibeCheckCabinet({ onBack }) {
@@ -2562,7 +2730,7 @@ farmable. Rates are baked into the mod ON PURPOSE: no server config can zero you
 ]
 
 // When Deuce sets up a donation page (Ko-fi etc.), paste the URL here and the About card grows a support line.
-const DONATE_URL = ''
+const DONATE_URL = 'ko-fi.com/donaldgallianoiii'
 
 function GuideTab() {
   const about = useChannel('about')

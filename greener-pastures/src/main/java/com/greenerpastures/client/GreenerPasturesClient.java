@@ -173,6 +173,10 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 context.client().execute(() -> {
                     if (NotebookState.applyVibe(payload)) DsBridge.pushNow();
                 }));
+        ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookTagS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyTag(payload)) DsBridge.pushNow();
+                }));
 
         // notebook/ console - poll the server ~1×/s while the console is open so the status bar + tabs tick live.
         // Change-detection in NotebookState means an unchanged push does NOT repaint (no flicker / scroll-reset).

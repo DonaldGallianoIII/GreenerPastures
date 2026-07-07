@@ -110,6 +110,9 @@ public final class NotebookNet {
             new java.util.concurrent.ConcurrentHashMap<>();
     private static final Map<UUID, com.greenerpastures.arcade.VibeCheck.Round> vibeRounds =
             new java.util.concurrent.ConcurrentHashMap<>();
+    /** Live QUICK CLAW rounds + their server-clock start (nanoTime) - the judge\u2019s stopwatch. */
+    private static final Map<UUID, Object[]> tagRounds =   // {SprintTag.Round, Long startNanos}
+            new java.util.concurrent.ConcurrentHashMap<>();
     /** Last SLOTS spin per player, seq-numbered so the client can animate each fresh pull. */
     private static final Map<UUID, long[]> slotsLast =    // {seq, bet, paid, f0, f1, f2}
             new java.util.concurrent.ConcurrentHashMap<>();
@@ -125,6 +128,7 @@ public final class NotebookNet {
         topdeckRounds.remove(player);
         slotsLast.remove(player);
         vibeRounds.remove(player);
+        tagRounds.remove(player);
     }
 
     /** A TOP DECK wager is debited at deal time, so a live round dying with the connection must
@@ -138,7 +142,7 @@ public final class NotebookNet {
     }
 
     /** Reset per-server-session state - called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); topdeckRounds.clear(); slotsLast.clear(); vibeRounds.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); topdeckRounds.clear(); slotsLast.clear(); vibeRounds.clear(); tagRounds.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -168,6 +172,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookTopdeckS2C.ID, NotebookTopdeckS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookSlotsS2C.ID, NotebookSlotsS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookVibeS2C.ID, NotebookVibeS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookTagS2C.ID, NotebookTagS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -227,6 +232,7 @@ public final class NotebookNet {
                 pushTopdeck(player);
                 pushSlots(player);
                 pushVibe(player);
+                pushTag(player);
                 long nowMs = System.currentTimeMillis();
                 Long last = lastPrefetch.get(player.getUuid());
                 if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -382,6 +388,8 @@ public final class NotebookNet {
                 case NotebookActionC2S.VIBE_NEW -> { vibeRounds.put(player.getUuid(), com.greenerpastures.arcade.VibeCheck.deal(new java.util.Random())); pushVibe(player); }
                 case NotebookActionC2S.VIBE_DRAW -> { vibeDraw(player); pushVibe(player); pushArcade(player); }
                 case NotebookActionC2S.VIBE_CASH -> { vibeCash(player); pushVibe(player); pushArcade(player); }
+                case NotebookActionC2S.TAG_NEW -> { tagNew(player); pushTag(player); }
+                case NotebookActionC2S.TAG_CLICK -> { tagClick(player); pushTag(player); pushArcade(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1603,6 +1611,59 @@ public final class NotebookNet {
             root.addProperty("payout", round.payout);
         }
         sendGated(player, "vibe", new NotebookVibeS2C(GSON.toJson(root)));
+    }
+
+    // ── QUICK CLAW (Game Corner cabinet #6, 2026-07-06): the sprint-clicker. The server deals the
+    // chase and judges the CLICK PACKET'S ARRIVAL on its own clock - reaction time can't be spoofed. ──
+
+    private static void tagNew(ServerPlayerEntity player) {
+        var prev = tagRounds.get(player.getUuid());
+        if (prev != null) com.greenerpastures.arcade.SprintTag.forfeit((com.greenerpastures.arcade.SprintTag.Round) prev[0]);
+        var round = com.greenerpastures.arcade.SprintTag.deal(
+                com.greenerpastures.arcade.CrowdPool.POOL, new java.util.Random());
+        if (round == null) return;
+        tagRounds.put(player.getUuid(), new Object[]{round, System.nanoTime()});
+        GpLog.d("arcade", "tag_new", "player", player.getUuid().toString(), "target", round.species);
+    }
+
+    private static void tagClick(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var entry = tagRounds.get(player.getUuid());
+        if (entry == null) return;
+        var round = (com.greenerpastures.arcade.SprintTag.Round) entry[0];
+        long elapsedMs = (System.nanoTime() - (Long) entry[1]) / 1_000_000L;
+        long paid = com.greenerpastures.arcade.SprintTag.judge(round, elapsedMs);
+        if (paid > 0) {
+            var store = com.greenerpastures.arcade.ArcadeStore.get(server);
+            store.record(player.getUuid(), arcadeToday(), paid, store.of(player.getUuid(), arcadeToday()).level);
+        }
+        if (paid >= 0) {
+            GpLog.i("arcade", "tag_click", "player", player.getUuid().toString(),
+                    "target", round.species, "elapsedMs", elapsedMs, "paid", Math.max(0, paid),
+                    "escaped", round.escaped);
+        }
+    }
+
+    /** QUICK CLAW state: the whole chase is choreography (timing is judged server-side), so the
+     *  full path ships up front and the settled result follows the click. */
+    public static void pushTag(ServerPlayerEntity player) {
+        var entry = tagRounds.get(player.getUuid());
+        JsonObject root = new JsonObject();
+        root.addProperty("active", entry != null && !((com.greenerpastures.arcade.SprintTag.Round) entry[0]).over);
+        if (entry != null) {
+            var r = (com.greenerpastures.arcade.SprintTag.Round) entry[0];
+            root.addProperty("species", r.species);
+            root.addProperty("fromLeft", r.fromLeft);
+            root.addProperty("yStart", r.yStartPct);
+            root.addProperty("yEnd", r.yEndPct);
+            root.addProperty("spawnDelayMs", r.spawnDelayMs);
+            root.addProperty("crossMs", r.crossMs);
+            root.addProperty("over", r.over);
+            root.addProperty("paid", r.paid);
+            root.addProperty("escaped", r.escaped);
+        }
+        sendGated(player, "tag", new NotebookTagS2C(GSON.toJson(root)));
     }
 
     /** SLOTS state: the symbol strip (static) + the seq-numbered last spin. */

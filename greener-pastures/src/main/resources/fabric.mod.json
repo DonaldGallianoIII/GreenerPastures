@@ -4,16 +4,23 @@
   "version": "${version}",
   "name": "Greener Pastures",
   "description": "A Data Science Mod for Cobblemon breeding - pasture & egg automation with deep, local analytics and charts that players and server admins can pull for themselves. Your data, your machine; nothing phones home.",
-  "authors": ["DonaldGalliano"],
+  "authors": [
+    "DonaldGalliano"
+  ],
   "contact": {
     "homepage": "https://modrinth.com/mod/greenerpastures",
-    "sources": "https://github.com/DonaldGalliano/greener-pastures"
+    "sources": "https://github.com/DonaldGalliano/greener-pastures",
+    "donate": "https://ko-fi.com/donaldgallianoiii"
   },
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": ["com.greenerpastures.GreenerPastures"],
-    "client": ["com.greenerpastures.client.GreenerPasturesClient"]
+    "main": [
+      "com.greenerpastures.GreenerPastures"
+    ],
+    "client": [
+      "com.greenerpastures.client.GreenerPasturesClient"
+    ]
   },
   "mixins": [
     "greenerpastures.mixins.json",

@@ -101,6 +101,7 @@ export const MOCK = {
   slots: { symbols: ['voltorb', 'lechonk', 'applin', 'snom', 'yamper', 'dedenne', 'mimikyu', 'morpeko'],
     minBet: 5, maxBet: 100, paytable: [100, 15, 5, 1] },
   vibe: { deckSize: 12, sourTotal: 4, active: false },
+  tag: { active: false },
   about: {
     version: '0.0.0-mock',
     author: 'DonaldGalliano',

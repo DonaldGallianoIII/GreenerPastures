@@ -7,44 +7,44 @@ Fan-made art used with credit (verified per-emotion/per-animation; no game rips)
   bounsweet: NOLASMOR, baronessfaron
   capsakid: G〜
   chespin: Emmuffin, Noo
-  chewtle: EzerArt
+  chewtle: Emmuffin, EzerArt, Soulja, nataniel-sama
   clobbopus: Emboarger, Emmuffin
   cramorant: G〜
   cufant: EzerArt, Gust
   cutiefly: NOLASMOR, baronessfaron
-  dedenne: Emmuffin, Top_Kec
+  dedenne: Emmuffin, Inv3rse, Top_Kec, baronessfaron
   deerling: Emmuffin, baronessfaron, mucrush
-  dreepy: Deeshura, Emboarger, G〜, NOLASMOR, Top_Kec
+  dreepy: Caitemis, Deeshura, Emboarger, G〜, Jhony-Rex, NOLASMOR, Top_Kec
   eldegoss: Emmuffin, EzerArt, Soulja
-  emolga: Emmuffin, LornaWR, mucrush
+  emolga: Emmuffin, JFain, LornaWR, baronessfaron, mucrush
   falinks: Emmuffin, EzerArt
   fennekin: Deeshura, G〜, Smalusion
   fidough: Axcel, Emmuffin
   flittle: Emmuffin
   froakie: C_Pariah, Cloudy, Emmuffin, G〜, baronessfaron, ◥θ┴θ◤
   fuecoco: Emboarger, Emmuffin, G〜
-  goomy: RacieB
+  goomy: Emmuffin, RacieB
   gossifleur: Emmuffin, baronessfaron
   greavard: , Emmuffin
   grookey: EzerArt, G〜, JustAGunk
   hatenna: Waffluffe, baronessfaron
   impidimp: Emmuffin
-  lechonk: Emmuffin, NikolaP
+  lechonk: Emboarger, Emmuffin, NikolaP
   litten: Caitemis, Emmuffin, Top_Kec, Waffluffe
-  milcery: Emmuffin, EzerArt, mixy:3
-  mimikyu: Emmuffin, JFain
+  milcery: Emmuffin, EzerArt, Riodise, mixy:3
+  mimikyu: Emmuffin, G〜, JFain, baronessfaron
   minccino: baronessfaron, mucrush
   morpeko: Emmuffin
   nacli: Emmuffin
   nickit: Ddragon, Top_Kec, Waffluffe
   oshawott: Emmuffin, mucrush
   pancham: Emmuffin
-  pawmi: Emmuffin, G〜
+  pawmi: Emmuffin, G〜, ShyStarryRain
   petilil: Emmuffin, Ichor, mucrush
   pincurchin: Emmuffin
   popplio: Emmuffin, Fable, ◥θ┴θ◤
   quaxly: Caitemis, Emmuffin, Top_Kec
-  rockruff: Emmuffin, JFain, XModxGodX
+  rockruff: Emmuffin, JFain, XModxGodX, baronessfaron
   rowlet: Emmuffin
   scorbunny: Emmuffin, NeroIntruder
   scorbunny (walk sprite): Emmuffin, NeroIntruder
@@ -52,7 +52,7 @@ Fan-made art used with credit (verified per-emotion/per-animation; no game rips)
   silicobra: Jelly, NeonCityRain, NikolaP
   sinistea: EzerArt, JFain, ShyStarryRain, baronessfaron
   sizzlipede: Emmuffin
-  skwovet: G〜
+  skwovet: G〜, Jhony-Rex, Soulja
   smoliv: Ajifer, Emmuffin
   snivy: Emmuffin
   snom: JFain, Jelly, ◥θ┴θ◤
@@ -66,7 +66,8 @@ Fan-made art used with credit (verified per-emotion/per-animation; no game rips)
   voltorb: JFain
   wattrel: Aviivix, JustAGunk
   wooloo: Emmuffin
-  yamper: RelicCipher
-  zorua: MilesFarber, baronessfaron
+  yamper: Emmuffin, RelicCipher, baronessfaron
+  zorua: Emmuffin, MilesFarber, baronessfaron
+  scorbunny (walk sprite): Emmuffin, NeroIntruder
   scorbunny (walk sprite): Emmuffin, NeroIntruder
   scorbunny (walk sprite): Emmuffin, NeroIntruder

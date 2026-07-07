@@ -249,6 +249,7 @@ public final class NotebookState {
     public static volatile String topdeckJson = "";
     public static volatile String slotsJson = "";
     public static volatile String vibeJson = "";
+    public static volatile String tagJson = "";
 
     public static boolean applySpecimens(com.greenerpastures.notebook.net.NotebookSpecimensS2C p) {
         String j = p.json() == null ? "" : p.json();
@@ -289,6 +290,13 @@ public final class NotebookState {
         String j = p.json() == null ? "" : p.json();
         boolean changed = !vibeJson.equals(j);
         vibeJson = j;
+        return changed;
+    }
+
+    public static boolean applyTag(com.greenerpastures.notebook.net.NotebookTagS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !tagJson.equals(j);
+        tagJson = j;
         return changed;
     }
 
@@ -348,7 +356,7 @@ public final class NotebookState {
         augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of(); augMetaJson = "";
         biobankTotal = 0; biobank = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
-        dashboardJson = ""; goalsJson = ""; notifsJson = ""; ritualsJson = ""; specimensJson = ""; arcadeJson = ""; treelineJson = ""; topdeckJson = ""; slotsJson = ""; vibeJson = "";
+        dashboardJson = ""; goalsJson = ""; notifsJson = ""; ritualsJson = ""; specimensJson = ""; arcadeJson = ""; treelineJson = ""; topdeckJson = ""; slotsJson = ""; vibeJson = ""; tagJson = "";
         navTab = ""; navSeq = 0;
     }
 }

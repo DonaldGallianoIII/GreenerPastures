@@ -142,6 +142,8 @@ public final class DsBridge {
             case "VIBE_NEW"        -> new NotebookActionC2S(NotebookActionC2S.VIBE_NEW, "", 0);
             case "VIBE_DRAW"       -> new NotebookActionC2S(NotebookActionC2S.VIBE_DRAW, "", 0);
             case "VIBE_CASH"       -> new NotebookActionC2S(NotebookActionC2S.VIBE_CASH, "", 0);
+            case "TAG_NEW"         -> new NotebookActionC2S(NotebookActionC2S.TAG_NEW, "", 0);
+            case "TAG_CLICK"       -> new NotebookActionC2S(NotebookActionC2S.TAG_CLICK, "", 0);
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }
@@ -240,6 +242,7 @@ public final class DsBridge {
         push("topdeck", jsonChannel(NotebookState.topdeckJson));
         push("slots", jsonChannel(NotebookState.slotsJson));
         push("vibe", jsonChannel(NotebookState.vibeJson));
+        push("tag", jsonChannel(NotebookState.tagJson));
         push("icons", iconsData());
         push("nav", navData());
         push("about", aboutData());

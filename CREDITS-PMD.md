@@ -5,7 +5,7 @@ The Game Corner's Pokémon art comes from the community-run **PMD Sprite Collab*
 Everything bundled is **fan-made**, verified per-emotion/per-animation - no assets ripped
 from the PMD games are included.
 
-Artists: , Ajifer, Aviivix, Axcel, baronessfaron, Blanca, C_Pariah, Caitemis, Cloudy, Ddragon, Deeshura, Emboarger, Emmuffin, eon, EzerArt, Fable, Gust, G〜, Ichor, Jelly, JFain, JustAGunk, LornaWR, MilesFarber, mixy:3, mucrush, NeonCityRain, NeroIntruder, NikolaP, Noivern, NOLASMOR, Noo, RacieB, RelicCipher, ShyStarryRain, Smalusion, Soulja, Top_Kec, Waffluffe, XModxGodX, ◥θ┴θ◤
+Artists: , Ajifer, Aviivix, Axcel, baronessfaron, Blanca, C_Pariah, Caitemis, Cloudy, Ddragon, Deeshura, Emboarger, Emmuffin, eon, EzerArt, Fable, Gust, G〜, Ichor, Inv3rse, Jelly, JFain, Jhony-Rex, JustAGunk, LornaWR, MilesFarber, mixy:3, mucrush, nataniel-sama, NeonCityRain, NeroIntruder, NikolaP, Noivern, NOLASMOR, Noo, RacieB, RelicCipher, Riodise, ShyStarryRain, Smalusion, Soulja, Top_Kec, Waffluffe, XModxGodX, ◥θ┴θ◤
 
 | Art | Artists |
 |---|---|
@@ -16,44 +16,44 @@ Artists: , Ajifer, Aviivix, Axcel, baronessfaron, Blanca, C_Pariah, Caitemis, Cl
 | Bounsweet | NOLASMOR, baronessfaron |
 | Capsakid | G〜 |
 | Chespin | Emmuffin, Noo |
-| Chewtle | EzerArt |
+| Chewtle | Emmuffin, EzerArt, Soulja, nataniel-sama |
 | Clobbopus | Emboarger, Emmuffin |
 | Cramorant | G〜 |
 | Cufant | EzerArt, Gust |
 | Cutiefly | NOLASMOR, baronessfaron |
-| Dedenne | Emmuffin, Top_Kec |
+| Dedenne | Emmuffin, Inv3rse, Top_Kec, baronessfaron |
 | Deerling | Emmuffin, baronessfaron, mucrush |
-| Dreepy | Deeshura, Emboarger, G〜, NOLASMOR, Top_Kec |
+| Dreepy | Caitemis, Deeshura, Emboarger, G〜, Jhony-Rex, NOLASMOR, Top_Kec |
 | Eldegoss | Emmuffin, EzerArt, Soulja |
-| Emolga | Emmuffin, LornaWR, mucrush |
+| Emolga | Emmuffin, JFain, LornaWR, baronessfaron, mucrush |
 | Falinks | Emmuffin, EzerArt |
 | Fennekin | Deeshura, G〜, Smalusion |
 | Fidough | Axcel, Emmuffin |
 | Flittle | Emmuffin |
 | Froakie | C_Pariah, Cloudy, Emmuffin, G〜, baronessfaron, ◥θ┴θ◤ |
 | Fuecoco | Emboarger, Emmuffin, G〜 |
-| Goomy | RacieB |
+| Goomy | Emmuffin, RacieB |
 | Gossifleur | Emmuffin, baronessfaron |
 | Greavard | , Emmuffin |
 | Grookey | EzerArt, G〜, JustAGunk |
 | Hatenna | Waffluffe, baronessfaron |
 | Impidimp | Emmuffin |
-| Lechonk | Emmuffin, NikolaP |
+| Lechonk | Emboarger, Emmuffin, NikolaP |
 | Litten | Caitemis, Emmuffin, Top_Kec, Waffluffe |
-| Milcery | Emmuffin, EzerArt, mixy:3 |
-| Mimikyu | Emmuffin, JFain |
+| Milcery | Emmuffin, EzerArt, Riodise, mixy:3 |
+| Mimikyu | Emmuffin, G〜, JFain, baronessfaron |
 | Minccino | baronessfaron, mucrush |
 | Morpeko | Emmuffin |
 | Nacli | Emmuffin |
 | Nickit | Ddragon, Top_Kec, Waffluffe |
 | Oshawott | Emmuffin, mucrush |
 | Pancham | Emmuffin |
-| Pawmi | Emmuffin, G〜 |
+| Pawmi | Emmuffin, G〜, ShyStarryRain |
 | Petilil | Emmuffin, Ichor, mucrush |
 | Pincurchin | Emmuffin |
 | Popplio | Emmuffin, Fable, ◥θ┴θ◤ |
 | Quaxly | Caitemis, Emmuffin, Top_Kec |
-| Rockruff | Emmuffin, JFain, XModxGodX |
+| Rockruff | Emmuffin, JFain, XModxGodX, baronessfaron |
 | Rowlet | Emmuffin |
 | Scorbunny | Emmuffin, NeroIntruder |
 | Scorbunny (walk sprite) | Emmuffin, NeroIntruder |
@@ -61,7 +61,7 @@ Artists: , Ajifer, Aviivix, Axcel, baronessfaron, Blanca, C_Pariah, Caitemis, Cl
 | Silicobra | Jelly, NeonCityRain, NikolaP |
 | Sinistea | EzerArt, JFain, ShyStarryRain, baronessfaron |
 | Sizzlipede | Emmuffin |
-| Skwovet | G〜 |
+| Skwovet | G〜, Jhony-Rex, Soulja |
 | Smoliv | Ajifer, Emmuffin |
 | Snivy | Emmuffin |
 | Snom | JFain, Jelly, ◥θ┴θ◤ |
@@ -75,7 +75,8 @@ Artists: , Ajifer, Aviivix, Axcel, baronessfaron, Blanca, C_Pariah, Caitemis, Cl
 | Voltorb | JFain |
 | Wattrel | Aviivix, JustAGunk |
 | Wooloo | Emmuffin |
-| Yamper | RelicCipher |
-| Zorua | MilesFarber, baronessfaron |
+| Yamper | Emmuffin, RelicCipher, baronessfaron |
+| Zorua | Emmuffin, MilesFarber, baronessfaron |
+| Scorbunny (walk sprite) | Emmuffin, NeroIntruder |
 | Scorbunny (walk sprite) | Emmuffin, NeroIntruder |
 | Scorbunny (walk sprite) | Emmuffin, NeroIntruder |
