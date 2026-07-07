@@ -43,9 +43,12 @@ public final class PastureHarvest {
      *  sweep means proportionally more rolls per minute - great for testing, silly for balance. */
     public static volatile long testIntervalTicks = 0L;
 
-    /** Offline-progress ceiling: how far back a catch-up may reach, in ticks (12h of world time). Keeps a
-     *  months-old save from rolling millions of sweeps, and bounds the idle yield like any respectable idle game. */
-    private static final long MAX_CATCHUP_TICKS = 12L * 60L * 60L * 20L;
+    /** Offline-progress ceiling: how far back a catch-up may reach - config/greenerpastures/pastures.json
+     *  maxCatchupHours (default 12h). Keeps a months-old save from rolling millions of sweeps, and bounds
+     *  the idle yield like any respectable idle game. */
+    private static long maxCatchupTicks() {
+        return com.greenerpastures.pasture.PastureSystem.config().maxCatchupTicks();
+    }
     private static final Set<AugmentFunction> DROP_FUNCTIONS =
             EnumSet.of(AugmentFunction.DROP_RATE, AugmentFunction.DROP_YIELD);
 
@@ -93,7 +96,7 @@ public final class PastureHarvest {
                 long now = world.getTime();
                 int sweeps = 1;
                 if (pd.lastHarvestTick > 0 && now > pd.lastHarvestTick) {
-                    long gap = Math.min(now - pd.lastHarvestTick, MAX_CATCHUP_TICKS);
+                    long gap = Math.min(now - pd.lastHarvestTick, maxCatchupTicks());
                     sweeps = (int) Math.max(1, gap / interval);
                 }
                 pd.lastHarvestTick = now;

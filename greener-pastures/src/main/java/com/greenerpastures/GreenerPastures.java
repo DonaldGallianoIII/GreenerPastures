@@ -72,6 +72,7 @@ public final class GreenerPastures implements ModInitializer {
 
         // buff/ - load the Daemon "root" buff rules + start the per-second grant/drain loop
         BuffSystem.init();
+        com.greenerpastures.pasture.PastureSystem.init();   // pastures.json - catch-up pacing (operator knob)
         DaemonBuffs.init();
 
         // ritual/ - load the custom-drop config (type-drops + gacha rituals) the Harvester reads

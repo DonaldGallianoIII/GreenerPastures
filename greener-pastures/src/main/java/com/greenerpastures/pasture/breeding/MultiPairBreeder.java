@@ -61,8 +61,11 @@ public final class MultiPairBreeder {
         reg.markDirty();
     }
 
-    /** Catch-up ceiling for missed broods (12h of world time) - mirrors PastureHarvest's drop catch-up. */
-    private static final long MAX_CATCHUP_TICKS = 12L * 60L * 60L * 20L;
+    /** Catch-up ceiling for missed broods - config/greenerpastures/pastures.json maxCatchupHours (default
+     *  12h; Deuce 2026-07-07: server pacing is the operator's call). Mirrors PastureHarvest's drop catch-up. */
+    private static long maxCatchupTicks() {
+        return com.greenerpastures.pasture.PastureSystem.config().maxCatchupTicks();
+    }
 
     /** The augment functions the breeder actually applies to the egg - and therefore the only tethers it pays
      *  burn for: Shiny (proc), Speed (cadence), IV Floor (perfect IVs) and EV (EV head-start). Drop Rate/Yield
@@ -170,7 +173,7 @@ public final class MultiPairBreeder {
                     // gap / 80 ticks = a ~115-brood burst the instant the old timer expires - live 2026-07-07).
                     int broods = 1;
                     if (testIntervalTicks <= 0 && pd.lastBreedTick > 0 && now > pd.lastBreedTick) {
-                        long gap = Math.min(now - pd.lastBreedTick, MAX_CATCHUP_TICKS);
+                        long gap = Math.min(now - pd.lastBreedTick, maxCatchupTicks());
                         broods = (int) Math.max(1, gap / Math.max(1L, interval));
                     }
                     pd.lastBreedTick = now;
