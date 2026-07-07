@@ -23,9 +23,9 @@ field, caption in "Description". Icon: `gp_icon_512.png` (from Deuce's gp_icon_n
    - Title: `The Harvester - your pastures, farming for you`
    - Caption: `Every tethered mon trickles its real drop table into storage - plus type-drops, so a Cobblemon-only world still farms blaze rods and echo shards. Real item art, block-free.`
 
-6. **RitualsTab (Deuce is capturing)**
+6. **Rits.png**
    - Title: `17 hidden rituals`
-   - Caption: `Assemble the right Pokemon in one pasture and something happens. Every ritual is a hidden recipe teased only by a riddle - with gacha pulls, visible pity, and dedicated spoils.`
+   - Caption: `Assemble the right Pokemon in one pasture and something happens. Every ritual is a hidden recipe teased only by a riddle - "Three heads. Three skulls. The restless dead." Discover them all.`
 
 7. **GameCornerShop.png**
    - Title: `Prize Counter + the High Roller Room`

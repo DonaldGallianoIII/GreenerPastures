@@ -2,8 +2,11 @@
 
 ## 1.0.0-beta.1 (first public release)
 
-Everything below ships in the first public beta. 363 unit tests; adversarially reviewed
-system-by-system pre-release; live-QA'd in singleplayer and on a dedicated server.
+Everything below ships in the first public beta. 369 unit tests; adversarially reviewed
+system-by-system pre-release plus a final multi-agent audit of money paths, dupes, tick
+perf and lifecycle; live-QA'd in singleplayer and on a dedicated server. The Notebook
+console renders through MCEF (without it: a friendly install prompt - all server-side
+systems run regardless). Server operators: config/greenerpastures/pastures.json.
 
 ### The Notebook
 - One item is the whole mod: a real web-app console rendered in-game (MCEF/Chromium, with a
