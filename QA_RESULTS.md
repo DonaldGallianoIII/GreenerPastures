@@ -239,6 +239,18 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Status:** 🚀 built — verify: dedicated server, breed → `egg_ingest bank` events return, no err, tray drains
 - **Lesson (a real one):** in-method env guards do NOT make client refs server-safe - quarantine in a separate class, always. Today's dedicated-server QA session existing at all is what caught this before launch.
 
+### BUG-022 · 🟠 NORMAL (reel display lie) · SLOTS reel showed a face it never landed
+- **Repro:** spin lands 5-6-6 (Mimikyu pair, paid correctly) but the middle reel DISPLAYS Voltorb - "why did i win this one?" (Deuce, 2026-07-06 night). Server math was always right; pure client render.
+- **Root cause:** the spin-cycle interval read landed faces through a state-mirrored ref that lags React's batched updates, so a stopped reel advanced +1 extra frame before freezing.
+- **Fix:** landed faces live in a plain synchronous ref (`finalRef`); the cycle interval checks it directly. In jar `85f61335`.
+- **Status:** ✅ verified live 2026-07-07 - 10+ max-bet spins, every displayed line matched the logged `reels` exactly.
+
+### BUG-023 · 🟠 NORMAL (data clobber) · Node-graph parents zero out after ~1 min - false "this pair can't breed"
+- **Repro:** open a pasture config with 2 valid ♂+♀ parents → stats show fine → wait ≤ 1 min → inspector reads 0/186, nature -, OT -, both chips show the unknown-gender glyph (⚲, reads like ♀) and the pair warning fires on a legal pair (Deuce screenshots, 2026-07-07 12:5x).
+- **Root cause:** the 1-min prefetch sweep pushes a stats-less roster shape (perf opt R3 F6) through the SAME change-gated channel as the full shape - the gate sees "payload changed" and lets the downgrade clobber live stats, ping-ponging with every full push. Advisory-only: the server-side breeder validates pairs against Cobblemon truth, so real breeding was never blocked.
+- **Fix:** prefetch now carries full stats (cheap at 1/min x ≤16 pastures; only snapshot capture stays full-gated) + the UI never warns while either gender is unknown. Commit `eaffef8`, in jar `757f7455`.
+- **Status:** 🚀 built - verify: open pasture config, idle 2+ min, stats stay populated and no false warning.
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …
