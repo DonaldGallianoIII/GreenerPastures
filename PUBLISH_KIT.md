@@ -32,8 +32,8 @@ page as players see it.
 - License: **MIT**
 
 **Links**:
-- Source: `https://github.com/DonaldGallianoIII/pokemon-prediction`
-- Issues: `https://github.com/DonaldGallianoIII/pokemon-prediction/issues`
+- Source: `https://github.com/DonaldGallianoIII/GreenerPastures`
+- Issues: `https://github.com/DonaldGallianoIII/GreenerPastures/issues`
 - Donation: platform **Ko-fi** → `https://ko-fi.com/donaldgallianoiii`
 
 **Icon**: upload `gp_icon_512.png`.
@@ -100,7 +100,7 @@ Needs: Cobblemon 1.7.3, Fabric API. Strongly recommended: Cobbreeding (the breed
 and MCEF (renders the console - without it you get a polite install prompt).
 
 Modrinth: <MODRINTH LINK HERE>
-Source (MIT): https://github.com/DonaldGallianoIII/pokemon-prediction
+Source (MIT): https://github.com/DonaldGallianoIII/GreenerPastures
 
 It's a beta - I'd genuinely love bug reports and balance feedback. Everything I fix goes
 out fast. Enjoy the pastures. 🌱
