@@ -27,6 +27,20 @@ currency behind rented Daemon buffs, breeding augments, and 17 hidden rituals.
 Full feature tour: the Modrinth page, or [`docs/dev/SHOWCASE.md`](docs/dev/SHOWCASE.md).
 Player-facing changelog: [`CHANGELOG.md`](CHANGELOG.md).
 
+## Screenshots
+
+*Wire your breeding line like a lab - filters, sinks, and live shiny odds:*
+
+![The Notebook's node graph - two Wooloo parents wired through IV/EV/nature/shiny filters into the BioBank](docs/media/VisusalScriptingWooloo.png)
+
+| | |
+|---|---|
+| ![BioBank - 512 eggs, sortable by any stat](docs/media/BioBankFroakie.png) *The BioBank - eggs as data* | ![The Augmenter - breeding meta as installable Kernel augments](docs/media/NetheriteAugmenter.png) *The Augmenter - breeding meta, in the UI* |
+| ![The Daemon - rented buffs beyond vanilla enchant caps](docs/media/DaemonCompiler.png) *The Daemon - buffs beyond vanilla caps* | ![The Harvester - passive drops with real item art](docs/media/DropsTab.png) *The Harvester - your pastures, farming for you* |
+| ![17 hidden rituals, each teased only by a riddle](docs/media/Rits.png) *17 hidden rituals, riddles only* | ![Prize Counter and the High Roller Room](docs/media/GameCornerShop.png) *Prize Counter + the High Roller Room* |
+| ![DAEMON FLIP - full Voltorb Flip with PMD portraits](docs/media/FlipGameCorner.png) *DAEMON FLIP - deduction and heartbreak* | ![QUICK CLAW - tag the WANTED runner in the crowd](docs/media/GameCornerWanted.png) *QUICK CLAW - tag the runner* |
+| ![SLOTS - three portrait reels, enumerable RTP](docs/media/SlotsGameCorner.png) *SLOTS - honestly rigged (95%, unit-tested)* | ![Specimen Disks - archive party mons losslessly](docs/media/DataStoragePokesTab.png) *Specimen Disks - your mons, as data* |
+
 ## Repo layout
 
 This is a working monorepo - Greener Pastures is the headline, the rest is the workshop around it.
