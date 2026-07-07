@@ -177,6 +177,24 @@ const CSS = `
 .sl-pay-row{ display:flex; align-items:center; gap:4px; }
 .sl-pay img{ width:16px; height:16px; image-rendering:pixelated; }
 .sl-pay-x{ color:var(--cyan); font-weight:700; margin-left:auto; }
+.vc-stage{ display:flex; flex-direction:column; align-items:center; gap:14px; padding:20px 26px;
+  border:1px solid var(--line2); border-radius:12px; background:linear-gradient(180deg,#0e141c 0%,#0b1017 100%);
+  min-width:380px; }
+.vc-card{ width:120px; height:120px; border:2px solid var(--line2); border-radius:12px; background:var(--slot);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  animation:vcFlip .4s cubic-bezier(.4,1.4,.5,1); }
+@keyframes vcFlip{ from{ transform:rotateY(90deg) scale(.8); opacity:0; } to{ transform:none; opacity:1; } }
+.vc-card img{ width:64px; height:64px; image-rendering:pixelated; }
+.vc-card-name{ font-size:10px; color:var(--muted); }
+.vc-happy{ border-color:var(--grn); box-shadow:0 0 16px rgba(70,200,120,.35); }
+.vc-sour{ border-color:#ff6b81; box-shadow:0 0 18px rgba(255,107,129,.45); animation:vcFlip .4s, tlBlink .4s steps(2) 4; }
+.vc-idle{ color:var(--dim); font-size:40px; }
+.vc-pot{ font-size:26px; font-weight:800; color:var(--amber); letter-spacing:1px; }
+.vc-history{ display:flex; gap:4px; flex-wrap:wrap; justify-content:center; max-width:420px; min-height:26px; }
+.vc-history img{ width:24px; height:24px; image-rendering:pixelated; border-radius:4px; border:1px solid var(--line2); }
+.vc-history img.sour{ border-color:#ff6b81; filter:saturate(1.3); }
+.vc-odds{ font-size:11px; color:var(--dim); display:flex; gap:14px; }
+.vc-odds b{ color:var(--cyan); }
 .gc-offer-row{ display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
 .gc-price{ font-size:11px; font-weight:700; color:var(--amber); }
 .tl-console{ width:min(860px,97%); margin:0 auto; padding:12px; border:1px solid var(--line2); border-radius:10px;
@@ -1817,6 +1835,7 @@ function GameCorner() {
   if (cabinet === 'tl') return <TreelineCabinet onBack={() => setCabinet(null)} />
   if (cabinet === 'td') return <TopDeckCabinet onBack={() => setCabinet(null)} />
   if (cabinet === 'sl') return <SlotsCabinet onBack={() => setCabinet(null)} />
+  if (cabinet === 'vc') return <VibeCheckCabinet onBack={() => setCabinet(null)} />
   const coins = d?.gcoins ?? 0
   const shop = d?.shop
   const left = shop ? Math.max(0, Math.floor((shop.endsAt - now) / 1000)) : 0
@@ -1845,6 +1864,10 @@ function GameCorner() {
           <button className="tl-cab" onClick={() => setCabinet('sl')}>
             <span className="tl-cab-name">SLOTS</span>
             <span className="tl-cab-sub">cabinet 04 · the classic · three voltorb pays 100x</span>
+          </button>
+          <button className="tl-cab" onClick={() => setCabinet('vc')}>
+            <span className="tl-cab-name">VIBE CHECK</span>
+            <span className="tl-cab-sub">cabinet 05 · free to play · happy doubles · one frown torches it</span>
           </button>
         </div>
         {shop && (
@@ -2205,6 +2228,72 @@ function TopDeckCabinet({ onBack }) {
           {phase === 'lost' && !d?.mercy?.available && (
             <button className="btn go" onClick={() => setPhase('reveal')}>NEXT</button>
           )}
+        </footer>
+        <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
+      </div>
+    </div>
+  )
+}
+
+// ── VIBE CHECK (cabinet 05): the free press-your-luck deck. 12 cards, 4 sour, pot doubles per
+// happy face. Server owns the shuffle; drawn cards are all the client ever sees. ──
+function VibeCheckCabinet({ onBack }) {
+  const d = useChannel('vibe')
+  const a = useChannel('arcade')
+  const coins = a?.gcoins ?? 0
+  const drawn = d?.drawn || []
+  const last = drawn[drawn.length - 1]
+  const active = d?.active
+  const pot = d?.pot ?? 0
+  const sourLeft = d?.sourLeft ?? 4
+  const remaining = d?.remaining ?? 12
+  const odds = remaining > 0 ? Math.round((sourLeft / remaining) * 100) : 0
+  const busted = d?.over && !d?.won
+  const banked = d?.over && d?.won
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="tl-console">
+        <header className="tl-head">
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn" onClick={onBack} title="back to the Game Corner lobby">‹</button>
+            <div className="tl-title">
+              <span className="tl-title-main">VIBE CHECK</span>
+              <span className="tl-title-sub">game corner · cabinet 05 · free deck · read the room</span>
+            </div>
+          </div>
+          <div className="tl-meters">
+            <div className="tl-meter"><span className="tl-meter-label">PURSE</span>
+              <span className="tl-meter-val">🪙 {fmt(coins)}</span></div>
+          </div>
+        </header>
+        <div className="vc-stage">
+          {last
+            ? <div key={drawn.length} className={`vc-card${last.happy ? ' vc-happy' : ' vc-sour'}`}>
+                <img src={cardArt(last.s, last.e)} alt="" draggable={false} />
+                <span className="vc-card-name">{cap1(last.s)} · {last.e.replace(/_/g, ' ')}</span>
+              </div>
+            : <div className="vc-card"><span className="vc-idle">◆</span></div>}
+          <span className="vc-pot">{busted ? 'TORCHED' : `🪙 ${fmt(pot)}`}</span>
+          <div className="vc-odds">
+            <span>cards left <b>{active ? remaining : '-'}</b></span>
+            <span>frowns hiding <b>{active ? sourLeft : '-'}</b></span>
+            <span>next draw sours <b>{active ? odds + '%' : '-'}</b></span>
+          </div>
+          <div className="vc-history">
+            {drawn.map((c, i) => <img key={i} className={c.happy ? '' : 'sour'} src={cardArt(c.s, c.e)} alt="" title={`${cap1(c.s)} · ${c.e}`} />)}
+          </div>
+        </div>
+        <div className={`tl-log${banked ? ' tl-log-win' : ''}${busted ? ' tl-log-lose' : ''}`}>
+          <span className="tl-log-prompt">&gt;</span> {!d || (!active && !d.over) ? 'a free deck · 8 smiles, 4 frowns · how greedy are you?'
+            : busted ? `${cap1(last?.s)} was NOT vibing · the pot is ash · deal again (still free)`
+            : banked ? `banked ${fmt(d.payout)} Coins · the deck respects restraint${drawn.length === 8 ? ' (FULL CLEAR!)' : ''}`
+            : pot === 0 ? 'deck is live · first draw is on the house (they all are)'
+            : `pot rides at ${fmt(pot)} · next smile makes it ${fmt(pot * 2)}`}
+        </div>
+        <footer className="tl-controls">
+          {(!d || !active) && <button className="btn go" onClick={() => send('vibe', 'VIBE_NEW', {})}>SHUFFLE THE DECK · free</button>}
+          {active && <button className="btn go" onClick={() => send('vibe', 'VIBE_DRAW', {})}>DRAW</button>}
+          {active && pot > 0 && <button className="btn" onClick={() => send('vibe', 'VIBE_CASH', {})}>CASH OUT · 🪙 {fmt(pot)}</button>}
         </footer>
         <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
       </div>

@@ -43,6 +43,9 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int SLOTS_SPIN = 26;       // Game Corner cabinet 4: amount = bet per pull
     public static final int TOPDECK_MERCY = 27;    // Game Corner cabinet 3: start the free memory check
     public static final int TOPDECK_MERCY_PICK = 28; // Game Corner cabinet 3: arg = chosen emotion
+    public static final int VIBE_NEW = 29;         // Game Corner cabinet 5: shuffle the free deck
+    public static final int VIBE_DRAW = 30;        // Game Corner cabinet 5: flip the next card
+    public static final int VIBE_CASH = 31;        // Game Corner cabinet 5: bank the pot
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

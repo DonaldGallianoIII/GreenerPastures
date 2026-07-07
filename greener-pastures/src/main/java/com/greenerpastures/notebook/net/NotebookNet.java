@@ -108,6 +108,8 @@ public final class NotebookNet {
             new java.util.concurrent.ConcurrentHashMap<>();
     private static final Map<UUID, com.greenerpastures.arcade.TopDeck.Round> topdeckRounds =
             new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<UUID, com.greenerpastures.arcade.VibeCheck.Round> vibeRounds =
+            new java.util.concurrent.ConcurrentHashMap<>();
     /** Last SLOTS spin per player, seq-numbered so the client can animate each fresh pull. */
     private static final Map<UUID, long[]> slotsLast =    // {seq, bet, paid, f0, f1, f2}
             new java.util.concurrent.ConcurrentHashMap<>();
@@ -122,6 +124,7 @@ public final class NotebookNet {
         treelineRounds.remove(player);
         topdeckRounds.remove(player);
         slotsLast.remove(player);
+        vibeRounds.remove(player);
     }
 
     /** A TOP DECK wager is debited at deal time, so a live round dying with the connection must
@@ -135,7 +138,7 @@ public final class NotebookNet {
     }
 
     /** Reset per-server-session state - called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); topdeckRounds.clear(); slotsLast.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); topdeckRounds.clear(); slotsLast.clear(); vibeRounds.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -164,6 +167,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookTreelineS2C.ID, NotebookTreelineS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookTopdeckS2C.ID, NotebookTopdeckS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookSlotsS2C.ID, NotebookSlotsS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookVibeS2C.ID, NotebookVibeS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -222,6 +226,7 @@ public final class NotebookNet {
                 pushTreeline(player);
                 pushTopdeck(player);
                 pushSlots(player);
+                pushVibe(player);
                 long nowMs = System.currentTimeMillis();
                 Long last = lastPrefetch.get(player.getUuid());
                 if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -374,6 +379,9 @@ public final class NotebookNet {
                 case NotebookActionC2S.TOPDECK_MERCY_PICK -> { topdeckMercyPick(player, p.arg()); pushTopdeck(player); pushArcade(player); }
                 case NotebookActionC2S.TOPDECK_CASHOUT -> { topdeckCashout(player); pushTopdeck(player); pushArcade(player); }
                 case NotebookActionC2S.SLOTS_SPIN -> { slotsSpin(player, p.amount()); pushSlots(player); pushArcade(player); }
+                case NotebookActionC2S.VIBE_NEW -> { vibeRounds.put(player.getUuid(), com.greenerpastures.arcade.VibeCheck.deal(new java.util.Random())); pushVibe(player); }
+                case NotebookActionC2S.VIBE_DRAW -> { vibeDraw(player); pushVibe(player); pushArcade(player); }
+                case NotebookActionC2S.VIBE_CASH -> { vibeCash(player); pushVibe(player); pushArcade(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1537,6 +1545,64 @@ public final class NotebookNet {
         slotsLast.put(player.getUuid(), new long[]{seq, bet, paid, reels[0], reels[1], reels[2]});
         GpLog.i("arcade", "sl_spin", "player", player.getUuid().toString(),
                 "bet", bet, "reels", reels[0] + "-" + reels[1] + "-" + reels[2], "paid", paid);
+    }
+
+    // ── VIBE CHECK (Game Corner cabinet #5 - the free deck, 2026-07-06). No wager: a tuned-small
+    // faucet where the drama is the deck's known 8/4 composition depleting under a doubling pot. ──
+
+    private static void vibeDraw(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var round = vibeRounds.get(player.getUuid());
+        var outcome = com.greenerpastures.arcade.VibeCheck.draw(round,
+                com.greenerpastures.arcade.TopDeckPool.EMOTIONS, new java.util.Random());
+        if (outcome == com.greenerpastures.arcade.VibeCheck.Outcome.SOUR) {
+            GpLog.i("arcade", "vibe_sour", "player", player.getUuid().toString(),
+                    "drawnBefore", round.drawn.size() - 1);
+        } else if (outcome == com.greenerpastures.arcade.VibeCheck.Outcome.HAPPY && round.over) {
+            com.greenerpastures.arcade.ArcadeStore.get(server).record(player.getUuid(), arcadeToday(),
+                    round.payout, com.greenerpastures.arcade.ArcadeStore.get(server).of(player.getUuid(), arcadeToday()).level);
+            GpLog.i("arcade", "vibe_clear", "player", player.getUuid().toString(), "paid", round.payout);
+        }
+    }
+
+    private static void vibeCash(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var round = vibeRounds.get(player.getUuid());
+        if (com.greenerpastures.arcade.VibeCheck.cashout(round) == com.greenerpastures.arcade.VibeCheck.Outcome.CASHED) {
+            com.greenerpastures.arcade.ArcadeStore.get(server).record(player.getUuid(), arcadeToday(),
+                    round.payout, com.greenerpastures.arcade.ArcadeStore.get(server).of(player.getUuid(), arcadeToday()).level);
+            GpLog.i("arcade", "vibe_cash", "player", player.getUuid().toString(),
+                    "paid", round.payout, "draws", round.drawn.size());
+        }
+    }
+
+    /** VIBE CHECK state: drawn cards only - the rest of the deck stays face-down on the server. */
+    public static void pushVibe(ServerPlayerEntity player) {
+        var round = vibeRounds.get(player.getUuid());
+        JsonObject root = new JsonObject();
+        root.addProperty("deckSize", com.greenerpastures.arcade.VibeCheck.DECK_SIZE);
+        root.addProperty("sourTotal", com.greenerpastures.arcade.VibeCheck.SOUR);
+        root.addProperty("active", round != null && !round.over);
+        if (round != null) {
+            JsonArray drawn = new JsonArray();
+            for (var c : round.drawn) {
+                JsonObject o = new JsonObject();
+                o.addProperty("s", c.species());
+                o.addProperty("e", c.emotion());
+                o.addProperty("happy", c.happy());
+                drawn.add(o);
+            }
+            root.add("drawn", drawn);
+            root.addProperty("pot", round.pot);
+            root.addProperty("remaining", round.remaining());
+            root.addProperty("sourLeft", round.sourRemaining());
+            root.addProperty("over", round.over);
+            root.addProperty("won", round.won);
+            root.addProperty("payout", round.payout);
+        }
+        sendGated(player, "vibe", new NotebookVibeS2C(GSON.toJson(root)));
     }
 
     /** SLOTS state: the symbol strip (static) + the seq-numbered last spin. */
