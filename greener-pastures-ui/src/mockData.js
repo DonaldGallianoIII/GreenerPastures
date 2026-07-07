@@ -86,7 +86,7 @@ export const MOCK = {
   },
   about: {
     version: '0.0.0-mock',
-    author: 'Deuce222XX',
+    author: 'DonaldGalliano',
     license: 'MIT',
     pmdArtists: 'Emmuffin, G〜, JFain, NOLASMOR, baronessfaron',
   },

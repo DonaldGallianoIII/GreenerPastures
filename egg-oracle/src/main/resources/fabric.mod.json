@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "EggOracle",
   "description": "A clean, configurable shiny-egg odds calculator for Cobblemon breeding. Set your server's shiny rate and Masuda multiplier, your pasture setup, and see your real per-egg odds, shinies-per-day, and time-to-shiny — in a modern popup, no inventory-slot UI.",
-  "authors": ["Deuce222XX"],
+  "authors": ["DonaldGalliano"],
   "license": "MIT",
   "environment": "client",
   "icon": "assets/eggoracle/icon.png",

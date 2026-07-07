@@ -339,7 +339,7 @@ public final class DsBridge {
         m.put("version", net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getModContainer("greenerpastures")
                 .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("dev"));
-        m.put("author", "Deuce222XX");
+        m.put("author", "DonaldGalliano");
         m.put("license", "MIT");
         m.put("pmdArtists", loadPmdArtists());
         aboutCache = m;

@@ -2118,7 +2118,7 @@ function AboutCard({ about }) {
       <div className="grn" style={{ fontWeight: 700, fontSize: 12, marginBottom: 4 }}>📖 About</div>
       <div style={{ fontSize: 11, lineHeight: 1.6, color: 'var(--text)' }}>
         <b>Greener Pastures - A Data Science Mod</b> · v{about?.version || '?'}
-        <br />Made by <b>{about?.author || 'Deuce222XX'}</b>, bred on a live Cobblemon server. {about?.license || 'MIT'} licensed:
+        <br />Made by <b>{about?.author || 'DonaldGalliano'}</b>, bred on a live Cobblemon server. {about?.license || 'MIT'} licensed:
         free forever, no paid tiers, and drop rates are baked in so no one can sell them back to you.
         <br />Built on Cobblemon · breeding by Cobbreeding · UI rendered with MCEF.
       </div>

@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "PokeSnack Planner",
   "description": "Client-side build overlay for Cobblemon poke_snack spawn towers. Lock a snack-column anchor and it shows the (-8,-8) home base to mine down to bedrock, the 17x17 spawn footprint where your platform goes, and the +/-64 vertical coverage band so one platform feeds the whole stack.",
-  "authors": ["Deuce222XX"],
+  "authors": ["DonaldGalliano"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": {

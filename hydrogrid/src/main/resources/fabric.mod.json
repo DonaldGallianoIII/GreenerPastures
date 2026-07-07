@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "HydroGrid",
   "description": "Client-side farmland-hydration overlay. Hold a water bucket to preview the 9x9 it irrigates, plus ghost markers for the next bucket on a seamless, zero-waste 9-block grid. Field Fill: give it two corners (type them with N, or stamp each with V in-world) and it marks every dig-and-place spot to irrigate the whole field with the minimum water, checking spots off as you fill them. Toggle with H.",
-  "authors": ["Deuce222XX"],
+  "authors": ["DonaldGalliano"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": {

@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "PastureKeeper",
   "description": "Stops tethered pasture Pokémon from spawning as wandering entities (per-pasture, server-lag fix) and collects their pasture drops into an accessible GUI. Breeding keeps running off the tethered data.",
-  "authors": ["Deuce222XX"],
+  "authors": ["DonaldGalliano"],
   "license": "MIT",
   "environment": "*",
   "entrypoints": {

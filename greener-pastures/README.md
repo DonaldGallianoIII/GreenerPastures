@@ -25,4 +25,4 @@ Cobblemon (and Cobbreeding for breeding features). Both are referenced **compile
 are **never bundled** — players install them separately.
 
 ## License
-MIT © Deuce222XX. Built for Cobblemon (MPL-2.0) and Cobbreeding (MIT) — thanks to those teams.
+MIT © DonaldGalliano. Built for Cobblemon (MPL-2.0) and Cobbreeding (MIT) — thanks to those teams.

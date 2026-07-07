@@ -119,7 +119,7 @@ Eggs are bagged and tagged: every voided egg is listed with the exact filter tha
 
 Nothing is bundled - install each as its own mod. Works in singleplayer and on dedicated servers (MCEF is only ever needed on clients).
 
-*MIT licensed. Built by Deuce222XX. Game Corner portraits: PMD Sprite Collab (fan-made, credited - CREDITS-PMD.md).*
+*MIT licensed. Built by DonaldGalliano. Game Corner portraits: PMD Sprite Collab (fan-made, credited - CREDITS-PMD.md).*
 
 ---
 
