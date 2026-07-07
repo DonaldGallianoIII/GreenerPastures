@@ -1,4 +1,4 @@
-# 🌱 Greener Pastures - Modrinth/CurseForge listing draft (rev 2026-07-06, post-Game-Corner)
+# 🌱 Greener Pastures - Modrinth/CurseForge listing draft (rev 2026-07-07, publish-day)
 
 > Paste-ready description for the mod page. Screenshots to capture during QA are marked 📸.
 
@@ -29,7 +29,7 @@ hoppers, no lag-farm entity soup.
 - Going big? Flip a pasture to **ghost mode** - the mons de-render entirely and keep breeding as
   pure data. Sixteen-pasture towers, zero entity soup, your TPS none the wiser.
 - Walk away: drops **and** eggs accrue while chunks are loaded and **catch up the instant you return**
-  (12h cap, online-time only - verified to the exact sweep, and honestly billed).
+  (12h catch-up cap by default, server-tunable, online-time only - verified to the exact sweep, and honestly billed).
 
 📸 *the node graph wiring a shiny filter into the BioBank*
 📸 *the Dashboard: live session stats, shiny sparkline, MissingNo. odometer*
@@ -68,9 +68,10 @@ fans twenty cards face-up, each wearing a random emotion portrait, slides them b
 survivor among strangers - up to five flips to find it, then a 2x / 6x / 20x let-it-ride ladder at a
 fixed, auditable 25% per rung; lose, and *Mercy* offers a free one-shot memory check (which face was
 that card wearing?) that refunds the wager and nothing more. **SLOTS** is the classic: three portrait
-reels, triple angry Voltorb pays 100x, and the return-to-player is a fixed, enumerable **457/512**
-(about 89%) - no config, no rigging, pinned by a unit test. **VIBE CHECK** is free to play: twelve
-cards, four sour; every happy face doubles the pot (128 max) while a live odds panel shows exactly
+reels, triple angry Voltorb pays 100x, any pair pays 1.5x, and the return-to-player is a fixed,
+enumerable **977/1024** (about 95% - a generous house, but still the house) - no config, no rigging,
+pinned by a unit test. **VIBE CHECK** is free to play: twelve
+cards, three sour; every happy face doubles the pot (512 max) while a live odds panel shows exactly
 how sour the next draw could be, and the first frown torches everything. **QUICK CLAW** is also
 free: an ambient crowd of real walk-cycle sprites ambles by, one WANTED runner sprints across - tag
 her and the payout scales with your reaction time, judged by the server on the click packet's
@@ -85,7 +86,10 @@ Counter** redeems them mobile-style: six shelves per player, stock rotating ever
 minutes, plus every purchase refreshes all the shelves on the spot. Shelf art is the real Minecraft
 item texture, the catalog runs to nearly 70 wares (effectively every Cobblemon held item), and the
 crown jewel is the **Mystery Egg**: 1200 coins for a random species egg with at least two perfect
-IVs and its hidden ability. Always.
+IVs and its hidden ability. Always. And below it all sits the **High Roller Room** - a fixed gold
+shelf of long-term goals: a Master Ball at 30,000, a **Prime Egg** at 8,000 (four perfect IVs +
+hidden ability), and the **Legend Specimen Disk** at 100,000 - a random implemented legendary or
+mythical, level 50, minted onto real tradeable specimen media. The season trophy.
 
 📸 *the six-cabinet lobby (each cabinet is a screenshot in its own right)*
 📸 *DAEMON FLIP mid-round - two happy flips and a nervous board*
