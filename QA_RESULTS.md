@@ -251,6 +251,13 @@ _(Per-finding detail — repro, expected/actual, log evidence, root-cause + fix 
 - **Fix:** prefetch now carries full stats (cheap at 1/min x ≤16 pastures; only snapshot capture stays full-gated) + the UI never warns while either gender is unknown. Commit `eaffef8`, in jar `757f7455`.
 - **Status:** 🚀 built - verify: open pasture config, idle 2+ min, stats stay populated and no false warning.
 
+### BUG-024 · 🔴 CRITICAL (pre-launch audit catch) · Pasture mutations had NO ownership gate - cross-player Kernel theft
+- **Repro:** Player B within 64 blocks of Player A's claimed pasture sends the KERNEL action -> A's slotted (fully-augmented) Kernel lands in B's inventory. NAME/PAIRINGS/graph-save equally open: rename, dissolve every breeding pair, wipe the routing graph. Found by the 2026-07-07 pre-publish Opus audit (3 auditors independently, 6/6 skeptic votes).
+- **Root cause:** onPastureAction/onGraphSave (NotebookNet) and onName/onPairings (PastureNet) gated only on distance + block-entity type; pd.owner was never compared to the acting player. Ownership was only consulted by CLAIM itself.
+- **Fix:** ownership gate on every mutating path in both handlers (claimed pasture -> operator only; unclaimed stays open for shared setup; CLAIM keeps its own refusal). Denied attempts log `action_denied`/`graph_denied` at WARN. Commit `3be0ba3`, jar `2985f6f0`. Same commit: harvest QA-override sweep-burst (breeder fix twinned + restamp), PastureNet claim now anchors offline-progress, QuickClaw win-message clobber.
+- **Status:** 🚀 built - verify: second account, try KERNEL/NAME/PAIRINGS on a claimed pasture -> refusal message + WARN log.
+- **Lesson:** distance is not authorization. Every C2S mutation needs an owner check at the handler, and twin handlers (Notebook vs wand GUI) must be swept TOGETHER - three of today's four audit fixes were "fixed one twin, forgot the other."
+
 <!-- TEMPLATE
 ### BUG-01 · 🟠 · Q## · <feature>
 - **Repro:** …
