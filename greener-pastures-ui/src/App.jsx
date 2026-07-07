@@ -2225,6 +2225,7 @@ function SlotsCabinet({ onBack }) {
   const [msg, setMsg] = useState('pick a bet · pull the lever')
   const [flash, setFlash] = useState('')              // '' | 'hit' | 'jack'
   const seqRef = useRef(0)
+  const finalRef = useRef([null, null, null])   // landed faces - refs are race-proof vs the cycle interval
   const timers = useRef([])
   const cycleRef = useRef(null)
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms))
@@ -2240,8 +2241,9 @@ function SlotsCabinet({ onBack }) {
     const stops = [700, 1300, 1900]
     d.reels.forEach((face, i) => {
       later(() => {
+        finalRef.current[i] = face
         setSpinning((sp) => sp.map((v, j) => (j === i ? false : v)))
-        setShown((sh) => sh.map((v, j) => (j === i ? face : v)))
+        setShown((sh) => sh.map((v, j) => (finalRef.current[j] != null ? finalRef.current[j] : v)))
         if (i === 2) {
           clearInterval(cycleRef.current)
           const paid = d.paid ?? 0
@@ -2258,21 +2260,19 @@ function SlotsCabinet({ onBack }) {
   const pull = () => {
     if (anySpin || coins < bet) return
     setSpinning([true, true, true])
+    finalRef.current = [null, null, null]
     setFlash('')
     setMsg('the reels hum...')
     clearInterval(cycleRef.current)
-    cycleRef.current = setInterval(() => {   // visual churn while we wait on the server
-      setShown((sh) => sh.map((v, i) => (spinningRefSafe()[i] ? (v + 1 + i) % Math.max(symbols.length, 1) : v)))
+    cycleRef.current = setInterval(() => {   // visual churn while we wait on the server; landed reels
+      // (finalRef set) are NEVER advanced - state-based checks raced React's batch and lied to Deuce once
+      setShown((sh) => sh.map((v, i) => (finalRef.current[i] == null ? (v + 1 + i) % Math.max(symbols.length, 1) : finalRef.current[i])))
     }, 70)
     send('slots', 'SLOTS_SPIN', { bet })
     later(() => {   // server refused (broke/guard)? unfreeze rather than spin forever
       if (seqRef.current === (d?.seq ?? 0)) { setSpinning([false, false, false]); clearInterval(cycleRef.current); setMsg('the machine coughs · no pull') }
     }, 4000)
   }
-  // interval closures need the live spinning state
-  const spinningLive = useRef(spinning); spinningLive.current = spinning
-  function spinningRefSafe() { return spinningLive.current }
-
   const payRows = [
     { faces: ['voltorb', 'voltorb', 'voltorb'], x: d?.paytable?.[0] ?? 100 },
     { faces: ['lechonk', 'lechonk', 'lechonk'], x: d?.paytable?.[1] ?? 15, note: 'any triple' },
