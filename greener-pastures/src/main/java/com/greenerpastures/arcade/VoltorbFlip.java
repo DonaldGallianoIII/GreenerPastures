@@ -27,16 +27,17 @@ public final class VoltorbFlip {
      *  fence returns by setting this back to a positive number (the old value was 1,024 - one kB a day). */
     public static final long DAILY_CAP = 0;
 
-    /** Per-level board mix {twos, threes, voltorbs} - a clear ramp; full-clear pots: 24 · 48 · 144 ·
-     *  288 · 864 · 1,728 · 5,184. */
+    /** Per-level board mix {twos, threes, voltorbs} - a clear ramp; full-clear pots: 36 · 72 · 216 ·
+     *  432 · 1,296 · 2,592 · 7,776. (Deuce 2026-07-07: "award a bit more" - one 2 swapped for a 3 per
+     *  level, so every pot is exactly 1.5x the old curve with IDENTICAL tile counts and difficulty.) */
     static final int[][] LEVELS = {
-            {3, 1, 6},
-            {4, 1, 7},
-            {4, 2, 8},
-            {5, 2, 8},
-            {5, 3, 9},
-            {6, 3, 10},
-            {6, 4, 10},
+            {2, 2, 6},
+            {3, 2, 7},
+            {3, 3, 8},
+            {4, 3, 8},
+            {4, 4, 9},
+            {5, 4, 10},
+            {5, 5, 10},
     };
 
     /** One live round. Tiles: 0 = Voltorb · 1/2/3 = multiplier. */

@@ -9,8 +9,8 @@ import java.util.Random;
 /**
  * <b>VIBE CHECK</b> - Game Corner cabinet #5 (Deuce, 2026-07-06): the free press-your-luck deck.
  * A {@link #DECK_SIZE}-card deck holds {@link #SOUR} sour faces; draw a HAPPY pokemon and the pot
- * doubles (1, 2, 4, ...), draw a sour one and the pot is gone. Cash out between draws; clearing
- * every happy card auto-cashes the max pot ({@code 2^(DECK_SIZE-SOUR-1)} = 128).
+ * doubles (2, 4, 8, ...), draw a sour one and the pot is gone. Cash out between draws; clearing
+ * every happy card auto-cashes the max pot ({@code 2^(DECK_SIZE-SOUR)} = 256).
  *
  * <p>FREE to play (no wager) - it's a coin faucet by design, tuned small: the known deck
  * composition makes every draw a real odds decision (4 sour in 12 to start; the deck depletes,
@@ -69,7 +69,7 @@ public final class VibeCheck {
             r.pot = 0;
             return Outcome.SOUR;
         }
-        r.pot = r.pot == 0 ? 1 : r.pot * 2;
+        r.pot = r.pot == 0 ? 2 : r.pot * 2;   // Deuce 2026-07-07: "award a bit more" - base 1 -> 2
         if (allHappyDrawn(r)) settle(r);   // only sour cards remain - nothing left to win, bank it
         return Outcome.HAPPY;
     }

@@ -64,7 +64,7 @@ class VoltorbFlipTest {
         assertNotNull(last);
         assertTrue(last.cleared(), "all 2s+3s flipped = cleared, with every 1 still face-down");
         assertEquals(expectedPot, last.coins());
-        assertEquals(2L * 2 * 2 * 2 * 3, expectedPot, "level 2 mix = x2^4 * x3 = 48");
+        assertEquals(2L * 2 * 2 * 3 * 3, expectedPot, "level 2 mix = x2^3 * x3^2 = 72");
     }
 
     @Test

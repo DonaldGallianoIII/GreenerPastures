@@ -45,11 +45,11 @@ class VibeCheckTest {
         for (long seed = 0; ; seed++) {
             VibeCheck.Round r = VibeCheck.deal(new Random(seed));
             if (drawOne(r) != VibeCheck.Outcome.HAPPY) continue;
-            assertEquals(1, r.pot);
-            if (drawOne(r) != VibeCheck.Outcome.HAPPY) continue;
             assertEquals(2, r.pot);
             if (drawOne(r) != VibeCheck.Outcome.HAPPY) continue;
             assertEquals(4, r.pot);
+            if (drawOne(r) != VibeCheck.Outcome.HAPPY) continue;
+            assertEquals(8, r.pot);
             break;
         }
         // and a sour start torches instantly
@@ -75,7 +75,7 @@ class VibeCheckTest {
             if (drawOne(r) != VibeCheck.Outcome.HAPPY) continue;
             assertEquals(VibeCheck.Outcome.CASHED, VibeCheck.cashout(r));
             assertTrue(r.over && r.won);
-            assertEquals(2, r.payout);
+            assertEquals(4, r.payout);
             assertEquals(VibeCheck.Outcome.INVALID, VibeCheck.cashout(r), "no double-dip");
             break;
         }
@@ -83,13 +83,13 @@ class VibeCheckTest {
 
     @Test
     void clearingEveryHappyCardAutoCashesTheMaxPot() {
-        long maxPot = 1L << (VibeCheck.DECK_SIZE - VibeCheck.SOUR - 1);
+        long maxPot = 1L << (VibeCheck.DECK_SIZE - VibeCheck.SOUR);
         boolean sawClear = false;
         for (long seed = 0; seed < 4000 && !sawClear; seed++) {
             VibeCheck.Round r = VibeCheck.deal(new Random(seed));
             while (!r.over) drawOne(r);
             if (r.won && r.drawn.stream().allMatch(VibeCheck.Card::happy)) {
-                assertEquals(maxPot, r.payout, "8 straight happy = 128");
+                assertEquals(maxPot, r.payout, "8 straight happy = 256");
                 assertEquals(VibeCheck.DECK_SIZE - VibeCheck.SOUR, r.drawn.size(), "auto-cash fires before a doomed draw");
                 sawClear = true;
             }
