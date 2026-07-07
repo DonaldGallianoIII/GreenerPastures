@@ -418,6 +418,8 @@ const CSS = `
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px; text-align:center; }
 .cell:hover{ border-color:#3a4960; }
 .cell .nm{ font-size:9px; color:var(--muted); line-height:1.1; word-break:break-word; }
+.cell .cell-art{ height:22px; display:flex; align-items:center; justify-content:center; }
+.cell .cell-art img{ width:20px; height:20px; image-rendering:pixelated; }
 .cell .ct{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text); }
 
 .plist{ width:200px; flex:none; overflow:auto; padding:8px; }
@@ -748,6 +750,7 @@ function InboxTab() {
 function Harvester() {
   const d = useChannel('storage')
   const inv = useChannel('inventory')
+  const icons = useChannel('icons')
   const items = d?.items
   const { list, total } = useMemo(() => {
     const list = Object.entries(items || {}).sort((a, b) => b[1] - a[1])
@@ -772,6 +775,9 @@ function Harvester() {
             <div key={id} className={`cell${ok ? '' : ' cell-full'}`} title={ok ? `${id} · L: one · ⇧: stack · R: all` : `${id} · inventory full - make room to pull`}
               onClick={(ev) => { if (ok) send('storage', shiftHeld(ev) ? 'PULL_STACK' : 'PULL_ONE', { item: id }) }}
               onContextMenu={(ev) => { ev.preventDefault(); if (ok) send('storage', 'PULL_ID', { item: id }) }}>
+              <span className="cell-art">{icons?.[id]
+                ? <img src={icons[id]} alt="" draggable={false} />
+                : <span style={{ color: 'var(--muted)' }}>◇</span>}</span>
               <span className="ct">{compact(n)}</span>
               <span className="nm">{shortId(id)}</span>
             </div>
@@ -2699,6 +2705,7 @@ function SlotsCabinet({ onBack }) {
 function RitualsTab() {
   const d = useChannel('rituals')
   const inv = useChannel('inventory')
+  const icons = useChannel('icons')
   const learned = d?.learned || []
   const hidden = d?.hidden ?? 0
   const loot = d?.loot || {}
@@ -2787,6 +2794,9 @@ function RitualsTab() {
             <div key={id} className={`cell${ok ? '' : ' cell-full'}`} title={ok ? `${id} · L: one · ⇧: stack · R: all` : `${id} · inventory full`}
               onClick={(ev) => { if (ok) send('storage', 'RITUAL_PULL', { item: id, mode: shiftHeld(ev) ? 1 : 0 }) }}
               onContextMenu={(ev) => { ev.preventDefault(); if (ok) send('storage', 'RITUAL_PULL', { item: id, mode: 2 }) }}>
+              <span className="cell-art">{icons?.[id]
+                ? <img src={icons[id]} alt="" draggable={false} />
+                : <span style={{ color: 'var(--muted)' }}>◇</span>}</span>
               <span className="ct">{compact(n)}</span>
               <span className="nm">{shortId(id)}</span>
             </div>

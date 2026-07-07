@@ -353,30 +353,43 @@ public final class DsBridge {
     private static String lastIconSource = "";
     private static Map<String, String> iconsSnapshot = Map.of();
 
+    private static java.util.Set<String> knownStorageIds = java.util.Set.of();
+
     private static Object iconsData() {
+        boolean grew = false;
         String src = NotebookState.arcadeJson;
-        if (src == null || src.isEmpty()) return iconsSnapshot.isEmpty() ? null : iconsSnapshot;
-        if (!src.equals(lastIconSource)) {
+        if (src != null && !src.isEmpty() && !src.equals(lastIconSource)) {
             lastIconSource = src;
             try {
                 var root = GSON.fromJson(src, com.google.gson.JsonObject.class);
                 var shop = root == null ? null : root.getAsJsonObject("shop");
-                boolean any = false;
                 for (var arr : new com.google.gson.JsonArray[]{
                         shop == null ? null : shop.getAsJsonArray("offers"),
                         root == null ? null : root.getAsJsonArray("highroller")}) {
                     if (arr == null) continue;
-                    any = true;
+                    grew = true;
                     for (var el : arr) {
                         var id = el.getAsJsonObject().get("id");
                         if (id != null) iconCache.computeIfAbsent(id.getAsString(), DsBridge::resolveItemIcon);
                     }
                 }
-                if (any) iconsSnapshot = Map.copyOf(iconCache);
             } catch (Throwable t) {
                 GpLog.d("bridge", "icons_err", "err", String.valueOf(t));
             }
         }
+        // Harvester storage too (Deuce 2026-07-07: "the trick we did in the gaming corner for the harvester") -
+        // resolve whatever ids the storage snapshot holds; the cache dedups, so re-sweeps cost nothing.
+        Map<String, Long> st = NotebookState.storage;
+        if (!st.isEmpty() && !knownStorageIds.equals(st.keySet())) {
+            knownStorageIds = java.util.Set.copyOf(st.keySet());
+            try {
+                for (String id : knownStorageIds) iconCache.computeIfAbsent(id, DsBridge::resolveItemIcon);
+                grew = true;
+            } catch (Throwable t) {
+                GpLog.d("bridge", "icons_err", "err", String.valueOf(t));
+            }
+        }
+        if (grew) iconsSnapshot = Map.copyOf(iconCache);
         return iconsSnapshot.isEmpty() ? null : iconsSnapshot;
     }
 
