@@ -46,6 +46,7 @@ public final class BreedCommand {
     private static int set(CommandContext<ServerCommandSource> ctx, int seconds) {
         long ticks = seconds * 20L;
         MultiPairBreeder.testIntervalTicks = ticks;
+        MultiPairBreeder.restampSchedules(ctx.getSource().getServer());
         GpLog.i("breeder", "test_interval", "seconds", seconds, "ticks", ticks);
         ctx.getSource().sendFeedback(() -> Text.literal("🥚 breeding override ON - every " + seconds
                 + "s per pair (" + ticks + " ticks; floor + Speed augment bypassed). /gp breed default to restore."), false);
@@ -54,6 +55,7 @@ public final class BreedCommand {
 
     private static int clear(CommandContext<ServerCommandSource> ctx) {
         MultiPairBreeder.testIntervalTicks = 0L;
+        MultiPairBreeder.restampSchedules(ctx.getSource().getServer());
         GpLog.i("breeder", "test_interval", "seconds", 0, "ticks", 0L);
         ctx.getSource().sendFeedback(() -> Text.literal("🥚 breeding override cleared - back to normal cadence."), false);
         return 1;

@@ -46,6 +46,21 @@ public final class MultiPairBreeder {
      *  baked into a world save. */
     public static volatile long testIntervalTicks = 0L;
 
+    /** {@code /gp breed interval}/{@code default} takes effect NOW: restamp every pasture's anchors so the
+     *  pending schedule (and any accrued catch-up gap) is discarded rather than replayed at the new rate.
+     *  Live 2026-07-07: override set mid-interval sat out the old 7.7-min timer, then burst ~115 broods. */
+    public static void restampSchedules(MinecraftServer server) {
+        PastureRegistry reg = PastureRegistry.get(server);
+        for (ServerWorld w : server.getWorlds()) {
+            long now = w.getTime();
+            for (PastureData pd : reg.inWorld(w).values()) {
+                if (pd.lastBreedTick > 0) pd.lastBreedTick = now;
+                pd.nextBreedTick = now;
+            }
+        }
+        reg.markDirty();
+    }
+
     /** Catch-up ceiling for missed broods (12h of world time) - mirrors PastureHarvest's drop catch-up. */
     private static final long MAX_CATCHUP_TICKS = 12L * 60L * 60L * 20L;
 
@@ -151,8 +166,10 @@ public final class MultiPairBreeder {
                     // full pipeline (shiny proc, Daemon graph, BioBank/void log, goals). Capped at 12h; offline
                     // gaps are gated out by OfflineProgress (online away-time counts, offline doesn't). broods=1
                     // is the normal loaded-chunk case.
+                    // Under the QA override the gap must NOT be re-priced at the test rate (a 7.7-min
+                    // gap / 80 ticks = a ~115-brood burst the instant the old timer expires - live 2026-07-07).
                     int broods = 1;
-                    if (pd.lastBreedTick > 0 && now > pd.lastBreedTick) {
+                    if (testIntervalTicks <= 0 && pd.lastBreedTick > 0 && now > pd.lastBreedTick) {
                         long gap = Math.min(now - pd.lastBreedTick, MAX_CATCHUP_TICKS);
                         broods = (int) Math.max(1, gap / Math.max(1L, interval));
                     }
