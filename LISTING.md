@@ -149,6 +149,8 @@ by species regardless), you're just playing the mod with the lights off.
 
 Nothing is bundled - install each as its own mod. Works in singleplayer and on dedicated servers (MCEF is only ever needed on clients).
 
+**Server operators**: `config/greenerpastures/pastures.json` → `maxCatchupHours` (default 12) caps how much away-from-the-chunk time pastures bank for breed/harvest catch-up. 0 disables catch-up; 168 max. It paces progression only - offline time never counts regardless.
+
 *MIT licensed. Built by DonaldGalliano. Game Corner art: PMD Sprite Collab - 500+ fan-made portraits + 23 walk sheets, 45 artists, credited in CREDITS-PMD.md, in the jar, and on the in-game About card. Enjoying it? There's an optional Ko-fi (ko-fi.com/donaldgallianoiii) on the About card - it buys nothing in-game, ever.*
 
 ---
