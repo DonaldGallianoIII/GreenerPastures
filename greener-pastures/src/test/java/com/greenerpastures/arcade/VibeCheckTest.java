@@ -89,7 +89,7 @@ class VibeCheckTest {
             VibeCheck.Round r = VibeCheck.deal(new Random(seed));
             while (!r.over) drawOne(r);
             if (r.won && r.drawn.stream().allMatch(VibeCheck.Card::happy)) {
-                assertEquals(maxPot, r.payout, "8 straight happy = 256");
+                assertEquals(maxPot, r.payout, "9 straight happy = 512");
                 assertEquals(VibeCheck.DECK_SIZE - VibeCheck.SOUR, r.drawn.size(), "auto-cash fires before a doomed draw");
                 sawClear = true;
             }

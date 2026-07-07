@@ -10,10 +10,10 @@ import java.util.Random;
  * <b>VIBE CHECK</b> - Game Corner cabinet #5 (Deuce, 2026-07-06): the free press-your-luck deck.
  * A {@link #DECK_SIZE}-card deck holds {@link #SOUR} sour faces; draw a HAPPY pokemon and the pot
  * doubles (2, 4, 8, ...), draw a sour one and the pot is gone. Cash out between draws; clearing
- * every happy card auto-cashes the max pot ({@code 2^(DECK_SIZE-SOUR)} = 256).
+ * every happy card auto-cashes the max pot ({@code 2^(DECK_SIZE-SOUR)} = 512).
  *
  * <p>FREE to play (no wager) - it's a coin faucet by design, tuned small: the known deck
- * composition makes every draw a real odds decision (4 sour in 12 to start; the deck depletes,
+ * composition makes every draw a real odds decision (3 sour in 12 to start; the deck depletes,
  * so the sour density CLIMBS as the pot doubles - that's the whole game).
  *
  * <p>Minecraft-free and server-authoritative: the shuffled deck order lives only here.
@@ -22,7 +22,7 @@ public final class VibeCheck {
     private VibeCheck() {}
 
     public static final int DECK_SIZE = 12;
-    public static final int SOUR = 4;
+    public static final int SOUR = 3;   // Deuce 2026-07-07: "putting frowns to 3 LOL" (was 4)
     public static final List<String> HAPPY_EMOTIONS = List.of("happy", "joyous");
     public static final List<String> SOUR_EMOTIONS = List.of("angry", "sad", "crying", "pain");
 

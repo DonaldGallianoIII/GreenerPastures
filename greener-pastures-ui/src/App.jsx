@@ -2510,7 +2510,7 @@ function QuickClawCabinet({ onBack }) {
   )
 }
 
-// ── VIBE CHECK (cabinet 05): the free press-your-luck deck. 12 cards, 4 sour, pot doubles per
+// ── VIBE CHECK (cabinet 05): the free press-your-luck deck. 12 cards, 3 sour, pot doubles per
 // happy face. Server owns the shuffle; drawn cards are all the client ever sees. ──
 function VibeCheckCabinet({ onBack }) {
   const d = useChannel('vibe')
@@ -2520,7 +2520,7 @@ function VibeCheckCabinet({ onBack }) {
   const last = drawn[drawn.length - 1]
   const active = d?.active
   const pot = d?.pot ?? 0
-  const sourLeft = d?.sourLeft ?? 4
+  const sourLeft = d?.sourLeft ?? 3
   const remaining = d?.remaining ?? 12
   const odds = remaining > 0 ? Math.round((sourLeft / remaining) * 100) : 0
   const busted = d?.over && !d?.won
@@ -2559,7 +2559,7 @@ function VibeCheckCabinet({ onBack }) {
           </div>
         </div>
         <div className={`tl-log${banked ? ' tl-log-win' : ''}${busted ? ' tl-log-lose' : ''}`}>
-          <span className="tl-log-prompt">&gt;</span> {!d || (!active && !d.over) ? 'a free deck · 8 smiles, 4 frowns · how greedy are you?'
+          <span className="tl-log-prompt">&gt;</span> {!d || (!active && !d.over) ? 'a free deck · 9 smiles, 3 frowns · how greedy are you?'
             : busted ? `${cap1(last?.s)} was NOT vibing · the pot is ash · deal again (still free)`
             : banked ? `banked ${fmt(d.payout)} Coins · the deck respects restraint${drawn.length === 8 ? ' (FULL CLEAR!)' : ''}`
             : pot === 0 ? 'deck is live · first draw is on the house (they all are)'
