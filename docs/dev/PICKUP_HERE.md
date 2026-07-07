@@ -1,96 +1,96 @@
-# 🎯 PICKUP_HERE - rewritten 2026-07-07 ~01:20 (Deuce went to bed; morning = maybe PUBLISH day)
+# 🎯 PICKUP_HERE - rewritten 2026-07-07 ~17:00 - PUBLISH DAY. IT SHIPPED.
 
-> **READ THIS WHOLE FILE FIRST** after /clear or compaction. Deuce's last words: "maybe tomorrow we
-> publish? he says as the massive scope creep looms above the bed like a sleep paralysis demon."
-> Translation: HOLD THE LINE ON FEATURES. The arcade is DONE. Tomorrow = QA pass + art + publish
-> tail. Do not accept a seventh cabinet before beta ships (gently).
+> **READ THIS WHOLE FILE FIRST** after /clear or compaction. (This file MOVED: it now lives at
+> `docs/dev/PICKUP_HERE.md` - repo root is public-facing.) Today Greener Pastures went from
+> "morning QA list" to **submitted to Modrinth, under review**. The work now is the LANDING, not
+> the building. Do not build features. Deuce's first release is in a moderator's queue.
 
 ## 0 · LIVE STATE RIGHT NOW
-- **Jar `85f61335` deployed IDENTICALLY to all 4 places**: CF instance mods/, BOTH Prism instances
-  (`/mnt/c/Users/deuce/AppData/Roaming/PrismLauncher/instances/GP-Masuda-QA{,-2}/.minecraft/mods/`),
-  WSL server `~/gp-qa-server/mods/`. Always deploy to ALL FOUR + md5-verify. Clients only when
-  tasklist.exe shows no javaw (ps in WSL CANNOT see Windows javaw!).
-- **Dedicated QA server RUNNING**, port 25565 (WSL IP 172.17.176.195 / Tailscale 100.95.66.88).
-  Logs: `~/gp-qa-server/gp-logs/latest.log` + `server-console.log`. Restart: kill pid on 25565 →
-  wait port free → `cd ~/gp-qa-server && nohup /home/donaldgalliano/jdks/jdk-21.0.11+10/bin/java
-  -Xmx4G -jar server.jar nogui > server-console.log 2>&1 & disown`. **TRAP**: my restart one-liners
-  left ZOMBIE watcher-shells all session (they wedge relaunches + my own Bash timeout once killed
-  the live server). Purged 2026-07-07 ~00:05. Keep restarts as SEPARATE short commands; wait for
-  the port with run_in_background, never a foreground until-loop.
-- **Monitor** (persistent) on gp-logs: all arcade events (clear/bust/cashout/tl_*/td_* incl mercy/
-  sl_spin/shop_buy/hr_buy missing? NO - hr_buy IS in filter? CHECK: filter covers discovered,
-  summon, clear, cashout, bust, cap_hit, tl_found, tl_lost, shop_buy, td_new, td_hit, td_miss,
-  td_cash, td_top, td_refund, td_mercy, td_mercy_won, td_mercy_lost, sl_spin - **hr_buy, vibe_*,
-  tag_* are NOT in the current filter** → re-arm with them added after compaction.
-- Git clean through `03df747`. **366 tests green.** Author = **DonaldGalliano** everywhere
-  (Deuce222XX is in-game only). Ko-fi live: ko-fi.com/donaldgallianoiii (About card + fabric.mod.json).
+- **Version `1.0.0-beta.1`** - tagged on GitHub, jar `fc1cb377` (`greenerpastures-1.0.0-beta.1.jar`)
+  deployed IDENTICALLY to all 4 installs (CF instance, both Prism GP-Masuda-QA{,-2}, WSL server
+  `~/gp-qa-server/mods/`) + server RUNNING on it (port 25565). **The jar FILENAME changed** - old
+  deploy scripts that copy `greenerpastures-0.1.0.jar` are stale; always rm-old + cp-new by name.
+- **Modrinth: SUBMITTED, UNDER REVIEW** (submitted ~16:10). Expect a few hours to ~48h. Deuce
+  filled the draft from `PUBLISH_KIT.md` + `MODRINTH_BODY.md` (working copies in
+  `Desktop/GreenerPasturesScreenshots/` alongside all 11 shots, `GALLERY_CAPTIONS.md`,
+  `gp_icon_512.png`, and the beta jar).
+  - **OPEN QUESTION: the slug.** `greener-pastures` was TAKEN (parked draft). Suggested fallbacks
+    were `greenerpastures` → `greener-pastures-cobblemon`. **Ask Deuce which one took**, then sync
+    it into LISTING/PUBLISH_KIT/README when the page goes live.
+  - If a moderator asks about the bundled art: PMD Sprite Collab, 100% fan-made verified
+    per-emotion/per-animation against credits.txt, zero CHUNSOFT rips ship, 45 artists credited
+    in CREDITS-PMD.md + in-jar pmd_credits.txt + the About card. Answer in the Moderation tab.
+- **GitHub: PUBLIC** - `github.com/DonaldGallianoIII/GreenerPastures` (renamed from
+  pokemon-prediction; old URLs redirect). MIT LICENSE at root; third-party jars (Cobbreeding,
+  fortunefix) PURGED from history via git filter-repo before flipping public. README = full
+  storefront: icon, pitch, 11-screenshot gallery (docs/media/), repo map, build steps.
+- **Branch law (Deuce's order, non-negotiable): ALL work on `dev`; `main` = Deuce-verified states
+  only** (docs-only changes may fast-forward main so the public page stays current). Currently
+  main == dev.
+- Monitor: the session's log monitor dies with the session. Re-arm post-compaction:
+  `bash <scratchpad>/gp-monitor.sh` shape - tail -F gp-logs/latest.log, grep the full arcade event
+  alternation + WARN/ERROR, with `queue_full` EXCLUDED (known-noisy under QA overrides).
 
-## 1 · THE GAME CORNER IS COMPLETE - SIX CABINETS + TWO SHOPS (all server-authoritative, all Coins)
-1. **DAEMON FLIP** (Voltorb Flip, PMD portraits, 7 levels persisted, bust drops a level)
-2. **TREELINE** (sweep trees, decoy arrows, PAY_PER_SWEEP **3** after Deuce's "cut a zero + half it" - max 30)
-3. **TOP DECK v2** (fan of 20 wearing random EMOTIONS → 1 survivor among strangers → 5 flips →
-   2x/6x/20x ladder → **Mercy**: free memory check, refunds wager only; td_refund on disconnect)
-4. **SLOTS** (pairs **1.5x floored** as of tonight, two-Voltorb 3x paid for it → RTP exactly
-   **977/1024 = 95.4%**, enumeration test re-pinned at bet 2; reel-display race FIXED - reels can
-   no longer show a face they didn't land)
-5. **VIBE CHECK** (free 12-card deck, 4 sour, pot doubles to 128 max, live odds panel, auto-cash on
-   8th smile; faucet by design, tuned small)
-6. **QUICK CLAW v2** (27 wanderers w/ stride variance + CONSTANT decoy-sprinter traffic 2-6s so the
-   target blends in; decoy runners never wear the wanted species = any poster-match IS her; server
-   judges click-packet ARRIVAL on nanoTime - unspoofable; 15→3 by reaction, pre-cog pays 0)
-- **Prize Counter**: 70 wares, real item textures (model-JSON resolver; Cobblemon nests textures!),
-  15-min rotation + refresh-on-every-buy (rolls persisted), double-click race guard, Mystery Egg
-  1200 (2 perfect IVs + HA), **charcoal_stick** not vanilla charcoal.
-- **HIGH ROLLER ROOM** (Q104, untested): fixed gold shelf - Master Ball 30k · Prime Egg 8k (4x31+HA)
-  · **Legend Specimen Disk 100k** (random implemented legendary/mythical Lv.50 minted onto real
-  specimen media via mintLegendMon; tooltip shows species; tradeable = server currency, on purpose).
-  Prices = my middle board; Deuce may retune after feeling post-nerf earn rates (~600-1200/hr).
-- Arcade art: **507 emotion portraits + 23 walk sheets, 45 artists**, ALL verified fan-made
-  per-emotion/per-animation (CHUNSOFT rule; Pikachu/Ditto/Eevee/Zapdos REJECTED as rips; Morpeko
-  hangry form + Malamar + Zeraora verified-legal for the future). CC-BY-NC note: some newer collab
-  entries are NC - fine for a free mod; revisit if Deuce enrolls in Modrinth payouts.
-- **SCRAPPED tonight**: the rhythm game (Deuce played his own recorder once: "this is not going to
-  be fun after a single playthrough"). WAV charter + recorder live in scratchpad/rhythm if ever revived.
+## 1 · WHAT SHIPPED TODAY (the whole arc, morning → submit)
+1. **Arcade QA swept green**: Q102 VIBE CHECK (shuffle proven honest over 25+ live rounds),
+   Q103 QUICK CLAW v3, Q104 High Roller (all 3 wares bought live; Legend Disk minted **Latios**).
+2. **Balance (Deuce directives)**: Daemon Flip pots ×1.5 (one 2→3 tile swap/level, difficulty
+   identical; L7 clear = 7,776) · VIBE CHECK base pot 1→2 AND frowns 4→3 (ceiling 512) ·
+   QUICK CLAW wanderers ×4 speed + sprinters ×3 (max 12 concurrent).
+3. **Icons everywhere**: High Roller shelf art (walk `highroller` array) · Prime Egg = generic
+   cobbreeding egg · block items via model parent-chain (froglight!) + side/all slot preference
+   (logs show bark not rings) · Harvester grid + ritual unclaimed-spoils grid show real item art.
+4. **Fixes**: BUG-022 slots reel verified live · **BUG-023 stats-clobber** (1-min prefetch
+   overwrote full pasture rosters with zeros → false "can't breed"; prefetch now carries stats +
+   UI never warns on unknown gender) · breeder AND harvest QA-override twin fixes (immediate
+   effect + no catch-up re-pricing; the 115-brood/43k-sweep bursts) · `/gp coins add` (QA-mode
+   only) · **pastures.json** operator config (maxCatchupHours, 0-168, both catch-ups).
+5. **The audit saga (READ THIS LESSON)**: 26-agent Opus audit → 7 confirmed findings → I shipped
+   4 fixes → the ownership gate collided with Deuce's two-account test + a sick CF fat-pack
+   instance (FancyMenu cursor GL errors) + an account-window mixup → an hour of "everything is
+   fucked" fog → **full revert** (byte-identical rollback proved it) → GitHub was born from the
+   scare. Findings live as documentation in QA_RESULTS (BUG-024). **The operator claim is
+   BILLING, not an ACL** - any future pasture lock is opt-in and co-designed with Deuce first.
+   Also: 3 of 4 audit fixes were "patched one twin, forgot the other" - sweep sibling handlers.
+6. **owo-ui RETIRED** (Deuce: "rip it away completely"): NotebookScreen (690 lines) deleted,
+   owo-lib dropped from gradle + fabric.mod.json (one less user dependency); no-MCEF now shows
+   `InstallMcefScreen` (vanilla screen: explanation + Modrinth link button). MCEF is THE console.
+7. **Release**: 369 tests · version bump → clean build → Deuce smoke-tested → main merged +
+   tagged `v1.0.0-beta.1` → Modrinth draft (description = MODRINTH_BODY, gallery = 11 shots incl.
+   Deuce's locked-riddles Rituals shot, icon = **Deuce's own SVG** converted via cairosvg) →
+   SUBMITTED. Docs (LISTING/SHOWCASE/CHANGELOG) all current with today's numbers.
 
-## 2 · MORNING QUEUE (in order)
-1. **Arcade QA sweep** - what's verified vs not:
-   - ✅ live-verified: VF clear/bust/clamp/cashout; Treeline payout curve + nerf + tl_lost taunt;
-     shop debits + rolls-refresh + real item art (Deuce screenshot); TOP DECK v2 full loop incl
-     Mercy WON refund (Cramorant, 200 back) + td_refund on disconnect; slots paytable math + reel
-     display fix confirmed by Deuce.
-   - ☐ NOT yet eyeballed: **Q102 VIBE CHECK** (whole cabinet), **Q103 QUICK CLAW v2** (traffic feel
-     + fairness + tag_click log), **Q104 HIGH ROLLER** (all three wares; legend disk release!),
-     slots jackpot flash (1/512, optional), Mystery Egg hatch check (2x31+HA), 15-min window turn.
-2. **Old stragglers**: Q82 Summit ritual · BUG-019 Lucky Egg no-glow · BUG-020 disc chips ·
-   Q61 📸 (LISTING wants 8-10 shots now - cabinets are prime material).
-3. **Launch tail**: icon 128² → screenshots → **version bump 1.0.0-beta.1 LAST** (gradle.properties;
-   renames jar!) → Modrinth publish per LISTING.md checklist (slug greener-pastures, dono field =
-   the Ko-fi, dependency tags). SHOWCASE/LISTING/CHANGELOG refreshed tonight by doc agent + count
-   sync (366 tests... files say 363 - bump if touched anyway).
-4. If Deuce pitches cabinet #7: point at the sleep paralysis demon and smile.
+## 2 · THE LANDING QUEUE (in order)
+1. **Check Modrinth review status** each session (project page → status / Moderation tab /
+   notifications). Answer moderator questions promptly (PMD art answer above).
+2. **On APPROVAL**, in order: swap README's "Modrinth: under review" line for the real URL
+   (+ LISTING/PUBLISH_KIT slug refs) → Deuce posts the **Cobblemon Discord thread** (title + body
+   drafted verbatim in `PUBLISH_KIT.md` §6 - first-release blurb included; attach
+   VisusalScriptingWooloo, GameCornerShop, BioBankFroakie, Rits; drop the Modrinth link in the
+   marked slot) → pin the link in-thread → watch GitHub Issues (public now).
+3. **Beta-feedback posture**: fixes ship fast on `dev`, main advances on Deuce's blessing,
+   versions go beta.2, beta.3... (bump = gradle.properties, renames jar).
+4. Later, unhurried: CurseForge + Cobbleverse ports (same kit) · the shelved backlog below.
 
-## 3 · TONIGHT'S BUG LEDGER (all fixed + deployed)
-BUG-022 slots reel displayed a face it never landed (anim race; landed-face ref) · QUICK CLAW
-mount-at-destination x2 (nobody moved; Amblers + wait-phase runner mount) · house-deck label clip ·
-uneven cabinet cards (250x96 uniform) · vanilla-charcoal-gate (charcoal_stick) · icon resolver flat
-paths (Cobblemon nests: follow models/item/*.json layer0) · Treeline printer (60→3) · pairs-1.5x
-naive flip would've been player-favored 103.6% (two-Volt 5→3 funds it).
+## 3 · SHELVED (do not resurrect without Deuce)
+Reverted audit findings (QA_RESULTS BUG-024 - opt-in pasture lock needs co-design) · SprintTag
+scripted-client timing (accepted for beta: free cabinet, closed coins) · Q82 Summit ritual ·
+BUG-019 Lucky Egg glow · BUG-020 disc chips · gp-dev-backlog memory (field-guide removal,
+echo/amethyst farmability, repel items) · snack-repellent seasonings (Deuce owes ingredient pick).
 
-## 4 · TRAPS (all previously bitten, all still armed)
-cwd resets between Bash calls BUT persists within a call - npm run build in wrong cwd ships STALE
-HTML silently (bitten TWICE tonight; always cd greener-pastures-ui && verify output path) · gradle
-"up-to-date" after failed npm = stale jar · Windows javaw invisible to WSL ps (use tasklist.exe) ·
-zombie restart watchers (see §0) · jar-over-running-game · em dashes forbidden · § literals fine in
-NotebookNet · Edit tool needs exact match - python scripts with count asserts are the reliable path ·
-GitHub raw 429s (backoff) · client packet-shape changes need BOTH sides swapped together.
+## 4 · TRAPS (all previously bitten)
+Deploy by NEW jar name (beta.1), all four + md5, clients only when tasklist.exe shows no javaw
+(WSL ps can't see Windows) · npm build cwd resets BETWEEN Bash calls (stale-HTML ships silently)
+· server restarts = separate short commands, background port-waits, NEVER foreground until-loops
+(zombie watchers once killed the live server) · python-with-count-asserts over Edit for big files
+· em dashes forbidden in player-facing strings · balance directives arrive as jokes and are REAL
+· two MC windows open = verify WHICH account before diagnosing "data loss" (usercache.json +
+"UUID of player" login lines are ground truth; today's lesson, learned twice) · the CF fat-pack
+instance has FancyMenu/MCEF/cursor issues that are NOT our mod.
 
-## 5 · DEUCE - tight replies · he tests, you watch logs + fix · offer boards with FULL descriptions
-(never bare Q-numbers) · no p2w, coins never convert to Data · hidden content stays hidden ·
-publishing as DonaldGalliano · "check" = read BOTH logs (CF singleplayer + server) · 💀 = affectionate
-· deploy clients only when MC closed · balance directives come as jokes ("cut a zero lmfao") and
-they are REAL directives.
-
-## 6 · DOCS: QA_PENDING (Q97-Q104 live board) · QA_RESULTS (BUG-001..021; add 022 row when touched) ·
-SHOWCASE/LISTING (agent-refreshed for 6 cabinets tonight; copies in Deuce's Desktop/DiscordTempSetup) ·
-CHANGELOG (6-cabinet era) · CREDITS-PMD (45 artists) · scratchpad/pmd (generators: gen_carddeck2,
-gen_crowd, fetch_emotions, fetch_walks - regenerate js+java TOGETHER, never hand-edit).
+## 5 · DEUCE
+First release EVER - he's proud and a little nervous; celebrate wins, keep replies tight ·
+publishing as **DonaldGalliano** (Deuce222XX in-game; alt = Phishing4Feebas) · he tests, you
+watch logs + fix · boards with FULL descriptions · no p2w, Coins never convert to Data · hidden
+content stays hidden · the GitHub avatar is the dog in the tie-dye bandana. The README no longer
+says so, but she supervised everything.
