@@ -79,4 +79,4 @@ community-run [PMD Sprite Collab](https://sprites.pmdcollab.org/) - **not** cove
 license, verified rip-free per emotion/animation, with all 45 artists credited in
 [`CREDITS-PMD.md`](CREDITS-PMD.md), inside the jar, and on the in-game About card.
 
-Built by **DonaldGalliano**, under the supervision of a small dog in a tie-dye bandana.
+Built by **DonaldGalliano**.
