@@ -91,6 +91,8 @@ export const MOCK = {
       'dedenne', 'rockruff', 'hatenna', 'toxel', 'sinistea', 'wooloo', 'axew', 'goomy', 'mimikyu', 'zorua'],
   },
   icons: {},
+  slots: { symbols: ['voltorb', 'lechonk', 'applin', 'snom', 'yamper', 'dedenne', 'mimikyu', 'morpeko'],
+    minBet: 5, maxBet: 100, paytable: [100, 15, 5, 1] },
   about: {
     version: '0.0.0-mock',
     author: 'DonaldGalliano',

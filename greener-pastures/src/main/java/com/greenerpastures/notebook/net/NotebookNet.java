@@ -108,6 +108,9 @@ public final class NotebookNet {
             new java.util.concurrent.ConcurrentHashMap<>();
     private static final Map<UUID, com.greenerpastures.arcade.TopDeck.Round> topdeckRounds =
             new java.util.concurrent.ConcurrentHashMap<>();
+    /** Last SLOTS spin per player, seq-numbered so the client can animate each fresh pull. */
+    private static final Map<UUID, long[]> slotsLast =    // {seq, bet, paid, f0, f1, f2}
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     public static void onDisconnect(UUID player) {
         lastPush.remove(player);
@@ -118,6 +121,7 @@ public final class NotebookNet {
         arcadeBoards.remove(player);
         treelineRounds.remove(player);
         topdeckRounds.remove(player);
+        slotsLast.remove(player);
     }
 
     /** A TOP DECK wager is debited at deal time, so a live round dying with the connection must
@@ -131,7 +135,7 @@ public final class NotebookNet {
     }
 
     /** Reset per-server-session state - called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); topdeckRounds.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); topdeckRounds.clear(); slotsLast.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -159,6 +163,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookArcadeS2C.ID, NotebookArcadeS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookTreelineS2C.ID, NotebookTreelineS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookTopdeckS2C.ID, NotebookTopdeckS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookSlotsS2C.ID, NotebookSlotsS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -216,6 +221,7 @@ public final class NotebookNet {
                 pushArcade(player);
                 pushTreeline(player);
                 pushTopdeck(player);
+                pushSlots(player);
                 long nowMs = System.currentTimeMillis();
                 Long last = lastPrefetch.get(player.getUuid());
                 if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -365,6 +371,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.TOPDECK_NEW -> { topdeckNew(player, p.amount()); pushTopdeck(player); pushArcade(player); }
                 case NotebookActionC2S.TOPDECK_GUESS -> { topdeckGuess(player, p.arg()); pushTopdeck(player); pushArcade(player); }
                 case NotebookActionC2S.TOPDECK_CASHOUT -> { topdeckCashout(player); pushTopdeck(player); pushArcade(player); }
+                case NotebookActionC2S.SLOTS_SPIN -> { slotsSpin(player, p.amount()); pushSlots(player); pushArcade(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1454,7 +1461,62 @@ public final class NotebookNet {
         sendGated(player, "topdeck", new NotebookTopdeckS2C(GSON.toJson(root)));
     }
 
-    /** TREELINE state: layout always; contents only where swept; the target's tree only once over. */
+    // ── SLOTS (Game Corner cabinet #4 - "the classic", 2026-07-06). One action per pull:
+    // debit, roll three uniform faces, pay the enumerable paytable. RTP 457/512. ──
+
+    private static void slotsSpin(ServerPlayerEntity player, int bet) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        if (!com.greenerpastures.arcade.SlotMachine.betValid(bet)) {
+            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r this machine takes "
+                    + com.greenerpastures.arcade.SlotMachine.MIN_BET + " to "
+                    + com.greenerpastures.arcade.SlotMachine.MAX_BET + " Coins a pull."), false);
+            return;
+        }
+        var store = com.greenerpastures.arcade.ArcadeStore.get(server);
+        if (!store.trysSpend(player.getUuid(), arcadeToday(), bet)) {
+            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r not enough Coins - the machines await."), false);
+            return;
+        }
+        int[] reels = com.greenerpastures.arcade.SlotMachine.spin(new java.util.Random());
+        long paid = com.greenerpastures.arcade.SlotMachine.payout(reels, bet);
+        if (paid > 0) {
+            store.record(player.getUuid(), arcadeToday(), paid, store.of(player.getUuid(), arcadeToday()).level);
+        }
+        long[] prev = slotsLast.get(player.getUuid());
+        long seq = prev == null ? 1 : prev[0] + 1;
+        slotsLast.put(player.getUuid(), new long[]{seq, bet, paid, reels[0], reels[1], reels[2]});
+        GpLog.i("arcade", "sl_spin", "player", player.getUuid().toString(),
+                "bet", bet, "reels", reels[0] + "-" + reels[1] + "-" + reels[2], "paid", paid);
+    }
+
+    /** SLOTS state: the symbol strip (static) + the seq-numbered last spin. */
+    public static void pushSlots(ServerPlayerEntity player) {
+        JsonObject root = new JsonObject();
+        JsonArray symbols = new JsonArray();
+        for (String sy : com.greenerpastures.arcade.SlotMachine.SYMBOLS) symbols.add(sy);
+        root.add("symbols", symbols);
+        root.addProperty("minBet", com.greenerpastures.arcade.SlotMachine.MIN_BET);
+        root.addProperty("maxBet", com.greenerpastures.arcade.SlotMachine.MAX_BET);
+        JsonArray pay = new JsonArray();
+        pay.add(com.greenerpastures.arcade.SlotMachine.PAY_JACKPOT);
+        pay.add(com.greenerpastures.arcade.SlotMachine.PAY_TRIPLE);
+        pay.add(com.greenerpastures.arcade.SlotMachine.PAY_TWO_VOLT);
+        pay.add(com.greenerpastures.arcade.SlotMachine.PAY_PAIR);
+        root.add("paytable", pay);
+        long[] last = slotsLast.get(player.getUuid());
+        if (last != null) {
+            root.addProperty("seq", last[0]);
+            root.addProperty("bet", last[1]);
+            root.addProperty("paid", last[2]);
+            JsonArray reels = new JsonArray();
+            reels.add(last[3]); reels.add(last[4]); reels.add(last[5]);
+            root.add("reels", reels);
+        }
+        sendGated(player, "slots", new NotebookSlotsS2C(GSON.toJson(root)));
+    }
+
+    /** TREELINE state: layout always; contents only where swept; the target\'s tree only once over. */
     public static void pushTreeline(ServerPlayerEntity player) {
         var round = treelineRounds.get(player.getUuid());
         JsonObject root = new JsonObject();

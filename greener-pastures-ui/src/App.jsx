@@ -4,7 +4,7 @@
    wired to the live data contract (NOTEBOOK_DATA_CONTRACT.md) via the bridge SDK.
    Viewport-sized window; every tab reads its channel; buttons send actions.
    ============================================================ */
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
 import { CARD_POOL } from './carddeck.js'
 import { HAPPY, SAD, VOLTORB_ANGRY, HAPPY_KEYS, SAD_KEYS } from './pmdsprites.js'
@@ -149,6 +149,20 @@ const CSS = `
 .td-rung{ padding:2px 8px; border:1px solid var(--line2); border-radius:5px; }
 .td-rung.on{ border-color:var(--cyan); color:var(--cyan); font-weight:700; }
 .td-rung.done{ border-color:var(--grn); color:var(--grn); }
+.sl-machine{ display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px 22px;
+  border:1px solid var(--line2); border-radius:12px; background:linear-gradient(180deg,#10161f 0%,#0c1118 100%); }
+.sl-reels{ display:flex; gap:10px; }
+.sl-reel{ width:92px; height:92px; border:1px solid var(--line2); border-radius:9px; background:var(--slot);
+  display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+.sl-reel img{ width:64px; height:64px; image-rendering:pixelated; }
+.sl-reel-spin img{ filter:blur(2px) brightness(1.1); }
+.sl-reel-hit{ border-color:var(--grn); box-shadow:0 0 12px rgba(70,200,120,.4); }
+.sl-reel-jack{ border-color:var(--amber); box-shadow:0 0 16px rgba(255,180,84,.55); animation:tlBlink .5s steps(2) 6; }
+.sl-pay{ display:grid; grid-template-columns:auto auto; gap:3px 14px; font-size:10px; color:var(--muted);
+  border:1px solid var(--line2); border-radius:8px; padding:8px 12px; background:var(--inset); }
+.sl-pay-row{ display:flex; align-items:center; gap:4px; }
+.sl-pay img{ width:16px; height:16px; image-rendering:pixelated; }
+.sl-pay-x{ color:var(--cyan); font-weight:700; margin-left:auto; }
 .gc-offer-row{ display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
 .gc-price{ font-size:11px; font-weight:700; color:var(--amber); }
 .tl-console{ width:min(860px,97%); margin:0 auto; padding:12px; border:1px solid var(--line2); border-radius:10px;
@@ -1788,6 +1802,7 @@ function GameCorner() {
   if (cabinet === 'vf') return <VoltorbCabinet onBack={() => setCabinet(null)} />
   if (cabinet === 'tl') return <TreelineCabinet onBack={() => setCabinet(null)} />
   if (cabinet === 'td') return <TopDeckCabinet onBack={() => setCabinet(null)} />
+  if (cabinet === 'sl') return <SlotsCabinet onBack={() => setCabinet(null)} />
   const coins = d?.gcoins ?? 0
   const shop = d?.shop
   const left = shop ? Math.max(0, Math.floor((shop.endsAt - now) / 1000)) : 0
@@ -1800,7 +1815,7 @@ function GameCorner() {
           <span className="h">🎰 Game Corner</span>
           <span className="amb" style={{ fontWeight: 700 }}>🪙 {fmt(coins)} Coins</span>
         </div>
-        <div className="row" style={{ gap: 12 }}>
+        <div className="row" style={{ gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
           <button className="tl-cab" onClick={() => setCabinet('vf')}>
             <span className="tl-cab-name">DAEMON FLIP</span>
             <span className="tl-cab-sub">cabinet 01 · deduction · flip the happy ones</span>
@@ -1812,6 +1827,10 @@ function GameCorner() {
           <button className="tl-cab" onClick={() => setCabinet('td')}>
             <span className="tl-cab-name">TOP DECK</span>
             <span className="tl-cab-sub">cabinet 03 · card sharping · let it ride</span>
+          </button>
+          <button className="tl-cab" onClick={() => setCabinet('sl')}>
+            <span className="tl-cab-name">SLOTS</span>
+            <span className="tl-cab-sub">cabinet 04 · the classic · three voltorb pays 100x</span>
           </button>
         </div>
         {shop && (
@@ -2129,6 +2148,123 @@ function TopDeckCabinet({ onBack }) {
             <button className="btn go" onClick={ride}>LET IT RIDE ▸ {ladder[stage - 1]}x</button>
           </>)}
         </footer>
+        <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
+      </div>
+    </div>
+  )
+}
+
+// ── SLOTS (cabinet 04): the classic. Server rolls; the reels here are pure theater that lands
+// on the server result left-to-right. Voltorb (angry) is the jackpot face, obviously. ──
+function slSymbolArt(name) { return name === 'voltorb' ? VOLTORB_ANGRY : CARD_POOL[name] }
+
+function SlotsCabinet({ onBack }) {
+  const d = useChannel('slots')
+  const a = useChannel('arcade')
+  const coins = a?.gcoins ?? 0
+  const [bet, setBet] = useState(10)
+  const [spinning, setSpinning] = useState([false, false, false])
+  const [shown, setShown] = useState([1, 2, 3])       // face indices currently displayed
+  const [msg, setMsg] = useState('pick a bet · pull the lever')
+  const [flash, setFlash] = useState('')              // '' | 'hit' | 'jack'
+  const seqRef = useRef(0)
+  const timers = useRef([])
+  const cycleRef = useRef(null)
+  const later = (fn, ms) => timers.current.push(setTimeout(fn, ms))
+  useEffect(() => () => { timers.current.forEach(clearTimeout); clearInterval(cycleRef.current) }, [])
+
+  const symbols = d?.symbols || []
+  const anySpin = spinning.some(Boolean)
+
+  useEffect(() => {   // a fresh seq = a fresh server result → stop the reels on it, left to right
+    if (!d || !d.seq || d.seq === seqRef.current || !d.reels) return
+    seqRef.current = d.seq
+    setFlash('')
+    const stops = [700, 1300, 1900]
+    d.reels.forEach((face, i) => {
+      later(() => {
+        setSpinning((sp) => sp.map((v, j) => (j === i ? false : v)))
+        setShown((sh) => sh.map((v, j) => (j === i ? face : v)))
+        if (i === 2) {
+          clearInterval(cycleRef.current)
+          const paid = d.paid ?? 0
+          const jack = d.reels.every((f) => f === 0)
+          setFlash(paid > 0 ? (jack ? 'jack' : 'hit') : '')
+          setMsg(paid > 0
+            ? (jack ? `THREE VOLTORB · the machine screams · +${fmt(paid)} Coins` : `winner · +${fmt(paid)} Coins`)
+            : 'the house nods · again?')
+        }
+      }, stops[i])
+    })
+  }, [d])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pull = () => {
+    if (anySpin || coins < bet) return
+    setSpinning([true, true, true])
+    setFlash('')
+    setMsg('the reels hum...')
+    clearInterval(cycleRef.current)
+    cycleRef.current = setInterval(() => {   // visual churn while we wait on the server
+      setShown((sh) => sh.map((v, i) => (spinningRefSafe()[i] ? (v + 1 + i) % Math.max(symbols.length, 1) : v)))
+    }, 70)
+    send('slots', 'SLOTS_SPIN', { bet })
+    later(() => {   // server refused (broke/guard)? unfreeze rather than spin forever
+      if (seqRef.current === (d?.seq ?? 0)) { setSpinning([false, false, false]); clearInterval(cycleRef.current); setMsg('the machine coughs · no pull') }
+    }, 4000)
+  }
+  // interval closures need the live spinning state
+  const spinningLive = useRef(spinning); spinningLive.current = spinning
+  function spinningRefSafe() { return spinningLive.current }
+
+  const payRows = [
+    { faces: ['voltorb', 'voltorb', 'voltorb'], x: d?.paytable?.[0] ?? 100 },
+    { faces: ['lechonk', 'lechonk', 'lechonk'], x: d?.paytable?.[1] ?? 15, note: 'any triple' },
+    { faces: ['voltorb', 'voltorb'], x: d?.paytable?.[2] ?? 5 },
+    { faces: ['snom', 'snom'], x: d?.paytable?.[3] ?? 1, note: 'any pair' },
+  ]
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="tl-console">
+        <header className="tl-head">
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn" onClick={onBack} title="back to the Game Corner lobby">‹</button>
+            <div className="tl-title">
+              <span className="tl-title-main">SLOTS</span>
+              <span className="tl-title-sub">game corner · cabinet 04 · the classic</span>
+            </div>
+          </div>
+          <div className="tl-meters">
+            <div className="tl-meter"><span className="tl-meter-label">PURSE</span>
+              <span className="tl-meter-val">🪙 {fmt(coins)}</span></div>
+          </div>
+        </header>
+        <div className="row" style={{ gap: 18, alignItems: 'flex-start', justifyContent: 'center' }}>
+          <div className="sl-machine">
+            <div className="sl-reels">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className={`sl-reel${spinning[i] ? ' sl-reel-spin' : ''}${!anySpin && flash === 'hit' ? ' sl-reel-hit' : ''}${!anySpin && flash === 'jack' ? ' sl-reel-jack' : ''}`}>
+                  {symbols.length > 0 && <img src={slSymbolArt(symbols[shown[i] % symbols.length])} alt="" draggable={false} />}
+                </div>
+              ))}
+            </div>
+            <div className="td-chips">{[5, 10, 25, 50, 100].map((v) => (
+              <button key={v} className={`td-chip${bet === v ? ' on' : ''}`} disabled={coins < v || anySpin}
+                onClick={() => setBet(v)}>{v}</button>
+            ))}</div>
+            <button className="btn go" style={{ minWidth: 160 }} disabled={anySpin || coins < bet} onClick={pull}>
+              {anySpin ? '···' : `PULL · 🪙 ${bet}`}</button>
+          </div>
+          <div className="sl-pay">
+            {payRows.map((r, i) => (<Fragment key={i}>
+              <span className="sl-pay-row">{r.faces.map((f, j) => <img key={j} src={slSymbolArt(f)} alt="" />)}
+                {r.note && <span className="dim" style={{ fontSize: 9 }}>{r.note}</span>}</span>
+              <span className="sl-pay-x">{r.x}x</span>
+            </Fragment>))}
+          </div>
+        </div>
+        <div className={`tl-log${flash ? ' tl-log-win' : ''}`}>
+          <span className="tl-log-prompt">&gt;</span> {msg}
+        </div>
         <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
       </div>
     </div>

@@ -136,6 +136,7 @@ public final class DsBridge {
             case "TOPDECK_NEW"     -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_NEW, "", (int) num(p, "wager", 0));
             case "TOPDECK_GUESS"   -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_GUESS, str(p, "picks", ""), 0);
             case "TOPDECK_CASHOUT" -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_CASHOUT, "", 0);
+            case "SLOTS_SPIN"      -> new NotebookActionC2S(NotebookActionC2S.SLOTS_SPIN, "", (int) num(p, "bet", 0));
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }
@@ -232,6 +233,7 @@ public final class DsBridge {
         push("arcade", jsonChannel(NotebookState.arcadeJson));
         push("treeline", jsonChannel(NotebookState.treelineJson));
         push("topdeck", jsonChannel(NotebookState.topdeckJson));
+        push("slots", jsonChannel(NotebookState.slotsJson));
         push("icons", iconsData());
         push("nav", navData());
         push("about", aboutData());

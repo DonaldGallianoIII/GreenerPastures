@@ -247,6 +247,7 @@ public final class NotebookState {
     public static volatile String arcadeJson = "";
     public static volatile String treelineJson = "";
     public static volatile String topdeckJson = "";
+    public static volatile String slotsJson = "";
 
     public static boolean applySpecimens(com.greenerpastures.notebook.net.NotebookSpecimensS2C p) {
         String j = p.json() == null ? "" : p.json();
@@ -273,6 +274,13 @@ public final class NotebookState {
         String j = p.json() == null ? "" : p.json();
         boolean changed = !topdeckJson.equals(j);
         topdeckJson = j;
+        return changed;
+    }
+
+    public static boolean applySlots(com.greenerpastures.notebook.net.NotebookSlotsS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !slotsJson.equals(j);
+        slotsJson = j;
         return changed;
     }
 
@@ -332,7 +340,7 @@ public final class NotebookState {
         augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of(); augMetaJson = "";
         biobankTotal = 0; biobank = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
-        dashboardJson = ""; goalsJson = ""; notifsJson = ""; ritualsJson = ""; specimensJson = ""; arcadeJson = ""; treelineJson = ""; topdeckJson = "";
+        dashboardJson = ""; goalsJson = ""; notifsJson = ""; ritualsJson = ""; specimensJson = ""; arcadeJson = ""; treelineJson = ""; topdeckJson = ""; slotsJson = "";
         navTab = ""; navSeq = 0;
     }
 }
