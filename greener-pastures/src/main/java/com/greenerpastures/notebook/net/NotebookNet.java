@@ -1887,19 +1887,6 @@ public final class NotebookNet {
             if (player.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0 * 64.0) return;
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;
             PastureRegistry reg = PastureRegistry.get(server);
-            // OWNERSHIP GATE (2026-07-07 audit, CRITICAL): every mutating action on a CLAIMED pasture is
-            // owner-only - without this, anyone within 64 blocks could extract the slotted Kernel into their
-            // own inventory, wipe pairings, or rename. CLAIM stays open (PastureClaim.toggle refuses inside),
-            // and unclaimed pastures stay open so shared setup before claiming keeps working.
-            if (p.action() != NotebookPastureActionC2S.CLAIM) {
-                PastureData gate = reg.getOrCreate(world, pos);
-                if (gate.owner != null && !gate.owner.equals(player.getUuid())) {
-                    GpLog.w("pasture", "action_denied", "player", player.getUuid().toString(),
-                            "pos", pos.toShortString(), "action", Integer.toString(p.action()));
-                    player.sendMessage(Text.literal("§c[Greener Pastures]§r This pasture is linked to someone else - only its operator can change it."), false);
-                    return;
-                }
-            }
             switch (p.action()) {
                 case NotebookPastureActionC2S.NAME -> {
                     String name = p.arg() == null ? "" : p.arg();
@@ -1985,10 +1972,6 @@ public final class NotebookNet {
             if (json.length() > 65536) return;   // sanity cap - a pasture graph is never this big
             PastureRegistry reg = PastureRegistry.get(server);
             PastureData pd = reg.getOrCreate(world, pos);
-            if (pd.owner != null && !pd.owner.equals(player.getUuid())) {   // 2026-07-07 audit: owner-only, same gate as pasture actions
-                GpLog.w("pasture", "graph_denied", "player", player.getUuid().toString(), "pos", pos.toShortString());
-                return;
-            }
             pd.graphJson = json;
             reg.markDirty();
             GpLog.i("notebook", "graph_save", "player", player.getUuid().toString(),

@@ -64,7 +64,6 @@ public final class PastureNet {
             BlockPos pos = payload.pos();
             if (world == null || !withinReach(player, pos)) return;
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;   // no phantom records at arbitrary pos
-            if (deniedByClaim(server, world, pos, player)) return;   // 2026-07-07 audit: owner-only on claimed pastures
             String name = payload.name();
             if (name.length() > 64) name = name.substring(0, 64);
             PastureRegistry.get(server).setName(world, pos, name);
@@ -80,20 +79,8 @@ public final class PastureNet {
             BlockPos pos = payload.pos();
             if (world == null || !withinReach(player, pos)) return;
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) return;   // no phantom records at arbitrary pos
-            if (deniedByClaim(server, world, pos, player)) return;   // 2026-07-07 audit: owner-only on claimed pastures
             PastureRegistry.get(server).setPairings(world, pos, sanitize(payload.pairings()));
         });
-    }
-
-    /** A CLAIMED pasture only takes mutations from its operator (2026-07-07 audit - the theft/grief gate).
-     *  Unclaimed pastures stay open so shared setup before claiming keeps working. */
-    private static boolean deniedByClaim(MinecraftServer server, ServerWorld world, BlockPos pos, ServerPlayerEntity player) {
-        PastureData pd = PastureRegistry.get(server).getOrCreate(world, pos);
-        if (pd.owner != null && !pd.owner.equals(player.getUuid())) {
-            player.sendMessage(Text.literal("§c[Greener Pastures]§r This pasture is linked to someone else - only its operator can change it."), false);
-            return true;
-        }
-        return false;
     }
 
     /** Toggle the operator claim - the locked-boolean tether-cost "box". Server-authoritative + validated;
@@ -112,8 +99,6 @@ public final class PastureNet {
             PastureClaim.Result r = PastureClaim.toggle(pd.owner, player.getUuid());
             if (r.changed()) {
                 pd.owner = r.owner();
-                pd.lastHarvestTick = world.getTime();   // anchor offline-progress at claim - never backfill the
-                pd.lastBreedTick = world.getTime();     // unowned past (2026-07-07 audit: NotebookNet's CLAIM did this, this twin didn't)
                 reg.markDirty();
                 player.sendMessage(Text.literal(r.outcome() == PastureClaim.Outcome.CLAIMED
                         ? "§a[Greener Pastures]§r Linked - this pasture is yours: its drops, eggs & outputs collect into your Notebook (you also pay its tether cost)."
