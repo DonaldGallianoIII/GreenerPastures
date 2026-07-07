@@ -2599,8 +2599,8 @@ function SlotsCabinet({ onBack }) {
   const payRows = [
     { faces: ['voltorb', 'voltorb', 'voltorb'], x: d?.paytable?.[0] ?? 100 },
     { faces: ['lechonk', 'lechonk', 'lechonk'], x: d?.paytable?.[1] ?? 15, note: 'any triple' },
-    { faces: ['voltorb', 'voltorb'], x: d?.paytable?.[2] ?? 5 },
-    { faces: ['snom', 'snom'], x: d?.paytable?.[3] ?? 1, note: 'any pair' },
+    { faces: ['voltorb', 'voltorb'], x: d?.paytable?.[2] ?? 3 },
+    { faces: ['snom', 'snom'], x: d?.paytable?.[3] ?? 1.5, note: 'any pair' },
   ]
   return (
     <div className="pane" style={{ overflow: 'auto' }}>

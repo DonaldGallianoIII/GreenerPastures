@@ -1751,7 +1751,8 @@ public final class NotebookNet {
         pay.add(com.greenerpastures.arcade.SlotMachine.PAY_JACKPOT);
         pay.add(com.greenerpastures.arcade.SlotMachine.PAY_TRIPLE);
         pay.add(com.greenerpastures.arcade.SlotMachine.PAY_TWO_VOLT);
-        pay.add(com.greenerpastures.arcade.SlotMachine.PAY_PAIR);
+        pay.add((double) com.greenerpastures.arcade.SlotMachine.PAY_PAIR_NUM
+                / com.greenerpastures.arcade.SlotMachine.PAY_PAIR_DEN);
         root.add("paytable", pay);
         long[] last = slotsLast.get(player.getUuid());
         if (last != null) {
