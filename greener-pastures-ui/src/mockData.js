@@ -84,6 +84,13 @@ export const MOCK = {
       null, null, null, null, null, null, null, null, null,
     ],
   },
+  topdeck: {
+    active: true, minBet: 10, maxBet: 200, ladder: [2, 6, 20], stage: 1, wager: 50,
+    over: false, won: false, payout: 0,
+    cards: ['emolga', 'snom', 'lechonk', 'pawmi', 'fidough', 'smoliv', 'applin', 'yamper', 'morpeko', 'nacli',
+      'dedenne', 'rockruff', 'hatenna', 'toxel', 'sinistea', 'wooloo', 'axew', 'goomy', 'mimikyu', 'zorua'],
+  },
+  icons: {},
   about: {
     version: '0.0.0-mock',
     author: 'DonaldGalliano',

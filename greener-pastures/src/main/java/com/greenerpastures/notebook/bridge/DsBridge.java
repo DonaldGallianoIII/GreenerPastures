@@ -132,7 +132,10 @@ public final class DsBridge {
             case "ARCADE_CASHOUT" -> new NotebookActionC2S(NotebookActionC2S.ARCADE_CASHOUT, "", 0);
             case "TREELINE_NEW"    -> new NotebookActionC2S(NotebookActionC2S.TREELINE_NEW, "", 0);
             case "TREELINE_SEARCH" -> new NotebookActionC2S(NotebookActionC2S.TREELINE_SEARCH, "", (int) num(p, "tree", -1));
-            case "SHOP_BUY"        -> new NotebookActionC2S(NotebookActionC2S.SHOP_BUY, "", (int) num(p, "slot", -1));
+            case "SHOP_BUY"        -> new NotebookActionC2S(NotebookActionC2S.SHOP_BUY, str(p, "item", ""), (int) num(p, "slot", -1));
+            case "TOPDECK_NEW"     -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_NEW, "", (int) num(p, "wager", 0));
+            case "TOPDECK_GUESS"   -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_GUESS, str(p, "picks", ""), 0);
+            case "TOPDECK_CASHOUT" -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_CASHOUT, "", 0);
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
         };
     }
@@ -228,6 +231,8 @@ public final class DsBridge {
         push("specimens", jsonChannel(NotebookState.specimensJson));
         push("arcade", jsonChannel(NotebookState.arcadeJson));
         push("treeline", jsonChannel(NotebookState.treelineJson));
+        push("topdeck", jsonChannel(NotebookState.topdeckJson));
+        push("icons", iconsData());
         push("nav", navData());
         push("about", aboutData());
     }
@@ -326,6 +331,60 @@ public final class DsBridge {
         frame.put("channel", channel);
         frame.put("data", data);
         server.broadcast(GSON.toJson(frame));
+    }
+
+    // ── Item icons for the browser (Deuce 2026-07-06: "display the item itself, its in game lol").
+    // The browser can't render MC item textures, but THIS class runs on the client with the full
+    // resource manager - so we read the flat item texture PNG and ship it as a data-URI. Cached
+    // per item id for the session; unresolvable ids (3D models, odd paths) map to "" = no icon. ──
+    private static final Map<String, String> iconCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static String lastIconSource = "";
+    private static Map<String, String> iconsSnapshot = Map.of();
+
+    private static Object iconsData() {
+        String src = NotebookState.arcadeJson;
+        if (src == null || src.isEmpty()) return iconsSnapshot.isEmpty() ? null : iconsSnapshot;
+        if (!src.equals(lastIconSource)) {
+            lastIconSource = src;
+            try {
+                var root = GSON.fromJson(src, com.google.gson.JsonObject.class);
+                var shop = root == null ? null : root.getAsJsonObject("shop");
+                var offers = shop == null ? null : shop.getAsJsonArray("offers");
+                if (offers != null) {
+                    for (var el : offers) {
+                        var id = el.getAsJsonObject().get("id");
+                        if (id != null) iconCache.computeIfAbsent(id.getAsString(), DsBridge::resolveItemIcon);
+                    }
+                    iconsSnapshot = Map.copyOf(iconCache);
+                }
+            } catch (Throwable t) {
+                GpLog.d("bridge", "icons_err", "err", String.valueOf(t));
+            }
+        }
+        return iconsSnapshot.isEmpty() ? null : iconsSnapshot;
+    }
+
+    /** Flat item texture → data URI. Tries the item's own namespace/path, plus known aliases. */
+    private static String resolveItemIcon(String itemId) {
+        String[] candidates = com.greenerpastures.arcade.GameShop.MYSTERY_EGG_ID.equals(itemId)
+                ? new String[]{"cobbreeding:pokemon_egg", "cobbreeding:egg", "cobblemon:poke_ball"}
+                : new String[]{itemId};
+        for (String cand : candidates) {
+            int colon = cand.indexOf(':');
+            if (colon <= 0) continue;
+            var texId = net.minecraft.util.Identifier.of(cand.substring(0, colon),
+                    "textures/item/" + cand.substring(colon + 1) + ".png");
+            try {
+                var res = MinecraftClient.getInstance().getResourceManager().getResource(texId);
+                if (res.isEmpty()) continue;
+                try (var in = res.get().getInputStream()) {
+                    byte[] png = in.readAllBytes();
+                    if (png.length == 0 || png.length > 256 * 1024) continue;   // sane flat-texture sizes only
+                    return "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(png);
+                }
+            } catch (Throwable ignored) { }
+        }
+        return "";
     }
 
     /** Static mod facts for the Guide tab's About card. Version comes from the loader (so the release

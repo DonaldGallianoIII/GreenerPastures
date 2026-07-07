@@ -106,6 +106,8 @@ public final class NotebookNet {
             new java.util.concurrent.ConcurrentHashMap<>();
     private static final Map<UUID, com.greenerpastures.arcade.Treeline.Round> treelineRounds =
             new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<UUID, com.greenerpastures.arcade.TopDeck.Round> topdeckRounds =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     public static void onDisconnect(UUID player) {
         lastPush.remove(player);
@@ -115,10 +117,21 @@ public final class NotebookNet {
         lastBiobankFlatten.remove(player);
         arcadeBoards.remove(player);
         treelineRounds.remove(player);
+        topdeckRounds.remove(player);
+    }
+
+    /** A TOP DECK wager is debited at deal time, so a live round dying with the connection must
+     *  refund it - and refunding is scum-proof: nothing secret was revealed, and ladder progress
+     *  (worth MORE than the wager) is what the relog forfeits. */
+    private static void refundLiveTopdeck(UUID player, MinecraftServer server) {
+        var round = topdeckRounds.get(player);
+        if (round == null || round.over) return;
+        com.greenerpastures.arcade.ArcadeStore.get(server).refund(player, arcadeToday(), round.wager);
+        GpLog.i("arcade", "td_refund", "player", player.toString(), "wager", round.wager);
     }
 
     /** Reset per-server-session state - called on SERVER_STARTED (a new SP world shares the JVM). */
-    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); }
+    public static void resetSession() { lastPrefetch.clear(); lastPush.clear(); augTargetSlot.clear(); daemonTargetSlot.clear(); lastBiobankFlatten.clear(); arcadeBoards.clear(); treelineRounds.clear(); topdeckRounds.clear(); }
 
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
@@ -145,6 +158,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookSpecimensS2C.ID, NotebookSpecimensS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookArcadeS2C.ID, NotebookArcadeS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookTreelineS2C.ID, NotebookTreelineS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookTopdeckS2C.ID, NotebookTopdeckS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
@@ -156,8 +170,10 @@ public final class NotebookNet {
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
                 server.execute(() -> prefetchConfigs(handler.player)));
         // Departed players must not accumulate gate/prefetch state forever on a 24/7 server (R3 #5/F11).
-        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
-                onDisconnect(handler.getPlayer().getUuid()));
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            refundLiveTopdeck(handler.getPlayer().getUuid(), server);
+            onDisconnect(handler.getPlayer().getUuid());
+        });
     }
 
     /** Push every known (snapshotted) pasture's config + graph for {@code player} - pre-warms the client cache.
@@ -199,6 +215,7 @@ public final class NotebookNet {
                 pushSpecimens(player);
                 pushArcade(player);
                 pushTreeline(player);
+                pushTopdeck(player);
                 long nowMs = System.currentTimeMillis();
                 Long last = lastPrefetch.get(player.getUuid());
                 if (last == null || nowMs - last > 60_000L) {   // re-warm the pasture-config cache at most 1×/min
@@ -344,7 +361,10 @@ public final class NotebookNet {
                 case NotebookActionC2S.ARCADE_CASHOUT -> { arcadeCashout(player); pushArcade(player); pushStatus(player); }
                 case NotebookActionC2S.TREELINE_NEW -> { treelineNew(player); pushTreeline(player); }
                 case NotebookActionC2S.TREELINE_SEARCH -> { treelineSearch(player, p.amount()); pushTreeline(player); pushStatus(player); }
-                case NotebookActionC2S.SHOP_BUY -> { shopBuy(player, p.amount()); pushArcade(player); }
+                case NotebookActionC2S.SHOP_BUY -> { shopBuy(player, p.amount(), p.arg()); pushArcade(player); }
+                case NotebookActionC2S.TOPDECK_NEW -> { topdeckNew(player, p.amount()); pushTopdeck(player); pushArcade(player); }
+                case NotebookActionC2S.TOPDECK_GUESS -> { topdeckGuess(player, p.arg()); pushTopdeck(player); pushArcade(player); }
+                case NotebookActionC2S.TOPDECK_CASHOUT -> { topdeckCashout(player); pushTopdeck(player); pushArcade(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
                     if ("all".equals(p.arg())) com.greenerpastures.notify.Inbox.dismissAll(player.getUuid());
                     else try { com.greenerpastures.notify.Inbox.dismiss(player.getUuid(), Long.parseLong(p.arg())); } catch (NumberFormatException ignored) { }
@@ -1210,11 +1230,12 @@ public final class NotebookNet {
         shop.addProperty("endsAt", com.greenerpastures.arcade.GameShop.windowEndsAt(nowMs));
         JsonArray offers = new JsonArray();
         boolean eggOk = com.greenerpastures.pasture.breeding.CobbreedingBridge.isAvailable();
-        for (var w : com.greenerpastures.arcade.GameShop.offersFor(player.getUuid(), nowMs, eggOk)) {
+        for (var w : com.greenerpastures.arcade.GameShop.offersFor(player.getUuid(), nowMs, eggOk, ledger.shopRolls)) {
             JsonObject o = new JsonObject();
+            o.addProperty("id", w.itemId());        // the client bridge resolves the REAL item texture from this
             o.addProperty("name", w.name());
             o.addProperty("price", w.price());
-            o.addProperty("emoji", w.emoji());
+            o.addProperty("count", w.count());
             offers.add(o);
         }
         shop.add("offers", offers);
@@ -1279,15 +1300,24 @@ public final class NotebookNet {
     }
 
     /** Redeem a shop shelf slot for Game Corner Coins. The ware is RE-DERIVED server-side from the
-     *  current window - a stale client can't buy last window's stock - and items land through the
-     *  manual capacity-aware path (never insertStack; full inventory refuses BEFORE the debit). */
-    private static void shopBuy(ServerPlayerEntity player, int slot) {
+     *  current window + the player's purchase count - a stale client can't buy last window's stock -
+     *  and items land through the manual capacity-aware path (never insertStack; full inventory
+     *  refuses BEFORE the debit). Every successful buy bumps shopRolls, which refreshes the whole
+     *  shelf (Deuce 2026-07-06); {@code expectedName} guards the click-vs-refresh race so a
+     *  double-click can never buy whatever just rotated into the slot. */
+    private static void shopBuy(ServerPlayerEntity player, int slot, String expectedName) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         long nowMs = System.currentTimeMillis();
         boolean eggOk = com.greenerpastures.pasture.breeding.CobbreedingBridge.isAvailable();
-        var ware = com.greenerpastures.arcade.GameShop.wareAt(player.getUuid(), nowMs, slot, eggOk);
+        var store = com.greenerpastures.arcade.ArcadeStore.get(server);
+        long rolls = store.of(player.getUuid(), arcadeToday()).shopRolls;
+        var ware = com.greenerpastures.arcade.GameShop.wareAt(player.getUuid(), nowMs, slot, eggOk, rolls);
         if (ware == null) return;
+        if (expectedName != null && !expectedName.isEmpty() && !expectedName.equals(ware.name())) {
+            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r the shelves just turned - check the new stock."), false);
+            return;
+        }
         ItemStack stack;
         if (com.greenerpastures.arcade.GameShop.MYSTERY_EGG_ID.equals(ware.itemId())) {
             stack = com.greenerpastures.pasture.breeding.CobbreedingBridge.shopMysteryEgg(new java.util.Random());
@@ -1312,16 +1342,116 @@ public final class NotebookNet {
             player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r no room in your pack - the counter holds your order."), false);
             return;
         }
-        var store = com.greenerpastures.arcade.ArcadeStore.get(server);
         if (!store.trysSpend(player.getUuid(), arcadeToday(), ware.price())) {
             player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r not enough Coins - the machines await."), false);
             return;
         }
         inv.main.set(free, stack);
         inv.markDirty();
+        store.bumpRolls(player.getUuid(), arcadeToday());   // every buy turns the shelves (window turn still applies)
         GpLog.i("arcade", "shop_buy", "player", player.getUuid().toString(), "item", ware.itemId(),
-                "count", ware.count(), "price", ware.price(),
+                "count", ware.count(), "price", ware.price(), "rolls", rolls + 1,
                 "coinsLeft", store.of(player.getUuid(), arcadeToday()).coins);
+    }
+
+    // ── TOP DECK (Game Corner cabinet #3 - Deuce's pitch, 2026-07-06). Wager debited at deal,
+    // secret draw never leaves the server, ladder 2x/6x/20x with cashout between rungs. ──
+
+    private static void topdeckNew(ServerPlayerEntity player, int wager) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var live = topdeckRounds.get(player.getUuid());
+        if (live != null && !live.over) {
+            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r finish the round on the table first."), false);
+            return;
+        }
+        if (wager < com.greenerpastures.arcade.TopDeck.MIN_BET || wager > com.greenerpastures.arcade.TopDeck.MAX_BET) {
+            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r the house takes "
+                    + com.greenerpastures.arcade.TopDeck.MIN_BET + " to " + com.greenerpastures.arcade.TopDeck.MAX_BET + " Coins a hand."), false);
+            return;
+        }
+        var store = com.greenerpastures.arcade.ArcadeStore.get(server);
+        if (!store.trysSpend(player.getUuid(), arcadeToday(), wager)) {
+            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r not enough Coins - the machines await."), false);
+            return;
+        }
+        var round = com.greenerpastures.arcade.TopDeck.deal(
+                com.greenerpastures.arcade.TopDeckPool.POOL, wager, new java.util.Random());
+        if (round == null) {    // pool bug, never expected - give the coins back rather than eat them
+            store.refund(player.getUuid(), arcadeToday(), wager);
+            return;
+        }
+        topdeckRounds.put(player.getUuid(), round);
+        GpLog.i("arcade", "td_new", "player", player.getUuid().toString(), "wager", wager);
+    }
+
+    private static void topdeckGuess(ServerPlayerEntity player, String csv) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var round = topdeckRounds.get(player.getUuid());
+        if (round == null || round.over) return;
+        int[] picks;
+        try {
+            String[] parts = csv.split(",");
+            picks = new int[parts.length];
+            for (int i = 0; i < parts.length; i++) picks[i] = Integer.parseInt(parts[i].trim());
+        } catch (Exception e) {
+            return;
+        }
+        int stageBefore = round.stage;
+        var outcome = com.greenerpastures.arcade.TopDeck.guess(round, picks, new java.util.Random());
+        switch (outcome) {
+            case HIT -> {
+                if (round.over) {   // top rung auto-cash
+                    com.greenerpastures.arcade.ArcadeStore.get(server).record(player.getUuid(), arcadeToday(),
+                            round.payout, com.greenerpastures.arcade.ArcadeStore.get(server).of(player.getUuid(), arcadeToday()).level);
+                    GpLog.i("arcade", "td_top", "player", player.getUuid().toString(),
+                            "wager", round.wager, "paid", round.payout);
+                } else {
+                    GpLog.i("arcade", "td_hit", "player", player.getUuid().toString(), "rung", stageBefore);
+                }
+            }
+            case MISS -> GpLog.i("arcade", "td_miss", "player", player.getUuid().toString(),
+                    "rung", stageBefore, "lost", round.wager);
+            default -> { }
+        }
+    }
+
+    private static void topdeckCashout(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var round = topdeckRounds.get(player.getUuid());
+        if (com.greenerpastures.arcade.TopDeck.cashout(round) == com.greenerpastures.arcade.TopDeck.Outcome.CASHED) {
+            com.greenerpastures.arcade.ArcadeStore.get(server).record(player.getUuid(), arcadeToday(),
+                    round.payout, com.greenerpastures.arcade.ArcadeStore.get(server).of(player.getUuid(), arcadeToday()).level);
+            GpLog.i("arcade", "td_cash", "player", player.getUuid().toString(),
+                    "wager", round.wager, "paid", round.payout);
+        }
+    }
+
+    /** TOP DECK state: the 20 species are public (they fanned face-up); the drawn index ships only
+     *  once the round is over. */
+    public static void pushTopdeck(ServerPlayerEntity player) {
+        var round = topdeckRounds.get(player.getUuid());
+        JsonObject root = new JsonObject();
+        root.addProperty("active", round != null && !round.over);
+        root.addProperty("minBet", com.greenerpastures.arcade.TopDeck.MIN_BET);
+        root.addProperty("maxBet", com.greenerpastures.arcade.TopDeck.MAX_BET);
+        JsonArray ladder = new JsonArray();
+        for (long m : com.greenerpastures.arcade.TopDeck.MULT) ladder.add(m);
+        root.add("ladder", ladder);
+        if (round != null) {
+            JsonArray cards = new JsonArray();
+            for (String s : round.species) cards.add(s);
+            root.add("cards", cards);
+            root.addProperty("stage", round.stage);
+            root.addProperty("wager", round.wager);
+            root.addProperty("over", round.over);
+            root.addProperty("won", round.won);
+            root.addProperty("payout", round.payout);
+            if (round.revealTarget >= 0) root.addProperty("reveal", round.revealTarget);
+        }
+        sendGated(player, "topdeck", new NotebookTopdeckS2C(GSON.toJson(root)));
     }
 
     /** TREELINE state: layout always; contents only where swept; the target's tree only once over. */

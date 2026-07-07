@@ -72,6 +72,35 @@ class GameShopTest {
     }
 
     @Test
+    void everyPurchaseTurnsTheShelves() {
+        long t = 11 * GameShop.WINDOW_MS + 77;
+        List<GameShop.Ware> before = GameShop.offersFor(A, t, true, 0);
+        List<GameShop.Ware> after = GameShop.offersFor(A, t, true, 1);
+        assertNotEquals(before, after, "a buy must refresh the stock (rolls 0 -> 1)");
+        assertEquals(after, GameShop.offersFor(A, t, true, 1), "same rolls = same shelves (relog-stable)");
+        assertEquals(GameShop.SLOTS, after.size());
+    }
+
+    @Test
+    void rollsFeedValidationTheSameAsDerivation() {
+        long t = 13 * GameShop.WINDOW_MS + 9;
+        for (long rolls : new long[]{0, 1, 5, 1234}) {
+            List<GameShop.Ware> offers = GameShop.offersFor(A, t, true, rolls);
+            for (int i = 0; i < GameShop.SLOTS; i++) {
+                assertEquals(offers.get(i), GameShop.wareAt(A, t, i, true, rolls),
+                        "rolls " + rolls + " slot " + i + " must validate what was shown");
+            }
+        }
+    }
+
+    @Test
+    void zeroRollsMatchesTheLegacyOverloads() {
+        long t = 17 * GameShop.WINDOW_MS + 300;
+        assertEquals(GameShop.offersFor(A, t), GameShop.offersFor(A, t, true, 0));
+        assertEquals(GameShop.wareAt(A, t, 2, true), GameShop.wareAt(A, t, 2, true, 0));
+    }
+
+    @Test
     void catalogPricesArePositiveAndIdsNamespaced() {
         for (GameShop.Ware w : GameShop.CATALOG) {
             assertTrue(w.price() > 0, w.itemId());

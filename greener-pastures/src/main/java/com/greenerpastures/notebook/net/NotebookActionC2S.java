@@ -37,6 +37,9 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int TREELINE_NEW = 20;      // Game Corner cabinet 2: deal a fresh forest
     public static final int TREELINE_SEARCH = 21;   // Game Corner cabinet 2: amount = tree id to sweep
     public static final int SHOP_BUY = 22;         // Game Corner shop: amount = shelf slot to redeem for Coins
+    public static final int TOPDECK_NEW = 23;      // Game Corner cabinet 3: amount = wager, debited on deal
+    public static final int TOPDECK_GUESS = 24;    // Game Corner cabinet 3: arg = csv of 5 picked card indices
+    public static final int TOPDECK_CASHOUT = 25;  // Game Corner cabinet 3: bank the completed rung
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

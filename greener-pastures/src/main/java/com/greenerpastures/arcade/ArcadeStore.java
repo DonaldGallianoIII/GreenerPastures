@@ -26,6 +26,9 @@ public final class ArcadeStore extends PersistentState {
         public long earnedToday = 0;
         public String day = "";
         public long coins = 0;
+        /** Lifetime shop purchases - seeds the shelf shuffle so every buy refreshes the stock
+         *  (Deuce 2026-07-06) while staying relog/restart-stable. Never day-rolled. */
+        public long shopRolls = 0;
     }
 
     private final Map<UUID, Ledger> ledgers = new HashMap<>();
@@ -58,6 +61,19 @@ public final class ArcadeStore extends PersistentState {
         return true;
     }
 
+    /** A purchase went through - turn the shelves (the rolls value feeds the shop's shuffle seed). */
+    public void bumpRolls(UUID player, String today) {
+        of(player, today).shopRolls++;
+        markDirty();
+    }
+
+    /** Give coins back WITHOUT counting them as winnings (earnedToday untouched) - wager refunds. */
+    public void refund(UUID player, String today, long amount) {
+        Ledger l = of(player, today);
+        l.coins += Math.max(0, amount);
+        markDirty();
+    }
+
     @Override
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         NbtCompound all = new NbtCompound();
@@ -67,6 +83,7 @@ public final class ArcadeStore extends PersistentState {
             row.putLong("earned", l.earnedToday);
             row.putString("day", l.day);
             row.putLong("coins", l.coins);
+            row.putLong("rolls", l.shopRolls);
             all.put(u.toString(), row);
         });
         nbt.put("ledgers", all);
@@ -84,6 +101,7 @@ public final class ArcadeStore extends PersistentState {
                 l.earnedToday = Math.max(0, row.getLong("earned"));
                 l.day = row.getString("day");
                 l.coins = Math.max(0, row.getLong("coins"));
+                l.shopRolls = Math.max(0, row.getLong("rolls"));
                 s.ledgers.put(UUID.fromString(k), l);
             } catch (IllegalArgumentException ignored) { }
         }

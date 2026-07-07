@@ -121,13 +121,22 @@ public final class GameShop {
     /** This player's shelves for the window holding {@code nowMs}: SLOTS distinct wares, order stable.
      *  Deterministic per (window, player) - "the person's shop", rotating together every 15 minutes. */
     public static List<Ware> offersFor(UUID player, long nowMs) {
-        return offersFor(player, nowMs, true);
+        return offersFor(player, nowMs, true, 0);
     }
 
     /** {@code includeEgg=false} when Cobbreeding is absent - offer derivation and purchase validation
      *  MUST use the same flag or a shelf index could point at different wares. */
     public static List<Ware> offersFor(UUID player, long nowMs, boolean includeEgg) {
-        long seed = windowIndex(nowMs) * 1_000_003L ^ player.getMostSignificantBits() ^ player.getLeastSignificantBits();
+        return offersFor(player, nowMs, includeEgg, 0);
+    }
+
+    /** {@code rolls} = the player's lifetime purchase count (Deuce 2026-07-06: every buy refreshes the
+     *  whole shelf, mobile-style, on top of the 15-minute rotation). Persisted in ArcadeStore so the
+     *  refreshed shelves survive relog; derivation and validation MUST pass the same value. */
+    public static List<Ware> offersFor(UUID player, long nowMs, boolean includeEgg, long rolls) {
+        long seed = windowIndex(nowMs) * 1_000_003L
+                ^ player.getMostSignificantBits() ^ player.getLeastSignificantBits()
+                ^ rolls * 0x9E3779B97F4A7C15L;
         List<Ware> pool = new ArrayList<>(CATALOG);
         if (!includeEgg) pool.removeIf(w -> MYSTERY_EGG_ID.equals(w.itemId()));
         java.util.Collections.shuffle(pool, new Random(seed));
@@ -136,8 +145,13 @@ public final class GameShop {
 
     /** Validate a purchase: the ware must be ON this player's current shelves (slot contents are
      *  re-derived server-side - a stale/forged slot index can't buy off-rotation stock). */
-    public static Ware wareAt(UUID player, long nowMs, int slot, boolean includeEgg) {
-        List<Ware> offers = offersFor(player, nowMs, includeEgg);
+    public static Ware wareAt(UUID player, long nowMs, int slot, boolean includeEgg, long rolls) {
+        List<Ware> offers = offersFor(player, nowMs, includeEgg, rolls);
         return (slot >= 0 && slot < offers.size()) ? offers.get(slot) : null;
+    }
+
+    /** Rolls-free overload kept for the pre-refresh callers/tests. */
+    public static Ware wareAt(UUID player, long nowMs, int slot, boolean includeEgg) {
+        return wareAt(player, nowMs, slot, includeEgg, 0);
     }
 }

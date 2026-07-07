@@ -6,6 +6,7 @@
    ============================================================ */
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
+import { CARD_POOL } from './carddeck.js'
 import { HAPPY, SAD, VOLTORB_ANGRY, HAPPY_KEYS, SAD_KEYS } from './pmdsprites.js'
 import { SCORBUNNY_SHEET } from './treelinesprites.js'
 
@@ -114,7 +115,40 @@ const CSS = `
 .gc-offer{ display:flex; flex-direction:column; gap:3px; padding:9px 10px; border:1px solid var(--line2);
   border-radius:8px; background:var(--inset); }
 .gc-offer-name{ font-size:11px; color:var(--text); }
-.gc-offer-emoji{ font-size:18px; }
+.gc-offer-art{ height:26px; display:flex; align-items:center; }
+.gc-offer-art img{ width:24px; height:24px; image-rendering:pixelated; }
+.gc-offer-noart{ color:var(--dim); font-size:16px; }
+.td-table{ position:relative; width:648px; max-width:100%; }
+.td-board{ position:relative; width:100%; height:416px; border:1px solid var(--line2); border-radius:10px;
+  background:linear-gradient(180deg,#0a1218 0%,#0c151d 100%); overflow:hidden; }
+.td-deck{ position:absolute; top:6px; right:12px; width:40px; height:46px; z-index:30; }
+.td-deck-card{ position:absolute; inset:0; border:1px solid var(--cyan); border-radius:5px; background:var(--inset);
+  display:flex; align-items:center; justify-content:center; color:var(--cyan); font-size:13px;
+  box-shadow:0 2px 8px rgba(0,0,0,.5); }
+.td-deck-count{ position:absolute; bottom:-16px; width:100%; text-align:center; font-size:9px; color:var(--dim); }
+.td-card{ position:absolute; width:110px; height:80px; border:1px solid var(--line2); border-radius:8px;
+  background:var(--inset); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  padding:4px; cursor:default; transition:transform .85s cubic-bezier(.45,1.25,.4,1) var(--dly,0s), opacity .7s ease var(--dly,0s); }
+.td-card img{ width:44px; height:44px; image-rendering:pixelated; }
+.td-card-name{ font-size:9px; color:var(--muted); letter-spacing:.5px; }
+.td-in-deck{ transform:translate(var(--dx),var(--dy)) rotate(6deg) scale(.16); opacity:0; }
+.td-return .td-card{ transition:transform 1.25s ease-in var(--rdly,0s), opacity 1s ease .25s; }
+.td-pickable{ cursor:pointer; }
+.td-pickable:hover{ border-color:var(--cyan); }
+.td-sel{ border-color:var(--cyan); box-shadow:0 0 0 2px var(--cyan), 0 0 12px rgba(92,200,255,.35); }
+.td-back-face{ display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:var(--cyan);
+  font-size:22px; opacity:.75; }
+.td-hit{ border-color:var(--grn); box-shadow:0 0 0 2px var(--grn), 0 0 14px rgba(70,200,120,.4); }
+.td-bust{ border-color:#ff6b81; box-shadow:0 0 0 2px #ff6b81, 0 0 14px rgba(255,107,129,.4); }
+.td-chips{ display:flex; gap:6px; align-items:center; }
+.td-chip{ padding:5px 11px; border:1px solid var(--line2); border-radius:14px; background:var(--inset);
+  color:var(--muted); font-size:11px; font-weight:700; cursor:pointer; }
+.td-chip.on{ border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 8px rgba(92,200,255,.25); }
+.td-chip:disabled{ opacity:.35; cursor:default; }
+.td-ladder{ display:flex; gap:8px; font-size:10px; color:var(--dim); align-items:center; }
+.td-rung{ padding:2px 8px; border:1px solid var(--line2); border-radius:5px; }
+.td-rung.on{ border-color:var(--cyan); color:var(--cyan); font-weight:700; }
+.td-rung.done{ border-color:var(--grn); color:var(--grn); }
 .gc-offer-row{ display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
 .gc-price{ font-size:11px; font-weight:700; color:var(--amber); }
 .tl-console{ width:min(860px,97%); margin:0 auto; padding:12px; border:1px solid var(--line2); border-radius:10px;
@@ -130,7 +164,7 @@ const CSS = `
 .tl-meter-val{ font-size:16px; font-weight:700; color:var(--amber); font-variant-numeric:tabular-nums; }
 .tl-pips{ display:flex; gap:3px; }
 .tl-pip{ width:9px; height:14px; background:var(--bg); border:1px solid var(--line2); border-radius:2px; }
-.tl-pip-on{ background:var(--grn); box-shadow:0 0 5px rgba(70,200,120,.5); }
+.tl-pip-on{ background:var(--cyan); box-shadow:0 0 5px rgba(92,200,255,.5); }
 .tl-screen{ width:100%; aspect-ratio:16/8; overflow:hidden; border:1px solid var(--line2); border-radius:7px;
   background:var(--bg); position:relative; }
 .tl-strip{ display:flex; width:200%; height:100%; transform:translateX(0); transition:transform 1.25s cubic-bezier(0.55,0.05,0.25,1); }
@@ -157,7 +191,7 @@ const CSS = `
   transform:translate(-50%,-78%); background:transparent; border:none; padding:0; cursor:pointer; }
 .tl-tree:disabled{ cursor:default; }
 .tl-tree-inner{ display:block; width:100%; height:100%; transition:filter .15s; }
-.tl-tree:not(:disabled):hover .tl-tree-inner{ filter:drop-shadow(0 0 6px rgba(70,200,120,.5)) brightness(1.3); }
+.tl-tree:not(:disabled):hover .tl-tree-inner{ filter:drop-shadow(0 0 6px rgba(92,200,255,.55)) brightness(1.3); }
 .tl-tree:not(:disabled):active .tl-tree-inner{ animation:tlRustle .35s linear; }
 .tl-searched .tl-tree-inner{ opacity:.3; }
 @keyframes tlRustle{ 0%,100%{ transform:rotate(0);} 25%{ transform:rotate(-4deg);} 50%{ transform:rotate(3.5deg);} 75%{ transform:rotate(-2.5deg);} }
@@ -169,7 +203,7 @@ const CSS = `
 @keyframes tlPop{ from{ transform:translateX(-50%) translateY(60%) scale(.4); opacity:0; }
   to{ transform:translateX(-50%) translateY(0) scale(1); opacity:1; } }
 .tl-arrow{ position:absolute; top:-55%; left:50%; transform:translateX(-50%); font-size:19px; font-weight:700;
-  color:var(--amber); text-shadow:0 0 7px rgba(240,180,80,.8); animation:tlArrowPulse .9s ease-in-out infinite; }
+  color:var(--cyan); text-shadow:0 0 7px rgba(92,200,255,.85); animation:tlArrowPulse .9s ease-in-out infinite; }
 @keyframes tlArrowPulse{ 0%,100%{ opacity:1; margin-top:0; } 50%{ opacity:.55; margin-top:-3px; } }
 .tl-found{ filter:drop-shadow(0 0 9px rgba(140,255,190,.9)); }
 .tl-taunt{ animation:tlTaunt 1.1s ease-in forwards; }
@@ -1744,14 +1778,16 @@ function VoltorbCabinet({ onBack }) {
   )
 }
 
-// ── Game Corner lobby: two cabinets (DAEMON FLIP · TREELINE) ──
+// ── Game Corner lobby: three cabinets (DAEMON FLIP · TREELINE · TOP DECK) ──
 function GameCorner() {
   const [cabinet, setCabinet] = useState(null)
   const d = useChannel('arcade')
+  const icons = useChannel('icons')
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
   if (cabinet === 'vf') return <VoltorbCabinet onBack={() => setCabinet(null)} />
   if (cabinet === 'tl') return <TreelineCabinet onBack={() => setCabinet(null)} />
+  if (cabinet === 'td') return <TopDeckCabinet onBack={() => setCabinet(null)} />
   const coins = d?.gcoins ?? 0
   const shop = d?.shop
   const left = shop ? Math.max(0, Math.floor((shop.endsAt - now) / 1000)) : 0
@@ -1773,23 +1809,29 @@ function GameCorner() {
             <span className="tl-cab-name">TREELINE</span>
             <span className="tl-cab-sub">cabinet 02 · scorbunny recovery · decoys snitch</span>
           </button>
+          <button className="tl-cab" onClick={() => setCabinet('td')}>
+            <span className="tl-cab-name">TOP DECK</span>
+            <span className="tl-cab-sub">cabinet 03 · card sharping · let it ride</span>
+          </button>
         </div>
         {shop && (
           <div className="gc-shop">
             <div className="gc-shop-head">
               <span className="h">Prize Counter</span>
-              <span className="dim" style={{ fontSize: 10 }}>your rotation · new stock in <span className="mono amb">{mm}:{ss}</span></span>
+              <span className="dim" style={{ fontSize: 10 }}>your rotation · refreshes on every buy · new stock in <span className="mono amb">{mm}:{ss}</span></span>
             </div>
             <div className="gc-offers">
               {(shop.offers || []).map((o, i) => (
                 <div key={`${o.name}${i}`} className="gc-offer">
-                  <span className="gc-offer-emoji">{o.emoji}</span>
+                  <span className="gc-offer-art">{icons?.[o.id]
+                    ? <img src={icons[o.id]} alt="" draggable={false} />
+                    : <span className="gc-offer-noart">◇</span>}</span>
                   <span className="gc-offer-name">{o.name}</span>
                   <div className="gc-offer-row">
                     <span className="gc-price">🪙 {fmt(o.price)}</span>
                     <button className="btn go" disabled={coins < o.price}
                       title={coins < o.price ? 'not enough Coins - the machines await' : 'redeem'}
-                      onClick={() => send('arcade', 'SHOP_BUY', { slot: i })}>REDEEM</button>
+                      onClick={() => send('arcade', 'SHOP_BUY', { slot: i, item: o.name })}>REDEEM</button>
                   </div>
                 </div>
               ))}
@@ -1815,8 +1857,8 @@ function TlTree() {
     <svg viewBox="0 0 60 80" style={{ width: '100%', height: '100%' }}>
       <rect x="26" y="58" width="8" height="16" fill="#8a6432" />
       <path d="M30 4 L52 34 L42 34 L56 56 L4 56 L18 34 L8 34 Z" fill="none"
-        stroke="#f0a12e" strokeWidth="2.2" strokeLinejoin="round" opacity="0.85" />
-      <path d="M30 12 L44 32 L38 32 L48 50 L12 50 L22 32 L16 32 Z" fill="rgba(240,161,46,0.10)" />
+        stroke="#5cc8ff" strokeWidth="2.2" strokeLinejoin="round" opacity="0.85" />
+      <path d="M30 12 L44 32 L38 32 L48 50 L12 50 L22 32 L16 32 Z" fill="rgba(92,200,255,0.10)" />
     </svg>
   )
 }
@@ -1943,6 +1985,151 @@ function TreelineCabinet({ onBack }) {
           {(phase === 'scatter' || phase === 'pan') && <span className="tl-watch">▶ WATCH THE TREELINE</span>}
           {phase === 'hunt' && <span className="tl-watch tl-watch-dim">sweep the trees · decoys snitch · payout falls with every sweep</span>}
         </footer>
+      </div>
+    </div>
+  )
+}
+
+// ── TOP DECK (cabinet 03): 20 cards fan from the deck, slide back, pick 5 of 20 for the secret
+// draw. Ladder 2x/6x/20x, cash out between rungs. Server owns the draw; this is all theater. ──
+const TD_COLS = 5
+const TD_CELL_W = 122
+const TD_CELL_H = 88
+function tdCellPos(i) {   // a 56px top strip keeps the house deck clear of row one
+  return { x: 8 + (i % TD_COLS) * TD_CELL_W, y: 56 + Math.floor(i / TD_COLS) * TD_CELL_H }
+}
+function cap1(n) { return n ? n.charAt(0).toUpperCase() + n.slice(1) : '?' }
+
+function TopDeckCabinet({ onBack }) {
+  const d = useChannel('topdeck')
+  const a = useChannel('arcade')
+  const coins = a?.gcoins ?? 0
+  const [phase, setPhase] = useState('table')   // table | fan | return | pick | ride | reveal
+  const [wager, setWager] = useState(50)
+  const [picks, setPicks] = useState([])
+  const [dealt, setDealt] = useState(false)     // false = cards sit in the deck (pre/post animation)
+  const [msg, setMsg] = useState('set a wager · the house deals 20 cards')
+  const stageRef = useRef(1)
+  const timers = useRef([])
+  const later = (fn, ms) => timers.current.push(setTimeout(fn, ms))
+  useEffect(() => () => timers.current.forEach(clearTimeout), [])
+
+  useEffect(() => {   // server pushes drive the big transitions; the animation phases are local
+    if (!d) return
+    if (d.active && (phase === 'table' || phase === 'reveal')) {
+      stageRef.current = d.stage
+      setPicks([]); setDealt(false); setPhase('fan')
+      setMsg('the table is dealt · study the 20 · PLAY shuffles them back in')
+      later(() => setDealt(true), 60)
+    } else if (d.active && d.stage > stageRef.current) {
+      stageRef.current = d.stage
+      setPicks([]); setPhase('ride')
+      setMsg(`rung ${d.stage - 1} cleared · ${d.ladder?.[d.stage - 2]}x is banked if you walk`)
+    } else if (d.over && (phase === 'pick' || phase === 'ride')) {
+      setPhase('reveal')
+      const name = cap1(d.cards?.[d.reveal])
+      setMsg(d.won ? `it was ${name} · the house pays ${fmt(d.payout)} Coins`
+                   : `it was ${name} · the house keeps your ${fmt(d.wager)}`)
+    }
+  }, [d])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  const deal = () => send('topdeck', 'TOPDECK_NEW', { wager })
+  const play = () => {
+    setPhase('return'); setDealt(false)
+    setMsg('back into the deck they go...')
+    later(() => { setPhase('pick'); setDealt(true); setMsg('pick 5 · the drawn card is on this table') }, 1500)
+  }
+  const togglePick = (i) => {
+    if (phase !== 'pick') return
+    setPicks((p) => p.includes(i) ? p.filter((x) => x !== i) : (p.length < 5 ? [...p, i] : p))
+  }
+  const confirm = () => { if (picks.length === 5) send('topdeck', 'TOPDECK_GUESS', { picks: picks.join(',') }) }
+  const ride = () => { setPhase('pick'); setMsg('fresh draw · pick 5 again') }
+  const cashout = () => send('topdeck', 'TOPDECK_CASHOUT', {})
+
+  const cards = d?.cards || []
+  const faceUp = phase === 'fan' || phase === 'return'
+  const stage = d?.stage ?? 1
+  const ladder = d?.ladder || [2, 6, 20]
+  const deckX = 648 - 52, deckY = 6
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="tl-console">
+        <header className="tl-head">
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn" onClick={onBack} title="back to the Game Corner lobby">‹</button>
+            <div className="tl-title">
+              <span className="tl-title-main">TOP DECK</span>
+              <span className="tl-title-sub">game corner · cabinet 03 · find the drawn card</span>
+            </div>
+          </div>
+          <div className="tl-meters">
+            <div className="tl-meter"><span className="tl-meter-label">LADDER</span>
+              <span className="td-ladder">{ladder.map((m, i) => (
+                <span key={m} className={`td-rung${d?.active && stage === i + 1 ? ' on' : ''}${d?.active && stage > i + 1 ? ' done' : ''}`}>{m}x</span>
+              ))}</span></div>
+            <div className="tl-meter"><span className="tl-meter-label">PURSE</span>
+              <span className="tl-meter-val">🪙 {fmt(coins)}</span></div>
+          </div>
+        </header>
+        <div className="td-table">
+          <div className={`td-board${phase === 'return' ? ' td-return' : ''}`}>
+            <div className="td-deck">
+              <span className="td-deck-card" style={{ transform: 'translate(4px,3px) rotate(3deg)' }}>◆</span>
+              <span className="td-deck-card" style={{ transform: 'translate(2px,1px) rotate(-2deg)' }}>◆</span>
+              <span className="td-deck-card">◆</span>
+              <span className="td-deck-count">house deck</span>
+            </div>
+            {cards.map((name, i) => {
+              const { x, y } = tdCellPos(i)
+              const inDeck = !dealt
+              const picked = picks.includes(i)
+              const isReveal = phase === 'reveal' && d?.reveal === i
+              const showFace = faceUp || isReveal
+              return (
+                <button key={`${name}${i}`}
+                  className={`td-card${inDeck ? ' td-in-deck' : ''}${phase === 'pick' ? ' td-pickable' : ''}${picked ? ' td-sel' : ''}${isReveal ? (d.won ? ' td-hit' : ' td-bust') : ''}`}
+                  style={{ left: x, top: y, '--dx': `${deckX - x}px`, '--dy': `${deckY - y}px`,
+                           '--dly': `${i * 45}ms`, '--rdly': '0ms' }}
+                  onClick={() => togglePick(i)} disabled={phase !== 'pick'}>
+                  {showFace ? (<>
+                    <img src={CARD_POOL[name]} alt="" draggable={false} />
+                    <span className="td-card-name">{cap1(name)}</span>
+                  </>) : <span className="td-back-face">◆</span>}
+                </button>
+              )
+            })}
+            {!d?.active && phase === 'table' && (
+              <div className="empty" style={{ position: 'absolute', inset: 0 }}>
+                <div><b>The dealer waits</b><span className="muted">wager Coins · find the drawn card · ride the ladder</span></div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className={`tl-log${phase === 'reveal' && d?.won ? ' tl-log-win' : ''}${phase === 'reveal' && d && !d.won ? ' tl-log-lose' : ''}`}>
+          <span className="tl-log-prompt">&gt;</span> {msg}
+        </div>
+        <footer className="tl-controls">
+          {(phase === 'table' || phase === 'reveal') && (<>
+            <span className="td-chips">{[10, 25, 50, 100, 200].map((v) => (
+              <button key={v} className={`td-chip${wager === v ? ' on' : ''}`} disabled={coins < v}
+                onClick={() => setWager(v)}>{v}</button>
+            ))}</span>
+            <button className="btn go" disabled={coins < wager} onClick={deal}>
+              {phase === 'reveal' ? 'NEW HAND' : 'DEAL'} · 🪙 {wager}</button>
+          </>)}
+          {phase === 'fan' && <button className="btn go" onClick={play}>PLAY ▸ shuffle them in</button>}
+          {phase === 'return' && <span className="tl-watch">▶ WATCH THE DECK</span>}
+          {phase === 'pick' && (<>
+            <span className="tl-watch tl-watch-dim">{picks.length}/5 picked</span>
+            <button className="btn go" disabled={picks.length !== 5} onClick={confirm}>CALL IT</button>
+          </>)}
+          {phase === 'ride' && (<>
+            <button className="btn" onClick={cashout}>CASH OUT · {ladder[stage - 2]}x = 🪙 {fmt((d?.wager ?? 0) * (ladder[stage - 2] ?? 2))}</button>
+            <button className="btn go" onClick={ride}>LET IT RIDE ▸ {ladder[stage - 1]}x</button>
+          </>)}
+        </footer>
+        <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
       </div>
     </div>
   )

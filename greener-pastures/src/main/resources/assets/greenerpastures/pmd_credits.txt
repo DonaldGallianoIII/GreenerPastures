@@ -1,31 +1,71 @@
 Greener Pastures - Game Corner art: PMD Sprite Collab (sprites.pmdcollab.org)
 Fan-made art used with credit (verified per-emotion/per-animation; no game rips). Artists:
+  applin: Emmuffin, eon
+  arrokuda: Caitemis
   axew: G〜
   blitzle: Emmuffin, mucrush
   bounsweet: NOLASMOR, baronessfaron
+  capsakid: G〜
   chespin: Emmuffin, Noo
+  chewtle: EzerArt
+  clobbopus: Emboarger, Emmuffin
+  cramorant: G〜
+  cufant: EzerArt, Gust
   cutiefly: NOLASMOR, baronessfaron
+  dedenne: Emmuffin, Top_Kec
+  deerling: Emmuffin, baronessfaron, mucrush
   dreepy: Deeshura, G〜, NOLASMOR, Top_Kec
+  eldegoss: Emmuffin, EzerArt
+  emolga: Emmuffin, LornaWR, mucrush
+  falinks: Emmuffin, EzerArt
   fennekin: G〜
+  fidough: Axcel, Emmuffin
+  flittle: Emmuffin
   froakie: Cloudy, Emmuffin, G〜, baronessfaron, ◥θ┴θ◤
   fuecoco: G〜
   goomy: RacieB
+  gossifleur: Emmuffin, baronessfaron
+  greavard: Emmuffin
   grookey: G〜, JustAGunk
+  hatenna: Waffluffe, baronessfaron
+  impidimp: Emmuffin
+  lechonk: Emmuffin, NikolaP
   litten: Emmuffin
   milcery: Emmuffin, mixy:3
   mimikyu: Emmuffin
+  minccino: baronessfaron, mucrush
+  morpeko: Emmuffin
+  nacli: Emmuffin
+  nickit: Ddragon, Top_Kec, Waffluffe
   oshawott: Emmuffin
   pancham: Emmuffin
+  pawmi: Emmuffin
+  petilil: Emmuffin, Ichor, mucrush
+  pincurchin: Emmuffin
   popplio: Emmuffin, Fable, ◥θ┴θ◤
   quaxly: Caitemis, Emmuffin
+  rockruff: Emmuffin, JFain, XModxGodX
   rowlet: Emmuffin
   scorbunny: Emmuffin, NeroIntruder
   scorbunny (walk sprite): Emmuffin, NeroIntruder
+  shroodle: G〜
+  silicobra: Jelly, NeonCityRain, NikolaP
+  sinistea: EzerArt, JFain, ShyStarryRain, baronessfaron
+  sizzlipede: Emmuffin
+  skwovet: G〜
+  smoliv: Emmuffin
   snivy: Emmuffin
+  snom: JFain, Jelly
   sobble: Emmuffin, G〜
   sprigatito: Emmuffin
+  tadbulb: ◥θ┴θ◤
+  tandemaus: G〜
   tepig: Emmuffin, Noivern
   togedemaru: Emmuffin
+  toxel: Emboarger, Emmuffin, EzerArt, Waffluffe
   voltorb: JFain
+  wattrel: Aviivix, JustAGunk
   wooloo: Emmuffin
+  yamper: RelicCipher
   zorua: MilesFarber, baronessfaron
+  scorbunny (walk sprite): Emmuffin, NeroIntruder
