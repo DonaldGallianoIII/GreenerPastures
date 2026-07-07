@@ -361,14 +361,18 @@ public final class DsBridge {
             try {
                 var root = GSON.fromJson(src, com.google.gson.JsonObject.class);
                 var shop = root == null ? null : root.getAsJsonObject("shop");
-                var offers = shop == null ? null : shop.getAsJsonArray("offers");
-                if (offers != null) {
-                    for (var el : offers) {
+                boolean any = false;
+                for (var arr : new com.google.gson.JsonArray[]{
+                        shop == null ? null : shop.getAsJsonArray("offers"),
+                        root == null ? null : root.getAsJsonArray("highroller")}) {
+                    if (arr == null) continue;
+                    any = true;
+                    for (var el : arr) {
                         var id = el.getAsJsonObject().get("id");
                         if (id != null) iconCache.computeIfAbsent(id.getAsString(), DsBridge::resolveItemIcon);
                     }
-                    iconsSnapshot = Map.copyOf(iconCache);
                 }
+                if (any) iconsSnapshot = Map.copyOf(iconCache);
             } catch (Throwable t) {
                 GpLog.d("bridge", "icons_err", "err", String.valueOf(t));
             }
@@ -382,9 +386,10 @@ public final class DsBridge {
      *  Falls back to the flat vanilla path, then gives up to "" (the UI shows a neutral \u25c7). */
     private static String resolveItemIcon(String itemId) {
         String[] candidates = switch (itemId) {
-            case com.greenerpastures.arcade.GameShop.MYSTERY_EGG_ID,
-                 com.greenerpastures.arcade.HighRoller.PRIME_EGG_ID ->
+            case com.greenerpastures.arcade.GameShop.MYSTERY_EGG_ID ->
                     new String[]{"cobbreeding:bug_dark_pokemon_egg", "cobbreeding:pokemon_egg", "cobblemon:poke_ball"};
+            case com.greenerpastures.arcade.HighRoller.PRIME_EGG_ID ->   // Deuce: generic egg look
+                    new String[]{"cobbreeding:pokemon_egg", "cobbreeding:normal_pokemon_egg", "cobblemon:poke_ball"};
             case com.greenerpastures.arcade.HighRoller.LEGEND_DISK_ID ->
                     new String[]{"greenerpastures:specimen_disk"};
             default -> new String[]{itemId};

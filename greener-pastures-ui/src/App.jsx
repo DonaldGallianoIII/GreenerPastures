@@ -2350,10 +2350,10 @@ function Ambler({ species, x0, y0, spd, stride = 1, onClick }) {
       const nx = Math.max(4, Math.min(96, cur.x + (Math.random() * 34 - 17)))
       const ny = Math.max(14, Math.min(92, cur.y + (Math.random() * 26 - 13)))
       const dist = Math.hypot(nx - cur.x, ny - cur.y)
-      const dur = Math.max(900, (dist * 260) / stride)
+      const dur = Math.max(225, (dist * 65) / stride)   // Deuce 2026-07-07: 4x the old amble
       setLeg({ x: nx, y: ny, dur, dir: qcDirFrom(nx - cur.x, ny - cur.y) })
       cur = { x: nx, y: ny }
-      timer.current = setTimeout(stroll, dur + 250 + Math.random() * 900)
+      timer.current = setTimeout(stroll, dur + 80 + Math.random() * 300)
     }
     timer.current = setTimeout(stroll, 60 + Math.random() * 800)
     return () => { alive = false; clearTimeout(timer.current) }
@@ -2374,7 +2374,7 @@ function qcDecoys(seed) {   // deterministic-ish ambient crowd, pure theater
   for (let i = 0; i < 27; i++) {
     out.push({ id: i, s: names[Math.floor(rnd() * names.length)],
       x: 4 + rnd() * 92, y: 16 + rnd() * 74,
-      spd: 90 + Math.floor(rnd() * 120), stride: 0.55 + rnd() * 1.25 })
+      spd: 40 + Math.floor(rnd() * 50), stride: 0.55 + rnd() * 1.25 })
   }
   return out
 }
@@ -2403,16 +2403,16 @@ function QuickClawCabinet({ onBack }) {
     const spawn = () => {
       if (!alive) return
       setRunners((rs) => {
-        if (rs.length >= 4) return rs
+        if (rs.length >= 12) return rs   // Deuce 2026-07-07: triple the traffic
         const names = Object.keys(CROWD).filter((n) => n !== d?.species)   // a decoy wearing the
         const y0 = 18 + Math.random() * 66                                 // WANTED face would be a lie
         return [...rs, { id: runnerId.current++, s: names[Math.floor(Math.random() * names.length)],
           fromLeft: Math.random() < 0.5, y0, y1: Math.max(16, Math.min(90, y0 + Math.random() * 30 - 15)),
           crossMs: 2000 + Math.random() * 4000 }]
       })
-      t = setTimeout(spawn, 900 + Math.random() * 2400)
+      t = setTimeout(spawn, 300 + Math.random() * 800)
     }
-    t = setTimeout(spawn, 400)
+    t = setTimeout(spawn, 150)
     return () => { alive = false; clearTimeout(t) }
   }, [d?.species])   // eslint-disable-line react-hooks/exhaustive-deps
 
