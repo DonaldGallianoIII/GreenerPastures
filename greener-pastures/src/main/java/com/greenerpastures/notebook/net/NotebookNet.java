@@ -204,7 +204,7 @@ public final class NotebookNet {
             BlockPos pos = BlockPos.fromLong(s.pos());
             if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity)) continue;
-            pushPastureConfig(player, pos, false);   // prefetch shape: no snapshot capture, no per-mon stats (R3 F6)
+            pushPastureConfig(player, pos, false);   // prefetch shape: no snapshot capture (stats ride along - see below)
             if (++sent >= 16) break;
         }
         if (sent > 0) GpLog.d("notebook", "prefetch", "player", player.getUuid().toString(), "n", Integer.toString(sent));
@@ -1167,7 +1167,11 @@ public final class NotebookNet {
             if (full) PastureSnapshotStore.get(server).capture(player.getUuid(), world, pos, pd, pasture);
             BreedingTier tier = pd.tier();
             boolean linked = pd.owner != null && pd.owner.equals(player.getUuid());
-            List<MonEntry> roster = CobbreedingBridge.rosterOf(pasture, pd, full);
+            // ALWAYS with stats. The R3 F6 stats-less prefetch shape ping-ponged with the full shape through
+            // the change gate: the 1-min prefetch sweep kept overwriting live IVs/genders with zeros, so the
+            // graph showed 0/186 parents and a false "this pair can't breed" (Deuce, live 2026-07-07). At
+            // 1/min x <=16 loaded pastures the stats read is cheap; only the snapshot capture stays full-gated.
+            List<MonEntry> roster = CobbreedingBridge.rosterOf(pasture, pd, true);
             long key = pos.asLong();
             sendGated(player, "cfg:" + key, new NotebookPastureConfigS2C(
                     key, pd.name, tier == null ? "" : tier.name(), linked, pd.maxPairs(), roster));

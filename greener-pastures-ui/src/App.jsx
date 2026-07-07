@@ -1470,6 +1470,8 @@ function DaemonGraph({ cfg }) {
     const a = monStats(monNodesActive[0].monId), b = monStats(monNodesActive[1].monId)
     const dA = speciesOf(monNodesActive[0].monId).toLowerCase() === 'ditto', dB = speciesOf(monNodesActive[1].monId).toLowerCase() === 'ditto'
     const gA = String(a.gender || '').toLowerCase(), gB = String(b.gender || '').toLowerCase()
+    const known = (g) => g === 'male' || g === 'female' || g === 'genderless'
+    if (!known(gA) || !known(gB)) return true   // stats not here yet - never warn on unknowns (the 0/186 clobber, 2026-07-07)
     const mf = (gA === 'male' && gB === 'female') || (gA === 'female' && gB === 'male')
     return (dA !== dB) || mf
   })()
