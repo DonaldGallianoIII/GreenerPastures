@@ -6,7 +6,7 @@
    ============================================================ */
 import { useState, useEffect, useMemo, useRef, Fragment } from 'react'
 import { useChannel, send, isMock } from './bridge.js'
-import { CARD_POOL } from './carddeck.js'
+import { CARD_ART, cardArt } from './carddeck.js'
 import { HAPPY, SAD, VOLTORB_ANGRY, HAPPY_KEYS, SAD_KEYS } from './pmdsprites.js'
 import { SCORBUNNY_SHEET } from './treelinesprites.js'
 
@@ -125,21 +125,34 @@ const CSS = `
 .td-deck-card{ position:absolute; inset:0; border:1px solid var(--cyan); border-radius:5px; background:var(--inset);
   display:flex; align-items:center; justify-content:center; color:var(--cyan); font-size:13px;
   box-shadow:0 2px 8px rgba(0,0,0,.5); }
-.td-deck-count{ position:absolute; bottom:-16px; width:100%; text-align:center; font-size:9px; color:var(--dim); }
-.td-card{ position:absolute; width:110px; height:80px; border:1px solid var(--line2); border-radius:8px;
-  background:var(--inset); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  padding:4px; cursor:default; transition:transform .85s cubic-bezier(.45,1.25,.4,1) var(--dly,0s), opacity .7s ease var(--dly,0s); }
-.td-card img{ width:44px; height:44px; image-rendering:pixelated; }
-.td-card-name{ font-size:9px; color:var(--muted); letter-spacing:.5px; }
+.td-deck-count{ position:absolute; bottom:-15px; left:50%; transform:translateX(-50%); white-space:nowrap;
+  font-size:9px; color:var(--dim); }
+.td-card{ position:absolute; width:110px; height:80px; border:none; background:transparent; padding:0;
+  perspective:520px; cursor:default;
+  transition:transform .85s cubic-bezier(.45,1.25,.4,1) var(--dly,0s), opacity .7s ease var(--dly,0s); }
+.td-flip-inner{ position:relative; display:block; width:100%; height:100%; transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.5,1.3,.5,1); }
+.td-card.td-flipped .td-flip-inner{ transform:rotateY(180deg); }
+.td-face{ position:absolute; inset:0; backface-visibility:hidden; border:1px solid var(--line2); border-radius:8px;
+  background:var(--inset); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px; }
+.td-face-down{ color:var(--cyan); font-size:20px; opacity:.85; }
+.td-face-up{ transform:rotateY(180deg); }
+.td-face img{ width:44px; height:44px; image-rendering:pixelated; }
+.td-stranger .td-face-up{ border-color:#5a2432; filter:saturate(.55); }
+.td-was .td-face-up{ border-color:var(--cyan); box-shadow:0 0 0 2px var(--cyan), 0 0 12px rgba(92,200,255,.4); }
+.td-hit .td-face-up{ border-color:var(--grn); box-shadow:0 0 0 2px var(--grn), 0 0 14px rgba(70,200,120,.45); }
+.td-mercy{ position:absolute; inset:0; z-index:40; background:rgba(8,12,17,.94); border-radius:10px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; }
+.td-mercy-opts{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:520px; }
+.td-mercy-opt{ display:flex; flex-direction:column; align-items:center; gap:3px; width:76px; padding:7px 4px;
+  border:1px solid var(--line2); border-radius:8px; background:var(--inset); cursor:pointer; color:var(--muted); font-size:9px; }
+.td-mercy-opt:hover{ border-color:var(--cyan); color:var(--cyan); }
+.td-mercy-opt img{ width:40px; height:40px; image-rendering:pixelated; }
+.td-card-name{ font-size:9px; color:var(--muted); letter-spacing:.5px; min-height:11px; }
 .td-in-deck{ transform:translate(var(--dx),var(--dy)) rotate(6deg) scale(.16); opacity:0; }
 .td-return .td-card{ transition:transform 1.25s ease-in var(--rdly,0s), opacity 1s ease .25s; }
 .td-pickable{ cursor:pointer; }
-.td-pickable:hover{ border-color:var(--cyan); }
-.td-sel{ border-color:var(--cyan); box-shadow:0 0 0 2px var(--cyan), 0 0 12px rgba(92,200,255,.35); }
-.td-back-face{ display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:var(--cyan);
-  font-size:22px; opacity:.75; }
-.td-hit{ border-color:var(--grn); box-shadow:0 0 0 2px var(--grn), 0 0 14px rgba(70,200,120,.4); }
-.td-bust{ border-color:#ff6b81; box-shadow:0 0 0 2px #ff6b81, 0 0 14px rgba(255,107,129,.4); }
+.td-pickable:hover .td-face-down{ border-color:var(--cyan); box-shadow:0 0 10px rgba(92,200,255,.3); }
 .td-chips{ display:flex; gap:6px; align-items:center; }
 .td-chip{ padding:5px 11px; border:1px solid var(--line2); border-radius:14px; background:var(--inset);
   color:var(--muted); font-size:11px; font-weight:700; cursor:pointer; }
@@ -2009,8 +2022,9 @@ function TreelineCabinet({ onBack }) {
   )
 }
 
-// ── TOP DECK (cabinet 03): 20 cards fan from the deck, slide back, pick 5 of 20 for the secret
-// draw. Ladder 2x/6x/20x, cash out between rungs. Server owns the draw; this is all theater. ──
+// ── TOP DECK v2 (cabinet 03): 20 cards fan face-up (each wearing a random emotion), slide back,
+// re-deal face-down with ONE og survivor among strangers. Flip up to 5 to find it; ladder 2x/6x/20x.
+// Mercy on a loss: name the emotion one og card wore = wager back. Server owns every secret. ──
 const TD_COLS = 5
 const TD_CELL_W = 122
 const TD_CELL_H = 88
@@ -2023,53 +2037,76 @@ function TopDeckCabinet({ onBack }) {
   const d = useChannel('topdeck')
   const a = useChannel('arcade')
   const coins = a?.gcoins ?? 0
-  const [phase, setPhase] = useState('table')   // table | fan | return | pick | ride | reveal
+  const [phase, setPhase] = useState('table')   // table | fan | return | hunt | ride | lost | mercy | reveal
   const [wager, setWager] = useState(50)
-  const [picks, setPicks] = useState([])
-  const [dealt, setDealt] = useState(false)     // false = cards sit in the deck (pre/post animation)
-  const [msg, setMsg] = useState('set a wager · the house deals 20 cards')
+  const [dealt, setDealt] = useState(false)
+  const [foundPos, setFoundPos] = useState(-1)  // brief green flash on the survivor you just flipped
+  const [msg, setMsg] = useState('set a wager · the house deals 20')
   const stageRef = useRef(1)
+  const pendingFlip = useRef(-1)
   const timers = useRef([])
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms))
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
-  useEffect(() => {   // server pushes drive the big transitions; the animation phases are local
+  useEffect(() => {
     if (!d) return
     if (d.active && (phase === 'table' || phase === 'reveal')) {
-      stageRef.current = d.stage
-      setPicks([]); setDealt(false); setPhase('fan')
-      setMsg('the table is dealt · study the 20 · PLAY shuffles them back in')
+      stageRef.current = d.stage; setFoundPos(-1); setDealt(false); setPhase('fan')
+      setMsg('the table is dealt · remember these faces · PLAY shuffles them in')
       later(() => setDealt(true), 60)
     } else if (d.active && d.stage > stageRef.current) {
       stageRef.current = d.stage
-      setPicks([]); setPhase('ride')
-      setMsg(`rung ${d.stage - 1} cleared · ${d.ladder?.[d.stage - 2]}x is banked if you walk`)
-    } else if (d.over && (phase === 'pick' || phase === 'ride')) {
+      const pos = pendingFlip.current; pendingFlip.current = -1
+      setFoundPos(pos)
+      setMsg('the survivor · rung cleared')
+      later(() => { setFoundPos(-1); setPhase('ride')
+        setMsg(`${d.ladder?.[d.stage - 2]}x is banked if you walk · the deck re-deals if you ride`) }, 1100)
+    } else if (d.over && !d.won && (phase === 'hunt' || phase === 'return')) {
+      setPhase('lost')
+      setMsg(`out of flips · she was card ${(d.reveal ?? 0) + 1} · the house keeps ${fmt(d.wager)}`)
+    } else if (d.over && d.won && (phase === 'hunt' || phase === 'ride')) {
       setPhase('reveal')
-      const name = cap1(d.cards?.[d.reveal])
-      setMsg(d.won ? `it was ${name} · the house pays ${fmt(d.payout)} Coins`
-                   : `it was ${name} · the house keeps your ${fmt(d.wager)}`)
+      setMsg(`the house pays ${fmt(d.payout)} Coins`)
+    } else if (d.mercy?.started && phase === 'lost') {
+      setPhase('mercy')
+      setMsg(`which face was ${cap1(d.mercy.species)} wearing in the fan?`)
+    } else if (d.mercy?.used && phase === 'mercy') {
+      setPhase('reveal')
+      setMsg(d.mercy.won ? `the house relents · ${fmt(d.wager)} Coins returned` : 'the house remembers better · next hand')
     }
   }, [d])   // eslint-disable-line react-hooks/exhaustive-deps
 
   const deal = () => send('topdeck', 'TOPDECK_NEW', { wager })
   const play = () => {
     setPhase('return'); setDealt(false)
-    setMsg('back into the deck they go...')
-    later(() => { setPhase('pick'); setDealt(true); setMsg('pick 5 · the drawn card is on this table') }, 1500)
+    setMsg('back into the deck · one of them stays on the table...')
+    later(() => { setPhase('hunt'); setDealt(true); setMsg('flip cards · find the one that stayed · strangers burn a flip') }, 1500)
   }
-  const togglePick = (i) => {
-    if (phase !== 'pick') return
-    setPicks((p) => p.includes(i) ? p.filter((x) => x !== i) : (p.length < 5 ? [...p, i] : p))
+  const flip = (i) => {
+    if (phase !== 'hunt' || flipInfo(i)) return
+    pendingFlip.current = i
+    send('topdeck', 'TOPDECK_FLIP', { pos: i })
   }
-  const confirm = () => { if (picks.length === 5) send('topdeck', 'TOPDECK_GUESS', { picks: picks.join(',') }) }
-  const ride = () => { setPhase('pick'); setMsg('fresh draw · pick 5 again') }
+  const ride = () => { setPhase('hunt'); setMsg('fresh table · same 20 faces · find the new survivor') }
   const cashout = () => send('topdeck', 'TOPDECK_CASHOUT', {})
+  const mercy = () => send('topdeck', 'TOPDECK_MERCY', {})
+  const mercyPick = (e) => send('topdeck', 'TOPDECK_MERCY_PICK', { emotion: e })
+
+  // what shows on a card right now: null = face-down
+  const strangerAt = {}
+  for (const f of d?.flips || []) strangerAt[f.pos] = f
+  function flipInfo(i) {
+    if (phase === 'fan' || phase === 'return') return { s: d.cards[i].s, e: d.cards[i].e, kind: 'og' }
+    if (strangerAt[i]) return { s: strangerAt[i].s, e: strangerAt[i].e, kind: 'stranger' }
+    if (foundPos === i) return { s: d.cards[i].s, e: d.cards[i].e, kind: 'found' }
+    if (d?.over && d.reveal === i) return { s: d.cards[i].s, e: d.cards[i].e, kind: d.won ? 'found' : 'was' }
+    return null
+  }
 
   const cards = d?.cards || []
-  const faceUp = phase === 'fan' || phase === 'return'
   const stage = d?.stage ?? 1
   const ladder = d?.ladder || [2, 6, 20]
+  const flipsLeft = d?.flipsLeft ?? 5
   const deckX = 648 - 52, deckY = 6
   return (
     <div className="pane" style={{ overflow: 'auto' }}>
@@ -2079,10 +2116,13 @@ function TopDeckCabinet({ onBack }) {
             <button className="btn" onClick={onBack} title="back to the Game Corner lobby">‹</button>
             <div className="tl-title">
               <span className="tl-title-main">TOP DECK</span>
-              <span className="tl-title-sub">game corner · cabinet 03 · find the drawn card</span>
+              <span className="tl-title-sub">game corner · cabinet 03 · find the card that stayed</span>
             </div>
           </div>
           <div className="tl-meters">
+            <div className="tl-meter"><span className="tl-meter-label">FLIPS</span>
+              <span className="tl-pips">{Array.from({ length: 5 }).map((_, i) =>
+                <i key={i} className={`tl-pip${i < flipsLeft ? ' tl-pip-on' : ''}`} />)}</span></div>
             <div className="tl-meter"><span className="tl-meter-label">LADDER</span>
               <span className="td-ladder">{ladder.map((m, i) => (
                 <span key={m} className={`td-rung${d?.active && stage === i + 1 ? ' on' : ''}${d?.active && stage > i + 1 ? ' done' : ''}`}>{m}x</span>
@@ -2099,33 +2139,47 @@ function TopDeckCabinet({ onBack }) {
               <span className="td-deck-card">◆</span>
               <span className="td-deck-count">house deck</span>
             </div>
-            {cards.map((name, i) => {
+            {cards.map((c, i) => {
               const { x, y } = tdCellPos(i)
-              const inDeck = !dealt
-              const picked = picks.includes(i)
-              const isReveal = phase === 'reveal' && d?.reveal === i
-              const showFace = faceUp || isReveal
+              const info = flipInfo(i)
+              const kind = info?.kind
               return (
-                <button key={`${name}${i}`}
-                  className={`td-card${inDeck ? ' td-in-deck' : ''}${phase === 'pick' ? ' td-pickable' : ''}${picked ? ' td-sel' : ''}${isReveal ? (d.won ? ' td-hit' : ' td-bust') : ''}`}
-                  style={{ left: x, top: y, '--dx': `${deckX - x}px`, '--dy': `${deckY - y}px`,
-                           '--dly': `${i * 45}ms`, '--rdly': '0ms' }}
-                  onClick={() => togglePick(i)} disabled={phase !== 'pick'}>
-                  {showFace ? (<>
-                    <img src={CARD_POOL[name]} alt="" draggable={false} />
-                    <span className="td-card-name">{cap1(name)}</span>
-                  </>) : <span className="td-back-face">◆</span>}
+                <button key={`${c.s}${i}`}
+                  className={`td-card${!dealt ? ' td-in-deck' : ''}${phase === 'hunt' && !info ? ' td-pickable' : ''}${info ? ' td-flipped' : ''}${kind === 'stranger' ? ' td-stranger' : ''}${kind === 'found' ? ' td-hit' : ''}${kind === 'was' ? ' td-was' : ''}`}
+                  style={{ left: x, top: y, '--dx': `${deckX - x}px`, '--dy': `${deckY - y}px`, '--dly': `${i * 45}ms` }}
+                  onClick={() => flip(i)} disabled={phase !== 'hunt' || !!info}>
+                  <span className="td-flip-inner">
+                    <span className="td-face td-face-down">◆</span>
+                    <span className="td-face td-face-up">
+                      {info && <img src={cardArt(info.s, info.e)} alt="" draggable={false} />}
+                      <span className="td-card-name">{info ? cap1(info.s) : ''}</span>
+                    </span>
+                  </span>
                 </button>
               )
             })}
-            {!d?.active && phase === 'table' && (
+            {!d?.active && (phase === 'table') && (
               <div className="empty" style={{ position: 'absolute', inset: 0 }}>
-                <div><b>The dealer waits</b><span className="muted">wager Coins · find the drawn card · ride the ladder</span></div>
+                <div><b>The dealer waits</b><span className="muted">wager Coins · find the card that stays · ride the ladder</span></div>
+              </div>
+            )}
+            {phase === 'mercy' && d?.mercy?.started && (
+              <div className="td-mercy">
+                <span className="h" style={{ fontSize: 13 }}>MERCY · which face was {cap1(d.mercy.species)} wearing?</span>
+                <div className="td-mercy-opts">
+                  {(d.mercy.options || []).map((e) => (
+                    <button key={e} className="td-mercy-opt" onClick={() => mercyPick(e)}>
+                      <img src={cardArt(d.mercy.species, e)} alt="" draggable={false} />
+                      <span>{e.replace(/_/g, ' ')}</span>
+                    </button>
+                  ))}
+                </div>
+                <span className="dim" style={{ fontSize: 10 }}>one answer · right = your {fmt(d.wager)} Coins back · free either way</span>
               </div>
             )}
           </div>
         </div>
-        <div className={`tl-log${phase === 'reveal' && d?.won ? ' tl-log-win' : ''}${phase === 'reveal' && d && !d.won ? ' tl-log-lose' : ''}`}>
+        <div className={`tl-log${(phase === 'reveal' && (d?.won || d?.mercy?.won)) ? ' tl-log-win' : ''}${phase === 'lost' ? ' tl-log-lose' : ''}`}>
           <span className="tl-log-prompt">&gt;</span> {msg}
         </div>
         <footer className="tl-controls">
@@ -2139,14 +2193,17 @@ function TopDeckCabinet({ onBack }) {
           </>)}
           {phase === 'fan' && <button className="btn go" onClick={play}>PLAY ▸ shuffle them in</button>}
           {phase === 'return' && <span className="tl-watch">▶ WATCH THE DECK</span>}
-          {phase === 'pick' && (<>
-            <span className="tl-watch tl-watch-dim">{picks.length}/5 picked</span>
-            <button className="btn go" disabled={picks.length !== 5} onClick={confirm}>CALL IT</button>
-          </>)}
+          {phase === 'hunt' && <span className="tl-watch tl-watch-dim">{flipsLeft} flips left · og face = the survivor · stranger = keep looking</span>}
           {phase === 'ride' && (<>
             <button className="btn" onClick={cashout}>CASH OUT · {ladder[stage - 2]}x = 🪙 {fmt((d?.wager ?? 0) * (ladder[stage - 2] ?? 2))}</button>
             <button className="btn go" onClick={ride}>LET IT RIDE ▸ {ladder[stage - 1]}x</button>
           </>)}
+          {phase === 'lost' && d?.mercy?.available && (
+            <button className="btn go" onClick={mercy}>Mercy?</button>
+          )}
+          {phase === 'lost' && !d?.mercy?.available && (
+            <button className="btn go" onClick={() => setPhase('reveal')}>NEXT</button>
+          )}
         </footer>
         <span className="dim" style={{ fontSize: 9 }}>portraits · PMD Sprite Collab (fan-made, credited - see the mod's CREDITS)</span>
       </div>
@@ -2156,7 +2213,7 @@ function TopDeckCabinet({ onBack }) {
 
 // ── SLOTS (cabinet 04): the classic. Server rolls; the reels here are pure theater that lands
 // on the server result left-to-right. Voltorb (angry) is the jackpot face, obviously. ──
-function slSymbolArt(name) { return name === 'voltorb' ? VOLTORB_ANGRY : CARD_POOL[name] }
+function slSymbolArt(name) { return name === 'voltorb' ? VOLTORB_ANGRY : cardArt(name, 'normal') }
 
 function SlotsCabinet({ onBack }) {
   const d = useChannel('slots')

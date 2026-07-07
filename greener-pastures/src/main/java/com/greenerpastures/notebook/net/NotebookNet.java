@@ -369,7 +369,9 @@ public final class NotebookNet {
                 case NotebookActionC2S.TREELINE_SEARCH -> { treelineSearch(player, p.amount()); pushTreeline(player); pushStatus(player); }
                 case NotebookActionC2S.SHOP_BUY -> { shopBuy(player, p.amount(), p.arg()); pushArcade(player); }
                 case NotebookActionC2S.TOPDECK_NEW -> { topdeckNew(player, p.amount()); pushTopdeck(player); pushArcade(player); }
-                case NotebookActionC2S.TOPDECK_GUESS -> { topdeckGuess(player, p.arg()); pushTopdeck(player); pushArcade(player); }
+                case NotebookActionC2S.TOPDECK_FLIP -> { topdeckFlip(player, p.amount()); pushTopdeck(player); pushArcade(player); }
+                case NotebookActionC2S.TOPDECK_MERCY -> { topdeckMercy(player); pushTopdeck(player); }
+                case NotebookActionC2S.TOPDECK_MERCY_PICK -> { topdeckMercyPick(player, p.arg()); pushTopdeck(player); pushArcade(player); }
                 case NotebookActionC2S.TOPDECK_CASHOUT -> { topdeckCashout(player); pushTopdeck(player); pushArcade(player); }
                 case NotebookActionC2S.SLOTS_SPIN -> { slotsSpin(player, p.amount()); pushSlots(player); pushArcade(player); }
                 case NotebookActionC2S.DISMISS_NOTE -> {
@@ -1369,22 +1371,22 @@ public final class NotebookNet {
         if (server == null) return;
         var live = topdeckRounds.get(player.getUuid());
         if (live != null && !live.over) {
-            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r finish the round on the table first."), false);
+            player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r finish the round on the table first."), false);
             return;
         }
         if (wager < com.greenerpastures.arcade.TopDeck.MIN_BET || wager > com.greenerpastures.arcade.TopDeck.MAX_BET) {
-            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r the house takes "
+            player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r the house takes "
                     + com.greenerpastures.arcade.TopDeck.MIN_BET + " to " + com.greenerpastures.arcade.TopDeck.MAX_BET + " Coins a hand."), false);
             return;
         }
         var store = com.greenerpastures.arcade.ArcadeStore.get(server);
         if (!store.trysSpend(player.getUuid(), arcadeToday(), wager)) {
-            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r not enough Coins - the machines await."), false);
+            player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r not enough Coins - the machines await."), false);
             return;
         }
         var round = com.greenerpastures.arcade.TopDeck.deal(
-                com.greenerpastures.arcade.TopDeckPool.POOL, wager, new java.util.Random());
-        if (round == null) {    // pool bug, never expected - give the coins back rather than eat them
+                com.greenerpastures.arcade.TopDeckPool.EMOTIONS, wager, new java.util.Random());
+        if (round == null) {    // catalog bug, never expected - give the coins back rather than eat them
             store.refund(player.getUuid(), arcadeToday(), wager);
             return;
         }
@@ -1392,21 +1394,14 @@ public final class NotebookNet {
         GpLog.i("arcade", "td_new", "player", player.getUuid().toString(), "wager", wager);
     }
 
-    private static void topdeckGuess(ServerPlayerEntity player, String csv) {
+    private static void topdeckFlip(ServerPlayerEntity player, int pos) {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         var round = topdeckRounds.get(player.getUuid());
         if (round == null || round.over) return;
-        int[] picks;
-        try {
-            String[] parts = csv.split(",");
-            picks = new int[parts.length];
-            for (int i = 0; i < parts.length; i++) picks[i] = Integer.parseInt(parts[i].trim());
-        } catch (Exception e) {
-            return;
-        }
         int stageBefore = round.stage;
-        var outcome = com.greenerpastures.arcade.TopDeck.guess(round, picks, new java.util.Random());
+        var outcome = com.greenerpastures.arcade.TopDeck.flip(round, pos,
+                com.greenerpastures.arcade.TopDeckPool.EMOTIONS, new java.util.Random());
         switch (outcome) {
             case HIT -> {
                 if (round.over) {   // top rung auto-cash
@@ -1418,7 +1413,7 @@ public final class NotebookNet {
                     GpLog.i("arcade", "td_hit", "player", player.getUuid().toString(), "rung", stageBefore);
                 }
             }
-            case MISS -> GpLog.i("arcade", "td_miss", "player", player.getUuid().toString(),
+            case LOST -> GpLog.i("arcade", "td_miss", "player", player.getUuid().toString(),
                     "rung", stageBefore, "lost", round.wager);
             default -> { }
         }
@@ -1436,8 +1431,32 @@ public final class NotebookNet {
         }
     }
 
-    /** TOP DECK state: the 20 species are public (they fanned face-up); the drawn index ships only
-     *  once the round is over. */
+    private static void topdeckMercy(ServerPlayerEntity player) {
+        var round = topdeckRounds.get(player.getUuid());
+        var options = com.greenerpastures.arcade.TopDeck.mercyStart(round,
+                com.greenerpastures.arcade.TopDeckPool.EMOTIONS, new java.util.Random());
+        if (options != null) {
+            GpLog.i("arcade", "td_mercy", "player", player.getUuid().toString(),
+                    "species", round.species.get(round.mercyIndex), "options", options.size());
+        }
+    }
+
+    private static void topdeckMercyPick(ServerPlayerEntity player, String emotion) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        var round = topdeckRounds.get(player.getUuid());
+        var outcome = com.greenerpastures.arcade.TopDeck.mercyPick(round, emotion);
+        if (outcome == com.greenerpastures.arcade.TopDeck.Outcome.MERCY_WON) {
+            com.greenerpastures.arcade.ArcadeStore.get(server).refund(player.getUuid(), arcadeToday(), round.wager);
+            GpLog.i("arcade", "td_mercy_won", "player", player.getUuid().toString(), "refund", round.wager);
+        } else if (outcome == com.greenerpastures.arcade.TopDeck.Outcome.MERCY_LOST) {
+            GpLog.i("arcade", "td_mercy_lost", "player", player.getUuid().toString());
+        }
+    }
+
+    /** TOP DECK state: the og 20 (species + the emotion each wore) are public - they fanned face-up.
+     *  Mid-rung the client gets ONLY flipped positions' stranger faces; the survivor's position ships
+     *  once the round settles. Mercy options ship only after MERCY starts. */
     public static void pushTopdeck(ServerPlayerEntity player) {
         var round = topdeckRounds.get(player.getUuid());
         JsonObject root = new JsonObject();
@@ -1449,14 +1468,44 @@ public final class NotebookNet {
         root.add("ladder", ladder);
         if (round != null) {
             JsonArray cards = new JsonArray();
-            for (String s : round.species) cards.add(s);
+            for (int i = 0; i < com.greenerpastures.arcade.TopDeck.DECK; i++) {
+                JsonObject c = new JsonObject();
+                c.addProperty("s", round.species.get(i));
+                c.addProperty("e", round.ogEmotions.get(i));
+                cards.add(c);
+            }
             root.add("cards", cards);
             root.addProperty("stage", round.stage);
             root.addProperty("wager", round.wager);
             root.addProperty("over", round.over);
             root.addProperty("won", round.won);
             root.addProperty("payout", round.payout);
+            root.addProperty("flipsLeft", round.flipsLeft);
+            JsonArray flips = new JsonArray();
+            for (int i = 0; i < com.greenerpastures.arcade.TopDeck.DECK; i++) {
+                if (round.flipped[i] && round.strangerSpecies[i] != null) {
+                    JsonObject f = new JsonObject();
+                    f.addProperty("pos", i);
+                    f.addProperty("s", round.strangerSpecies[i]);
+                    f.addProperty("e", round.strangerEmotion[i]);
+                    flips.add(f);
+                }
+            }
+            root.add("flips", flips);
             if (round.revealTarget >= 0) root.addProperty("reveal", round.revealTarget);
+            JsonObject mercy = new JsonObject();
+            mercy.addProperty("available", round.mercyAvailable && !round.mercyUsed);
+            mercy.addProperty("started", round.mercyIndex >= 0 && !round.mercyUsed);
+            mercy.addProperty("used", round.mercyUsed);
+            mercy.addProperty("won", round.mercyWon);
+            if (round.mercyIndex >= 0) {
+                mercy.addProperty("species", round.species.get(round.mercyIndex));
+                mercy.addProperty("card", round.mercyIndex);
+                JsonArray opts = new JsonArray();
+                for (String e : round.mercyOptions) opts.add(e);
+                mercy.add("options", opts);
+            }
+            root.add("mercy", mercy);
         }
         sendGated(player, "topdeck", new NotebookTopdeckS2C(GSON.toJson(root)));
     }
@@ -1468,14 +1517,14 @@ public final class NotebookNet {
         MinecraftServer server = player.getServer();
         if (server == null) return;
         if (!com.greenerpastures.arcade.SlotMachine.betValid(bet)) {
-            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r this machine takes "
+            player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r this machine takes "
                     + com.greenerpastures.arcade.SlotMachine.MIN_BET + " to "
                     + com.greenerpastures.arcade.SlotMachine.MAX_BET + " Coins a pull."), false);
             return;
         }
         var store = com.greenerpastures.arcade.ArcadeStore.get(server);
         if (!store.trysSpend(player.getUuid(), arcadeToday(), bet)) {
-            player.sendMessage(net.minecraft.text.Text.literal("§6[Game Corner]§r not enough Coins - the machines await."), false);
+            player.sendMessage(net.minecraft.text.Text.literal("\u00a76[Game Corner]\u00a7r not enough Coins - the machines await."), false);
             return;
         }
         int[] reels = com.greenerpastures.arcade.SlotMachine.spin(new java.util.Random());

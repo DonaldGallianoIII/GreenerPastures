@@ -134,7 +134,9 @@ public final class DsBridge {
             case "TREELINE_SEARCH" -> new NotebookActionC2S(NotebookActionC2S.TREELINE_SEARCH, "", (int) num(p, "tree", -1));
             case "SHOP_BUY"        -> new NotebookActionC2S(NotebookActionC2S.SHOP_BUY, str(p, "item", ""), (int) num(p, "slot", -1));
             case "TOPDECK_NEW"     -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_NEW, "", (int) num(p, "wager", 0));
-            case "TOPDECK_GUESS"   -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_GUESS, str(p, "picks", ""), 0);
+            case "TOPDECK_FLIP"    -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_FLIP, "", (int) num(p, "pos", -1));
+            case "TOPDECK_MERCY"   -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_MERCY, "", 0);
+            case "TOPDECK_MERCY_PICK" -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_MERCY_PICK, str(p, "emotion", ""), 0);
             case "TOPDECK_CASHOUT" -> new NotebookActionC2S(NotebookActionC2S.TOPDECK_CASHOUT, "", 0);
             case "SLOTS_SPIN"      -> new NotebookActionC2S(NotebookActionC2S.SLOTS_SPIN, "", (int) num(p, "bet", 0));
             default -> null;   // DEPOSIT / inventory land when the real inventory channel is added (EGG_PIPELINE_SPEC)
