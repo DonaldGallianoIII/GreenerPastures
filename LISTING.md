@@ -141,6 +141,12 @@ Eggs are bagged and tagged: every voided egg is listed with the exact filter tha
 - **Cobbreeding 2.2.x** - the breeding half of the mod activates with it (multi-pair Kernels, egg IV/nature reads). Without it, Greener Pastures self-disables those features with a friendly log line instead of crashing.
 - **MCEF 2.1.6+** (client only) - renders the full Notebook console. Without it you get a simpler built-in UI; everything still works.
 
+**One config we HIGHLY encourage**: in Cobbreeding's `config/cobbreeding/main.json`, set
+`"eggEncryptionEnabled": false`. This is a data science mod - the whole point is seeing your eggs'
+IVs, natures and abilities and making decisions with them, and encryption hides exactly that until
+hatch. Everything works fine with encryption ON (we test that way too - eggs bank, sort and route
+by species regardless), you're just playing the mod with the lights off.
+
 Nothing is bundled - install each as its own mod. Works in singleplayer and on dedicated servers (MCEF is only ever needed on clients).
 
 *MIT licensed. Built by DonaldGalliano. Game Corner art: PMD Sprite Collab - 500+ fan-made portraits + 23 walk sheets, 45 artists, credited in CREDITS-PMD.md, in the jar, and on the in-game About card. Enjoying it? There's an optional Ko-fi (ko-fi.com/donaldgallianoiii) on the About card - it buys nothing in-game, ever.*
