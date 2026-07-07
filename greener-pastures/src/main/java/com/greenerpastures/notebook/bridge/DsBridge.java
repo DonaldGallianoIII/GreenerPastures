@@ -440,7 +440,14 @@ public final class DsBridge {
             if (root == null) return null;
             var textures = root.getAsJsonObject("textures");
             if (textures != null) {
-                if (textures.has("layer0")) return textures.get("layer0").getAsString();
+                // Slot preference: flat item art first, then the block face that reads best as an icon
+                // (a log's "side" beats its "end" rings; cube_all uses "all").
+                for (String slot : new String[]{"layer0", "side", "all", "front", "texture"}) {
+                    if (textures.has(slot)) {
+                        String v = textures.get(slot).getAsString();
+                        if (!v.startsWith("#")) return v;
+                    }
+                }
                 for (var e : textures.entrySet()) {
                     String v = e.getValue().getAsString();
                     if (!v.startsWith("#")) return v;   // "#side"-style refs point at slots, not files
