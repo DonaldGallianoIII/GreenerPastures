@@ -34,7 +34,7 @@ import java.nio.file.StandardCopyOption;
  * ({@code ws://127.0.0.1:25599}, {@code DsBridge}) exactly as it does for the browser; MCEF is only the render
  * surface ("two transports, one app"). Render + input mirror CinemaMod's {@code ExampleScreen} (mcef 2.1.6-1.21.1),
  * translated to Yarn. Instantiated only when the {@code mcef} mod is present (guarded in GreenerPasturesClient);
- * without it, the owo {@link NotebookScreen} is used instead.
+ * without it, {@link InstallMcefScreen} tells the player how to get it (MCEF is THE console).
  */
 public class NotebookBrowserScreen extends Screen {
     /** file:// URL of the extracted single-file console (cached for the session). */

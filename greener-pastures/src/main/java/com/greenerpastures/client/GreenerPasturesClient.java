@@ -4,7 +4,7 @@ import com.greenerpastures.GreenerPastures;
 import com.greenerpastures.egg.highlighter.ShinyEggHighlighterClient;
 import com.greenerpastures.egg.oracle.EggOracleClient;
 import com.greenerpastures.client.notebook.NotebookBrowserScreen;
-import com.greenerpastures.client.notebook.NotebookScreen;
+import com.greenerpastures.client.notebook.InstallMcefScreen;
 import com.greenerpastures.client.notebook.NotebookState;
 import com.greenerpastures.notebook.bridge.DsBridge;
 import com.greenerpastures.notebook.net.NotebookAugmenterS2C;
@@ -33,7 +33,6 @@ import net.minecraft.client.gui.screen.ingame.HandledScreens;
  */
 public final class GreenerPasturesClient implements ClientModInitializer {
     /** Ticks since load; gates the notebook live-poll to ~1×/s while the console is open. */
-    private static int notebookPollTick;
     private static int warmTick;
     /** Mod-load state is immutable - resolve ONCE, not 20×/s on the tick path (perf-audit R3 client #3). */
     private static boolean mcefPresent;
@@ -51,7 +50,7 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         HandledScreens.register(PastureMenu.TYPE, PastureScreen::new);
 
         // notebook/ console - client-side open hook for the Notebook item (air / non-pasture right-click).
-        // With MCEF installed → the React console in-game (Chromium); otherwise fall back to the owo UI.
+        // With MCEF installed → the React console in-game (Chromium); otherwise an install-MCEF prompt.
         // Kernel right-click → rename screen (QoL: label your kernels)
         com.greenerpastures.pasture.breeding.BreedingUpgradeItem.renameScreenOpener =
                 stack -> net.minecraft.client.MinecraftClient.getInstance().setScreen(
@@ -91,51 +90,51 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // notebook/ console sync - receive status pushes → cache + refresh the open console
         ClientPlayNetworking.registerGlobalReceiver(NotebookStatusS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyStatus(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyStatus(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookStorageS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyStorage(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyStorage(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookCompilerS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyCompiler(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyCompiler(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookPasturesS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyPastures(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyPastures(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookAugmenterS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyAugmenter(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyAugmenter(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookBioBankS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyBiobank(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyBiobank(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookPastureConfigS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyPastureConfig(payload)) { NotebookScreen.refreshIfOpen(); DsBridge.pushNow(); }
+                    if (NotebookState.applyPastureConfig(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookGraphS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyGraph(payload)) { NotebookScreen.refreshIfOpen(); DsBridge.pushNow(); }
+                    if (NotebookState.applyGraph(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookEggLogS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyEggLog(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyEggLog(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookDashboardS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyDashboard(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyDashboard(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(NotebookGoalsS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyGoals(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyGoals(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookNotifsS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
-                    if (NotebookState.applyNotifs(payload)) NotebookScreen.refreshIfOpen();
+                    if (NotebookState.applyNotifs(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookPastureExtraS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
@@ -178,14 +177,6 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                     if (NotebookState.applyTag(payload)) DsBridge.pushNow();
                 }));
 
-        // notebook/ console - poll the server ~1×/s while the console is open so the status bar + tabs tick live.
-        // Change-detection in NotebookState means an unchanged push does NOT repaint (no flicker / scroll-reset).
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (!(client.currentScreen instanceof NotebookScreen)) return;
-            if (client.getNetworkHandler() == null) return;
-            if (++notebookPollTick % 20 == 0) ClientPlayNetworking.send(new NotebookRequestC2S(0));
-        });
-
         // Pre-warm the MCEF console browser in the background once in a world, so the FIRST open shows an
         // already-painted page (no black/loading blip). preload() self-guards: no MCEF / not-ready / already-warm.
         // While the console is CLOSED the pump runs at a trickle (full rate only during the post-preload
@@ -212,13 +203,13 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // analytics/ chart screens land here later.
     }
 
-    /** Open the Notebook console - the MCEF React UI when the {@code mcef} mod is present, else the owo shell. */
+    /** Open the Notebook console - the MCEF React UI when the {@code mcef} mod is present, else the install prompt. */
     private static void openConsole() {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mcefPresent) {
             mc.setScreen(new NotebookBrowserScreen());
         } else {
-            mc.setScreen(new NotebookScreen());
+            mc.setScreen(new InstallMcefScreen());   // owo fallback retired (Deuce 2026-07-07) - MCEF is THE console
         }
     }
 }

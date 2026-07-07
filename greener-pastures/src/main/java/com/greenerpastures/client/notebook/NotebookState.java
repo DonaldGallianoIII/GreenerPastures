@@ -18,9 +18,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Client-side cache the {@link NotebookScreen} renders from (NOTEBOOK_INTERACTIVE_SPEC §2.1) - the screen never
+ * Client-side cache the console renders from (NOTEBOOK_INTERACTIVE_SPEC §2.1) - the UI never
  * touches server objects, it reads this. Updated by the S2C receivers (wired in {@code GreenerPasturesClient}),
- * which then call {@link NotebookScreen#refreshIfOpen()} to rebuild the open console.
+ * which then nudge {@code DsBridge.pushNow()} to re-serve the browser channels.
  *
  * <p>Fields are {@code volatile} because receivers hop onto the client thread but the screen may read mid-hop.
  */

@@ -92,9 +92,8 @@ _Compiled from a full code survey; rev 2026-07-07 - 369 tests, post-adversarial-
 |---|---|---|---|
 | Cobblemon | **1.7.3** (1.7.x pinned) | both | required - pastures, snacks, spawning integration |
 | Fabric API | any recent | both | required |
-| owo-lib | 0.12.15+ | client-facing | required - fallback console UI |
+| MCEF | 2.1.6+ | client only | required for the console UI (mod loads + all server systems run without it; the Notebook shows an install prompt) |
 | Cobbreeding | 2.2.x | both | recommended - unlocks multi-pair breeding + egg reads; self-disables cleanly without it |
-| MCEF | 2.1.6+ | client only | recommended - the full React console; basic UI without it |
 
 - Minecraft 1.21.1 · Fabric Loader 0.16+ · Java 21. Nothing jar-in-jar bundled.
 - Version discipline: the Cobblemon dependency is **range-pinned in fabric.mod.json** so an incompatible Cobblemon gives a clean loader message, never a cryptic mixin crash.

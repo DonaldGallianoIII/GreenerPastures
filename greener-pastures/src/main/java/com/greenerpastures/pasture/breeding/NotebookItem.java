@@ -32,14 +32,14 @@ import java.util.List;
  *   <li><b>Right-click a pasture</b> → that pasture's config screen ({@link #openMenu}).</li>
  *   <li><b>Right-click anything else / the air</b> → the tabbed console (Pastures · Storage · Augmenter · …).</li>
  * </ul>
- * Right-click-the-air opens the owo-ui {@code NotebookScreen} shell client-side (via {@code CONSOLE_OPENER});
+ * Right-click-the-air opens the Notebook console client-side (via {@code CONSOLE_OPENER});
  * per-tab content (Pastures · Storage · Augmenter · …) is being built out next.
  */
 public class NotebookItem extends Item {
 
     /**
      * Client-only hook that opens the Notebook console. Defaults to a no-op so this common/server class carries no
-     * client references; {@code GreenerPasturesClient} sets it to open {@code NotebookScreen}. Invoked from
+     * client references; {@code GreenerPasturesClient} sets it to open the console screen. Invoked from
      * {@link #use} on the client when the Notebook is right-clicked in the air / at a non-pasture.
      */
     public static Runnable CONSOLE_OPENER = () -> {};
@@ -108,7 +108,7 @@ public class NotebookItem extends Item {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         ItemStack held = user.getStackInHand(hand);
         if (world.isClient) {
-            CONSOLE_OPENER.run();   // client-only: open the owo-ui Notebook console (hook set in GreenerPasturesClient)
+            CONSOLE_OPENER.run();   // client-only: open the Notebook console (hook set in GreenerPasturesClient)
         } else if (user instanceof ServerPlayerEntity sp) {
             GpLog.i("notebook", "console_open", "player", sp.getUuid().toString());
         }

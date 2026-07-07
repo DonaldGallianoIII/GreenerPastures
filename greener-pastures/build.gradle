@@ -9,7 +9,6 @@ base { archivesName = project.archives_base_name }
 
 repositories {
     maven { url = 'https://maven.fabricmc.net/' }
-    maven { url = 'https://maven.wispforest.io' }   // owo-lib (Notebook console UI)
     maven { url = 'https://mcef-download.cinemamod.com/repositories/releases' }   // MCEF — in-game Chromium for the React console
     mavenCentral()
 }
@@ -23,11 +22,6 @@ dependencies {
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-
-    // owo-ui — flexbox-style declarative UI lib powering the Notebook console (already standard in the Shedmon pack).
-    // modImplementation = dev compile+runtime classpath + declared dependency; NOT bundled (users get it via Modrinth
-    // deps / the fabric.mod.json `depends` entry). Version matches the pack's owo-lib-0.12.15.4+1.21.jar.
-    modImplementation "io.wispforest:owo-lib:0.12.15.4+1.21"
 
     // MCEF — embedded Chromium (JCEF) that renders the React Notebook console in-game. Two artifacts: the common
     // API (compile-only) + the Fabric mod (runtime-only, NOT bundled — users install MCEF alongside, it downloads
