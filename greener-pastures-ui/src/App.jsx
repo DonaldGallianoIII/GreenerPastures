@@ -2311,6 +2311,26 @@ function Walker({ species, dir, walking = true, scale = 2, speedMs = 140, style 
 }
 
 const QC_DIRS = { S: 0, SE: 1, E: 2, NE: 3, N: 4, NW: 5, W: 6, SW: 7 }
+
+// A decoy sprinter: mounts at an edge, dashes across at its own speed, removes itself. Same
+// choreography as the real target so her entrance is just one more body in traffic.
+function DecoyRunner({ runner, onClick, onDone }) {
+  const [go, setGo] = useState(false)
+  useEffect(() => {
+    const a = setTimeout(() => setGo(true), 40)
+    const b = setTimeout(onDone, runner.crossMs + 400)
+    return () => { clearTimeout(a); clearTimeout(b) }
+  }, [])   // eslint-disable-line react-hooks/exhaustive-deps
+  const fromX = runner.fromLeft ? -8 : 108
+  const toX = runner.fromLeft ? 108 : -8
+  return (
+    <div className="qc-walker qc-clickable" onClick={onClick}
+      style={{ left: `${go ? toX : fromX}%`, top: `${go ? runner.y1 : runner.y0}%`,
+        transition: go ? `left ${runner.crossMs}ms linear, top ${runner.crossMs}ms linear` : 'none' }}>
+      <Walker species={runner.s} dir={QC_DIRS[runner.fromLeft ? 'E' : 'W']} speedMs={70} scale={2.4} />
+    </div>
+  )
+}
 function qcDirFrom(dx, dy) {
   const ang = Math.atan2(dy, dx)   // screen-space, +y down
   const oct = Math.round(ang / (Math.PI / 4))
@@ -2319,7 +2339,7 @@ function qcDirFrom(dx, dy) {
 
 // A bystander that actually GOES places: pick a waypoint, stroll to it, pick another. New DOM
 // nodes mount at their spawn point and move on the NEXT tick, so the CSS transition always fires.
-function Ambler({ species, x0, y0, spd, onClick }) {
+function Ambler({ species, x0, y0, spd, stride = 1, onClick }) {
   const [leg, setLeg] = useState({ x: x0, y: y0, dur: 0, dir: 0 })
   const timer = useRef(null)
   useEffect(() => {
@@ -2330,7 +2350,7 @@ function Ambler({ species, x0, y0, spd, onClick }) {
       const nx = Math.max(4, Math.min(96, cur.x + (Math.random() * 34 - 17)))
       const ny = Math.max(14, Math.min(92, cur.y + (Math.random() * 26 - 13)))
       const dist = Math.hypot(nx - cur.x, ny - cur.y)
-      const dur = Math.max(1200, dist * 260)
+      const dur = Math.max(900, (dist * 260) / stride)
       setLeg({ x: nx, y: ny, dur, dir: qcDirFrom(nx - cur.x, ny - cur.y) })
       cur = { x: nx, y: ny }
       timer.current = setTimeout(stroll, dur + 250 + Math.random() * 900)
@@ -2351,12 +2371,10 @@ function qcDecoys(seed) {   // deterministic-ish ambient crowd, pure theater
   const out = []
   let x = seed * 7919 + 13
   const rnd = () => { x = (x * 1103515245 + 12345) % 2147483648; return x / 2147483648 }
-  for (let i = 0; i < 9; i++) {
-    const dirs = ['S', 'SE', 'E', 'NE', 'N', 'NW', 'W', 'SW']
+  for (let i = 0; i < 27; i++) {
     out.push({ id: i, s: names[Math.floor(rnd() * names.length)],
-      x: 8 + rnd() * 84, y: 18 + rnd() * 70,
-      dir: dirs[Math.floor(rnd() * 8)], drift: (rnd() - 0.5) * 26, driftY: (rnd() - 0.5) * 18,
-      spd: 110 + Math.floor(rnd() * 90) })
+      x: 4 + rnd() * 92, y: 16 + rnd() * 74,
+      spd: 90 + Math.floor(rnd() * 120), stride: 0.55 + rnd() * 1.25 })
   }
   return out
 }
@@ -2377,6 +2395,26 @@ function QuickClawCabinet({ onBack }) {
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   const decoys = useMemo(() => qcDecoys(seed), [seed])
+  const [runners, setRunners] = useState([])
+  const runnerId = useRef(0)
+  useEffect(() => {   // the traffic stream: random crowd mons dash across at various speeds, always
+    let alive = true
+    let t
+    const spawn = () => {
+      if (!alive) return
+      setRunners((rs) => {
+        if (rs.length >= 4) return rs
+        const names = Object.keys(CROWD).filter((n) => n !== d?.species)   // a decoy wearing the
+        const y0 = 18 + Math.random() * 66                                 // WANTED face would be a lie
+        return [...rs, { id: runnerId.current++, s: names[Math.floor(Math.random() * names.length)],
+          fromLeft: Math.random() < 0.5, y0, y1: Math.max(16, Math.min(90, y0 + Math.random() * 30 - 15)),
+          crossMs: 2000 + Math.random() * 4000 }]
+      })
+      t = setTimeout(spawn, 900 + Math.random() * 2400)
+    }
+    t = setTimeout(spawn, 400)
+    return () => { alive = false; clearTimeout(t) }
+  }, [d?.species])   // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!d) return
@@ -2440,10 +2478,14 @@ function QuickClawCabinet({ onBack }) {
           )}
           {decoys.map((dc) => (dc.s !== d?.species || phase === 'idle') && (
             <Ambler key={`${seed}-${dc.id}`} species={dc.s} x0={dc.x} y0={dc.y} spd={dc.spd}
-              onClick={clickDecoy} />
+              stride={dc.stride} onClick={clickDecoy} />
+          ))}
+          {runners.map((r) => (
+            <DecoyRunner key={r.id} runner={r} onClick={clickDecoy}
+              onDone={() => setRunners((rs) => rs.filter((x) => x.id !== r.id))} />
           ))}
           {d?.species && (phase === 'wait' || phase === 'run') && (
-            <div className={`qc-walker qc-runner${phase === 'run' ? ' qc-clickable' : ''}`}
+            <div className={`qc-walker${phase === 'run' ? ' qc-clickable' : ''}`}
               onClick={clickRunner}
               style={{ left: `${running ? toX : fromX}%`, top: `${running ? d.yEnd : d.yStart}%`,
                 transition: running ? `left ${d.crossMs}ms linear, top ${d.crossMs}ms linear` : 'none' }}>
