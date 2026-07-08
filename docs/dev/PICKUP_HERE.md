@@ -10,7 +10,11 @@
   deployed IDENTICALLY to all 4 installs (CF instance, both Prism GP-Masuda-QA{,-2}, WSL server
   `~/gp-qa-server/mods/`) + server RUNNING on it (port 25565). **The jar FILENAME changed** - old
   deploy scripts that copy `greenerpastures-0.1.0.jar` are stale; always rm-old + cp-new by name.
-- **Modrinth: SUBMITTED, UNDER REVIEW** (submitted ~16:10). Expect a few hours to ~48h. Deuce
+- **CURSEFORGE: APPROVED + LIVE (2026-07-08)** - Deuce shipped it there himself overnight:
+  `curseforge.com/minecraft/mc-mods/greener-pastures-cobblemon`. His server's pack builder pulls
+  from CF; Cobbreeding is MODRINTH-ONLY by its devs' explicit warning (any CF upload = fake) -
+  packagers add it as an external file. Server-announcement post with all dep links: delivered.
+- **Modrinth: SUBMITTED, UNDER REVIEW** (submitted 2026-07-07 ~16:10). Expect a few hours to ~48h. Deuce
   filled the draft from `PUBLISH_KIT.md` + `MODRINTH_BODY.md` (working copies in
   `Desktop/GreenerPasturesScreenshots/` alongside all 11 shots, `GALLERY_CAPTIONS.md`,
   `gp_icon_512.png`, and the beta jar).
