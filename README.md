@@ -7,7 +7,8 @@
 <p align="center">
   <b>Your Cobblemon breeding operation, run like a lab.</b><br>
   Eggs as data · a real in-game console · a six-cabinet Game Corner<br><br>
-  Modrinth: under review (link lands here the moment it's approved) ·
+  <a href="https://www.curseforge.com/minecraft/mc-mods/greener-pastures-cobblemon">CurseForge</a> ·
+  Modrinth: under review ·
   <a href="https://ko-fi.com/donaldgallianoiii">Ko-fi</a> ·
   MIT licensed
 </p>
