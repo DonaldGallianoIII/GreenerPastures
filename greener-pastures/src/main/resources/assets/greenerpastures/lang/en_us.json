@@ -26,5 +26,7 @@
   "itemGroup.greenerpastures": "Greener Pastures",
   "item.greenerpastures.ultra_compressed_snack": "Ultra Compressed Snack",
   "item.greenerpastures.snack_repel": "Snack Repel",
-  "item.greenerpastures.specimen_disk": "Specimen Disk"
+  "item.greenerpastures.specimen_disk": "Specimen Disk",
+  "block.greenerpastures.exhibit_pen": "Exhibit Pen",
+  "block.greenerpastures.specimen_statue": "Specimen Statue"
 }

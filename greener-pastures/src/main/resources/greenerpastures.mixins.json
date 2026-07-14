@@ -7,6 +7,7 @@
     "BlockDropBoostMixin",
     "EnchantmentLevelMixin",
     "EnchantmentValueBoostMixin",
+    "EntityNoSaveMixin",
     "PokeSnackOverdriveMixin",
     "PokemonPastureBlockEntityMixin",
     "PotionDurationMixin",

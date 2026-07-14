@@ -49,6 +49,12 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         // pasture/ wand GUI + Compiler bench
         HandledScreens.register(PastureMenu.TYPE, PastureScreen::new);
 
+        // display/ - the Specimen Statue's frozen-mon renderer (factory stores a lambda; StatueRenderer
+        // and its Cobblemon client classes load lazily when the render dispatcher builds, not at init).
+        net.minecraft.client.render.block.entity.BlockEntityRendererFactories.register(
+                com.greenerpastures.display.DisplaySuite.SPECIMEN_STATUE_BE,
+                ctx -> new com.greenerpastures.client.display.StatueRenderer());
+
         // notebook/ console - client-side open hook for the Notebook item (air / non-pasture right-click).
         // With MCEF installed → the React console in-game (Chromium); otherwise an install-MCEF prompt.
         // Kernel right-click → rename screen (QoL: label your kernels)

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SSS",
+    "SDS",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:smooth_stone"
+    },
+    "D": {
+      "item": "greenerpastures:data_disk_blank"
+    }
+  },
+  "result": {
+    "id": "greenerpastures:specimen_statue",
+    "count": 1
+  }
+}

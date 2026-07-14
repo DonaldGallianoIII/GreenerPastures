@@ -1,4 +1,29 @@
-# 🎯 PICKUP_HERE - rewritten 2026-07-07 ~17:00 - PUBLISH DAY. IT SHIPPED.
+# 🎯 PICKUP_HERE — updated 2026-07-14: BUILDING the Display Suite, right now, with Deuce
+
+> **LIVE TASK (read this first):** Deuce and I are actively building the **Display Suite** —
+> two new blocks: **Exhibit Pen** (specimen-disk-fed pasture clone, roams, NO breeding) and
+> **Specimen Statue** (disk → frozen positionable statue via BER, no entity). Full detailed spec:
+> **`docs/dev/DISPLAY_SPEC.md`**. Branch: `dev` as always. Context: born from Deuce's shiny zoo
+> (Jurassic-Park island) on Tinderbeef's server — see memory `tinderbeef-server-zoo`.
+>
+> **STATE (2026-07-14, spec §7):** steps 1–4 CODED + building green, 389 tests pass.
+> - Logic cores + suites: `display/ExhibitRules`, `StatueTransform`, `RenderSpec` (20 new tests).
+> - MC wiring: `DisplaySuite` registration (GP's FIRST placed blocks), `ExhibitPenBlock(+Entity)`
+>   with sweep lifecycle (respawn/leash/discard), `StatueBlock(+Entity)` with pose sync,
+>   `CobblemonProjector` (the ONE Cobblemon seam, lazy - NeoForge rule), `EntityNoSaveMixin`
+>   (projections never serialize - the anti-dupe backstop), `client/display/StatueRenderer`
+>   (FREEZE_FRAME dummy, cosmetics-only spec, light sampled above plinth).
+> - Assets: vanilla-placeholder models (composter=pen, chiseled bricks=plinth), loot, recipes
+>   (8 planks/smooth stone ring + blank data disk), lang.
+> - **NEXT:** in-game smoke on the QA instance (spec §4 checklist: dupe hunt, ball/battle attack
+>   surface, spawn suppression), then the statue-controls FEEL PASS with Deuce (v1 map: empty
+>   click=rotate, sneak=scale, stick=nudge sawtooth, sneak-stick=axis, shears=eject) + §5 open
+>   questions (names, recipes, poses). NeoForge fold-back still rides the same batch.
+> Everything below this block is the previous (publish-day) state, kept for reference.
+
+---
+
+# (previous) PICKUP_HERE - rewritten 2026-07-07 ~17:00 - PUBLISH DAY. IT SHIPPED.
 
 > **READ THIS WHOLE FILE FIRST** after /clear or compaction. (This file MOVED: it now lives at
 > `docs/dev/PICKUP_HERE.md` - repo root is public-facing.) Today Greener Pastures went from

@@ -68,6 +68,11 @@ public final class GreenerPastures implements ModInitializer {
 
         // economy/ - dark economy min-slice: Renderer block (eggs → Data) + Daemon item + per-player Data
         DarkEconomy.init();
+
+        // display/ - the zoo layer: Exhibit Pen (disk-fed pasture clone, no breeding) + Specimen Statue
+        // (disk → frozen positionable render). Pure vanilla registration; Cobblemon is only touched at
+        // interaction time via CobblemonProjector (spec: docs/dev/DISPLAY_SPEC.md).
+        com.greenerpastures.display.DisplaySuite.init();
         GpItems.init();         // console-economy items: GPU reagent, Data-disk denominations, Notebook (art + registration; behaviour later)
 
         // buff/ - load the Daemon "root" buff rules + start the per-second grant/drain loop
