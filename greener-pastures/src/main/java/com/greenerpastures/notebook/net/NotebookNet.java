@@ -359,6 +359,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.APPLY_AUGMENT -> { applyAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player, true); }
+                case NotebookActionC2S.COMPRESS_EGGS -> { compressEggs(player, p.arg()); pushBiobank(player, true); }
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
                 case NotebookActionC2S.RITUAL_PULL -> { ritualPull(player, p.arg(), p.amount()); pushRituals(player); }
                 case NotebookActionC2S.CORRUPT_KERNEL -> { corruptKernel(player); pushAugmenter(player); }
@@ -1144,6 +1145,43 @@ public final class NotebookNet {
             player.getInventory().markDirty();
             GpLog.i("notebook", "biobank_withdraw", "player", player.getUuid().toString(), "index", Integer.toString(flatIndex));
         }
+    }
+
+    /** The Compression press (Deuce, 2026-07-19): feed 100 banked eggs of one species → a permanent, stacking
+     *  +5% drop-proc multiplier for that species across every pasture the player owns. Shinies are never
+     *  eligible (SACRED, the same rule as the egg pipeline) and the WORST eggs (lowest total IV) feed first,
+     *  so the press eats the culls and the keepers stay banked. All-or-nothing: under 100 eligible = no-op. */
+    private static void compressEggs(ServerPlayerEntity player, String species) {
+        MinecraftServer server = player.getServer();
+        if (server == null || species == null || species.isBlank()) return;
+        java.util.function.Predicate<ItemStack> eligible = egg -> {
+            EggCard c = EggReader.card(egg);
+            return c == null || !c.shiny();
+        };
+        java.util.Comparator<ItemStack> worstFirst = java.util.Comparator.comparingInt(egg -> {
+            EggCard c = EggReader.card(egg);
+            return c == null ? -1 : c.ivTotal();      // unreadable = worthless = first into the press
+        });
+        int eaten = BioBankStore.get(server).sacrifice(player.getUuid(), species,
+                com.greenerpastures.biobank.CompressionLedger.BATCH, eligible, worstFirst);
+        if (eaten < com.greenerpastures.biobank.CompressionLedger.BATCH) {
+            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r The press needs "
+                    + com.greenerpastures.biobank.CompressionLedger.BATCH + " non-shiny "
+                    + capFirst(species) + " eggs in the BioBank."), false);
+            return;
+        }
+        com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
+        comp.record(player.getUuid(), species, eaten);
+        double mult = comp.get(player.getUuid()).multiplierOf(species);
+        player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r COMPRESSED: " + eaten + " "
+                + capFirst(species) + " eggs pressed into a permanent +5% drop bonus - now ×"
+                + String.format("%.2f", mult) + " on all your pastures."), false);
+        GpLog.i("compression", "press", "player", player.getUuid().toString(), "species", species,
+                "eggs", Integer.toString(eaten), "mult", String.format("%.2f", mult));
+    }
+
+    private static String capFirst(String s) {
+        return s == null || s.isEmpty() ? "?" : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     // ── pasture config (the React right-click-a-pasture screen; replaces the owo PastureScreen) ───────────────
@@ -2028,7 +2066,18 @@ public final class NotebookNet {
                 }
             }
         }
-        ServerPlayNetworking.send(player, new NotebookBioBankS2C(entries.size(), entries));
+        // Compression ledger rides the biobank packet: it only ever changes when the bank does (a press
+        // eats 100 eggs → rev bump), so the rev gate above covers both.
+        List<NotebookBioBankS2C.Press> presses = List.of();
+        com.greenerpastures.biobank.CompressionLedger led =
+                com.greenerpastures.biobank.CompressionStore.get(server).get(player.getUuid());
+        if (led != null && !led.isEmpty()) {
+            presses = new ArrayList<>();
+            for (Map.Entry<String, Long> e : led.snapshot().entrySet()) {
+                presses.add(new NotebookBioBankS2C.Press(e.getKey(), e.getValue()));
+            }
+        }
+        ServerPlayNetworking.send(player, new NotebookBioBankS2C(entries.size(), entries, presses));
     }
 
     /** Write Data onto blank media (§5c - the Notebook is the drive): consume 1 blank + debit the

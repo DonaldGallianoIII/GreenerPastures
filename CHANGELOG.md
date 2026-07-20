@@ -1,5 +1,19 @@
 # Changelog - Greener Pastures
 
+## Unreleased (dev)
+
+### The Compression Press
+- **New BioBank mechanic**: press **100 banked eggs of one species** into a permanent
+  **+5% drop rate** for that species across every pasture you own - and it **stacks forever**
+  (20 presses = ×2.0). The multiplier scales the whole drop proc your Kernel/Tether stack
+  already computed, so it composes with Drop Rate / Drop Yield mods instead of replacing them.
+- The press always eats the **worst 100** eggs (lowest IV total) and **never touches a shiny**;
+  all-or-nothing, so it can never half-eat a bucket. Constants are baked (no config - the
+  anti-p2w rule).
+- BioBank capacity raised **256 → 1024 eggs per species** - a press habit needs stock.
+- Press from the BioBank tab: every species row has a ⭓ press button + confirm modal showing
+  current → next multiplier; presses land in the sweep audit log (`comp` / `comp_x` fields).
+
 ## 1.0.0-beta.1 (first public release)
 
 Everything below ships in the first public beta. 369 unit tests; adversarially reviewed

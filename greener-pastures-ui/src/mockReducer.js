@@ -103,6 +103,19 @@ export function applyMock(state, channel, action, payload) {
       addItem(inv, 'cobbreeding:pokemon_egg', 1)
       out.biobank = b
       out.inventory = inv
+    } else if (action === 'COMPRESS') {                                          // press 100 worst non-shiny eggs → permanent per-species drop bonus
+      const b = clone(state.biobank)
+      const sp = payload.species
+      const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+      const eligible = b.entries.map((e, i) => ({ e, i })).filter(({ e }) => e.species === sp && !e.shiny)
+      if (eligible.length < 100) return {}
+      eligible.sort((a, z) => a.e.ivs.reduce((x, y) => x + y, 0) - z.e.ivs.reduce((x, y) => x + y, 0))
+      const eaten = new Set(eligible.slice(0, 100).map(({ i }) => i))
+      b.entries = b.entries.filter((_, i) => !eaten.has(i))
+      b.total = Math.max(0, b.total - 100)
+      b.compression = { ...(b.compression || {}) }
+      b.compression[norm(sp)] = (b.compression[norm(sp)] || 0) + 100
+      out.biobank = b
     }
   }
   return out

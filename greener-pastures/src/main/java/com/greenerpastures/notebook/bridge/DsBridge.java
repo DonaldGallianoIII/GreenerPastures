@@ -119,6 +119,7 @@ public final class DsBridge {
             case "APPLY_AUGMENT"  -> new NotebookActionC2S(NotebookActionC2S.APPLY_AUGMENT, str(p, "type", ""), 0);
             case "REMOVE_AUGMENT" -> new NotebookActionC2S(NotebookActionC2S.REMOVE_AUGMENT, str(p, "type", ""), 0);
             case "WITHDRAW"       -> new NotebookActionC2S(NotebookActionC2S.WITHDRAW, "", (int) num(p, "index", 0));
+            case "COMPRESS"       -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_EGGS, str(p, "species", ""), 0);
             case "DISMISS_NOTE"   -> new NotebookActionC2S(NotebookActionC2S.DISMISS_NOTE, str(p, "id", "all"), 0);
             case "WRITE_DISK"     -> new NotebookActionC2S(NotebookActionC2S.WRITE_DISK, str(p, "denom", ""), 0);
             case "RITUAL_PULL"    -> new NotebookActionC2S(NotebookActionC2S.RITUAL_PULL, str(p, "item", ""), (int) num(p, "mode", 0));
@@ -561,6 +562,10 @@ public final class DsBridge {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("total", NotebookState.biobankTotal);
         m.put("entries", NotebookState.biobank);
+        // Compression ledger as {normalized species → eggs pressed} - the UI derives ×mult per species.
+        Map<String, Object> comp = new LinkedHashMap<>();
+        for (var press : NotebookState.biobankPresses) comp.put(press.species(), press.eggs());
+        m.put("compression", comp);
         return m;
     }
 

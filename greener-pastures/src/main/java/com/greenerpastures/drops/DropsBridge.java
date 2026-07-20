@@ -71,19 +71,35 @@ public final class DropsBridge {
      *  list once and reuse it across sweeps instead of re-copying per sweep (perf-audit R3 tick #1). */
     public static Map<String, Integer> harvest(java.util.List<PokemonPastureBlockEntity.Tethering> roster, Random rng,
                                                double procChance, int yieldBonus) {
+        return harvest(roster, rng, procChance, yieldBonus, s -> 1.0);
+    }
+
+    /** Per-species proc scale (species display name → ×N ≥ 1) - the Compression press multiplier. Applied to
+     *  the WHOLE proc the caller computed (base + augments), then clamped to certainty. */
+    @FunctionalInterface
+    public interface SpeciesScale { double scale(String species); }
+
+    /** Species-scaled overload: each mon's proc = {@code min(1, procChance × scale(species))}, so a pressed
+     *  species drops more often while every other lever (augments, tethers, yield) is untouched. */
+    public static Map<String, Integer> harvest(java.util.List<PokemonPastureBlockEntity.Tethering> roster, Random rng,
+                                               double procChance, int yieldBonus, SpeciesScale scale) {
         Map<String, Integer> out = new LinkedHashMap<>();
         try {
             for (PokemonPastureBlockEntity.Tethering t : roster) {
-                if (rng.nextDouble() >= procChance) continue;     // this mon didn't proc a drop this tick
                 Pokemon p = t.getPokemon();
                 if (p == null) continue;
+                String species;
+                try { species = p.getSpecies().getName(); } catch (Throwable ex) { species = "?"; }
+                double mult;
+                try { mult = Math.max(1.0, scale.scale(species)); } catch (Throwable ex) { mult = 1.0; }
+                double proc = Math.min(1.0, procChance * mult);
+                if (rng.nextDouble() >= proc) continue;     // this mon didn't proc a drop this tick
                 Map<String, Integer> rolled = rollEvent(p, rng, yieldBonus);
                 // per-proc audit line: the proc HAPPENED - an empty roll means the species' drop table came up
                 // dry (all low-% entries missed), which drop-rate QA must see distinctly from "no proc".
                 if (com.greenerpastures.core.GpLog.on(com.greenerpastures.core.GpLog.Level.DEBUG)) {
-                    String species;
-                    try { species = p.getSpecies().getName(); } catch (Throwable ex) { species = "?"; }
                     com.greenerpastures.core.GpLog.d("harvest", "proc", "species", species,
+                            "comp_x", mult > 1.0 ? String.format("%.2f", mult) : "1",
                             "items", rolled.isEmpty() ? "dry" : rolled.toString());
                 }
                 rolled.forEach((id, n) -> out.merge(id, n, Integer::sum));

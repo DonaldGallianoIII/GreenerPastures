@@ -8,8 +8,9 @@ package com.greenerpastures.biobank;
 public final class BioBank {
     private BioBank() {}
 
-    /** Per-unique-species cap (Deuce, 2026-07-01) - each species holds up to this many eggs. */
-    public static final int DEFAULT_CAP = 256;
+    /** Per-unique-species cap - each species holds up to this many eggs. 256 → 1024 (Deuce, 2026-07-19):
+     *  the Compression press eats 100 per pull, so a bucket must hold serious stock. */
+    public static final int DEFAULT_CAP = 1024;
 
     public static int capacity() { return DEFAULT_CAP; }
 }

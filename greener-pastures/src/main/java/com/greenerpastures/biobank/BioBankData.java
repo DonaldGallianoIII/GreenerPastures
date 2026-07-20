@@ -92,6 +92,29 @@ public final class BioBankData {
         return ItemStack.EMPTY;
     }
 
+    /** Feed the Compression press: remove exactly {@code n} eggs of {@code species}, chosen worst-first
+     *  ({@code worstFirst} order) among those passing {@code eligible} - ALL-OR-NOTHING, so a press can never
+     *  half-eat a bucket (fewer than {@code n} eligible ⇒ nothing is touched, returns 0). Selection is by
+     *  identity, so duplicate-looking eggs are each their own sacrifice. Empties the bucket when the last
+     *  egg leaves, same as {@link #removeAt}. */
+    public int sacrifice(String species, int n,
+                         java.util.function.Predicate<ItemStack> eligible,
+                         java.util.Comparator<ItemStack> worstFirst) {
+        List<ItemStack> bucket = bySpecies.get(species);
+        if (bucket == null || n <= 0) return 0;
+        List<ItemStack> picks = new ArrayList<>();
+        for (ItemStack egg : bucket) if (eligible.test(egg)) picks.add(egg);
+        if (picks.size() < n) return 0;
+        picks.sort(worstFirst);
+        java.util.Set<ItemStack> chosen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        chosen.addAll(picks.subList(0, n));
+        bucket.removeIf(chosen::contains);
+        total -= n;
+        rev++;
+        if (bucket.isEmpty()) bySpecies.remove(species);
+        return n;
+    }
+
     // --- persistence (egg ItemStacks are stored losslessly, one NbtList per species) ---
 
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {

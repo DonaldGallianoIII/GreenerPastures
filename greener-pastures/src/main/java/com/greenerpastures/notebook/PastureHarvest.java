@@ -71,6 +71,7 @@ public final class PastureHarvest {
         if (pastures.isEmpty()) return;
         NotebookStore store = NotebookStore.get(server);
         DataStore data = DataStore.get(server);
+        com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
         boolean dirty = false;   // one registry markDirty per scan, not per pasture (perf-audit R3 tick #2)
 
         try (var scan = com.greenerpastures.core.GpProf.begin("harvest.scan")) {
@@ -108,8 +109,14 @@ public final class PastureHarvest {
                         new java.util.ArrayList<>(pasture.getTetheredPokemon());
                 Map<String, Integer> harvested = new java.util.LinkedHashMap<>();
                 int productive = 0;
+                // Compression press (2026-07-19): the owner's permanent per-species multiplier scales each
+                // mon's WHOLE proc - composes on top of Kernel/Tether drop mods, clamped at certainty inside.
+                com.greenerpastures.biobank.CompressionLedger led = comp.get(pd.owner);
+                boolean pressed = led != null && !led.isEmpty();
                 for (int i = 0; i < sweeps; i++) {
-                    Map<String, Integer> one = DropsBridge.harvest(roster, RNG, proc, yield);
+                    Map<String, Integer> one = pressed
+                            ? DropsBridge.harvest(roster, RNG, proc, yield, led::multiplierOf)
+                            : DropsBridge.harvest(roster, RNG, proc, yield);
                     if (!one.isEmpty()) productive++;
                     one.forEach((id, n) -> harvested.merge(id, n, Integer::sum));
                 }
@@ -130,7 +137,7 @@ public final class PastureHarvest {
                     // what landed. Together with DropsBridge's per-proc lines this is the full drop audit trail.
                     GpLog.d("notebook_harvest", "sweep", "pos", pos.toShortString(),
                             "mons", mons, "proc_pct", String.format("%.2f", proc * 100.0),
-                            "yield", yield, "sweeps", sweeps, "stored", stored,
+                            "yield", yield, "comp", pressed ? "on" : "-", "sweeps", sweeps, "stored", stored,
                             "items", harvested.isEmpty() ? "-" : harvested.toString());
                 }
                 if (sweeps > 1 && stored > 0) {              // the away-deposit note → the console's Inbox (not chat)

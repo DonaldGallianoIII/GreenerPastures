@@ -49,6 +49,18 @@ public final class BioBankStore extends PersistentState {
         return added;
     }
 
+    /** Feed a player's Compression press (see {@link BioBankData#sacrifice}) - all-or-nothing removal of
+     *  {@code n} worst eligible eggs; returns the eggs actually consumed (0 or {@code n}). */
+    public int sacrifice(UUID player, String species, int n,
+                         java.util.function.Predicate<ItemStack> eligible,
+                         java.util.Comparator<ItemStack> worstFirst) {
+        BioBankData bank = banks.get(player);
+        if (bank == null) return 0;
+        int removed = bank.sacrifice(species, n, eligible, worstFirst);
+        if (removed > 0) markDirty();
+        return removed;
+    }
+
     /** Withdraw the egg at {@code flatIndex} (species-grouped order) back out as a real ItemStack; EMPTY if none. */
     public ItemStack withdraw(UUID player, int flatIndex) {
         BioBankData bank = banks.get(player);

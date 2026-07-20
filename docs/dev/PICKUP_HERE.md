@@ -1,5 +1,47 @@
 # 🎯 PICKUP_HERE — updated 2026-07-14: BUILDING the Display Suite, right now, with Deuce
 
+> **⚡ SIDE-SESSION 2026-07-19 — COMPRESSION PRESS shipped on `dev` (coded + 397 tests green, NOT deployed).**
+> Deuce's ask ("Compressed pokemon") landed as: **100 BioBank eggs of a species → permanent +5% drop rate
+> for that species in your pastures, stacking forever** (his design, upgraded live from a one-shot ×3 to a
+> repeatable ledger); BioBank cap **256 → 1024**/species. Implementation: `biobank/CompressionLedger`
+> (MC-free core + 8 tests) + `CompressionStore` (per-UUID PersistentState) · `BioBankData.sacrifice`
+> (all-or-nothing, worst-ΣIV-first, shinies NEVER eligible) · `DropsBridge` species-scale overload →
+> `PastureHarvest` applies owner's multiplier per mon (`comp`/`comp_x` in the JSONL) · action
+> `COMPRESS_EGGS=35` + `compression` map on the biobank channel · React: ⭓ press button per species row +
+> confirm modal (current → next mult), Guide card updated, mock data/reducer covered. Jar built with fresh
+> HTML (verified in-zip). **NEXT: batch in-game QA** (press a species, watch `compression press` +
+> `harvest proc comp_x` lines, confirm rev-gated UI refresh) - rides the same QA batch as the Display Suite.
+
+> **⚡ SIDE-SESSION 2026-07-15→16 (FarmHand/hydrogrid) — DEPLOYED LIVE, awaiting Deuce's field test.**
+> Big Auto-Farm upgrade session in `hydrogrid/`, jar deployed to `Shedmon (3)/mods/` (zip-verified).
+> What shipped in this build:
+> - **Full-speed batching**: removed the 120ms rate limit; every valid target in reach is handled
+>   every client tick; same-tick replant after breaks; scan band raised to +5 for tree canopies.
+> - **Crop filter, key `/`**: ALL → VIVICHOKE ONLY → HEARTY GRAINS ONLY. Filters both reaping AND
+>   which seed gets planted (fixes cross-planting on Deuce's mixed viv/hearty field). Berries,
+>   honey, apricorns, vanilla crops only run on ALL.
+> - **2x-reach experiment, key `;`**: Deuce suspects Shedmon doesn't enforce reach. Every break is
+>   re-checked ~500ms later and logged (`verify` events: dist + stillGone). Verdict = read the log:
+>   `stillGone:true` beyond ~5.5 dist ⇒ not enforced. Vanilla 1.21 default is enforced (4.5+1).
+> - **Hearty grains**: decompiled Cobblemon 1.7.3 — break ONLY age-6 upper half (drops 2–3 grains,
+>   base resets to age 3 + regrows; a harvested stalk half-standing is CORRECT). Fixed waterlogged
+>   crops re-firing forever (break→water≠air; cooldown now unconditional). Deuce reported "not
+>   harvesting properly" — root cause unconfirmed, diagnosis rides on the debug log below.
+> - **Fortune**: auto-selects highest-Fortune hotbar tool for breaks. Loot-table truth: fortune
+>   does NOTHING for vivichoke/hearty (flat drops); vanilla crops only.
+> - **Honey (Deuce's rule: LEAVES ONLY, NEVER hives)**: saccharine leaves age 2 + hotbar glass
+>   bottle → honey bottle, leaf refills. Skips waterlogged leaves (block refuses).
+> - **Apricorns (folded INTO FarmHand, supersedes ApricornArborist-separate)**: age-3 any color →
+>   right-click pop, regrows. Class-matched like berries.
+> - **Debug JSONL** (observability rule): `Shedmon (3)/logs/hydrogrid-farm.jsonl` — farm/break/
+>   verify/honey/apricorn/hearty events. Keys now: `,` run · `.` mode · `/` filter · `;` 2x reach.
+>
+> **NEXT for FarmHand:** Deuce runs a REAP pass (fortune pick + seeds + glass bottles on hotbar,
+> `;` on, over the mixed field + under saccharine/apricorn trees) → then tail the JSONL for
+> (1) the reach-enforcement verdict, (2) what hearty blocks the scanner actually saw. All source
+> in `hydrogrid/` (not yet renamed farmhand), builds with home JDK+gradlew (memory:
+> `shedscope-build-toolchain`). Uncommitted — commit when Deuce says.
+
 > **LIVE TASK (read this first):** Deuce and I are actively building the **Display Suite** —
 > two new blocks: **Exhibit Pen** (specimen-disk-fed pasture clone, roams, NO breeding) and
 > **Specimen Statue** (disk → frozen positionable statue via BER, no entity). Full detailed spec:

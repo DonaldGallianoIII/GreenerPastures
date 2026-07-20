@@ -60,12 +60,18 @@ export const MOCK = {
   },
 
   biobank: {
-    total: 3,
+    total: 103,
     entries: [
       { species: 'eevee', shiny: true, ivs: [31, 31, 31, 31, 31, 31], evs: [0, 0, 0, 0, 0, 0], nature: 'timid', gender: 'female', ability: 'adaptability' },
       { species: 'eevee', shiny: false, ivs: [31, 31, 31, 0, 31, 31], evs: [252, 0, 0, 0, 4, 252], nature: 'jolly', gender: 'male', ability: 'run_away' },
       { species: 'ditto', shiny: false, ivs: [31, 0, 31, 31, 0, 31], evs: [0, 0, 0, 0, 0, 0], nature: '', gender: '', ability: '' },
+      // 100 pressable klink so the Compression press modal is exercisable in dev
+      ...Array.from({ length: 100 }, (_, i) => (
+        { species: 'klink', shiny: false, ivs: [i % 32, 10, 10, 10, 10, 10], evs: [0, 0, 0, 0, 0, 0], nature: 'hardy', gender: '', ability: 'plus' }
+      )),
     ],
+    // Compression ledger: normalized species → eggs ever pressed (100 = one press = +5%)
+    compression: { eevee: 200 },
   },
 
   // The player's inventory as 36 MC slots: [0..8] hotbar, [9..35] main. null = empty. Shown as a little
