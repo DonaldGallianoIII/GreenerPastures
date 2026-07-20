@@ -113,6 +113,7 @@ public final class GreenerPastures implements ModInitializer {
             com.greenerpastures.pasture.breeding.MultiPairBreeder.testIntervalTicks = 0L;   // QA cadence override
             com.greenerpastures.notebook.PastureHarvest.testIntervalTicks = 0L;             // QA harvest override
             com.greenerpastures.notify.Inbox.clearAll();                                     // console Inbox notes
+            com.greenerpastures.notify.DonationFeed.clearAll();                               // server-press donation window
             com.greenerpastures.core.GpProf.reset();                                          // fresh perf window per world
             com.greenerpastures.drops.RitualHarvest.resetSession();                            // spanning-ritual pasture snapshots
             com.greenerpastures.pasture.breeding.MultiPairBreeder.resetSession();               // full-pasture nag dedupe

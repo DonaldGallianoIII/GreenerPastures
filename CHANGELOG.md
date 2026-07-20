@@ -16,7 +16,9 @@
 - **The SERVER press**: donate your 100-egg pulls to a communal pool instead - every **1000
   pooled eggs** of a species (from anyone) is a further **+1% drop rate for EVERYONE**, stacking
   forever and applied as a **"more" multiplier** (`your presses × server press`, never added).
-  Tier crossings are broadcast to the whole server with the donator's name.
+- **The donation feed**: no chat spam - donations land in a separate section of the Inbox tab
+  (who fed what, tier crossings highlighted with the donator's name). A global 24h rolling
+  window, hard-capped in memory; go look when you want to, ignore it when you don't.
 
 ## 1.0.0-beta.1 (first public release)
 

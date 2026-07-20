@@ -75,6 +75,18 @@ export const MOCK = {
     serverCompression: { eevee: 2300, klink: 800 },
   },
 
+  // Inbox: dismissible notes + the global server-press donation feed (24h rolling window, not dismissible)
+  notifications: {
+    notes: [
+      { id: 1, icon: '⛏', text: 'North Farm caught up 42 sweeps while away → +117 items', t: Date.now() - 40 * 60 * 1000 },
+    ],
+    donations: [
+      { id: 3, t: Date.now() - 5 * 60 * 1000, who: 'Deuce222XX', species: 'klink', eggs: 100, mult: 1.02, tierUp: true },
+      { id: 2, t: Date.now() - 3 * 60 * 60 * 1000, who: 'Phishing4Feebas', species: 'klink', eggs: 100, mult: 1.01, tierUp: false },
+      { id: 1, t: Date.now() - 22 * 60 * 60 * 1000, who: 'Tinderbeef', species: 'eevee', eggs: 100, mult: 1.02, tierUp: false },
+    ],
+  },
+
   // The player's inventory as 36 MC slots: [0..8] hotbar, [9..35] main. null = empty. Shown as a little
   // inventory window so slot/item flow is visible (storage grabs land here; GPU is consumed on apply).
   // (Real bridge: an `inventory` channel of slots — contract update to follow.)

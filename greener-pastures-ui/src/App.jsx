@@ -813,6 +813,34 @@ function InboxTab() {
           ))}
         </div>
       )}
+      <DonationFeed ago={ago} donations={d?.donations || []} />
+    </div>
+  )
+}
+
+// The server-press donation feed: a separate, non-dismissible section (Deuce, 2026-07-19 - no chat
+// chirps; go look if you want to). Entries expire server-side after 24h - a rolling window, not a log.
+function DonationFeed({ ago, donations }) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div className="row" style={{ marginBottom: 6 }}>
+        <span className="h" style={{ fontSize: 12 }}>⛃ Server press donations</span>
+        <span className="dim" style={{ fontSize: 10, marginLeft: 6 }}>last 24h · everyone sees this feed</span>
+      </div>
+      {!donations.length ? <div className="muted" style={{ fontSize: 11 }}>no donations in the last 24h - feed the communal press from any BioBank species row.</div> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {donations.map((n) => (
+            <div key={n.id} className="note" style={n.tierUp ? { borderColor: 'var(--pink)' } : undefined}>
+              <span className="note-ic">{n.tierUp ? '▲' : '⛃'}</span>
+              <span className="note-tx">
+                <b>{n.who}</b> donated {n.eggs} {cap(n.species)} eggs
+                {n.tierUp && <span style={{ color: 'var(--pink)' }}> - tipped the pool to ×{Number(n.mult).toFixed(2)} for everyone</span>}
+              </span>
+              <span className="dim mono" style={{ fontSize: 9, flex: 'none' }}>{ago(n.t)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

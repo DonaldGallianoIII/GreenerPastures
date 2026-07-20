@@ -263,6 +263,22 @@ public final class NotebookNet {
         }
         JsonObject root = new JsonObject();
         root.add("notes", notes);
+        // The server-press DONATION FEED (global, 24h rolling window, not dismissible) rides the same
+        // channel as its own section - the content gate below means a new donation reaches every viewer
+        // on their next 1s poll, with zero chat noise.
+        JsonArray donations = new JsonArray();
+        for (com.greenerpastures.notify.DonationFeed.Entry e : com.greenerpastures.notify.DonationFeed.entries()) {
+            JsonObject o = new JsonObject();
+            o.addProperty("id", e.id());
+            o.addProperty("t", e.atMs());
+            o.addProperty("who", e.who());
+            o.addProperty("species", e.species());
+            o.addProperty("eggs", e.eggs());
+            o.addProperty("mult", e.mult());
+            o.addProperty("tierUp", e.tierUp());
+            donations.add(o);
+        }
+        root.add("donations", donations);
         sendGated(player, "notifs", new NotebookNotifsS2C(GSON.toJson(root)));
     }
 
@@ -1179,21 +1195,19 @@ public final class NotebookNet {
         com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
         long tiersBefore = comp.server().pressesOf(species);
         comp.recordServer(species, eaten);
-        long tiersAfter = comp.server().pressesOf(species);
+        boolean tierUp = comp.server().pressesOf(species) > tiersBefore;
         double mult = comp.server().multiplierOf(species);
         long toNext = comp.server().toNextPress(species);
-        if (tiersAfter > tiersBefore) {
-            server.getPlayerManager().broadcast(net.minecraft.text.Text.literal(
-                    "§d[Greener Pastures]§r The server press reached §d×" + String.format("%.2f", mult)
-                    + "§r " + capFirst(species) + " drops for EVERYONE - tipped by " + player.getName().getString() + "."), false);
-        } else {
-            player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r DONATED: " + eaten + " "
-                    + capFirst(species) + " eggs to the server press - " + toNext
-                    + " more to the next +1% for everyone (now ×" + String.format("%.2f", mult) + ")."), false);
-        }
+        // No chat broadcast (Deuce, 2026-07-19): donations land in the Inbox tab's DONATION FEED instead -
+        // a global 24h rolling window anyone can go read. The donator still gets their private confirm.
+        com.greenerpastures.notify.DonationFeed.push(player.getName().getString(), species, eaten, mult, tierUp);
+        player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r DONATED: " + eaten + " "
+                + capFirst(species) + " eggs to the server press - " + (tierUp
+                ? "that pull tipped it to ×" + String.format("%.2f", mult) + " for everyone!"
+                : toNext + " more to the next +1% for everyone (now ×" + String.format("%.2f", mult) + ").")), false);
         GpLog.i("compression", "donate", "player", player.getUuid().toString(), "species", species,
                 "eggs", Integer.toString(eaten), "server_mult", String.format("%.2f", mult),
-                "to_next", Long.toString(toNext));
+                "to_next", Long.toString(toNext), "tier_up", Boolean.toString(tierUp));
     }
 
     /** The shared press feed: remove exactly one BATCH of {@code species} from the player's BioBank -

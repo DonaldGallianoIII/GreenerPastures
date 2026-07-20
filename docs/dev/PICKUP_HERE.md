@@ -13,10 +13,14 @@
 > 1000 pooled eggs/species = +1% for EVERYONE, a "more" multiplier (`personal × server`, Deuce's PoE
 > framing). `CompressionLedger.server()` (1000/+1% constants) + server ledger in `CompressionStore`
 > (rev counter folded into the biobank push gate so OTHER viewers see communal tier changes),
-> `COMPRESS_SERVER=36`, tier-up chat broadcast with donator name, modal shows both presses + pool
-> progress; 400 tests green. **NEXT: batch in-game QA** (press + donate a species, watch
-> `compression press`/`donate` + `harvest proc comp_x` lines, two-account check that a donation
-> refreshes the OTHER console's chip) - rides the same QA batch as the Display Suite.
+> `COMPRESS_SERVER=36`, modal shows both presses + pool progress. **Donation visibility (Deuce: no
+> chat chirp):** tier-up broadcast REPLACED by `notify/DonationFeed` - a GLOBAL 24h rolling window
+> (TTL prune + 200-entry RAM cap, clock-injected tests) rendered as its own non-dismissible section
+> in the Inbox tab (tier-ups highlighted pink with donator name); rides the notifs channel's content
+> gate so every viewer sees new donations on the 1s poll. 404 tests green. **NEXT: batch in-game QA**
+> (press + donate a species, watch `compression press`/`donate` + `harvest proc comp_x` lines,
+> two-account check that a donation refreshes the OTHER console's chip + Inbox feed) - rides the
+> same QA batch as the Display Suite.
 
 > **⚡ SIDE-SESSION 2026-07-15→16 (FarmHand/hydrogrid) — DEPLOYED LIVE, awaiting Deuce's field test.**
 > Big Auto-Farm upgrade session in `hydrogrid/`, jar deployed to `Shedmon (3)/mods/` (zip-verified).
