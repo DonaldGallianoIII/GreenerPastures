@@ -70,8 +70,9 @@ export const MOCK = {
         { species: 'klink', shiny: false, ivs: [i % 32, 10, 10, 10, 10, 10], evs: [0, 0, 0, 0, 0, 0], nature: 'hardy', gender: '', ability: 'plus' }
       )),
     ],
-    // Compression ledger: normalized species → eggs ever pressed (100 = one press = +5%)
+    // Compression ledgers: normalized species → eggs ever pressed (personal: 100 = +5%; server: 1000 = +1%)
     compression: { eevee: 200 },
+    serverCompression: { eevee: 2300, klink: 800 },
   },
 
   // The player's inventory as 36 MC slots: [0..8] hotbar, [9..35] main. null = empty. Shown as a little

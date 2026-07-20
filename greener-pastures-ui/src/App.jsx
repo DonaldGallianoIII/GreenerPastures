@@ -647,6 +647,10 @@ function Slot({ s, idx, hot }) {
 const normSp = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
 const PRESS_BATCH = 100
 const PRESS_BONUS = 0.05
+// The communal server press: 1000 pooled eggs = +1% for EVERYONE, applied as a "more" multiplier
+// (personal × server) - donations go in 100 at a time, same as a personal press.
+const SERVER_BATCH = 1000
+const SERVER_BONUS = 0.01
 
 function BioBank() {
   const d = useChannel('biobank')
@@ -655,8 +659,10 @@ function BioBank() {
   const [pressFor, setPressFor] = useState(null)   // species with the Compression press modal open
   const entries = d?.entries
   const comp = d?.compression || {}
+  const svComp = d?.serverCompression || {}
   const pressesOf = (sp) => Math.floor((comp[normSp(sp)] || 0) / PRESS_BATCH)
   const multOf = (sp) => 1 + PRESS_BONUS * pressesOf(sp)
+  const svMultOf = (sp) => 1 + SERVER_BONUS * Math.floor((svComp[normSp(sp)] || 0) / SERVER_BATCH)
   // Memoized: grouping thousands of eggs re-ran on EVERY render (sort clicks, accordion toggles) - R3 #9.
   const { groups, species } = useMemo(() => {
     const groups = {}
@@ -678,13 +684,13 @@ function BioBank() {
       <div className="acc">
         {species.map((sp) => {
           const on = sp === open
-          const mult = multOf(sp)
+          const mult = multOf(sp) * svMultOf(sp)   // effective: personal × server ("more" multiplier)
           return (
             <div key={sp}>
               <div className={`sphead${on ? ' on' : ''}`} onClick={() => setOpen(on ? null : sp)}>
                 <span className="grn">{on ? '▾' : '▸'}</span>
                 <span className="spname">{cap(sp)}</span>
-                {mult > 1 && <span className="chip" style={{ color: 'var(--amber)' }} title={`${pressesOf(sp)} press${pressesOf(sp) > 1 ? 'es' : ''} - permanent drop-rate bonus in your pastures`}>⭓ ×{mult.toFixed(2)}</span>}
+                {mult > 1 && <span className="chip" style={{ color: 'var(--amber)' }} title={`your presses ×${multOf(sp).toFixed(2)} × server press ×${svMultOf(sp).toFixed(2)} - permanent drop-rate bonus in your pastures`}>⭓ ×{mult.toFixed(2)}</span>}
                 <span style={{ flex: 1 }} />
                 <span className="chip">×{groups[sp].length}</span>
                 <button className="btn" style={{ padding: '2px 7px', fontSize: 10 }} title="Compression press: 100 eggs → permanent +5% drops for this species" onClick={(e) => { e.stopPropagation(); setPressFor(sp) }}>⭓ press</button>
@@ -694,43 +700,55 @@ function BioBank() {
           )
         })}
       </div>
-      {pressFor && <PressModal sp={pressFor} eggs={groups[pressFor] || []} presses={pressesOf(pressFor)} onClose={() => setPressFor(null)} />}
+      {pressFor && <PressModal sp={pressFor} eggs={groups[pressFor] || []} presses={pressesOf(pressFor)}
+        svEggs={svComp[normSp(pressFor)] || 0} onClose={() => setPressFor(null)} />}
     </div>
   )
 }
 
 /** The Compression press confirm: 100 worst non-shiny eggs of one species → a permanent, stacking +5%
  *  drop-proc multiplier for that species across every pasture you own. All-or-nothing; shinies never eaten. */
-function PressModal({ sp, eggs, presses, onClose }) {
+function PressModal({ sp, eggs, presses, svEggs, onClose }) {
   const eligible = eggs.filter(({ e }) => !e.shiny).length
   const ready = eligible >= PRESS_BATCH
   const cur = 1 + PRESS_BONUS * presses
   const next = cur + PRESS_BONUS
+  const svMult = 1 + SERVER_BONUS * Math.floor(svEggs / SERVER_BATCH)
+  const svToNext = SERVER_BATCH - (svEggs % SERVER_BATCH)
+  const notReadyTip = ready ? undefined : `bank ${PRESS_BATCH - eligible} more non-shiny ${cap(sp)} eggs first`
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
-      <div className="card" style={{ width: 400, padding: 16 }} onClick={(e) => e.stopPropagation()}>
+      <div className="card" style={{ width: 420, padding: 16 }} onClick={(e) => e.stopPropagation()}>
         <div className="h" style={{ marginBottom: 8 }}>⭓ Compression Press · {cap(sp)}</div>
         <div className="dim" style={{ fontSize: 11, lineHeight: 1.5, marginBottom: 10 }}>
-          Feed {PRESS_BATCH} banked {cap(sp)} eggs to the press and they are gone forever - compressed into
-          a permanent <span className="grn">+5% drop rate</span> for every {cap(sp)} in your pastures.
-          It stacks with your Kernel and Tether drop mods, and with every future press.
+          Feed {PRESS_BATCH} banked {cap(sp)} eggs to the press and they are gone forever. The press always
+          eats the <span className="amb">worst {PRESS_BATCH}</span> (lowest total IV); shiny eggs are never taken.
         </div>
-        <div className="dim" style={{ fontSize: 11, lineHeight: 1.5, marginBottom: 10 }}>
-          The press always eats the <span className="amb">worst {PRESS_BATCH}</span> (lowest total IV).
-          Shiny eggs are never taken.
+        <div style={{ fontSize: 11, lineHeight: 1.5, marginBottom: 10, padding: '6px 8px', border: '1px solid var(--dim)', borderRadius: 4 }}>
+          <div className="grn" style={{ marginBottom: 2 }}>YOUR press · +5% per {PRESS_BATCH} eggs, yours forever</div>
+          <div className="row" style={{ fontSize: 12 }}>
+            <span>×{cur.toFixed(2)}</span>
+            <span className="grn" style={{ margin: '0 6px' }}>→</span>
+            <span className="grn">×{next.toFixed(2)} after this press</span>
+          </div>
         </div>
-        <div className="row" style={{ fontSize: 12, marginBottom: 4 }}>
-          <span>current ×{cur.toFixed(2)}</span>
-          <span className="grn" style={{ margin: '0 6px' }}>→</span>
-          <span className="grn">×{next.toFixed(2)} after this press</span>
+        <div style={{ fontSize: 11, lineHeight: 1.5, marginBottom: 10, padding: '6px 8px', border: '1px solid var(--dim)', borderRadius: 4 }}>
+          <div style={{ color: 'var(--pink)', marginBottom: 2 }}>SERVER press · every {SERVER_BATCH} pooled eggs = +1% for EVERYONE</div>
+          <div className="row" style={{ fontSize: 12 }}>
+            <span>server ×{svMult.toFixed(2)}</span>
+            <span className="dim" style={{ marginLeft: 6 }}>· {svToNext} eggs to the next +1%</span>
+          </div>
+          <div className="dim" style={{ fontSize: 10 }}>a MORE multiplier: your total = yours × server's, on every pasture you own</div>
         </div>
         <div className="row" style={{ fontSize: 11, marginBottom: 12 }}>
           <span className={ready ? 'grn' : 'amb'}>{eligible} non-shiny banked</span>
-          <span className="dim" style={{ marginLeft: 4 }}>· {PRESS_BATCH} needed</span>
+          <span className="dim" style={{ marginLeft: 4 }}>· {PRESS_BATCH} needed per pull</span>
         </div>
         <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
           <button className="btn" onClick={onClose}>cancel</button>
-          <button className="btn" disabled={!ready} title={ready ? undefined : `bank ${PRESS_BATCH - eligible} more non-shiny ${cap(sp)} eggs first`}
+          <button className="btn" disabled={!ready} title={notReadyTip ?? `donate ${PRESS_BATCH} eggs to the communal pool`}
+            onClick={() => { send('biobank', 'COMPRESS_SERVER', { species: sp }); onClose() }}>⛃ DONATE {PRESS_BATCH}</button>
+          <button className="btn" disabled={!ready} title={notReadyTip}
             onClick={() => { send('biobank', 'COMPRESS', { species: sp }); onClose() }}>⭓ COMPRESS {PRESS_BATCH}</button>
         </div>
       </div>
@@ -2884,7 +2902,9 @@ silently: shiny or unreadable eggs are ALWAYS kept, and the void log shows every
 The node graph (per breeding line) decides each egg's fate: IV/EV/nature/shiny filters → keep or render.
 Withdrawing checks your inventory first; the bank never deletes - except the COMPRESSION PRESS, which you
 pull yourself: 100 banked eggs of one species → a permanent +5% drop rate for that species in your pastures,
-stacking forever. The press eats the worst eggs (lowest IV total) and never touches a shiny.`],
+stacking forever. Or DONATE the 100 to the SERVER press instead - every 1000 pooled eggs (from anyone) is
++1% for EVERYONE, multiplied on top of your own presses. Either way the press eats the worst eggs
+(lowest IV total) and never touches a shiny.`],
   ['🍰 Snack Science', `ULTRA COMPRESSED SNACK: craft several poke snacks together - up to 9 effects, 6 copies
 each. SNACK REPEL: craft a can (6 glass + 2 iron ingots + nether wart), charge it with 1-6 berries of the type
 you DON'T want, then bake the charged can into an Ultra snack - that type's snack spawns divide by the charge.

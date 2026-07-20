@@ -111,11 +111,17 @@ public final class PastureHarvest {
                 int productive = 0;
                 // Compression press (2026-07-19): the owner's permanent per-species multiplier scales each
                 // mon's WHOLE proc - composes on top of Kernel/Tether drop mods, clamped at certainty inside.
+                // The communal SERVER press is a "more" multiplier: personal × server, never added (Deuce).
                 com.greenerpastures.biobank.CompressionLedger led = comp.get(pd.owner);
-                boolean pressed = led != null && !led.isEmpty();
+                com.greenerpastures.biobank.CompressionLedger svLed = comp.server();
+                boolean personal = led != null && !led.isEmpty();
+                boolean pressed = personal || !svLed.isEmpty();
+                DropsBridge.SpeciesScale scale = personal
+                        ? (s -> led.multiplierOf(s) * svLed.multiplierOf(s))
+                        : svLed::multiplierOf;
                 for (int i = 0; i < sweeps; i++) {
                     Map<String, Integer> one = pressed
-                            ? DropsBridge.harvest(roster, RNG, proc, yield, led::multiplierOf)
+                            ? DropsBridge.harvest(roster, RNG, proc, yield, scale)
                             : DropsBridge.harvest(roster, RNG, proc, yield);
                     if (!one.isEmpty()) productive++;
                     one.forEach((id, n) -> harvested.merge(id, n, Integer::sum));

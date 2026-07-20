@@ -19,15 +19,36 @@ public final class CompressionStore extends PersistentState {
     private static final String ID = "greenerpastures_compression";
 
     private final Map<UUID, CompressionLedger> ledgers = new HashMap<>();
+    /** The communal pool (Deuce, 2026-07-19): anyone donates, everyone's pastures benefit - a "more"
+     *  multiplier the harvest multiplies ON TOP of each owner's personal ledger. */
+    private CompressionLedger serverLedger = CompressionLedger.server();
+    /** Bumped on every mutation - folded into the biobank push's rev gate so OTHER viewers' consoles pick
+     *  up a communal tier change even though their own bank didn't move. Not persisted. */
+    private long rev = 0;
+
+    public long rev() { return rev; }
 
     /** The player's ledger, or null if they've never pressed anything. */
     public CompressionLedger get(UUID player) {
         return ledgers.get(player);
     }
 
+    /** The communal server ledger (never null; empty until someone donates). */
+    public CompressionLedger server() {
+        return serverLedger;
+    }
+
     /** Record a press for a player (created on first touch). */
     public void record(UUID player, String species, long eggs) {
         ledgers.computeIfAbsent(player, u -> new CompressionLedger()).record(species, eggs);
+        rev++;
+        markDirty();
+    }
+
+    /** Record a donation into the communal pool. */
+    public void recordServer(String species, long eggs) {
+        serverLedger.record(species, eggs);
+        rev++;
         markDirty();
     }
 
@@ -40,11 +61,18 @@ public final class CompressionStore extends PersistentState {
             map.put(u.toString(), c);
         });
         nbt.put("ledgers", map);
+        NbtCompound sv = new NbtCompound();
+        serverLedger.snapshot().forEach(sv::putLong);
+        nbt.put("server", sv);
         return nbt;
     }
 
     private static CompressionStore fromNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         CompressionStore s = new CompressionStore();
+        NbtCompound sv = nbt.getCompound("server");
+        Map<String, Long> svSnap = new HashMap<>();
+        for (String sp : sv.getKeys()) svSnap.put(sp, sv.getLong(sp));
+        s.serverLedger = CompressionLedger.serverFromSnapshot(svSnap);
         NbtCompound map = nbt.getCompound("ledgers");
         for (String k : map.getKeys()) {
             try {

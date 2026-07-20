@@ -15,7 +15,8 @@ import java.util.List;
  * EVs[6] (HP·Atk·Def·SpA·SpD·Spe order) · nature · gender · ability (best-effort, "" if unavailable).
  * (Tera / ball / OT / moves are post-hatch, so not part of an egg's spec - §7.3.)
  */
-public record NotebookBioBankS2C(int total, List<Entry> entries, List<Press> presses) implements CustomPayload {
+public record NotebookBioBankS2C(int total, List<Entry> entries, List<Press> presses,
+                                 List<Press> serverPresses) implements CustomPayload {
 
     /** One Compression-press ledger row: normalized species key → total eggs ever pressed (100 eggs = one
      *  press = a permanent +5% drop-proc multiplier for that species). */
@@ -61,6 +62,7 @@ public record NotebookBioBankS2C(int total, List<Entry> entries, List<Press> pre
             PacketCodecs.VAR_INT, NotebookBioBankS2C::total,
             Entry.CODEC.collect(PacketCodecs.toList()), NotebookBioBankS2C::entries,
             Press.CODEC.collect(PacketCodecs.toList()), NotebookBioBankS2C::presses,
+            Press.CODEC.collect(PacketCodecs.toList()), NotebookBioBankS2C::serverPresses,
             NotebookBioBankS2C::new);
 
     @Override

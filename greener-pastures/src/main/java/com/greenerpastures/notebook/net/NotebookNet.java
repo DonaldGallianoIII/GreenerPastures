@@ -360,6 +360,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player, true); }
                 case NotebookActionC2S.COMPRESS_EGGS -> { compressEggs(player, p.arg()); pushBiobank(player, true); }
+                case NotebookActionC2S.COMPRESS_SERVER -> { donateEggs(player, p.arg()); pushBiobank(player, true); }
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
                 case NotebookActionC2S.RITUAL_PULL -> { ritualPull(player, p.arg(), p.amount()); pushRituals(player); }
                 case NotebookActionC2S.CORRUPT_KERNEL -> { corruptKernel(player); pushAugmenter(player); }
@@ -1154,6 +1155,51 @@ public final class NotebookNet {
     private static void compressEggs(ServerPlayerEntity player, String species) {
         MinecraftServer server = player.getServer();
         if (server == null || species == null || species.isBlank()) return;
+        int eaten = sacrificeWorst(server, player, species);
+        if (eaten <= 0) return;
+        com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
+        comp.record(player.getUuid(), species, eaten);
+        double mult = comp.get(player.getUuid()).multiplierOf(species);
+        player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r COMPRESSED: " + eaten + " "
+                + capFirst(species) + " eggs pressed into a permanent +5% drop bonus - now ×"
+                + String.format("%.2f", mult) + " on all your pastures."), false);
+        GpLog.i("compression", "press", "player", player.getUuid().toString(), "species", species,
+                "eggs", Integer.toString(eaten), "mult", String.format("%.2f", mult));
+    }
+
+    /** Donate 100 eggs into the COMMUNAL server press (Deuce, 2026-07-19): every 1000 pooled eggs of a
+     *  species = a further +1% drop rate for EVERYONE's pastures - a "more" multiplier the harvest applies
+     *  on top of each owner's personal ledger. Same feed rules as the personal press (worst first, shinies
+     *  never, all-or-nothing). A tier crossing is broadcast: the whole server should see the bar fill. */
+    private static void donateEggs(ServerPlayerEntity player, String species) {
+        MinecraftServer server = player.getServer();
+        if (server == null || species == null || species.isBlank()) return;
+        int eaten = sacrificeWorst(server, player, species);
+        if (eaten <= 0) return;
+        com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
+        long tiersBefore = comp.server().pressesOf(species);
+        comp.recordServer(species, eaten);
+        long tiersAfter = comp.server().pressesOf(species);
+        double mult = comp.server().multiplierOf(species);
+        long toNext = comp.server().toNextPress(species);
+        if (tiersAfter > tiersBefore) {
+            server.getPlayerManager().broadcast(net.minecraft.text.Text.literal(
+                    "§d[Greener Pastures]§r The server press reached §d×" + String.format("%.2f", mult)
+                    + "§r " + capFirst(species) + " drops for EVERYONE - tipped by " + player.getName().getString() + "."), false);
+        } else {
+            player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r DONATED: " + eaten + " "
+                    + capFirst(species) + " eggs to the server press - " + toNext
+                    + " more to the next +1% for everyone (now ×" + String.format("%.2f", mult) + ")."), false);
+        }
+        GpLog.i("compression", "donate", "player", player.getUuid().toString(), "species", species,
+                "eggs", Integer.toString(eaten), "server_mult", String.format("%.2f", mult),
+                "to_next", Long.toString(toNext));
+    }
+
+    /** The shared press feed: remove exactly one BATCH of {@code species} from the player's BioBank -
+     *  worst total-IV first, shinies never eligible, all-or-nothing. Returns eggs eaten (0 = refused,
+     *  with the reason messaged). */
+    private static int sacrificeWorst(MinecraftServer server, ServerPlayerEntity player, String species) {
         java.util.function.Predicate<ItemStack> eligible = egg -> {
             EggCard c = EggReader.card(egg);
             return c == null || !c.shiny();
@@ -1168,16 +1214,9 @@ public final class NotebookNet {
             player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r The press needs "
                     + com.greenerpastures.biobank.CompressionLedger.BATCH + " non-shiny "
                     + capFirst(species) + " eggs in the BioBank."), false);
-            return;
+            return 0;
         }
-        com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
-        comp.record(player.getUuid(), species, eaten);
-        double mult = comp.get(player.getUuid()).multiplierOf(species);
-        player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r COMPRESSED: " + eaten + " "
-                + capFirst(species) + " eggs pressed into a permanent +5% drop bonus - now ×"
-                + String.format("%.2f", mult) + " on all your pastures."), false);
-        GpLog.i("compression", "press", "player", player.getUuid().toString(), "species", species,
-                "eggs", Integer.toString(eaten), "mult", String.format("%.2f", mult));
+        return eaten;
     }
 
     private static String capFirst(String s) {
@@ -2048,7 +2087,11 @@ public final class NotebookNet {
         }
         // Rev gate before assembly: flattening a hoard-scale bank (thousands of eggs → cards + entries) every
         // second was the single biggest per-viewer cost (R3 F1/F2). Unchanged bank → nothing at all happens.
-        if (!changed(player, "biobank_rev", bank == null ? -1L : bank.rev())) return;
+        // The compression rev is folded in so a COMMUNAL donation reaches every viewer's console, not just
+        // the donator's (their own bank rev doesn't move when someone else feeds the server press).
+        long compRev = com.greenerpastures.biobank.CompressionStore.get(server).rev();
+        long sig = (bank == null ? -1L : bank.rev()) + compRev * 0x1_0000_0000L;
+        if (!changed(player, "biobank_rev", sig)) return;
         lastBiobankFlatten.put(player.getUuid(), nowMs);
         List<NotebookBioBankS2C.Entry> entries = new ArrayList<>();
         try (var span = com.greenerpastures.core.GpProf.begin("net.biobank_flatten")) {
@@ -2066,18 +2109,21 @@ public final class NotebookNet {
                 }
             }
         }
-        // Compression ledger rides the biobank packet: it only ever changes when the bank does (a press
-        // eats 100 eggs → rev bump), so the rev gate above covers both.
-        List<NotebookBioBankS2C.Press> presses = List.of();
-        com.greenerpastures.biobank.CompressionLedger led =
-                com.greenerpastures.biobank.CompressionStore.get(server).get(player.getUuid());
-        if (led != null && !led.isEmpty()) {
-            presses = new ArrayList<>();
-            for (Map.Entry<String, Long> e : led.snapshot().entrySet()) {
-                presses.add(new NotebookBioBankS2C.Press(e.getKey(), e.getValue()));
-            }
+        // Compression ledgers ride the biobank packet - the combined rev gate above covers bank mutations
+        // AND compression mutations (including someone ELSE feeding the communal press).
+        com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
+        List<NotebookBioBankS2C.Press> presses = pressList(comp.get(player.getUuid()));
+        List<NotebookBioBankS2C.Press> serverPresses = pressList(comp.server());
+        ServerPlayNetworking.send(player, new NotebookBioBankS2C(entries.size(), entries, presses, serverPresses));
+    }
+
+    private static List<NotebookBioBankS2C.Press> pressList(com.greenerpastures.biobank.CompressionLedger led) {
+        if (led == null || led.isEmpty()) return List.of();
+        List<NotebookBioBankS2C.Press> out = new ArrayList<>();
+        for (Map.Entry<String, Long> e : led.snapshot().entrySet()) {
+            out.add(new NotebookBioBankS2C.Press(e.getKey(), e.getValue()));
         }
-        ServerPlayNetworking.send(player, new NotebookBioBankS2C(entries.size(), entries, presses));
+        return out;
     }
 
     /** Write Data onto blank media (§5c - the Notebook is the drive): consume 1 blank + debit the

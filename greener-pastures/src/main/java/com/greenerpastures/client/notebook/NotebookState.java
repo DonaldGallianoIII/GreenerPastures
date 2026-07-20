@@ -221,13 +221,15 @@ public final class NotebookState {
     public static volatile int biobankTotal = 0;
     public static volatile List<NotebookBioBankS2C.Entry> biobank = List.of();
     public static volatile List<NotebookBioBankS2C.Press> biobankPresses = List.of();
+    public static volatile List<NotebookBioBankS2C.Press> biobankServerPresses = List.of();
 
     public static boolean applyBiobank(NotebookBioBankS2C p) {
         boolean changed = biobankTotal != p.total() || !biobank.equals(p.entries())
-                || !biobankPresses.equals(p.presses());
+                || !biobankPresses.equals(p.presses()) || !biobankServerPresses.equals(p.serverPresses());
         biobankTotal = p.total();
         biobank = p.entries();
         biobankPresses = p.presses();
+        biobankServerPresses = p.serverPresses();
         return changed;
     }
 
@@ -357,7 +359,7 @@ public final class NotebookState {
         pastureConfig = null; pastureConfigLoading = false; pastureGraphJson = ""; pastureExtraJson = "";
         pastureConfigCache.clear(); pastureGraphCache.clear(); pastureExtraCache.clear();
         augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of(); augMetaJson = "";
-        biobankTotal = 0; biobank = List.of(); biobankPresses = List.of();
+        biobankTotal = 0; biobank = List.of(); biobankPresses = List.of(); biobankServerPresses = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
         dashboardJson = ""; goalsJson = ""; notifsJson = ""; ritualsJson = ""; specimensJson = ""; arcadeJson = ""; treelineJson = ""; topdeckJson = ""; slotsJson = ""; vibeJson = ""; tagJson = "";
         navTab = ""; navSeq = 0;

@@ -58,6 +58,41 @@ class CompressionLedgerTest {
     }
 
     @Test
+    void serverLedgerUsesCommunalConstants() {
+        CompressionLedger sv = CompressionLedger.server();
+        sv.record("klink", 800);
+        assertEquals(0, sv.pressesOf("klink"));               // 800 < 1000 - no tier yet
+        assertEquals(1.0, sv.multiplierOf("klink"));
+        assertEquals(200, sv.toNextPress("klink"));
+        sv.record("klink", 200);
+        assertEquals(1, sv.pressesOf("klink"));
+        assertEquals(1.01, sv.multiplierOf("klink"), 1e-9);   // 1000 eggs = +1% for everyone
+        assertEquals(1000, sv.toNextPress("klink"));          // fresh tier - a full batch to the next
+        sv.record("klink", 9000);
+        assertEquals(1.10, sv.multiplierOf("klink"), 1e-9);   // stacks forever, same as personal
+    }
+
+    @Test
+    void serverSnapshotRoundTripsWithServerConstants() {
+        CompressionLedger sv = CompressionLedger.server();
+        sv.record("klink", 2000);
+        CompressionLedger back = CompressionLedger.serverFromSnapshot(sv.snapshot());
+        assertEquals(2, back.pressesOf("klink"));
+        assertEquals(1.02, back.multiplierOf("klink"), 1e-9);
+        // the PERSONAL loader on the same data reads it at personal constants - the two never mix
+        assertEquals(1.0 + 0.05 * 20, CompressionLedger.fromSnapshot(sv.snapshot()).multiplierOf("klink"), 1e-9);
+    }
+
+    @Test
+    void moreMultiplierComposition() {
+        CompressionLedger mine = new CompressionLedger();
+        mine.record("klink", 400);                            // ×1.20 personal
+        CompressionLedger sv = CompressionLedger.server();
+        sv.record("klink", 5000);                             // ×1.05 server
+        assertEquals(1.20 * 1.05, mine.multiplierOf("klink") * sv.multiplierOf("klink"), 1e-9);   // the harvest multiplies, never adds
+    }
+
+    @Test
     void ignoresJunkInput() {
         CompressionLedger l = new CompressionLedger();
         l.record(null, 100);

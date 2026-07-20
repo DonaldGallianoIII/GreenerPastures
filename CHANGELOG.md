@@ -13,6 +13,10 @@
 - BioBank capacity raised **256 → 1024 eggs per species** - a press habit needs stock.
 - Press from the BioBank tab: every species row has a ⭓ press button + confirm modal showing
   current → next multiplier; presses land in the sweep audit log (`comp` / `comp_x` fields).
+- **The SERVER press**: donate your 100-egg pulls to a communal pool instead - every **1000
+  pooled eggs** of a species (from anyone) is a further **+1% drop rate for EVERYONE**, stacking
+  forever and applied as a **"more" multiplier** (`your presses × server press`, never added).
+  Tier crossings are broadcast to the whole server with the donator's name.
 
 ## 1.0.0-beta.1 (first public release)
 
