@@ -301,6 +301,8 @@ public final class NotebookNet {
             o.addProperty("count", s.getCount());
             o.addProperty("fn", t == null ? "" : t.function());
             o.addProperty("tier", t == null ? 0 : t.tier());
+            if (s.contains(net.minecraft.component.DataComponentTypes.CUSTOM_NAME))
+                o.addProperty("name", s.getName().getString());
             tethers.add(o);
         }
         root.add("tethers", tethers);
@@ -331,6 +333,23 @@ public final class NotebookNet {
         }
         root.add("refunds", refunds);
         sendGated(player, "loom", new NotebookLoomS2C(GSON.toJson(root)));
+    }
+
+    /** Loom rename (Deuce, 2026-07-20: "name soul tethers just like kernels, otherwise it gets hard to
+     *  keep track of whats what") - same sanitize + CUSTOM_NAME contract as {@link #renameHeldKernel},
+     *  but addressed by inventory slot since the Loom is where you're already looking at them. */
+    private static void renameTether(ServerPlayerEntity player, String name, int invSlot) {
+        var main = player.getInventory().main;
+        if (invSlot < 0 || invSlot >= main.size()) return;
+        ItemStack stack = main.get(invSlot);
+        if (!(stack.getItem() instanceof com.greenerpastures.economy.SoulTetherItem)) return;
+        String clean = name == null ? "" : name.replaceAll("[\\p{Cntrl}]", "").trim();
+        if (clean.length() > 32) clean = clean.substring(0, 32);
+        if (clean.isEmpty()) stack.remove(net.minecraft.component.DataComponentTypes.CUSTOM_NAME);
+        else stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_NAME,
+                net.minecraft.text.Text.literal(clean).styled(st -> st.withItalic(false)));
+        player.getInventory().markDirty();
+        GpLog.i("loom", "rename", "player", player.getUuid().toString(), "slot", Integer.toString(invSlot), "name", clean);
     }
 
     /** Loom inscription: write {@code [function · tier]} onto ONE Soul Tether in main-inventory slot
@@ -476,6 +495,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.COMPRESS_EGGS -> { compressEggs(player, p.arg()); pushBiobank(player, true); }
                 case NotebookActionC2S.COMPRESS_SERVER -> { donateEggs(player, p.arg()); pushBiobank(player, true); }
                 case NotebookActionC2S.INSCRIBE_TETHER -> { inscribeTether(player, p.arg(), p.amount()); pushLoom(player); pushStatus(player); }
+                case NotebookActionC2S.RENAME_TETHER -> { renameTether(player, p.arg(), p.amount()); pushLoom(player); }
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
                 case NotebookActionC2S.RITUAL_PULL -> { ritualPull(player, p.arg(), p.amount()); pushRituals(player); }
                 case NotebookActionC2S.CORRUPT_KERNEL -> { corruptKernel(player); pushAugmenter(player); }
@@ -2077,6 +2097,8 @@ public final class NotebookNet {
             o.addProperty("has", !ts.isEmpty());
             o.addProperty("fn", tt == null ? "" : tt.function());
             o.addProperty("tier", tt == null ? 0 : tt.tier());
+            if (ts.contains(net.minecraft.component.DataComponentTypes.CUSTOM_NAME))
+                o.addProperty("name", ts.getName().getString());
             slotArr.add(o);
         }
         root.add("tethers", slotArr);

@@ -123,6 +123,8 @@ public final class DsBridge {
             case "COMPRESS_SERVER" -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_SERVER, str(p, "species", ""), 0);
             case "INSCRIBE_TETHER" -> new NotebookActionC2S(NotebookActionC2S.INSCRIBE_TETHER,
                     str(p, "fn", "wipe") + ":" + (int) num(p, "tier", 0), (int) num(p, "slot", -1));
+            case "RENAME_TETHER" -> new NotebookActionC2S(NotebookActionC2S.RENAME_TETHER,
+                    str(p, "name", ""), (int) num(p, "slot", -1));
             case "DISMISS_NOTE"   -> new NotebookActionC2S(NotebookActionC2S.DISMISS_NOTE, str(p, "id", "all"), 0);
             case "WRITE_DISK"     -> new NotebookActionC2S(NotebookActionC2S.WRITE_DISK, str(p, "denom", ""), 0);
             case "RITUAL_PULL"    -> new NotebookActionC2S(NotebookActionC2S.RITUAL_PULL, str(p, "item", ""), (int) num(p, "mode", 0));

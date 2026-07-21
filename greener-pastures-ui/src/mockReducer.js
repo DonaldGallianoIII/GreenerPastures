@@ -108,6 +108,12 @@ export function applyMock(state, channel, action, payload) {
         t.tier = wipe ? 0 : payload.tier
       }
       out.loom = l
+    } else if (action === 'RENAME_TETHER') {
+      const l = clone(state.loom)
+      const t = (l?.tethers || []).find((x) => x.slot === payload.slot)
+      if (!t) return {}
+      if (payload.name) t.name = payload.name; else delete t.name
+      out.loom = l
     }
   } else if (channel === 'biobank') {
     if (action === 'WITHDRAW') {                                                 // pull an egg out → materializes in inventory (to hatch)

@@ -79,7 +79,7 @@ export const MOCK = {
   loom: {
     tethers: [
       { slot: 3, count: 4, fn: '', tier: 0 },
-      { slot: 11, count: 1, fn: 'shiny', tier: 2 },
+      { slot: 11, count: 1, fn: 'shiny', tier: 2, name: 'Eevee Line A' },
     ],
     catalog: ['shiny', 'speed', 'iv_floor', 'ev', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].map((id) => ({
       id,

@@ -1877,9 +1877,10 @@ function TetherRow({ cfg }) {
           const c = cells.find((x) => x.idx === i)
           if (c?.has) {
             return (
-              <button key={i} className="btn" style={{ color: 'var(--cyan)' }} title="click to return it to your inventory"
+              <button key={i} className="btn" style={{ color: 'var(--cyan)' }}
+                title={`${c.name ? `“${c.name}” · ` : ''}${fnLabel(c.fn)} · Tier ${TIER_ROMAN[c.tier] || '?'} - click to return it to your inventory`}
                 onClick={() => send('pasture', 'TETHER', { pos: cfg.pos, idx: i, slot: -1 })}>
-                {FN_ICONS[c.fn] || '⧟'} {fnLabel(c.fn)} {TIER_ROMAN[c.tier] || ''}
+                {FN_ICONS[c.fn] || '⧟'} {c.name || `${fnLabel(c.fn)} ${TIER_ROMAN[c.tier] || ''}`}
               </button>
             )
           }
@@ -1894,7 +1895,7 @@ function TetherRow({ cfg }) {
                       <div key={t.slot} className="brow" style={{ cursor: 'pointer', marginBottom: 3 }}
                         onClick={() => { send('pasture', 'TETHER', { pos: cfg.pos, idx: i, slot: t.slot }); setPick(null) }}>
                         <span>{FN_ICONS[t.fn] || '⧟'}</span>
-                        <span style={{ flex: 1, fontSize: 11 }}>{fnLabel(t.fn)} · {TIER_ROMAN[t.tier]}</span>
+                        <span style={{ flex: 1, fontSize: 11 }}>{t.name ? `“${t.name}” · ` : ''}{fnLabel(t.fn)} · {TIER_ROMAN[t.tier]}</span>
                       </div>
                     ))}
                 </div>
@@ -1916,12 +1917,15 @@ function LoomTab() {
   const d = useChannel('loom')
   const status = useChannel('status')
   const [sel, setSel] = useState(null)     // selected main-inventory slot
+  const [nameDraft, setNameDraft] = useState('')
   const tethers = d?.tethers || []
   const catalog = d?.catalog || []
   const refunds = d?.refunds || [0, 50, 200, 450]
   const balance = status?.data ?? 0
   const selT = tethers.find((t) => t.slot === sel) || null
   const fnLabel = (id) => catalog.find((c) => c.id === id)?.label || id
+  useEffect(() => { setNameDraft(selT?.name || '') }, [sel])   // seed the rename field per selection
+  const saveName = () => { if (selT && nameDraft !== (selT.name || '')) send('loom', 'RENAME_TETHER', { slot: selT.slot, name: nameDraft }) }
   return (
     <div className="pane" style={{ overflow: 'auto' }}>
       <div className="row" style={{ marginBottom: 8 }}>
@@ -1946,6 +1950,7 @@ function LoomTab() {
               onClick={() => setSel(sel === t.slot ? null : t.slot)}>
               <span>{t.tier > 0 ? FN_ICONS[t.fn] || '⧟' : '⧟'}</span>
               <span style={{ flex: 1, color: t.tier > 0 ? 'var(--cyan)' : 'var(--muted)' }}>
+                {t.name && <b>“{t.name}” · </b>}
                 {t.tier > 0 ? `${fnLabel(t.fn)} Tether · Tier ${TIER_ROMAN[t.tier]}` : `Blank Soul Tether${t.count > 1 ? ` ×${t.count}` : ''}`}
               </span>
               <span className="dim mono" style={{ fontSize: 9 }}>{sel === t.slot ? 'selected ▾' : 'select'}</span>
@@ -1955,6 +1960,15 @@ function LoomTab() {
       )}
       {selT && (
         <div className="inset" style={{ padding: 10, borderRadius: 8 }}>
+          <div className="row" style={{ gap: 8, marginBottom: 8 }}>
+            <span className="dim" style={{ fontSize: 10, letterSpacing: 1 }}>NAME</span>
+            <input className="gp-input" style={{ flex: 1 }} value={nameDraft} maxLength={32}
+              placeholder="name this tether (like a Kernel) - empty clears"
+              onFocus={() => send('console', 'INPUT_FOCUS', { v: true })}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onBlur={() => { send('console', 'INPUT_FOCUS', { v: false }); saveName() }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { saveName(); e.target.blur() } }} />
+          </div>
           <div className="row" style={{ marginBottom: 6 }}>
             <span className="dim" style={{ fontSize: 10, letterSpacing: 1 }}>INSCRIBE AS</span>
             <span style={{ flex: 1 }} />
