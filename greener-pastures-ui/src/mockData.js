@@ -75,6 +75,21 @@ export const MOCK = {
     serverCompression: { eevee: 2300, klink: 800 },
   },
 
+  // Loom: Soul Tethers in the main inventory + the inscription catalog (costs 100/400/900 by tier²)
+  loom: {
+    tethers: [
+      { slot: 3, count: 4, fn: '', tier: 0 },
+      { slot: 11, count: 1, fn: 'shiny', tier: 2 },
+    ],
+    catalog: ['shiny', 'speed', 'iv_floor', 'ev', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].map((id) => ({
+      id,
+      label: { shiny: 'Shiny', speed: 'Speed', iv_floor: 'IV Floor', ev: 'Fine-Tune (EV)', enrichment: 'Enrichment', drop_rate: 'Drop Rate', drop_yield: 'Drop Yield', hatch: 'Hatch Haste' }[id],
+      cls: ['speed', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].includes(id) ? 'throughput' : 'quality',
+      tiers: [1, 2, 3].map((t) => ({ tier: t, cost: t * t * 100, ampPct: 10 * t, burn: (['speed', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].includes(id) ? 3 : 8) * t })),
+    })),
+    refunds: [0, 50, 200, 450],
+  },
+
   // Inbox: dismissible notes + the global server-press donation feed (24h rolling window, not dismissible)
   notifications: {
     notes: [

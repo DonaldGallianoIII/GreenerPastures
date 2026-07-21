@@ -160,6 +160,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playC2S().register(NotebookGraphSaveC2S.ID, NotebookGraphSaveC2S.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookEggLogS2C.ID, NotebookEggLogS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookNotifsS2C.ID, NotebookNotifsS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookLoomS2C.ID, NotebookLoomS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookDashboardS2C.ID, NotebookDashboardS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookGoalsS2C.ID, NotebookGoalsS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookGoalC2S.ID, NotebookGoalC2S.CODEC);
@@ -225,6 +226,7 @@ public final class NotebookNet {
                 pushDashboard(player);
                 pushGoals(player);
                 pushNotifs(player);
+                pushLoom(player);
                 pushRituals(player);
                 pushSpecimens(player);
                 pushArcade(player);
@@ -280,6 +282,102 @@ public final class NotebookNet {
         }
         root.add("donations", donations);
         sendGated(player, "notifs", new NotebookNotifsS2C(GSON.toJson(root)));
+    }
+
+    /** The LOOM tab (Deuce, 2026-07-20 - the Soul Tether's own bench): every tether in the player's main
+     *  inventory + the inscription catalog (non-selector functions × tiers I-III with cost/amp/burn).
+     *  Data balance deliberately NOT included - the UI reads it off the status channel, so this JSON only
+     *  changes (and only re-pushes) when the tethers themselves do. */
+    public static void pushLoom(ServerPlayerEntity player) {
+        JsonObject root = new JsonObject();
+        JsonArray tethers = new JsonArray();
+        var main = player.getInventory().main;
+        for (int i = 0; i < main.size(); i++) {
+            ItemStack s = main.get(i);
+            if (!(s.getItem() instanceof com.greenerpastures.economy.SoulTetherItem)) continue;
+            com.greenerpastures.economy.Tether t = s.get(com.greenerpastures.economy.DarkEconomy.TETHER);
+            JsonObject o = new JsonObject();
+            o.addProperty("slot", i);
+            o.addProperty("count", s.getCount());
+            o.addProperty("fn", t == null ? "" : t.function());
+            o.addProperty("tier", t == null ? 0 : t.tier());
+            tethers.add(o);
+        }
+        root.add("tethers", tethers);
+        JsonArray catalog = new JsonArray();
+        for (com.greenerpastures.economy.AugmentFunction f : com.greenerpastures.economy.AugmentFunction.values()) {
+            if (f.selector) continue;   // a CHOICE can't be amplified - selectors never appear on the Loom
+            JsonObject o = new JsonObject();
+            o.addProperty("id", f.id);
+            o.addProperty("label", f.label);
+            o.addProperty("cls", f.cls == com.greenerpastures.economy.TetherClass.QUALITY ? "quality" : "throughput");
+            JsonArray tiers = new JsonArray();
+            for (int t = 1; t <= com.greenerpastures.economy.SoulTether.MAX_TIER; t++) {
+                com.greenerpastures.economy.SoulTether st = new com.greenerpastures.economy.SoulTether(f.id, f.cls, t);
+                JsonObject ti = new JsonObject();
+                ti.addProperty("tier", t);
+                ti.addProperty("cost", com.greenerpastures.economy.TetherEconomics.inscribeCost(t));
+                ti.addProperty("ampPct", (int) Math.round((st.amplification() - 1.0) * 100));
+                ti.addProperty("burn", st.burnPerCycle());
+                tiers.add(ti);
+            }
+            o.add("tiers", tiers);
+            catalog.add(o);
+        }
+        root.add("catalog", catalog);
+        JsonArray refunds = new JsonArray();   // wipeRefund by current tier 0..3 - the UI shows honest net costs
+        for (int t = 0; t <= com.greenerpastures.economy.SoulTether.MAX_TIER; t++) {
+            refunds.add(com.greenerpastures.economy.TetherEconomics.wipeRefund(t));
+        }
+        root.add("refunds", refunds);
+        sendGated(player, "loom", new NotebookLoomS2C(GSON.toJson(root)));
+    }
+
+    /** Loom inscription: write {@code [function · tier]} onto ONE Soul Tether in main-inventory slot
+     *  {@code invSlot}, paid in Data via {@link com.greenerpastures.economy.TetherInscription} (book-style:
+     *  re-inscribing refunds half the old tier first, so flipping never profits). A stacked blank is split
+     *  so exactly one tether is written - a component write on a stack of 16 would be a 16-for-1 dupe. */
+    private static void inscribeTether(ServerPlayerEntity player, String arg, int invSlot) {
+        MinecraftServer server = player.getServer();
+        if (server == null || arg == null || arg.isBlank()) return;
+        var main = player.getInventory().main;
+        if (invSlot < 0 || invSlot >= main.size()) return;
+        ItemStack stack = main.get(invSlot);
+        if (!(stack.getItem() instanceof com.greenerpastures.economy.SoulTetherItem)) return;
+        String[] parts = arg.split(":", 2);
+        String fn = parts[0];
+        int tier = 0;
+        if (parts.length > 1) { try { tier = Integer.parseInt(parts[1]); } catch (NumberFormatException ignored) { } }
+        boolean wipe = tier <= 0 || fn.isBlank() || "wipe".equals(fn);
+        if (!wipe) {
+            com.greenerpastures.economy.AugmentFunction f = com.greenerpastures.economy.AugmentFunction.byId(fn);
+            if (f == null || f.selector) return;   // unknown / selector functions can't be inscribed
+            tier = Math.min(tier, com.greenerpastures.economy.SoulTether.MAX_TIER);
+        }
+        com.greenerpastures.economy.DataStore data = com.greenerpastures.economy.DataStore.get(server);
+        long balance = data.balanceOf(player.getUuid());
+        com.greenerpastures.economy.TetherInscription.Result res = com.greenerpastures.economy.TetherInscription
+                .inscribe(stack.get(com.greenerpastures.economy.DarkEconomy.TETHER), wipe ? "" : fn, wipe ? 0 : tier, balance);
+        if (!res.ok()) {
+            player.sendMessage(net.minecraft.text.Text.literal(
+                    "§c[Greener Pastures]§r Not enough Data for that inscription."), false);
+            return;
+        }
+        if (res.dataDelta() > 0 && !data.tryDebit(player.getUuid(), res.dataDelta())) return;   // race-safe re-check
+        if (res.dataDelta() < 0) data.credit(player.getUuid(), -res.dataDelta());
+        ItemStack target = stack.getCount() > 1 ? stack.split(1) : stack;   // one tether per inscription
+        target.set(com.greenerpastures.economy.DarkEconomy.TETHER, res.tether());
+        if (target != stack) player.getInventory().offerOrDrop(target);
+        player.getInventory().markDirty();
+        String what = wipe ? "wiped back to blank" : "inscribed: "
+                + com.greenerpastures.economy.AugmentFunction.byId(fn).label + " · Tier " + tier;
+        String cost = res.dataDelta() == 0 ? "" : res.dataDelta() > 0
+                ? " (-" + String.format("%,d", res.dataDelta()) + " Data)"
+                : " (+" + String.format("%,d", -res.dataDelta()) + " Data back)";
+        player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r Soul Tether " + what + cost + "."), false);
+        GpLog.i("loom", wipe ? "wipe" : "inscribe", "player", player.getUuid().toString(),
+                "fn", wipe ? "-" : fn, "tier", Integer.toString(wipe ? 0 : tier),
+                "delta", Long.toString(res.dataDelta()));
     }
 
     /** Send the viewing player's live breeding analytics (eggs/shiny/kept/voided/Data/by-tier/spark) for the Dashboard. */
@@ -377,6 +475,7 @@ public final class NotebookNet {
                 case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player, true); }
                 case NotebookActionC2S.COMPRESS_EGGS -> { compressEggs(player, p.arg()); pushBiobank(player, true); }
                 case NotebookActionC2S.COMPRESS_SERVER -> { donateEggs(player, p.arg()); pushBiobank(player, true); }
+                case NotebookActionC2S.INSCRIBE_TETHER -> { inscribeTether(player, p.arg(), p.amount()); pushLoom(player); pushStatus(player); }
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
                 case NotebookActionC2S.RITUAL_PULL -> { ritualPull(player, p.arg(), p.amount()); pushRituals(player); }
                 case NotebookActionC2S.CORRUPT_KERNEL -> { corruptKernel(player); pushAugmenter(player); }
@@ -1964,6 +2063,23 @@ public final class NotebookNet {
             if (kcp != null && kcp > 0) k.addProperty("corruptPairs", kcp);
             root.add("kernel", k);
         }
+        // Soul Tether functional slots (Deuce, 2026-07-20): the Kernel's unlocked slot count + what sits in
+        // each - the React TETHERS row renders these cells next to the KERNEL row.
+        BreedingTier bt = pd.tier();
+        int unlockedSlots = bt == null ? 0 : Math.min(bt.slots, pd.upgrades.size() - 1);
+        root.addProperty("slots", unlockedSlots);
+        JsonArray slotArr = new JsonArray();
+        for (int i = 0; i < unlockedSlots; i++) {
+            ItemStack ts = pd.upgrades.getStack(1 + i);
+            com.greenerpastures.economy.Tether tt = ts.get(com.greenerpastures.economy.DarkEconomy.TETHER);
+            JsonObject o = new JsonObject();
+            o.addProperty("idx", i);
+            o.addProperty("has", !ts.isEmpty());
+            o.addProperty("fn", tt == null ? "" : tt.function());
+            o.addProperty("tier", tt == null ? 0 : tt.tier());
+            slotArr.add(o);
+        }
+        root.add("tethers", slotArr);
         return root.toString();
     }
 
@@ -2004,6 +2120,10 @@ public final class NotebookNet {
                     int src = -1; try { src = Integer.parseInt(p.arg()); } catch (Exception ignored) { }
                     toggleKernel(player, reg.getOrCreate(world, pos), src); reg.markDirty();
                 }
+                case NotebookPastureActionC2S.TETHER -> {
+                    toggleTether(player, reg.getOrCreate(world, pos), p.arg()); reg.markDirty();
+                    pushLoom(player);   // the tether left / re-entered the inventory - refresh the bench
+                }
                 default -> { }
             }
             pushPastureConfig(player, pos);
@@ -2029,6 +2149,44 @@ public final class NotebookNet {
         for (int i = 0; i < inv.size(); i++) {                         // else the first Kernel found
             if (inv.getStack(i).getItem() instanceof BreedingUpgradeItem) { pd.upgrades.setStack(0, inv.getStack(i).split(1)); break; }
         }
+    }
+
+    /** Slot an INSCRIBED Soul Tether into functional slot {@code idx} (pd.upgrades slot {@code 1+idx}), or
+     *  return the slotted one. {@code arg = "idx:invSlot"}; invSlot -1 = return. Blanks refuse - an
+     *  uninscribed tether amplifies nothing and must visit the Loom first (that's the whole loop). */
+    private static void toggleTether(ServerPlayerEntity player, PastureData pd, String arg) {
+        if (arg == null || arg.isBlank()) return;
+        int idx, src;
+        try {
+            String[] parts = arg.split(":", 2);
+            idx = Integer.parseInt(parts[0]);
+            src = parts.length > 1 ? Integer.parseInt(parts[1]) : -1;
+        } catch (NumberFormatException e) { return; }
+        BreedingTier tier = pd.tier();
+        int unlocked = tier == null ? 0 : Math.min(tier.slots, pd.upgrades.size() - 1);
+        if (idx < 0 || idx >= unlocked) return;                     // slot not unlocked by this Kernel
+        int upSlot = 1 + idx;
+        ItemStack cur = pd.upgrades.getStack(upSlot);
+        if (src < 0) {                                              // return the slotted tether
+            if (cur.isEmpty()) return;
+            ItemStack out = cur.copy();
+            pd.upgrades.setStack(upSlot, ItemStack.EMPTY);
+            player.getInventory().insertStack(out);
+            if (!out.isEmpty()) pd.upgrades.setStack(upSlot, out);  // inventory full → keep it slotted (never destroy)
+            else GpLog.i("loom", "tether_return", "player", player.getUuid().toString(), "slot", Integer.toString(idx));
+            return;
+        }
+        if (!cur.isEmpty()) return;                                 // occupied - return it first
+        var main = player.getInventory().main;
+        if (src >= main.size()) return;
+        ItemStack s = main.get(src);
+        if (!(s.getItem() instanceof com.greenerpastures.economy.SoulTetherItem)) return;
+        com.greenerpastures.economy.Tether t = s.get(com.greenerpastures.economy.DarkEconomy.TETHER);
+        if (t == null || t.isBlank()) return;                       // blank - the Loom comes first
+        pd.upgrades.setStack(upSlot, s.split(1));
+        player.getInventory().markDirty();
+        GpLog.i("loom", "tether_slot", "player", player.getUuid().toString(),
+                "slot", Integer.toString(idx), "fn", t.function(), "tier", Integer.toString(t.tier()));
     }
 
     /** Swap two of the player's own main-inventory slots (grab-and-move in the Notebook's native inventory). */

@@ -142,6 +142,10 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 context.client().execute(() -> {
                     if (NotebookState.applyNotifs(payload)) DsBridge.pushNow();
                 }));
+        ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookLoomS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyLoom(payload)) DsBridge.pushNow();
+                }));
         ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookPastureExtraS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
                     if (NotebookState.applyPastureExtra(payload)) DsBridge.pushNow();

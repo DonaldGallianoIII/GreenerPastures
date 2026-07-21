@@ -2,6 +2,19 @@
 
 ## Unreleased (dev)
 
+### Soul Tethers actually work now (the Loom)
+- **beta.1 shipped Soul Tethers with no way to use them** - craftable, but nothing could inscribe
+  a blank and the slot GUI was orphaned by the console migration. Both doors now exist:
+- **The Loom** - a new Notebook tab, the tether's own bench (Compiler=Daemon, Augmenter=Kernel,
+  Loom=Tether): select a tether from your inventory, inscribe [function · tier] for Data
+  (100/400/900 by tier; +10/20/30% to the matching Kernel mod). Book-style re-inscription:
+  wiping refunds half, so experimenting always has a real cost and flipping never profits.
+- **TETHERS row on the pasture screen** - right where you slot the Kernel: your tier's unlocked
+  functional slots as cells; click an empty cell to slot an inscribed tether from your inventory,
+  click a filled one to take it back. Blanks refuse (visit the Loom first). The already-shipped
+  runtime (amplification, Data burn while the Daemon is fed, drain billing) lights up unchanged.
+- Tether tooltips now tell the truth about where to go.
+
 ### The Compression Press
 - **New BioBank mechanic**: press **100 banked eggs of one species** into a permanent
   **+5% drop rate** for that species across every pasture you own - and it **stacks forever**

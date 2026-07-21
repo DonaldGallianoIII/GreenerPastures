@@ -94,6 +94,21 @@ export function applyMock(state, channel, action, payload) {
       out.storage = s
       out.inventory = inv
     }
+  } else if (channel === 'loom') {
+    if (action === 'INSCRIBE_TETHER') {                                          // write [fn · tier] onto the selected tether
+      const l = clone(state.loom)
+      const t = (l?.tethers || []).find((x) => x.slot === payload.slot)
+      if (!t) return {}
+      const wipe = !payload.tier || payload.fn === 'wipe'
+      if (t.count > 1) {                                                         // split one off the stack, like the server
+        t.count -= 1
+        l.tethers.push({ slot: 35, count: 1, fn: wipe ? '' : payload.fn, tier: wipe ? 0 : payload.tier })
+      } else {
+        t.fn = wipe ? '' : payload.fn
+        t.tier = wipe ? 0 : payload.tier
+      }
+      out.loom = l
+    }
   } else if (channel === 'biobank') {
     if (action === 'WITHDRAW') {                                                 // pull an egg out → materializes in inventory (to hatch)
       const b = clone(state.biobank)

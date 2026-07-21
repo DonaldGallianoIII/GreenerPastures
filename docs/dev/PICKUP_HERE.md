@@ -1,5 +1,17 @@
 # 🎯 PICKUP_HERE — updated 2026-07-14: BUILDING the Display Suite, right now, with Deuce
 
+> **⚡ 2026-07-20 (same QA day, after the press): SOUL TETHERS WERE DEAD - now revived via the LOOM.**
+> Deuce's live QA find: beta.1 shipped tethers with NO inscribe path (TetherInscription was never
+> called) and NO reachable slot GUI (PastureMenu orphaned by the owo→React migration). Fix, his
+> design: **Loom tab** (tether's own bench: pick inventory tether → function×tier catalog → pay Data,
+> wipe refunds half; `INSCRIBE_TETHER=37`, `NotebookLoomS2C`, channel `loom`, stacked blanks split
+> one-per-inscription = anti-dupe) + **TETHERS row on the pasture config screen** next to KERNEL
+> (`NotebookPastureActionC2S.TETHER=4`, arg "idx:invSlot"/-1 return; blanks refused; extra JSON gains
+> `slots`+`tethers`). Tooltips corrected. JSONL keys: `loom` inscribe/wipe/tether_slot/tether_return.
+> 404 tests green, jar rebuilt + HTML verified. **QA:** inscribe (check Data math incl. wipe refund +
+> stacked-blank split), slot into pasture, then confirm the amplified proc/burn actually bills
+> (`tether drain` lines) - the runtime was always live, it just never had input until now.
+
 > **⚡ SIDE-SESSION 2026-07-19 — COMPRESSION PRESS shipped on `dev` (coded + 397 tests green, NOT deployed).**
 > Deuce's ask ("Compressed pokemon") landed as: **100 BioBank eggs of a species → permanent +5% drop rate
 > for that species in your pastures, stacking forever** (his design, upgraded live from a one-shot ×3 to a

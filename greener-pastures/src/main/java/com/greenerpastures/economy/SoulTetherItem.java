@@ -24,7 +24,7 @@ public class SoulTetherItem extends Item {
         super.appendTooltip(stack, context, tooltip, type);
         Tether t = stack.get(DarkEconomy.TETHER);
         if (t == null || t.isBlank()) {
-            tooltip.add(Text.literal("Blank - inscribe [function · tier] at a Compiler").formatted(Formatting.DARK_GRAY));
+            tooltip.add(Text.literal("Blank - inscribe [function · tier] at the Notebook's Loom").formatted(Formatting.DARK_GRAY));
             return;
         }
         SoulTether st = t.toSoulTether();
@@ -35,7 +35,7 @@ public class SoulTetherItem extends Item {
         tooltip.add(Text.literal(name + " Tether · Tier " + roman(t.tier())).formatted(Formatting.LIGHT_PURPLE));
         tooltip.add(Text.literal("+" + ampPct + "% to its Kernel mod · burns " + st.burnPerCycle() + " Data/cycle (" + cls + ")")
                 .formatted(Formatting.GRAY));
-        tooltip.add(Text.literal("Slot into a Kernel · rented while the Daemon is fed").formatted(Formatting.DARK_GRAY));
+        tooltip.add(Text.literal("Slot it on a pasture's config screen · rented while the Daemon is fed").formatted(Formatting.DARK_GRAY));
     }
 
     private static String roman(int tier) {

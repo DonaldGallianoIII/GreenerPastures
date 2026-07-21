@@ -51,6 +51,7 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int HR_BUY = 34;           // High Roller Room: amount = fixed shelf slot
     public static final int COMPRESS_EGGS = 35;    // BioBank press: arg = species key → 100 worst non-shiny eggs → permanent +5% drops
     public static final int COMPRESS_SERVER = 36;  // BioBank press: arg = species key → donate 100 eggs to the communal pool (1000 = +1% for everyone)
+    public static final int INSCRIBE_TETHER = 37;  // Loom: arg = "functionId:tier" ("wipe:0" = wipe), amount = main-inventory slot of the tether
 
     public static final Id<NotebookActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_action"));

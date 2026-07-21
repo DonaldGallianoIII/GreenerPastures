@@ -22,6 +22,7 @@ public record NotebookPastureActionC2S(long pos, int action, String arg, Map<UUI
     public static final int PAIRINGS = 1;  // pairings = mon → bucket (0 = unassigned)
     public static final int CLAIM = 2;     // toggle the operator/link claim (link the pasture to my Notebook)
     public static final int KERNEL = 3;    // slot a Kernel from my inventory, or return the slotted one
+    public static final int TETHER = 4;    // arg = "slotIdx:invSlot" slot an inscribed tether into functional slot, "slotIdx:-1" return it
 
     public static final Id<NotebookPastureActionC2S> ID =
             new Id<>(Identifier.of(GreenerPastures.MOD_ID, "notebook_pasture_action"));

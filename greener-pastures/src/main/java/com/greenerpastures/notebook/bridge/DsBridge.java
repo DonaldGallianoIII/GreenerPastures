@@ -121,6 +121,8 @@ public final class DsBridge {
             case "WITHDRAW"       -> new NotebookActionC2S(NotebookActionC2S.WITHDRAW, "", (int) num(p, "index", 0));
             case "COMPRESS"       -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_EGGS, str(p, "species", ""), 0);
             case "COMPRESS_SERVER" -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_SERVER, str(p, "species", ""), 0);
+            case "INSCRIBE_TETHER" -> new NotebookActionC2S(NotebookActionC2S.INSCRIBE_TETHER,
+                    str(p, "fn", "wipe") + ":" + (int) num(p, "tier", 0), (int) num(p, "slot", -1));
             case "DISMISS_NOTE"   -> new NotebookActionC2S(NotebookActionC2S.DISMISS_NOTE, str(p, "id", "all"), 0);
             case "WRITE_DISK"     -> new NotebookActionC2S(NotebookActionC2S.WRITE_DISK, str(p, "denom", ""), 0);
             case "RITUAL_PULL"    -> new NotebookActionC2S(NotebookActionC2S.RITUAL_PULL, str(p, "item", ""), (int) num(p, "mode", 0));
@@ -184,6 +186,7 @@ public final class DsBridge {
             }
             case "CLAIM"  -> act = NotebookPastureActionC2S.CLAIM;
             case "KERNEL" -> act = NotebookPastureActionC2S.KERNEL;
+            case "TETHER" -> { act = NotebookPastureActionC2S.TETHER; arg = (int) num(p, "idx", -1) + ":" + (int) num(p, "slot", -1); }
             default -> { return; }
         }
         if (MinecraftClient.getInstance().getNetworkHandler() != null)
@@ -238,6 +241,7 @@ public final class DsBridge {
         push("dashboard", jsonChannel(NotebookState.dashboardJson));
         push("goals", jsonChannel(NotebookState.goalsJson));
         push("notifications", jsonChannel(NotebookState.notifsJson));
+        push("loom", jsonChannel(NotebookState.loomJson));
         push("rituals", jsonChannel(NotebookState.ritualsJson));
         push("specimens", jsonChannel(NotebookState.specimensJson));
         push("arcade", jsonChannel(NotebookState.arcadeJson));
@@ -311,6 +315,8 @@ public final class DsBridge {
         if (extra instanceof com.google.gson.JsonObject jo) {
             m.put("health", jo.get("health"));
             if (jo.has("kernel")) m.put("kernel", jo.get("kernel"));
+            if (jo.has("slots")) m.put("slots", jo.get("slots"));
+            if (jo.has("tethers")) m.put("tethers", jo.get("tethers"));
         }
         return m;
     }

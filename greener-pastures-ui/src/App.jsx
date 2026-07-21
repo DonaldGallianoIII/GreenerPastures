@@ -467,6 +467,7 @@ const TABS = [
   { id: 'pastures',  label: 'Pastures',  path: 'gp://pastures' },
   { id: 'compiler',  label: 'Compiler',  path: 'gp://daemon/compiler' },
   { id: 'augmenter', label: 'Augmenter', path: 'gp://kernel/augmenter' },
+  { id: 'loom',      label: 'Loom',      path: 'gp://tether/loom' },
   { id: 'dashboard', label: 'Dashboard', path: 'gp://dashboard' },
   { id: 'inbox',     label: 'Inbox',     path: 'gp://inbox' },
   { id: 'rituals',   label: 'Rituals',   path: 'gp://rituals' },
@@ -539,6 +540,7 @@ export default function App() {
           {tab === 'pastures' && <Pastures />}
           {tab === 'compiler' && <Compiler />}
           {tab === 'augmenter' && <Augmenter />}
+          {tab === 'loom' && <LoomTab />}
           {tab === 'dashboard' && <Dashboard />}
           {tab === 'inbox' && <InboxTab />}
           {tab === 'rituals' && <RitualsTab />}
@@ -1832,6 +1834,7 @@ function PastureConfig({ cfg }) {
         <button className="btn" style={{ marginLeft: 8 }} onClick={() => send('pasture', 'KERNEL', { pos: cfg.pos })}>
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
       </div>
+      {hasKernel && <TetherRow cfg={cfg} />}
       {hasKernel && cfg.kernel && Object.keys(cfg.kernel).length > 0 && (
         <div className="kload" style={{ marginBottom: 10 }}>
           <span className="dim" style={{ fontSize: 9, letterSpacing: 1 }}>LOADOUT</span>
@@ -1852,6 +1855,138 @@ function PastureConfig({ cfg }) {
   )
 }
 const pairHue = (b) => `hsl(${(b * 67) % 360} 70% 62%)`
+
+// The pasture's Soul Tether slots - the same place you slot the Kernel (Deuce, 2026-07-20). Cells come
+// from the extra JSON (cfg.slots/cfg.tethers); the picker lists inscribed tethers off the loom channel.
+function TetherRow({ cfg }) {
+  const loom = useChannel('loom')
+  const [pick, setPick] = useState(null)   // cell index with the picker open
+  const slots = cfg.slots || 0
+  const cells = cfg.tethers || []
+  const inscribed = (loom?.tethers || []).filter((t) => t.tier > 0)
+  const fnLabel = (id) => (loom?.catalog || []).find((c) => c.id === id)?.label || id
+  if (!slots) return null
+  return (
+    <div className="inset" style={{ padding: 8, marginBottom: 10, borderRadius: 8 }}>
+      <div className="row">
+        <span className="dim" style={{ fontSize: 10, letterSpacing: 1 }}>TETHERS</span>
+        <span className="dim" style={{ fontSize: 9, marginLeft: 8 }}>amplify this Kernel's mods · rented in Data while the Daemon is fed · inscribe at the Loom</span>
+      </div>
+      <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+        {Array.from({ length: slots }, (_, i) => {
+          const c = cells.find((x) => x.idx === i)
+          if (c?.has) {
+            return (
+              <button key={i} className="btn" style={{ color: 'var(--cyan)' }} title="click to return it to your inventory"
+                onClick={() => send('pasture', 'TETHER', { pos: cfg.pos, idx: i, slot: -1 })}>
+                {FN_ICONS[c.fn] || '⧟'} {fnLabel(c.fn)} {TIER_ROMAN[c.tier] || ''}
+              </button>
+            )
+          }
+          return (
+            <span key={i} style={{ position: 'relative' }}>
+              <button className="btn" style={{ color: 'var(--muted)' }} onClick={() => setPick(pick === i ? null : i)}>+ tether</button>
+              {pick === i && (
+                <div className="card" style={{ position: 'absolute', top: '110%', left: 0, zIndex: 40, padding: 6, minWidth: 190 }}>
+                  {inscribed.length === 0
+                    ? <div className="dim" style={{ fontSize: 10, padding: 4 }}>no inscribed tethers - visit the Loom tab</div>
+                    : inscribed.map((t) => (
+                      <div key={t.slot} className="brow" style={{ cursor: 'pointer', marginBottom: 3 }}
+                        onClick={() => { send('pasture', 'TETHER', { pos: cfg.pos, idx: i, slot: t.slot }); setPick(null) }}>
+                        <span>{FN_ICONS[t.fn] || '⧟'}</span>
+                        <span style={{ flex: 1, fontSize: 11 }}>{fnLabel(t.fn)} · {TIER_ROMAN[t.tier]}</span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── The Loom: the Soul Tether's own bench (Deuce, 2026-07-20) - every item type gets its own tab:
+// Compiler=Daemon · Augmenter=Kernel · Loom=Tether. Inscribe [function · tier] for Data; book-style
+// re-inscription (wipe refunds half), so experimenting always has a real cost. ──
+const FN_ICONS = { shiny: '✦', speed: '⚡', iv_floor: '▲', ev: '🎯', enrichment: '◈', drop_rate: '⛏', drop_yield: '⛏', hatch: '🐣' }
+const TIER_ROMAN = ['', 'I', 'II', 'III']
+function LoomTab() {
+  const d = useChannel('loom')
+  const status = useChannel('status')
+  const [sel, setSel] = useState(null)     // selected main-inventory slot
+  const tethers = d?.tethers || []
+  const catalog = d?.catalog || []
+  const refunds = d?.refunds || [0, 50, 200, 450]
+  const balance = status?.data ?? 0
+  const selT = tethers.find((t) => t.slot === sel) || null
+  const fnLabel = (id) => catalog.find((c) => c.id === id)?.label || id
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="row" style={{ marginBottom: 8 }}>
+        <span className="h">⧟ The Loom</span>
+        <span style={{ flex: 1 }} />
+        <span className="dim mono" style={{ fontSize: 10 }}>◈ {balance.toLocaleString()} Data</span>
+      </div>
+      <div className="dim" style={{ fontSize: 11, marginBottom: 10, lineHeight: 1.5 }}>
+        Inscribe a <b>Soul Tether</b> with [function · tier], paid in Data. A slotted tether multiplies its
+        pasture Kernel's MATCHING mod (+10/20/30% by tier) and burns Data per breeding cycle while your Daemon
+        is fed. Re-inscribing refunds half the old tier - you can experiment, never profit. Slot inscribed
+        tethers on a pasture's config screen, next to the Kernel.
+      </div>
+      {tethers.length === 0 ? (
+        <div className="dim" style={{ fontSize: 11 }}>
+          no Soul Tethers in your inventory - craft one: 3 amethyst + echo shard + string.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+          {tethers.map((t) => (
+            <div key={t.slot} className="brow" style={{ cursor: 'pointer', borderColor: sel === t.slot ? 'var(--green)' : undefined }}
+              onClick={() => setSel(sel === t.slot ? null : t.slot)}>
+              <span>{t.tier > 0 ? FN_ICONS[t.fn] || '⧟' : '⧟'}</span>
+              <span style={{ flex: 1, color: t.tier > 0 ? 'var(--cyan)' : 'var(--muted)' }}>
+                {t.tier > 0 ? `${fnLabel(t.fn)} Tether · Tier ${TIER_ROMAN[t.tier]}` : `Blank Soul Tether${t.count > 1 ? ` ×${t.count}` : ''}`}
+              </span>
+              <span className="dim mono" style={{ fontSize: 9 }}>{sel === t.slot ? 'selected ▾' : 'select'}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {selT && (
+        <div className="inset" style={{ padding: 10, borderRadius: 8 }}>
+          <div className="row" style={{ marginBottom: 6 }}>
+            <span className="dim" style={{ fontSize: 10, letterSpacing: 1 }}>INSCRIBE AS</span>
+            <span style={{ flex: 1 }} />
+            {selT.tier > 0 && (
+              <button className="btn" title={`wipe back to blank - refunds ${refunds[selT.tier]} Data (half of what it cost)`}
+                onClick={() => send('loom', 'INSCRIBE_TETHER', { fn: 'wipe', tier: 0, slot: selT.slot })}>wipe (+{refunds[selT.tier]}◈)</button>
+            )}
+          </div>
+          {catalog.map((f) => (
+            <div key={f.id} className="row" style={{ gap: 6, marginBottom: 4 }}>
+              <span style={{ width: 130, fontSize: 11 }}>{FN_ICONS[f.id] || '⧟'} {f.label}
+                <span className="dim" style={{ fontSize: 9 }}> · {f.cls}</span></span>
+              {f.tiers.map((ti) => {
+                const net = ti.cost - (refunds[selT.tier] || 0)
+                const same = selT.fn === f.id && selT.tier === ti.tier
+                const afford = net <= balance
+                return (
+                  <button key={ti.tier} className="btn" disabled={same || !afford}
+                    title={same ? 'already inscribed' : `+${ti.ampPct}% to the Kernel's ${f.label} mod · burns ${ti.burn} Data/cycle · net ${net >= 0 ? '-' : '+'}${Math.abs(net)} Data${afford ? '' : ' - not enough Data'}`}
+                    onClick={() => send('loom', 'INSCRIBE_TETHER', { fn: f.id, tier: ti.tier, slot: selT.slot })}>
+                    {TIER_ROMAN[ti.tier]} <span className="dim" style={{ fontSize: 9 }}>{net >= 0 ? `-${net}` : `+${-net}`}◈</span>
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Specimens (mon compression v1): party mon → lossless data on a Specimen Disk ──
 function SpecimensTab() {
   const d = useChannel('specimens')
@@ -2920,8 +3055,10 @@ catch up the moment you return (12h cap, online time only).`],
   ['🧬 Kernels & the Augmenter', `Hold a Kernel near the Augmenter tab. Installs cost GPU (quality 2 ◈ ·
 throughput 1 ◈) plus a slot; picking a different nature/ball/EV spread later is FREE - the augment is yours.
 Nature Lock and Ball Lock force every egg; the EV Primer applies a full 510-budget spread; IV Floor guarantees
-perfect stats; Ability Splice forces the hidden ability. Soul Tethers amplify installed augments - for rent,
-paid in Data.`],
+perfect stats; Ability Splice forces the hidden ability. SOUL TETHERS amplify installed augments - for rent,
+paid in Data: inscribe [function · tier] at the LOOM tab (+10/20/30% to the matching Kernel mod), then slot
+them on the pasture's config screen next to the Kernel. They burn Data per cycle only while your Daemon is
+fed; wiping refunds half.`],
   ['👾 The Daemon & Data', `Eggs your graph declines don't vanish - they RENDER into Data, credited to you.
 The Daemon spends it: compile buffs onto it (2 ◈ per tier) and switch it on - it drains Data per second while
 granting its loadout. Starved Daemon = buffs sleep, base augments keep working. Nothing is ever destroyed
