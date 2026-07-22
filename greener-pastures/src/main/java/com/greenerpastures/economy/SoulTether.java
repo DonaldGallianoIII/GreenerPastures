@@ -20,8 +20,10 @@ public record SoulTether(String function, TetherClass cls, int tier) {
 
     public boolean isBlank() { return tier <= 0 || function == null || function.isBlank(); }
 
-    /** Multiplier applied to the Kernel's matching mod: +10 / +20 / +30% by tier (1.0 when blank). */
-    public double amplification() { return isBlank() ? 1.0 : 1.0 + 0.10 * tier; }
+    /** Multiplier applied to the Kernel's matching CONTINUOUS mod: ×1.5 / ×2.0 / ×2.5 by tier (1.0 when
+     *  blank). Bumped from +10/20/30% (Deuce QA 2026-07-21): a rented amplifier must be FELT. Discrete
+     *  (leveled) mods don't use this - they get flat +tier levels in {@code EffectiveAugments}. */
+    public double amplification() { return isBlank() ? 1.0 : 1.0 + 0.50 * tier; }
 
     /** Data burned per breeding cycle while powered - quality is expensive (sets the grid), throughput is
      *  cheap (pays for itself). 0 when blank/inert (a starved Daemon also makes this irrelevant). */

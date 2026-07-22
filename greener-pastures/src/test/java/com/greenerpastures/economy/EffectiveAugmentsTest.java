@@ -20,8 +20,8 @@ class EffectiveAugmentsTest {
     void tetherAmplifiesOnlyItsMatchingBase() {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.SHINY, 5);
         EffectiveAugments e = EffectiveAugments.of(base, List.of(tether("shiny", TetherClass.QUALITY, 2)));
-        assertEquals(6.0, e.magnitude(AugmentFunction.SHINY), 1e-9, "5 × 1.20 (tier II)");
-        assertEquals(0.06, e.shinyProcChance(), 1e-9);
+        assertEquals(10.0, e.magnitude(AugmentFunction.SHINY), 1e-9, "5 × 2.0 (tier II)");
+        assertEquals(0.10, e.shinyProcChance(), 1e-9);
     }
 
     @Test
@@ -44,7 +44,7 @@ class EffectiveAugmentsTest {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.SHINY, 10);
         EffectiveAugments e = EffectiveAugments.of(base,
                 List.of(tether("shiny", TetherClass.QUALITY, 1), tether("shiny", TetherClass.QUALITY, 1)));
-        assertEquals(12.1, e.magnitude(AugmentFunction.SHINY), 1e-9, "10 × 1.10 × 1.10");
+        assertEquals(22.5, e.magnitude(AugmentFunction.SHINY), 1e-9, "10 × 1.5 × 1.5");
     }
 
     @Test
@@ -60,7 +60,7 @@ class EffectiveAugmentsTest {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.ENRICHMENT, 20);
         assertEquals(1.20, EffectiveAugments.of(base, List.of()).enrichmentMultiplier(), 1e-9, "20% base → 1.20×");
         EffectiveAugments amped = EffectiveAugments.of(base, List.of(tether("enrichment", TetherClass.THROUGHPUT, 1)));
-        assertEquals(1.22, amped.enrichmentMultiplier(), 1e-9, "20 × 1.10 = 22% → 1.22×");
+        assertEquals(1.30, amped.enrichmentMultiplier(), 1e-9, "20 × 1.5 = 30% → 1.30×");
     }
 
     @Test
@@ -69,58 +69,70 @@ class EffectiveAugmentsTest {
     }
 
     @Test
-    void speedLevelRoundsTheAmplifiedMagnitude() {
-        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.SPEED, 2);
-        assertEquals(2, EffectiveAugments.of(base, List.of()).speedLevel());
-        // 2 × 1.30 = 2.6 → rounds to 3
-        assertEquals(3, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 3))).speedLevel());
+    void speedIsDiscreteTetherAddsFlatLevels() {
+        // Speed is a LEVELED mod: a tether ADDS +tier levels (never multiply-and-round, which ate tiers).
+        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.SPEED, 1);
+        assertEquals(1, EffectiveAugments.of(base, List.of()).speedLevel());
+        assertEquals(2, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 1))).speedLevel(),
+                "tier I is FELT even on a level-1 mod");
+        assertEquals(3, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 2))).speedLevel());
+        assertEquals(3, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 3))).speedLevel(),
+                "clamped at the cadence ladder's top");
+        assertEquals(0, EffectiveAugments.of(Map.of(), List.of(tether("speed", TetherClass.THROUGHPUT, 3))).speedLevel(),
+                "no base mod → a tether adds nothing (base = free, amplification = rented)");
     }
 
     @Test
     void dropRateCentipercentBecomesAProcFraction() {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.DROP_RATE, 25);   // 25 centipercent = 0.25%
         assertEquals(0.0025, EffectiveAugments.of(base, List.of()).dropRateFraction(), 1e-9);
-        // a Drop Rate tether (throughput) tier II ×1.20 → 30 → 0.30%
-        assertEquals(0.0030,
+        // a Drop Rate tether (throughput) tier II ×2.0 → 50 → 0.50%
+        assertEquals(0.0050,
                 EffectiveAugments.of(base, List.of(tether("drop_rate", TetherClass.THROUGHPUT, 2))).dropRateFraction(), 1e-9);
         assertEquals(0.0, EffectiveAugments.of(Map.of(), List.of()).dropRateFraction(), 1e-9, "no mod → no bonus");
     }
 
     @Test
-    void ivFloorCountsGuaranteedPerfectsCappedAtSix() {
+    void ivFloorIsARetiredTetherTarget() {
+        // IV Floor keeps its BASE behavior (guaranteed perfects, capped at 6) but a tether on it is inert
+        // (Deuce, 2026-07-21: multiply-and-round jank wasn't worth keeping - the target is retired).
         assertEquals(2, EffectiveAugments.of(Map.of(AugmentFunction.IV_FLOOR, 2), List.of()).ivFloorCount(), "flat base");
-        // an IV Floor tether (quality) tier II ×1.20 → 2×1.2 = 2.4 → rounds to 2
         assertEquals(2, EffectiveAugments.of(Map.of(AugmentFunction.IV_FLOOR, 2),
-                List.of(tether("iv_floor", TetherClass.QUALITY, 2))).ivFloorCount());
-        // base 5 × tier III (×1.30) = 6.5 → 7 → capped at the 6 stats
-        assertEquals(6, EffectiveAugments.of(Map.of(AugmentFunction.IV_FLOOR, 5),
-                List.of(tether("iv_floor", TetherClass.QUALITY, 3))).ivFloorCount());
+                List.of(tether("iv_floor", TetherClass.QUALITY, 3))).ivFloorCount(), "tether contributes NOTHING");
+        assertEquals(6, EffectiveAugments.of(Map.of(AugmentFunction.IV_FLOOR, 9), List.of()).ivFloorCount(),
+                "base still caps at the 6 stats");
         assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).ivFloorCount(), "no mod → no floor");
     }
 
     @Test
-    void evFloorPerStatClampedToFitTheFiveTenTotal() {
+    void evIsARetiredTetherTarget() {
+        // EV's flat floor has no consumers since the EV-spread rework (BUG-002) - a tether on it is inert.
         assertEquals(20, EffectiveAugments.of(Map.of(AugmentFunction.EV, 20), List.of()).evFloorPerStat(), "flat base");
-        // an EV tether (quality) tier I ×1.10 → 20×1.1 = 22
-        assertEquals(22, EffectiveAugments.of(Map.of(AugmentFunction.EV, 20),
-                List.of(tether("ev", TetherClass.QUALITY, 1))).evFloorPerStat());
-        // base 80 × tier III (×1.30) = 104 → clamped to 85 (6×85 = 510 total)
-        assertEquals(85, EffectiveAugments.of(Map.of(AugmentFunction.EV, 80),
-                List.of(tether("ev", TetherClass.QUALITY, 3))).evFloorPerStat());
+        assertEquals(20, EffectiveAugments.of(Map.of(AugmentFunction.EV, 20),
+                List.of(tether("ev", TetherClass.QUALITY, 3))).evFloorPerStat(), "tether contributes NOTHING");
         assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).evFloorPerStat(), "no mod → no floor");
     }
 
     @Test
-    void dropYieldIsAFlatBudgetBonusAmplifiedByItsTether() {
+    void dropYieldIsDiscreteTetherAddsFlatBudget() {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.DROP_YIELD, 2);   // +2 budget ceiling
         assertEquals(2, EffectiveAugments.of(base, List.of()).dropYieldBonus(), "flat base, no tether");
-        // a Drop Yield tether (throughput) tier III ×1.30 → 2.6 → rounds to 3
+        // a LEVELED mod: tier I = +1, tier III = +3 - every tier is felt (the old ×1.1 rounded away to nothing)
         assertEquals(3,
-                EffectiveAugments.of(base, List.of(tether("drop_yield", TetherClass.THROUGHPUT, 3))).dropYieldBonus());
-        // tier I ×1.10 → 2.2 → rounds back down to 2 (integer budget)
-        assertEquals(2,
                 EffectiveAugments.of(base, List.of(tether("drop_yield", TetherClass.THROUGHPUT, 1))).dropYieldBonus());
+        assertEquals(5,
+                EffectiveAugments.of(base, List.of(tether("drop_yield", TetherClass.THROUGHPUT, 3))).dropYieldBonus());
         assertEquals(0, EffectiveAugments.of(Map.of(), List.of()).dropYieldBonus(), "no mod → no bonus");
+    }
+
+    @Test
+    void hatchIsDiscreteTetherAddsFlatLevelsClampedAtThree() {
+        Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.HATCH, 1);
+        assertEquals(1, EffectiveAugments.of(base, List.of()).hatchLevel());
+        assertEquals(2, EffectiveAugments.of(base, List.of(tether("hatch", TetherClass.THROUGHPUT, 1))).hatchLevel(),
+                "tier I is FELT on a level-1 mod");
+        assertEquals(3, EffectiveAugments.of(base, List.of(tether("hatch", TetherClass.THROUGHPUT, 3))).hatchLevel(),
+                "clamped at Hatch Haste III");
     }
 
     @Test

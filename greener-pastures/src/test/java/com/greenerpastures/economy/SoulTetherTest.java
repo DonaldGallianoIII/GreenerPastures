@@ -10,9 +10,10 @@ class SoulTetherTest {
 
     @Test
     void amplificationRisesByTier() {
-        assertEquals(1.10, new SoulTether("shiny", TetherClass.QUALITY, 1).amplification(), 1e-9);
-        assertEquals(1.20, new SoulTether("shiny", TetherClass.QUALITY, 2).amplification(), 1e-9);
-        assertEquals(1.30, new SoulTether("shiny", TetherClass.QUALITY, 3).amplification(), 1e-9);
+        // ×1.5 / ×2.0 / ×2.5 - bumped from +10/20/30% (Deuce QA 2026-07-21: rented power must be FELT)
+        assertEquals(1.50, new SoulTether("shiny", TetherClass.QUALITY, 1).amplification(), 1e-9);
+        assertEquals(2.00, new SoulTether("shiny", TetherClass.QUALITY, 2).amplification(), 1e-9);
+        assertEquals(2.50, new SoulTether("shiny", TetherClass.QUALITY, 3).amplification(), 1e-9);
     }
 
     @Test

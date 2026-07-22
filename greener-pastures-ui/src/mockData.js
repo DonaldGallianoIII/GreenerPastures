@@ -81,11 +81,14 @@ export const MOCK = {
       { slot: 3, count: 4, fn: '', tier: 0 },
       { slot: 11, count: 1, fn: 'shiny', tier: 2, name: 'Eevee Line A' },
     ],
-    catalog: ['shiny', 'speed', 'iv_floor', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].map((id) => ({
+    catalog: ['shiny', 'speed', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].map((id) => ({
       id,
-      label: { shiny: 'Shiny', speed: 'Speed', iv_floor: 'IV Floor', ev: 'Fine-Tune (EV)', enrichment: 'Enrichment', drop_rate: 'Drop Rate', drop_yield: 'Drop Yield', hatch: 'Hatch Haste' }[id],
+      label: { shiny: 'Shiny', speed: 'Speed', enrichment: 'Enrichment', drop_rate: 'Drop Rate', drop_yield: 'Drop Yield', hatch: 'Hatch Haste' }[id],
       cls: ['speed', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].includes(id) ? 'throughput' : 'quality',
-      tiers: [1, 2, 3].map((t) => ({ tier: t, cost: t * t * 100, ampPct: 10 * t, burn: (['speed', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].includes(id) ? 3 : 8) * t })),
+      // discrete (leveled) mods: flat +tier levels; percent mods: ×1.5/×2/×2.5
+      tiers: [1, 2, 3].map((t) => ['speed', 'drop_yield', 'hatch'].includes(id)
+        ? { tier: t, cost: t * t * 100, mode: 'levels', amp: t, burn: 3 * t }
+        : { tier: t, cost: t * t * 100, mode: 'pct', ampPct: 50 * t, burn: (id === 'shiny' ? 8 : 3) * t }),
     })),
     refunds: [0, 50, 200, 450],
   },

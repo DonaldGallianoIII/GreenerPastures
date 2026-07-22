@@ -308,10 +308,9 @@ public final class NotebookNet {
         root.add("tethers", tethers);
         JsonArray catalog = new JsonArray();
         for (com.greenerpastures.economy.AugmentFunction f : com.greenerpastures.economy.AugmentFunction.values()) {
-            if (f.selector) continue;   // a CHOICE can't be amplified - selectors never appear on the Loom
-            // EV is DEAD as a tether target (Deuce QA 2026-07-21): since BUG-002 the EV augment is a selected
-            // 510 spread (pd.evSpread()) and the old flat floor the tether would amplify has no consumers.
-            if (f == com.greenerpastures.economy.AugmentFunction.EV) continue;
+            // Selectors (a choice can't be amplified) + retired targets (EV: no consumers since the
+            // spread rework · IV Floor: rounding jank) never appear on the Loom - one gate, one truth.
+            if (!f.tetherable()) continue;
             JsonObject o = new JsonObject();
             o.addProperty("id", f.id);
             o.addProperty("label", f.label);
@@ -322,7 +321,13 @@ public final class NotebookNet {
                 JsonObject ti = new JsonObject();
                 ti.addProperty("tier", t);
                 ti.addProperty("cost", com.greenerpastures.economy.TetherEconomics.inscribeCost(t));
-                ti.addProperty("ampPct", (int) Math.round((st.amplification() - 1.0) * 100));
+                if (f.discrete) {                 // leveled mod: flat +tier levels, always felt below the cap
+                    ti.addProperty("mode", "levels");
+                    ti.addProperty("amp", t);
+                } else {                          // percent mod: ×1.5 / ×2.0 / ×2.5
+                    ti.addProperty("mode", "pct");
+                    ti.addProperty("ampPct", (int) Math.round((st.amplification() - 1.0) * 100));
+                }
                 ti.addProperty("burn", st.burnPerCycle());
                 tiers.add(ti);
             }
@@ -373,8 +378,7 @@ public final class NotebookNet {
         boolean wipe = tier <= 0 || fn.isBlank() || "wipe".equals(fn);
         if (!wipe) {
             com.greenerpastures.economy.AugmentFunction f = com.greenerpastures.economy.AugmentFunction.byId(fn);
-            if (f == null || f.selector) return;   // unknown / selector functions can't be inscribed
-            if (f == com.greenerpastures.economy.AugmentFunction.EV) return;   // dead target - see pushLoom
+            if (f == null || !f.tetherable()) return;   // unknown / selector / retired (EV, IV Floor) - refused
             tier = Math.min(tier, com.greenerpastures.economy.SoulTether.MAX_TIER);
         }
         com.greenerpastures.economy.DataStore data = com.greenerpastures.economy.DataStore.get(server);
