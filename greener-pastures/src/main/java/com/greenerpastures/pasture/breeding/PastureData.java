@@ -61,6 +61,10 @@ public class PastureData {
     /** World-time (ticks) of the last brood that actually ran - the breeding catch-up anchor (same semantics
      *  as {@link #lastHarvestTick}: unloaded-chunk gaps are rolled on reload, offline gaps are gated). Persisted. */
     public long lastBreedTick;
+    /** World tick of the last tether-RENT accrual (TetherUpkeep) - same freeze-and-catch-up contract as
+     *  {@link #lastHarvestTick}: unloaded-chunk gaps are billed on reload (capped), so away production
+     *  never keeps its tether boosts rent-free. Persisted. */
+    public long lastRentTick;
 
     /** Gacha ritual pull-state per ritual id - {@code [bankedPulls, pity]} (NOTEBOOK_BUILD_PLAN 3b: the state
      *  the retired Harvester block used to hold). Persisted so pity survives restarts - pity is a PROMISE. */
@@ -133,6 +137,7 @@ public class PastureData {
         if (graphJson != null && !graphJson.isEmpty()) nbt.putString("graphJson", graphJson);
         if (lastHarvestTick > 0) nbt.putLong("lastHarvest", lastHarvestTick);
         if (lastBreedTick > 0) nbt.putLong("lastBreed", lastBreedTick);
+        if (lastRentTick > 0) nbt.putLong("lastRent", lastRentTick);
         if (!ritualState.isEmpty()) {
             NbtCompound rs = new NbtCompound();
             ritualState.forEach((id, st) -> rs.putIntArray(id, new int[]{st[0], st[1]}));
@@ -164,6 +169,7 @@ public class PastureData {
         d.graphJson = nbt.getString("graphJson");
         d.lastHarvestTick = nbt.getLong("lastHarvest");
         d.lastBreedTick = nbt.getLong("lastBreed");
+        d.lastRentTick = nbt.getLong("lastRent");
         NbtCompound rs = nbt.getCompound("rituals");
         for (String id : rs.getKeys()) {
             int[] st = rs.getIntArray(id);
