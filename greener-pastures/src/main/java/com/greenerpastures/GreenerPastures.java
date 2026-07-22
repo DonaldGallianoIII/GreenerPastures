@@ -89,6 +89,7 @@ public final class GreenerPastures implements ModInitializer {
         // notebook/ - block-free harvest: owned (Notebook-linked) pastures roll drops → owner's Notebook storage
         // (replaces the Harvester block for owned pastures; the block stands down for them to avoid double-dip).
         PastureHarvest.init();
+        com.greenerpastures.notebook.TetherUpkeep.init();   // the per-second tether rent clock (Deuce, 2026-07-21)
 
         // notebook/ - console sync layer (C2S request → S2C status; per-tab payloads land with each tab)
         NotebookNet.init();
@@ -114,6 +115,7 @@ public final class GreenerPastures implements ModInitializer {
             com.greenerpastures.notebook.PastureHarvest.testIntervalTicks = 0L;             // QA harvest override
             com.greenerpastures.notify.Inbox.clearAll();                                     // console Inbox notes
             com.greenerpastures.notify.DonationFeed.clearAll();                               // server-press donation window
+            com.greenerpastures.notebook.TetherUpkeep.resetSession();                          // clean rent tabs per world
             com.greenerpastures.core.GpProf.reset();                                          // fresh perf window per world
             com.greenerpastures.drops.RitualHarvest.resetSession();                            // spanning-ritual pasture snapshots
             com.greenerpastures.pasture.breeding.MultiPairBreeder.resetSession();               // full-pasture nag dedupe

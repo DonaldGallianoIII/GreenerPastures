@@ -10,7 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Headless tests for the per-cycle fed-vs-starved tether decision. */
+/** Headless tests for the fed-vs-starved tether decision. Billing lives on the TetherUpkeep ticker
+ *  (per-second rent, Deuce 2026-07-21); resolve() only answers "can the owner cover a second of rent". */
 class TetherRuntimeTest {
 
     private static SoulTether shiny(int tier) { return new SoulTether("shiny", TetherClass.QUALITY, tier); }
@@ -18,48 +19,47 @@ class TetherRuntimeTest {
     private static final Map<AugmentFunction, Integer> SHINY5 = Map.of(AugmentFunction.SHINY, 5);
 
     @Test
-    void fedAmplifiesAndDrains() {
-        // shiny tier II = quality burn 8×2 = 16; balance 100 covers it
+    void fedAmplifiesWhenASecondOfRentIsCovered() {
+        // shiny tier II = quality 100 centi/s → gate = 1 whole Data; balance 100 covers it
         TetherRuntime.Resolution r = TetherRuntime.resolve(SHINY5, List.of(shiny(2)), 100);
         assertTrue(r.amplified());
-        assertEquals(16L, r.drain());
+        assertEquals(1L, r.upkeep(), "one second of rent, rounded up to whole Data");
         assertEquals(35.0, r.effective().magnitude(AugmentFunction.SHINY), 1e-9, "5 + 2 levels × 15 while fed");
     }
 
     @Test
-    void starvedFallsBackToBaseWithNoDrain() {
-        TetherRuntime.Resolution r = TetherRuntime.resolve(SHINY5, List.of(shiny(2)), 10);   // 10 < 16
+    void starvedFallsBackToBase() {
+        TetherRuntime.Resolution r = TetherRuntime.resolve(SHINY5, List.of(shiny(2)), 0);   // broke
         assertFalse(r.amplified());
-        assertEquals(0L, r.drain(), "can't pay → don't drain");
+        assertEquals(0L, r.upkeep());
         assertEquals(5.0, r.effective().magnitude(AugmentFunction.SHINY), 1e-9, "base only when starved");
     }
 
     @Test
     void exactlyAffordableIsFed() {
-        TetherRuntime.Resolution r = TetherRuntime.resolve(SHINY5, List.of(shiny(2)), 16);
+        TetherRuntime.Resolution r = TetherRuntime.resolve(SHINY5, List.of(shiny(2)), 1);   // gate is 1
         assertTrue(r.amplified());
-        assertEquals(16L, r.drain());
     }
 
     @Test
-    void noTethersIsBaseAndNoDrain() {
+    void noTethersIsBaseAndNoRent() {
         TetherRuntime.Resolution r = TetherRuntime.resolve(SHINY5, List.of(), 1000);
         assertFalse(r.amplified());
-        assertEquals(0L, r.drain());
+        assertEquals(0L, r.upkeep());
         assertEquals(5.0, r.effective().magnitude(AugmentFunction.SHINY), 1e-9);
     }
 
     @Test
-    void totalBurnSumsEveryTether() {
-        // shiny tier II (quality 16) + speed tier I (throughput 3) = 19
-        long burn = TetherRuntime.totalBurn(List.of(shiny(2), new SoulTether("speed", TetherClass.THROUGHPUT, 1)));
-        assertEquals(19L, burn);
+    void upkeepSumsEveryTetherInCentiPerSecond() {
+        // shiny tier II (quality 100) + speed tier I (throughput 20) = 120 centi/s
+        long centi = TetherRuntime.upkeepCentiPerSecond(List.of(shiny(2), new SoulTether("speed", TetherClass.THROUGHPUT, 1)));
+        assertEquals(120L, centi);
     }
 
     @Test
-    void blankTetherBurnsNothingSoItStaysBase() {
+    void blankTetherRentsNothingSoItStaysBase() {
         TetherRuntime.Resolution r = TetherRuntime.resolve(SHINY5, List.of(SoulTether.blank()), 1000);
-        assertEquals(0L, TetherRuntime.totalBurn(List.of(SoulTether.blank())));
+        assertEquals(0L, TetherRuntime.upkeepCentiPerSecond(List.of(SoulTether.blank())));
         assertFalse(r.amplified());
         assertEquals(5.0, r.effective().magnitude(AugmentFunction.SHINY), 1e-9);
     }
@@ -73,48 +73,42 @@ class TetherRuntimeTest {
     }
 
     @Test
-    void resolveForChargesOnlyTheConsumersOwnTethers() {
-        // a Kernel carrying BOTH a shiny mod+tether (the breeder's) and a drop-rate mod+tether (the Harvester's)
+    void resolveForAmplifiesOnlyTheConsumersOwnFunctions() {
+        // a Kernel carrying BOTH a shiny mod+tether (the breeder's) and a drop-rate mod+tether (the
+        // Harvester's) - each consumer amplifies only its own functions; nobody bills here (the rent
+        // clock does), so overlap is a display concern, not a double-charge.
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.SHINY, 5, AugmentFunction.DROP_RATE, 25);
-        List<SoulTether> tethers = List.of(shiny(2), dropRate(2));   // burns: shiny 16 (quality), drop_rate 6 (throughput)
+        List<SoulTether> tethers = List.of(shiny(2), dropRate(2));
         long balance = 1000;
 
-        // Harvester resolves only DROP_RATE → drains 6, boosts drop-rate (25 + 2lv×100 = 225), leaves shiny at base
         TetherRuntime.Resolution drops =
                 TetherRuntime.resolveFor(base, tethers, balance, EnumSet.of(AugmentFunction.DROP_RATE));
-        assertEquals(6L, drops.drain(), "only the drop-rate tether's burn");
-        assertEquals(225.0, drops.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9);
+        assertEquals(225.0, drops.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9, "25 + 2lv × 100");
         assertEquals(5.0, drops.effective().magnitude(AugmentFunction.SHINY), 1e-9, "shiny is the breeder's - not amplified here");
 
-        // breeder resolves only SHINY → drains 16, amplifies shiny, leaves drop-rate at base
         TetherRuntime.Resolution breed =
                 TetherRuntime.resolveFor(base, tethers, balance, EnumSet.of(AugmentFunction.SHINY));
-        assertEquals(16L, breed.drain(), "only the shiny tether's burn");
         assertEquals(35.0, breed.effective().magnitude(AugmentFunction.SHINY), 1e-9);
         assertEquals(25.0, breed.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9);
-
-        // disjoint sets ⇒ each tether billed exactly once across the two clocks (no double-charge, no gap)
-        assertEquals(TetherRuntime.totalBurn(tethers), drops.drain() + breed.drain());
     }
 
     @Test
-    void resolveForStarvesWhenItCantCoverItsOwnBurn() {
+    void resolveForStarvesABrokeOwner() {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.DROP_RATE, 25);
         TetherRuntime.Resolution r =
-                TetherRuntime.resolveFor(base, List.of(dropRate(2)), 5, EnumSet.of(AugmentFunction.DROP_RATE)); // 5 < 6
+                TetherRuntime.resolveFor(base, List.of(dropRate(2)), 0, EnumSet.of(AugmentFunction.DROP_RATE));
         assertFalse(r.amplified());
-        assertEquals(0L, r.drain());
-        assertEquals(25.0, r.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9, "starved → base drop rate, no drain");
+        assertEquals(25.0, r.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9, "broke → base drop rate");
     }
 
     @Test
     void resolveForAmplifiesEnrichmentMultiplierForTheRenderer() {
         // the Renderer's exact path: resolveFor({ENRICHMENT}) → effective().enrichmentMultiplier()
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.ENRICHMENT, 20);          // +20% base → 1.20×
-        SoulTether enrich = new SoulTether("enrichment", TetherClass.THROUGHPUT, 1);          // +10%, burn 3
+        SoulTether enrich = new SoulTether("enrichment", TetherClass.THROUGHPUT, 1);          // +10%/lv, rent 0.2/s
         TetherRuntime.Resolution r =
                 TetherRuntime.resolveFor(base, List.of(enrich), 100, EnumSet.of(AugmentFunction.ENRICHMENT));
-        assertEquals(3L, r.drain(), "only the enrichment tether's burn");
-        assertEquals(1.30, r.effective().enrichmentMultiplier(), 1e-9, "20 + 1lv×10 = 30% → 1.30×");
+        assertTrue(r.amplified());
+        assertEquals(1.30, r.effective().enrichmentMultiplier(), 1e-9, "20 + 1lv × 10 = 30% → 1.30×");
     }
 }

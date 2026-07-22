@@ -21,15 +21,17 @@ class SoulTetherTest {
         SoulTether b = SoulTether.blank();
         assertTrue(b.isBlank());
         assertEquals(0, b.levelsAdded(), "no levels added");
-        assertEquals(0L, b.burnPerCycle(), "no burn");
+        assertEquals(0L, b.upkeepCentiPerSecond(), "no rent");
     }
 
     @Test
-    void qualityBurnsMoreThanThroughput() {
-        assertEquals(24L, new SoulTether("shiny", TetherClass.QUALITY, 3).burnPerCycle(), "quality tier III = expensive");
-        assertEquals(9L, new SoulTether("speed", TetherClass.THROUGHPUT, 3).burnPerCycle(), "throughput tier III = cheap");
-        assertTrue(new SoulTether("iv", TetherClass.QUALITY, 2).burnPerCycle()
-                > new SoulTether("speed", TetherClass.THROUGHPUT, 2).burnPerCycle());
+    void qualityRentsMoreThanThroughput() {
+        // Rent in centi-Data/SECOND (Deuce, 2026-07-21: "9 data per second is insanely high" - per-cycle
+        // burn replaced by per-second rent): quality 0.5/tier, throughput 0.2/tier.
+        assertEquals(150L, new SoulTether("shiny", TetherClass.QUALITY, 3).upkeepCentiPerSecond(), "shiny III = 1.5 Data/s");
+        assertEquals(60L, new SoulTether("speed", TetherClass.THROUGHPUT, 3).upkeepCentiPerSecond(), "throughput III = 0.6 Data/s");
+        assertTrue(new SoulTether("iv", TetherClass.QUALITY, 2).upkeepCentiPerSecond()
+                > new SoulTether("speed", TetherClass.THROUGHPUT, 2).upkeepCentiPerSecond());
     }
 
     @Test

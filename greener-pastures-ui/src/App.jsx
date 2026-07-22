@@ -1877,7 +1877,7 @@ function TetherRow({ cfg }) {
     <div className="inset" style={{ padding: 8, marginBottom: 10, borderRadius: 8 }}>
       <div className="row">
         <span className="dim" style={{ fontSize: 10, letterSpacing: 1 }}>TETHERS</span>
-        <span className="dim" style={{ fontSize: 9, marginLeft: 8 }}>amplify this Kernel's mods · rented in Data while the Daemon is fed · inscribe at the Loom</span>
+        <span className="dim" style={{ fontSize: 9, marginLeft: 8 }}>amplify this Kernel's mods · rent per second while linked with mons inside · inscribe at the Loom</span>
       </div>
       <div className="row" style={{ gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
         {Array.from({ length: slots }, (_, i) => {
@@ -1943,9 +1943,10 @@ function LoomTab() {
       <div className="dim" style={{ fontSize: 11, marginBottom: 10, lineHeight: 1.5 }}>
         Inscribe a <b>Soul Tether</b> with [function · tier], paid in Data. A slotted tether ADDS flat,
         stacking levels on top of its pasture Kernel's MATCHING mod - deliberately past the augment's
-        normal max (a Kernel maxes Drop Rate at level II? a tether keeps climbing). Rent: it burns Data
-        per breeding cycle while your Daemon is fed. Re-inscribing refunds half the old tier - you can
-        experiment, never profit. Slot inscribed tethers on a pasture's config screen, next to the Kernel.
+        normal max (a Kernel maxes Drop Rate at level II? a tether keeps climbing). Rent is charged PER
+        SECOND, only while it sits on a linked pasture with mons inside; go broke and it just goes
+        inert, never negative. Re-inscribing refunds half the old tier - you can experiment, never
+        profit. Slot inscribed tethers on a pasture's config screen, next to the Kernel.
       </div>
       {tethers.length === 0 ? (
         <div className="dim" style={{ fontSize: 11 }}>
@@ -1995,7 +1996,7 @@ function LoomTab() {
                 const afford = net <= balance
                 return (
                   <button key={ti.tier} className="btn" disabled={same || !afford}
-                    title={same ? 'already inscribed' : `${ti.boost} on top of the Kernel's ${f.label} mod, past its normal max · burns ${ti.burn} Data/cycle · net ${net >= 0 ? '-' : '+'}${Math.abs(net)} Data${afford ? '' : ' - not enough Data'}`}
+                    title={same ? 'already inscribed' : `${ti.boost} on top of the Kernel's ${f.label} mod, past its normal max · rent ${ti.rent} Data/s while slotted · net ${net >= 0 ? '-' : '+'}${Math.abs(net)} Data${afford ? '' : ' - not enough Data'}`}
                     onClick={() => send('loom', 'INSCRIBE_TETHER', { fn: f.id, tier: ti.tier, slot: selT.slot })}>
                     {TIER_ROMAN[ti.tier]} <span className="dim" style={{ fontSize: 9 }}>{ti.boost} · {net >= 0 ? `-${net}` : `+${-net}`}◈</span>
                   </button>
@@ -3080,8 +3081,8 @@ Nature Lock and Ball Lock force every egg; the EV Primer applies a full 510-budg
 perfect stats; Ability Splice forces the hidden ability. SOUL TETHERS are rented headroom, paid in Data:
 inscribe [function · tier] at the LOOM tab, slot them next to the Kernel on the pasture screen, and each
 tier ADDS flat stacking levels on top of the matching mod - deliberately PAST the augment's normal max
-(a tether keeps climbing where the Augmenter stops). They burn Data per cycle only while your Daemon is
-fed; wiping refunds half.`],
+(a tether keeps climbing where the Augmenter stops). Rent bills per second, only while the tether sits on
+a linked pasture with mons inside; a broke wallet just means inert tethers. Wiping refunds half.`],
   ['👾 The Daemon & Data', `Eggs your graph declines don't vanish - they RENDER into Data, credited to you.
 The Daemon spends it: compile buffs onto it (2 ◈ per tier) and switch it on - it drains Data per second while
 granting its loadout. Starved Daemon = buffs sleep, base augments keep working. Nothing is ever destroyed

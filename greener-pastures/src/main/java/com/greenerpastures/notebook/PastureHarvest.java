@@ -151,11 +151,8 @@ public final class PastureHarvest {
                             (pd.name.isEmpty() ? pos.toShortString() : pd.name)
                             + " caught up " + sweeps + " sweeps while away → +" + stored + " items");
                 }
-                if (stored > 0 && res.drain() > 0) {         // drain drop-tethers per PRODUCTIVE sweep (catch-up pays like live play)
-                    data.tryDebit(pd.owner, res.drain() * Math.max(1, productive));
-                    GpLog.d("tether", "drain", "pos", pos.toShortString(),
-                            "data", res.drain() * Math.max(1, productive), "owner", pd.owner.toString(), "src", "notebook_harvest");
-                }
+                // No billing here (Deuce, 2026-07-21): tether rent is flat per-second on the TetherUpkeep
+                // ticker (linked + occupied + loaded only). resolve() above only decides fed/starved.
             } catch (Throwable t) {
                 // a Cobblemon API edge must never crash the world tick (mirrors the breeder/Renderer/Harvester guards)
                 GpLog.w("notebook_harvest", "skip", "pos", pos.toShortString(), "err", String.valueOf(t));

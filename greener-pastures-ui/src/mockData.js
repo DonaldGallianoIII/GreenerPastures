@@ -87,7 +87,7 @@ export const MOCK = {
       cls: ['speed', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].includes(id) ? 'throughput' : 'quality',
       // every tier ADDS flat levels past the augment max; boost = server-formatted label (one truth)
       tiers: [1, 2, 3].map((t) => ({
-        tier: t, cost: t * t * 100, burn: (id === 'shiny' ? 8 : 3) * t,
+        tier: t, cost: t * t * 100, rent: ((id === 'shiny' ? 0.5 : 0.2) * t).toFixed(2),
         boost: { shiny: `+${15 * t}% shiny`, enrichment: `+${10 * t}% render value`, drop_rate: `+${t.toFixed(2)}% drops` }[id] || `+${t} level${t > 1 ? 's' : ''}`,
       })),
     })),

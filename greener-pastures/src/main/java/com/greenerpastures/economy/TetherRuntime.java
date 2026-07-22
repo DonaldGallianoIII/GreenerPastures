@@ -6,40 +6,43 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The per-breeding-cycle Soul-Tether decision, Minecraft-free + unit-tested. Given a Kernel's base
- * augment levels, its slotted tethers, and the operator's current Data balance, decide whether the
- * tethers are <b>FED</b> (amplify the base mods + drain Data) or <b>STARVED</b> (inert → the free base
- * only, no drain).
+ * The Soul-Tether FED / STARVED decision, Minecraft-free + unit-tested. Given a Kernel's base augment
+ * levels, its slotted tethers, and the operator's current Data balance, decide whether the tethers
+ * amplify (fed) or fall back to the free base (starved).
  *
- * <p><b>All-or-nothing</b> (DAEMON_AND_TETHERS.md): if the balance can't cover the full burn this cycle,
- * the tethers fall back to the free base. Starvation drops you to base - it never pauses breeding and
- * never destroys anything; hunger is a luxury, never life support. The breeder calls {@link #resolve}
- * each cycle, applies {@link Resolution#effective()} to the egg, and debits {@link Resolution#drain()}.
+ * <p><b>Billing lives elsewhere</b> (Deuce, 2026-07-21): rent is a flat per-second charge on the
+ * {@code TetherUpkeep} ticker - only while the tether sits on a LINKED pasture with mons inside a loaded
+ * chunk. This class never debits; it only answers "can the owner cover a second of rent right now?" -
+ * a broke owner's tethers read starved everywhere the moment the rent stops clearing. Starvation drops
+ * you to base - it never pauses breeding and never destroys anything; hunger is a luxury, never life
+ * support.
  */
 public final class TetherRuntime {
     private TetherRuntime() {}
 
-    /** What to run this cycle: the (possibly amplified) augments, the Data to debit, and whether fed. */
-    public record Resolution(EffectiveAugments effective, long drain, boolean amplified) {}
+    /** What to run this cycle: the (possibly amplified) augments, the rent gate that was checked
+     *  (whole Data for one second of the selected tethers, informational), and whether fed. */
+    public record Resolution(EffectiveAugments effective, long upkeep, boolean amplified) {}
 
-    /** Sum of every powered tether's burn this cycle (blank/inert tethers burn 0). */
-    public static long totalBurn(List<SoulTether> tethers) {
+    /** Sum of the selected tethers' rent in centi-Data per second (blank tethers rent 0). */
+    public static long upkeepCentiPerSecond(List<SoulTether> tethers) {
         long sum = 0L;
         if (tethers != null) {
             for (SoulTether t : tethers) {
-                if (t != null) sum += t.burnPerCycle();
+                if (t != null) sum += t.upkeepCentiPerSecond();
             }
         }
         return sum;
     }
 
     public static Resolution resolve(Map<AugmentFunction, Integer> base, List<SoulTether> tethers, long balance) {
-        long burn = totalBurn(tethers);
-        if (burn > 0 && balance >= burn) {
-            // FED: the account covers the full burn → amplify the base mods and drain that much.
-            return new Resolution(EffectiveAugments.of(base, tethers), burn, true);
+        long centi = upkeepCentiPerSecond(tethers);
+        long gate = (centi + 99) / 100;                 // one second of rent, rounded up to whole Data
+        if (centi > 0 && balance >= gate) {
+            // FED: the account can cover the rent → amplify the base mods (TetherUpkeep does the billing).
+            return new Resolution(EffectiveAugments.of(base, tethers), gate, true);
         }
-        // STARVED or no tethers: run the free base, drain nothing.
+        // STARVED or no tethers: run the free base.
         return new Resolution(EffectiveAugments.of(base, List.of()), 0L, false);
     }
 

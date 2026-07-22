@@ -25,11 +25,13 @@ public record SoulTether(String function, TetherClass cls, int tier) {
      *  augment's rollable max (Deuce, 2026-07-21: that's what the rent buys). */
     public int levelsAdded() { return isBlank() ? 0 : tier; }
 
-    /** Data burned per breeding cycle while powered - quality is expensive (sets the grid), throughput is
-     *  cheap (pays for itself). 0 when blank/inert (a starved Daemon also makes this irrelevant). */
-    public long burnPerCycle() {
+    /** RENT in centi-Data per second (Deuce, 2026-07-21: tethers charge per second, only while slotted on
+     *  a linked pasture with mons inside - billed by the TetherUpkeep ticker, not the breeding/harvest
+     *  clocks). Quality 0.5 Data/s per tier (sets the grid), throughput 0.2 (pays for itself): a Shiny III
+     *  rents at 1.5/s, a Drop Yield III at 0.6/s. 0 when blank. */
+    public long upkeepCentiPerSecond() {
         if (isBlank()) return 0L;
-        long perTier = (cls == TetherClass.QUALITY) ? 8L : 3L;
+        long perTier = (cls == TetherClass.QUALITY) ? 50L : 20L;
         return perTier * tier;
     }
 }

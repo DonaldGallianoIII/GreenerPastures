@@ -182,27 +182,12 @@ public final class MultiPairBreeder {
                     // (the chunk was unloaded), and a 12h catch-up is up to ~288 broods (perf-audit R3 tick #8).
                     java.util.List<java.util.List<PokemonPastureBlockEntity.Tethering>> pairs = buildPairs(pasture, tier, pd);
                     String mode = pd.pairings.isEmpty() ? "auto" : "buckets";
-                    // Amplification is paid PER BROOD (review: the old lump debit was all-or-nothing, so a
-                    // long catch-up amplified every egg then failed to pay - free shinies). Each productive
-                    // brood debits its burn up front; the moment the wallet can't pay, the REST of the
-                    // catch-up runs starved (free base mods) - exactly the fed/starved contract, per cycle.
-                    TetherRuntime.Resolution starved = res.drain() > 0
-                            ? TetherRuntime.resolveFor(pd.baseAugmentLevels(), pd.slottedTethers(), 0L, BREEDING_FUNCTIONS)
-                            : res;
-                    boolean fed = true;
-                    long drained = 0L;
-                    int productiveBroods = 0;
+                    // Billing moved OFF the breeding clock (Deuce, 2026-07-21): tethers now pay flat rent
+                    // per second on the TetherUpkeep ticker (linked + occupied + loaded only). resolve()
+                    // just decides fed/starved from the balance - fed broods amplify, broke owners get base.
                     for (int b = 0; b < broods && !pairs.isEmpty(); b++) {
-                        EffectiveAugments eff = fed ? res.effective() : starved.effective();
-                        int got = breedPairs(world, pos, tier, pd, now, eff, pairs, mode, interval);
+                        int got = breedPairs(world, pos, tier, pd, now, res.effective(), pairs, mode, interval);
                         if (got == 0 && laid == 0 && b > 2) break;   // sterile pasture - don't grind 288 no-op broods
-                        if (got > 0) {
-                            productiveBroods++;
-                            if (fed && res.drain() > 0 && pd.owner != null) {
-                                if (DataStore.get(server).tryDebit(pd.owner, res.drain())) drained += res.drain();
-                                else fed = false;                    // broke mid-catch-up: rest of the burst is base-rate
-                            }
-                        }
                         laid += got;
                     }
                     pd.nextBreedTick = now + interval;
@@ -211,10 +196,6 @@ public final class MultiPairBreeder {
                         com.greenerpastures.notify.Inbox.push(pd.owner, "🥚",
                                 (pd.name.isEmpty() ? pos.toShortString() : pd.name)
                                 + " caught up " + broods + " broods while away → " + laid + " eggs");
-                    }
-                    if (drained > 0) {                                       // tethers earned their burn - paid per productive brood
-                        GpLog.d("tether", "drain", "pos", pos.toShortString(),
-                                "data", drained, "owner", pd.owner.toString(), "starvedMidway", !fed);
                     }
                     moved += drainQueueToTray(pos, pd);                      // top the tray straight up
                 }

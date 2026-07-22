@@ -322,7 +322,7 @@ public final class NotebookNet {
                 ti.addProperty("tier", t);
                 ti.addProperty("cost", com.greenerpastures.economy.TetherEconomics.inscribeCost(t));
                 ti.addProperty("boost", f.boostLabel(t));   // ONE formatter (AugmentFunction) - UI just prints it
-                ti.addProperty("burn", st.burnPerCycle());
+                ti.addProperty("rent", String.format("%.2f", st.upkeepCentiPerSecond() / 100.0));   // Data/s
                 tiers.add(ti);
             }
             o.add("tiers", tiers);
