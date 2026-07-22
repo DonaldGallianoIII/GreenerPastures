@@ -158,11 +158,12 @@ public final class MultiPairBreeder {
                     long balance = (pd.owner != null) ? DataStore.get(server).balanceOf(pd.owner) : 0L;
                     TetherRuntime.Resolution res = TetherRuntime.resolveFor(
                             pd.baseAugmentLevels(), pd.slottedTethers(), balance, BREEDING_FUNCTIONS);
+                    EffectiveAugments eff = res.effective();
 
                     long interval = testIntervalTicks > 0
                             ? testIntervalTicks   // QA override (/gp breed interval N) - fixed rate, floor bypassed
                             : speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
-                                    res.effective().speedLevel(), tier.baseSpeedFactor());
+                                    eff.speedLevel(), tier.baseSpeedFactor());
 
                     // CATCH-UP: broods missed while this chunk was unloaded (the loop skips unloaded chunks, so
                     // lastBreedTick froze). Rolled now with the current pairs/Kernel - every egg still walks the
@@ -175,6 +176,26 @@ public final class MultiPairBreeder {
                     if (testIntervalTicks <= 0 && pd.lastBreedTick > 0 && now > pd.lastBreedTick) {
                         long gap = Math.min(now - pd.lastBreedTick, maxCatchupTicks());
                         broods = (int) Math.max(1, gap / Math.max(1L, interval));
+                        // PRE-PAID away rent (Deuce, 2026-07-21): a multi-brood catch-up keeps its
+                        // breeding-tether boosts (shiny/speed) ONLY if the owner can pay the window's
+                        // rent up front. Can't pay = no debit at all; the burst re-prices at BASE speed
+                        // and breeds at base mods. Live single broods ride the TetherUpkeep clock.
+                        if (broods > 1 && res.amplified()) {
+                            long rent = TetherRuntime.rentFor(gap / 20L,
+                                    TetherRuntime.select(pd.slottedTethers(), BREEDING_FUNCTIONS));
+                            if (rent > 0 && pd.owner != null && !DataStore.get(server).tryDebit(pd.owner, rent)) {
+                                eff = TetherRuntime.resolveFor(pd.baseAugmentLevels(), pd.slottedTethers(),
+                                        0L, BREEDING_FUNCTIONS).effective();
+                                interval = speedAdjustedInterval(CobbreedingBridge.nextBreedingInterval(),
+                                        eff.speedLevel(), tier.baseSpeedFactor());
+                                broods = (int) Math.max(1, gap / Math.max(1L, interval));
+                                GpLog.i("tether", "rent_unpaid", "src", "breeder", "pos", pos.toShortString(),
+                                        "owed", rent, "broods", broods);
+                            } else if (rent > 0) {
+                                GpLog.i("tether", "rent_catchup", "src", "breeder", "pos", pos.toShortString(),
+                                        "data", rent, "seconds", gap / 20L);
+                            }
+                        }
                     }
                     pd.lastBreedTick = now;
 
@@ -182,11 +203,10 @@ public final class MultiPairBreeder {
                     // (the chunk was unloaded), and a 12h catch-up is up to ~288 broods (perf-audit R3 tick #8).
                     java.util.List<java.util.List<PokemonPastureBlockEntity.Tethering>> pairs = buildPairs(pasture, tier, pd);
                     String mode = pd.pairings.isEmpty() ? "auto" : "buckets";
-                    // Billing moved OFF the breeding clock (Deuce, 2026-07-21): tethers now pay flat rent
-                    // per second on the TetherUpkeep ticker (linked + occupied + loaded only). resolve()
-                    // just decides fed/starved from the balance - fed broods amplify, broke owners get base.
+                    // Billing lives on the TetherUpkeep clock (live) + the pre-paid catch-up above (away).
+                    // eff is already the honest resolution: amplified if paid-for, base if not.
                     for (int b = 0; b < broods && !pairs.isEmpty(); b++) {
-                        int got = breedPairs(world, pos, tier, pd, now, res.effective(), pairs, mode, interval);
+                        int got = breedPairs(world, pos, tier, pd, now, eff, pairs, mode, interval);
                         if (got == 0 && laid == 0 && b > 2) break;   // sterile pasture - don't grind 288 no-op broods
                         laid += got;
                     }

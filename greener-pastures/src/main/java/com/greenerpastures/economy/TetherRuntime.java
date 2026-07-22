@@ -24,6 +24,16 @@ public final class TetherRuntime {
      *  (whole Data for one second of the selected tethers, informational), and whether fed. */
     public record Resolution(EffectiveAugments effective, long upkeep, boolean amplified) {}
 
+    /** Whole-Data rent for {@code seconds} of the given tethers (ceil - the house never rounds in the
+     *  renter's favor). The catch-up consumers use this to PRE-PAY an away window before applying the
+     *  boost (Deuce, 2026-07-21: check the Data first, then buff): can't pay = no charge, base mods. */
+    public static long rentFor(long seconds, List<SoulTether> tethers) {
+        if (seconds <= 0) return 0L;
+        long centi = upkeepCentiPerSecond(tethers);
+        if (centi <= 0) return 0L;
+        return (centi * seconds + 99) / 100;
+    }
+
     /** Sum of the selected tethers' rent in centi-Data per second (blank tethers rent 0). */
     public static long upkeepCentiPerSecond(List<SoulTether> tethers) {
         long sum = 0L;

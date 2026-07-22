@@ -23,10 +23,11 @@ import java.util.UUID;
  * per owner and debit as whole Data. A failed debit clears the tab instead of going negative - the
  * starvation fallback ({@link TetherRuntime#resolve} gating on balance) is the whole penalty.
  *
- * <p>Unloaded chunks freeze the clock and the gap is <b>billed on reload</b> (capped at maxCatchupHours),
- * exactly like the breeder's broods and the Harvester's sweeps catch up - away production must not keep
- * its tether boosts rent-free (Deuce, 2026-07-21). Empty pens rent nothing, unlinked pastures rent
- * nothing. Billing lives ONLY here - the breeder / harvest clocks stopped debiting the day this shipped.
+ * <p>This clock bills LIVE seconds only. Away windows are billed by the CONSUMERS' own catch-ups
+ * (breeder broods · harvest sweeps), <b>pre-paid</b>: each catch-up checks the owner can afford its
+ * window's rent FIRST and only then applies the boost - can't pay = no charge, base mods (Deuce,
+ * 2026-07-21: "check if the user has enough data first, then if they do, apply the buff"). Empty pens
+ * rent nothing, unlinked pastures rent nothing.
  */
 public final class TetherUpkeep {
     private TetherUpkeep() {}
@@ -45,39 +46,23 @@ public final class TetherUpkeep {
         Map<BlockPos, PastureData> pastures = reg.inWorld(world);
         if (pastures.isEmpty()) return;
         DataStore data = DataStore.get(server);
-        boolean dirty = false;   // one registry markDirty per scan (mirrors the harvest loop)
         for (Map.Entry<BlockPos, PastureData> e : pastures.entrySet()) {
             PastureData pd = e.getValue();
+            if (pd.owner == null) continue;                       // rent needs a LINKED pasture
             BlockPos pos = e.getKey();
-            if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;   // clock freezes; gap billed on reload
+            if (!world.getChunkManager().isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) continue;   // away rent = the consumers' pre-paid catch-ups
             if (!(world.getBlockEntity(pos) instanceof PokemonPastureBlockEntity pasture)) continue;
             try {
-                // Advance the rent clock for EVERY visited pasture first - even unbillable ones - so
-                // linking / slotting later never back-bills time the tether wasn't renting.
-                long now = world.getTime();
-                long gap = pd.lastRentTick > 0
-                        ? Math.min(now - pd.lastRentTick, com.greenerpastures.pasture.PastureSystem.config().maxCatchupTicks())
-                        : 20L;
-                pd.lastRentTick = now;
-                dirty = true;
-                if (gap < 20L) continue;
-                if (pd.owner == null) continue;                       // rent needs a LINKED pasture
                 if (pasture.getTetheredPokemon().isEmpty()) continue;   // "units inside" - empty pens rent nothing
-                long centiPerSec = TetherRuntime.upkeepCentiPerSecond(pd.slottedTethers());
-                if (centiPerSec <= 0) continue;
-                long seconds = gap / 20L;
-                long owed = TAB.merge(pd.owner, centiPerSec * seconds, Long::sum);
+                long centi = TetherRuntime.upkeepCentiPerSecond(pd.slottedTethers());
+                if (centi <= 0) continue;
+                long owed = TAB.merge(pd.owner, centi, Long::sum);
                 long whole = owed / 100;
                 if (whole <= 0) continue;
                 if (data.tryDebit(pd.owner, whole)) {
                     TAB.put(pd.owner, owed % 100);
-                    if (seconds > 1) {   // a reload catch-up - the away window paid like live play
-                        GpLog.i("tether", "rent_catchup", "owner", pd.owner.toString(), "data", whole,
-                                "seconds", Long.toString(seconds), "pos", pos.toShortString());
-                    } else {
-                        GpLog.d("tether", "rent", "owner", pd.owner.toString(), "data", whole,
-                                "pos", pos.toShortString());
-                    }
+                    GpLog.d("tether", "rent", "owner", pd.owner.toString(), "data", whole,
+                            "pos", pos.toShortString());
                 } else {
                     TAB.put(pd.owner, 0L);   // broke: clear the tab - starvation is the penalty, never debt
                 }
@@ -86,7 +71,6 @@ public final class TetherUpkeep {
                 GpLog.w("tether", "rent_skip", "pos", pos.toShortString(), "err", String.valueOf(t));
             }
         }
-        if (dirty) reg.markDirty();
     }
 
     /** SERVER_STARTED hygiene - a new world starts with clean tabs. */

@@ -65,6 +65,17 @@ class TetherRuntimeTest {
     }
 
     @Test
+    void rentForPricesAwayWindowsCeilNeverFloor() {
+        // The pre-paid catch-up contract (Deuce, 2026-07-21): away windows are priced by the second and
+        // checked BEFORE the boost applies. Ceil - the house never rounds in the renter's favor.
+        assertEquals(2160L, TetherRuntime.rentFor(3600,
+                List.of(new SoulTether("drop_yield", TetherClass.THROUGHPUT, 3))), "1h of Yield III = 2160");
+        assertEquals(1L, TetherRuntime.rentFor(1, List.of(shiny(1))), "50 centi rounds UP to 1 whole Data");
+        assertEquals(0L, TetherRuntime.rentFor(0, List.of(shiny(3))), "no window, no rent");
+        assertEquals(0L, TetherRuntime.rentFor(3600, List.of(SoulTether.blank())), "blanks never rent");
+    }
+
+    @Test
     void selectKeepsOnlyTheNamedFunctions() {
         List<SoulTether> all = List.of(shiny(2), dropRate(2), SoulTether.blank());
         List<SoulTether> drops = TetherRuntime.select(all, EnumSet.of(AugmentFunction.DROP_RATE));

@@ -96,12 +96,33 @@ public final class PastureHarvest {
                 // ancient save doesn't roll millions. sweeps=1 is the normal loaded-chunk case.
                 long now = world.getTime();
                 int sweeps = 1;
+                long gapTicks = 0;
                 if (pd.lastHarvestTick > 0 && now > pd.lastHarvestTick) {
-                    long gap = Math.min(now - pd.lastHarvestTick, maxCatchupTicks());
-                    sweeps = (int) Math.max(1, gap / interval);
+                    gapTicks = Math.min(now - pd.lastHarvestTick, maxCatchupTicks());
+                    sweeps = (int) Math.max(1, gapTicks / interval);
                 }
                 pd.lastHarvestTick = now;
                 dirty = true;
+
+                // PRE-PAID away rent (Deuce, 2026-07-21): a multi-sweep catch-up keeps its drop-tether
+                // boost ONLY if the owner can pay the window's rent up front - checked BEFORE the buff
+                // is applied. Can't pay = no debit at all and the whole burst rolls at base mods. Live
+                // single sweeps are covered by the TetherUpkeep per-second clock instead.
+                if (sweeps > 1 && res.amplified()) {
+                    long rent = TetherRuntime.rentFor(gapTicks / 20L,
+                            TetherRuntime.select(pd.slottedTethers(), DROP_FUNCTIONS));
+                    if (rent > 0 && !data.tryDebit(pd.owner, rent)) {
+                        TetherRuntime.Resolution base = TetherRuntime.resolveFor(
+                                pd.baseAugmentLevels(), pd.slottedTethers(), 0L, DROP_FUNCTIONS);
+                        proc = BASE_PROC + base.effective().dropRateFraction();
+                        yield = base.effective().dropYieldBonus();
+                        GpLog.i("tether", "rent_unpaid", "src", "harvest", "pos", pos.toShortString(),
+                                "owed", Long.toString(rent), "sweeps", Integer.toString(sweeps));
+                    } else if (rent > 0) {
+                        GpLog.i("tether", "rent_catchup", "src", "harvest", "pos", pos.toShortString(),
+                                "data", Long.toString(rent), "seconds", Long.toString(gapTicks / 20L));
+                    }
+                }
 
                 // Snapshot the roster ONCE for all sweeps - it can't change mid-catch-up (the chunk was
                 // unloaded), and a 12h catch-up is up to 720 sweeps in this one tick (perf-audit R3 tick #1).
