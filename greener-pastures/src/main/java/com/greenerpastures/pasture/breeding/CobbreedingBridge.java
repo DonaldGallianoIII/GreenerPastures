@@ -327,19 +327,24 @@ public final class CobbreedingBridge {
     public static ItemStack shopMysteryEgg(java.util.Random rng, int perfectIvs) {
         if (!available) return null;
         try {
-            List<Species> pool = new ArrayList<>();
+            // Eggs hatch BASE forms (Deuce QA 2026-07-21: a shop egg hatched a POLITOED). Every implemented
+            // species is walked down its pre-evolution chain and the pool is deduped by base - so a 3-stage
+            // line gets one ticket, not three, and no egg can ever contain an evolved mon.
+            java.util.Map<String, Species> pool = new java.util.LinkedHashMap<>();
             for (Species sp : PokemonSpecies.INSTANCE.getImplemented()) {
-                var labels = sp.getLabels();
+                Species base = baseFormOf(sp);
+                var labels = base.getLabels();
                 if (labels.contains("legendary") || labels.contains("mythical")
                         || labels.contains("ultra_beast") || labels.contains("paradox")) continue;
                 boolean hasHidden = false;
-                for (PotentialAbility pa : sp.getAbilities()) {
+                for (PotentialAbility pa : base.getAbilities()) {
                     if (pa.getType() != CommonAbilityType.INSTANCE) { hasHidden = true; break; }
                 }
-                if (hasHidden) pool.add(sp);
+                if (hasHidden) pool.putIfAbsent(base.showdownId(), base);
             }
             if (pool.isEmpty()) return null;
-            Species sp = pool.get(rng.nextInt(pool.size()));
+            List<Species> bases = new ArrayList<>(pool.values());
+            Species sp = bases.get(rng.nextInt(bases.size()));
             PokemonProperties props = new PokemonProperties();
             props.setSpecies(sp.showdownId());
             props.setIvs(IVs.createRandomIVs(Math.max(1, Math.min(6, perfectIvs))));
@@ -348,6 +353,24 @@ public final class CobbreedingBridge {
         } catch (Throwable t) {
             GreenerPastures.LOG.warn("[game-corner] mystery egg build failed", t);
             return null;
+        }
+    }
+
+    /** Walk a species down its pre-evolution chain to the BASE form (Poliwag for Politoed); bounded so a
+     *  malformed circular chain can't hang the shop. Falls back to the species itself on any API surprise. */
+    static Species baseFormOf(Species sp) {
+        try {
+            Species cur = sp;
+            for (int i = 0; i < 10; i++) {
+                var pre = cur.getPreEvolution();
+                if (pre == null) break;
+                Species prev = pre.getSpecies();
+                if (prev == null || prev == cur) break;
+                cur = prev;
+            }
+            return cur;
+        } catch (Throwable t) {
+            return sp;
         }
     }
 

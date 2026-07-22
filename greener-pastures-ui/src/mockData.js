@@ -81,7 +81,7 @@ export const MOCK = {
       { slot: 3, count: 4, fn: '', tier: 0 },
       { slot: 11, count: 1, fn: 'shiny', tier: 2, name: 'Eevee Line A' },
     ],
-    catalog: ['shiny', 'speed', 'iv_floor', 'ev', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].map((id) => ({
+    catalog: ['shiny', 'speed', 'iv_floor', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].map((id) => ({
       id,
       label: { shiny: 'Shiny', speed: 'Speed', iv_floor: 'IV Floor', ev: 'Fine-Tune (EV)', enrichment: 'Enrichment', drop_rate: 'Drop Rate', drop_yield: 'Drop Yield', hatch: 'Hatch Haste' }[id],
       cls: ['speed', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].includes(id) ? 'throughput' : 'quality',

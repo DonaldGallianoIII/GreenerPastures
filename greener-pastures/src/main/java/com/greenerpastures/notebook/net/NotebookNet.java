@@ -309,6 +309,9 @@ public final class NotebookNet {
         JsonArray catalog = new JsonArray();
         for (com.greenerpastures.economy.AugmentFunction f : com.greenerpastures.economy.AugmentFunction.values()) {
             if (f.selector) continue;   // a CHOICE can't be amplified - selectors never appear on the Loom
+            // EV is DEAD as a tether target (Deuce QA 2026-07-21): since BUG-002 the EV augment is a selected
+            // 510 spread (pd.evSpread()) and the old flat floor the tether would amplify has no consumers.
+            if (f == com.greenerpastures.economy.AugmentFunction.EV) continue;
             JsonObject o = new JsonObject();
             o.addProperty("id", f.id);
             o.addProperty("label", f.label);
@@ -371,6 +374,7 @@ public final class NotebookNet {
         if (!wipe) {
             com.greenerpastures.economy.AugmentFunction f = com.greenerpastures.economy.AugmentFunction.byId(fn);
             if (f == null || f.selector) return;   // unknown / selector functions can't be inscribed
+            if (f == com.greenerpastures.economy.AugmentFunction.EV) return;   // dead target - see pushLoom
             tier = Math.min(tier, com.greenerpastures.economy.SoulTether.MAX_TIER);
         }
         com.greenerpastures.economy.DataStore data = com.greenerpastures.economy.DataStore.get(server);
