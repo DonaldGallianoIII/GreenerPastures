@@ -1835,6 +1835,13 @@ function PastureConfig({ cfg }) {
           {hasKernel ? 'remove' : 'slot from inventory'}</button>
       </div>
       {hasKernel && <TetherRow cfg={cfg} />}
+      {cfg.kernel?.tetherFx?.length > 0 && (
+        <div className="kload" style={{ marginBottom: 10, opacity: cfg.kernel.tetherStarved ? 0.55 : 1 }}>
+          <span className="dim" style={{ fontSize: 9, letterSpacing: 1 }}>⧟ TETHER FX</span>
+          {cfg.kernel.tetherFx.map((x) => <span className="kchip" key={x} style={{ color: 'var(--pink)' }}>{x}</span>)}
+          {cfg.kernel.tetherStarved && <span className="kchip" style={{ color: 'var(--amber)' }}>starved - not enough Data to power the tethers</span>}
+        </div>
+      )}
       {hasKernel && cfg.kernel && Object.keys(cfg.kernel).length > 0 && (
         <div className="kload" style={{ marginBottom: 10 }}>
           <span className="dim" style={{ fontSize: 9, letterSpacing: 1 }}>LOADOUT</span>

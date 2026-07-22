@@ -1358,6 +1358,16 @@ public final class NotebookNet {
         return s == null || s.isEmpty() ? "?" : Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
+    /** "45" not "45.0" - whole magnitudes print clean in the TETHER FX chips. */
+    private static String trimNum(double v) {
+        return v == Math.floor(v) ? String.valueOf((long) v) : String.valueOf(v);
+    }
+
+    /** Centipercent → percent with two decimals ("250" → "2.50"). */
+    private static String centiPct(double centi) {
+        return String.format("%.2f", centi / 100.0);
+    }
+
     // ── pasture config (the React right-click-a-pasture screen; replaces the owo PastureScreen) ───────────────
 
     /** Build + push the focused pasture's full editable config (name · tier · link · maxPairs · roster). */
@@ -2073,6 +2083,54 @@ public final class NotebookNet {
             if (a != null && (v = a.level(com.greenerpastures.economy.AugmentFunction.ENRICHMENT)) > 0)
                 chips.add("◈ enrichment +" + v + "%");
             if (!chips.isEmpty()) k.add("chips", chips);
+            // TETHER FX (Deuce, 2026-07-21: "show how the tether is impacting this pasture") - a
+            // before → after line per mod the slotted tethers touch. Numbers come from a potential
+            // resolution (unlimited balance) so the player always sees what the tether DOES; a second
+            // resolution against the owner's live Data decides the STARVED flag (dim + warn, never lie).
+            java.util.List<com.greenerpastures.economy.SoulTether> slotted = pd.slottedTethers();
+            if (!slotted.isEmpty()) {
+                Map<com.greenerpastures.economy.AugmentFunction, Integer> baseLv = pd.baseAugmentLevels();
+                java.util.EnumSet<com.greenerpastures.economy.AugmentFunction> fns =
+                        java.util.EnumSet.allOf(com.greenerpastures.economy.AugmentFunction.class);
+                com.greenerpastures.economy.EffectiveAugments pot = com.greenerpastures.economy.TetherRuntime
+                        .resolveFor(baseLv, slotted, Long.MAX_VALUE / 4, fns).effective();
+                long ownerBal = pd.owner == null ? 0L
+                        : com.greenerpastures.economy.DataStore.get(server).balanceOf(pd.owner);
+                boolean powered = com.greenerpastures.economy.TetherRuntime
+                        .resolveFor(baseLv, slotted, ownerBal, fns).amplified();
+                JsonArray fx = new JsonArray();
+                for (com.greenerpastures.economy.AugmentFunction f : com.greenerpastures.economy.AugmentFunction.values()) {
+                    int b = baseLv.getOrDefault(f, 0);
+                    double e = pot.magnitude(f);
+                    if (b <= 0 || e <= b) continue;
+                    String line = switch (f) {
+                        case SHINY      -> "✦ shiny " + b + "% → " + trimNum(e) + "%";
+                        case DROP_RATE  -> "⛏ drops +" + centiPct(b) + "% → +" + centiPct(e) + "%";
+                        case ENRICHMENT -> "◈ enrichment +" + b + "% → +" + trimNum(e) + "%";
+                        case SPEED      -> "⚡ speed lv " + b + " → lv " + pot.speedLevel();
+                        case DROP_YIELD -> "⛏ yield +" + b + " → +" + pot.dropYieldBonus();
+                        case HATCH      -> "🐣 hatch ×" + com.greenerpastures.pasture.breeding.HatchHaste.factorLabel(b)
+                                + " → ×" + com.greenerpastures.pasture.breeding.HatchHaste.factorLabel(pot.hatchLevel());
+                        default -> null;
+                    };
+                    if (line != null) fx.add(line);
+                }
+                // A tether with NO matching Kernel mod does nothing (base = free, amplification = rented) -
+                // say it in the player's face instead of showing a slotted tether with silent zero effect.
+                java.util.Set<com.greenerpastures.economy.AugmentFunction> baseless = new java.util.LinkedHashSet<>();
+                for (com.greenerpastures.economy.SoulTether st : slotted) {
+                    com.greenerpastures.economy.AugmentFunction f =
+                            com.greenerpastures.economy.AugmentFunction.byId(st.function());
+                    if (f != null && f.tetherable() && baseLv.getOrDefault(f, 0) <= 0) baseless.add(f);
+                }
+                for (com.greenerpastures.economy.AugmentFunction f : baseless) {
+                    fx.add("⚠ " + f.label + " tether idle - install the matching Kernel augment first");
+                }
+                if (!fx.isEmpty()) {
+                    k.add("tetherFx", fx);
+                    if (!powered) k.addProperty("tetherStarved", true);
+                }
+            }
             // Full augment map + corruption - the client dresses its DISPLAY stack with these so hovering the
             // slotted kernel shows the real tooltip, not a default-born one (Deuce, 2026-07-04).
             if (kernel.contains(net.minecraft.component.DataComponentTypes.CUSTOM_NAME))
