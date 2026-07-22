@@ -9,18 +9,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SoulTetherTest {
 
     @Test
-    void amplificationRisesByTier() {
-        // ×1.5 / ×2.0 / ×2.5 - bumped from +10/20/30% (Deuce QA 2026-07-21: rented power must be FELT)
-        assertEquals(1.50, new SoulTether("shiny", TetherClass.QUALITY, 1).amplification(), 1e-9);
-        assertEquals(2.00, new SoulTether("shiny", TetherClass.QUALITY, 2).amplification(), 1e-9);
-        assertEquals(2.50, new SoulTether("shiny", TetherClass.QUALITY, 3).amplification(), 1e-9);
+    void tierIsTheLevelsAdded() {
+        // Flat additive model (Deuce, 2026-07-21): a Tier-N tether adds N levels on top of its Kernel mod.
+        assertEquals(1, new SoulTether("shiny", TetherClass.QUALITY, 1).levelsAdded());
+        assertEquals(2, new SoulTether("shiny", TetherClass.QUALITY, 2).levelsAdded());
+        assertEquals(3, new SoulTether("shiny", TetherClass.QUALITY, 3).levelsAdded());
     }
 
     @Test
     void blankTetherIsInert() {
         SoulTether b = SoulTether.blank();
         assertTrue(b.isBlank());
-        assertEquals(1.0, b.amplification(), 1e-9, "no amplification");
+        assertEquals(0, b.levelsAdded(), "no levels added");
         assertEquals(0L, b.burnPerCycle(), "no burn");
     }
 

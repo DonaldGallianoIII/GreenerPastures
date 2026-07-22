@@ -31,12 +31,10 @@ public class SoulTetherItem extends Item {
         AugmentFunction f = AugmentFunction.byId(t.function());
         String name = (f != null) ? f.label : t.function();
         String cls = (f != null && f.cls == TetherClass.THROUGHPUT) ? "throughput" : "quality";
-        String effect = (f != null && f.discrete)
-                ? "+" + t.tier() + (t.tier() == 1 ? " level" : " levels") + " to its Kernel mod"
-                : "×" + String.format("%.1f", st.amplification()) + " its Kernel mod";
+        String effect = (f != null) ? f.boostLabel(t.tier()) : "+" + t.tier() + " levels";
         tooltip.add(Text.literal(name + " Tether · Tier " + roman(t.tier())).formatted(Formatting.LIGHT_PURPLE));
-        tooltip.add(Text.literal(effect + " · burns " + st.burnPerCycle() + " Data/cycle (" + cls + ")")
-                .formatted(Formatting.GRAY));
+        tooltip.add(Text.literal(effect + " on top of its Kernel mod, past its normal max · burns "
+                + st.burnPerCycle() + " Data/cycle (" + cls + ")").formatted(Formatting.GRAY));
         tooltip.add(Text.literal("Slot it on a pasture's config screen · rented while the Daemon is fed").formatted(Formatting.DARK_GRAY));
     }
 

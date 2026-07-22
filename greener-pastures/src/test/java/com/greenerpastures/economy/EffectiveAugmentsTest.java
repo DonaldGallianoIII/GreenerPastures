@@ -20,8 +20,8 @@ class EffectiveAugmentsTest {
     void tetherAmplifiesOnlyItsMatchingBase() {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.SHINY, 5);
         EffectiveAugments e = EffectiveAugments.of(base, List.of(tether("shiny", TetherClass.QUALITY, 2)));
-        assertEquals(10.0, e.magnitude(AugmentFunction.SHINY), 1e-9, "5 × 2.0 (tier II)");
-        assertEquals(0.10, e.shinyProcChance(), 1e-9);
+        assertEquals(35.0, e.magnitude(AugmentFunction.SHINY), 1e-9, "5 + 2 levels × 15 (tier II)");
+        assertEquals(0.35, e.shinyProcChance(), 1e-9);
     }
 
     @Test
@@ -40,11 +40,11 @@ class EffectiveAugmentsTest {
     }
 
     @Test
-    void multipleMatchingTethersStackMultiplicatively() {
+    void multipleMatchingTethersStackAdditively() {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.SHINY, 10);
         EffectiveAugments e = EffectiveAugments.of(base,
                 List.of(tether("shiny", TetherClass.QUALITY, 1), tether("shiny", TetherClass.QUALITY, 1)));
-        assertEquals(22.5, e.magnitude(AugmentFunction.SHINY), 1e-9, "10 × 1.5 × 1.5");
+        assertEquals(40.0, e.magnitude(AugmentFunction.SHINY), 1e-9, "10 + (1+1) levels × 15 - flat, stacking");
     }
 
     @Test
@@ -60,7 +60,7 @@ class EffectiveAugmentsTest {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.ENRICHMENT, 20);
         assertEquals(1.20, EffectiveAugments.of(base, List.of()).enrichmentMultiplier(), 1e-9, "20% base → 1.20×");
         EffectiveAugments amped = EffectiveAugments.of(base, List.of(tether("enrichment", TetherClass.THROUGHPUT, 1)));
-        assertEquals(1.30, amped.enrichmentMultiplier(), 1e-9, "20 × 1.5 = 30% → 1.30×");
+        assertEquals(1.30, amped.enrichmentMultiplier(), 1e-9, "20 + 1 level × 10 = 30% → 1.30×");
     }
 
     @Test
@@ -76,8 +76,11 @@ class EffectiveAugmentsTest {
         assertEquals(2, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 1))).speedLevel(),
                 "tier I is FELT even on a level-1 mod");
         assertEquals(3, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 2))).speedLevel());
-        assertEquals(3, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 3))).speedLevel(),
-                "clamped at the cadence ladder's top");
+        assertEquals(4, EffectiveAugments.of(base, List.of(tether("speed", TetherClass.THROUGHPUT, 3))).speedLevel(),
+                "tethers push PAST the rollable max (level 4 is tether-only territory)");
+        assertEquals(6, EffectiveAugments.of(Map.of(AugmentFunction.SPEED, 3),
+                List.of(tether("speed", TetherClass.THROUGHPUT, 3), tether("speed", TetherClass.THROUGHPUT, 3))).speedLevel(),
+                "stacked tethers climb to the extended ladder's top (6)");
         assertEquals(0, EffectiveAugments.of(Map.of(), List.of(tether("speed", TetherClass.THROUGHPUT, 3))).speedLevel(),
                 "no base mod → a tether adds nothing (base = free, amplification = rented)");
     }
@@ -86,8 +89,8 @@ class EffectiveAugmentsTest {
     void dropRateCentipercentBecomesAProcFraction() {
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.DROP_RATE, 25);   // 25 centipercent = 0.25%
         assertEquals(0.0025, EffectiveAugments.of(base, List.of()).dropRateFraction(), 1e-9);
-        // a Drop Rate tether (throughput) tier II ×2.0 → 50 → 0.50%
-        assertEquals(0.0050,
+        // a Drop Rate tether (throughput) tier II = +2 levels × 100 centipercent → 225 → 2.25%
+        assertEquals(0.0225,
                 EffectiveAugments.of(base, List.of(tether("drop_rate", TetherClass.THROUGHPUT, 2))).dropRateFraction(), 1e-9);
         assertEquals(0.0, EffectiveAugments.of(Map.of(), List.of()).dropRateFraction(), 1e-9, "no mod → no bonus");
     }
@@ -131,8 +134,8 @@ class EffectiveAugmentsTest {
         assertEquals(1, EffectiveAugments.of(base, List.of()).hatchLevel());
         assertEquals(2, EffectiveAugments.of(base, List.of(tether("hatch", TetherClass.THROUGHPUT, 1))).hatchLevel(),
                 "tier I is FELT on a level-1 mod");
-        assertEquals(3, EffectiveAugments.of(base, List.of(tether("hatch", TetherClass.THROUGHPUT, 3))).hatchLevel(),
-                "clamped at Hatch Haste III");
+        assertEquals(4, EffectiveAugments.of(base, List.of(tether("hatch", TetherClass.THROUGHPUT, 3))).hatchLevel(),
+                "tethers push past Hatch Haste III (the 1s timer floor still rules)");
     }
 
     @Test

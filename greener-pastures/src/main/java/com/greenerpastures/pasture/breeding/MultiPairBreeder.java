@@ -245,11 +245,13 @@ public final class MultiPairBreeder {
      *  ({@link BreedingTier#baseSpeedFactor()} - every kernel breeds faster, greener much faster), floored
      *  so breeding never runs absurdly fast (the floor protects the server). */
     public static long speedAdjustedInterval(long baseInterval, int speedLevel, double tierFactor) {
-        double factor = switch (Math.max(0, Math.min(3, speedLevel))) {
+        // Levels 4-6 are tether-only (Deuce, 2026-07-21: tethers stack PAST the rollable max) - the ladder
+        // continues linearly and the 2.5-min floor below still has the final word.
+        int lv = Math.max(0, Math.min(6, speedLevel));
+        double factor = switch (lv) {
+            case 0 -> 1.0;
             case 1 -> 1.5;
-            case 2 -> 2.0;
-            case 3 -> 3.0;
-            default -> 1.0;
+            default -> lv;   // 2→×2 · 3→×3 · ... · 6→×6
         };
         // 2.5-min floor SIGNED OFF for release (Deuce 2026-07-04): at the ~10-min default base it only
         // shaves the very top of the Greener+Speed III stack; servers configuring faster bases are

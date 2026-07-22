@@ -321,13 +321,7 @@ public final class NotebookNet {
                 JsonObject ti = new JsonObject();
                 ti.addProperty("tier", t);
                 ti.addProperty("cost", com.greenerpastures.economy.TetherEconomics.inscribeCost(t));
-                if (f.discrete) {                 // leveled mod: flat +tier levels, always felt below the cap
-                    ti.addProperty("mode", "levels");
-                    ti.addProperty("amp", t);
-                } else {                          // percent mod: ×1.5 / ×2.0 / ×2.5
-                    ti.addProperty("mode", "pct");
-                    ti.addProperty("ampPct", (int) Math.round((st.amplification() - 1.0) * 100));
-                }
+                ti.addProperty("boost", f.boostLabel(t));   // ONE formatter (AugmentFunction) - UI just prints it
                 ti.addProperty("burn", st.burnPerCycle());
                 tiers.add(ti);
             }

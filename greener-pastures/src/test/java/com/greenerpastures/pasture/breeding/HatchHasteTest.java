@@ -13,7 +13,8 @@ class HatchHasteTest {
         assertEquals(300, HatchHaste.scaledTimer(600, 1));
         assertEquals(150, HatchHaste.scaledTimer(600, 2));
         assertEquals(60, HatchHaste.scaledTimer(600, 3));
-        assertEquals(60, HatchHaste.scaledTimer(600, 99), "levels above III clamp to III");
+        assertEquals(30, HatchHaste.scaledTimer(1200, 5), "levels 4-6 are tether-only rungs (x0.025)");
+        assertEquals(60, HatchHaste.scaledTimer(4800, 99), "levels above VI clamp to VI (x0.0125)");
     }
 
     @Test

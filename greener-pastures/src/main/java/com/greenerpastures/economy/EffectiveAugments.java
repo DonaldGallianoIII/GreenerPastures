@@ -23,32 +23,28 @@ public final class EffectiveAugments {
     }
 
     public static EffectiveAugments of(Map<AugmentFunction, Integer> base, List<SoulTether> tethers) {
-        // 1) per-function amplification. CONTINUOUS functions (percent mods) collect a multiplicative
-        //    product; DISCRETE (leveled) functions collect a flat +tier sum - multiply-then-round on a
-        //    1..3 level ate whole tiers (Deuce QA 2026-07-21: every break point must be FELT). Untetherable
-        //    functions (selectors + the retired EV / IV Floor targets) are inert no matter what's slotted.
-        Map<AugmentFunction, Double> amp = new EnumMap<>(AugmentFunction.class);
+        // 1) per-function tether LEVELS - flat and additive (Deuce, 2026-07-21): a Tier-N tether adds N
+        //    levels, multiple tethers on one function SUM, and each level is worth the function's
+        //    tetherStep (half a level-I install - the exact I→II→III ladder, continued PAST the rollable
+        //    max; that's what the rent buys). Untetherable functions (selectors + retired EV / IV Floor)
+        //    are inert no matter what's slotted.
         Map<AugmentFunction, Integer> add = new EnumMap<>(AugmentFunction.class);
         if (tethers != null) {
             for (SoulTether t : tethers) {
                 if (t == null || t.isBlank()) continue;
                 AugmentFunction f = AugmentFunction.byId(t.function());
                 if (f == null || !f.tetherable()) continue;
-                if (f.discrete) add.merge(f, t.tier(), Integer::sum);
-                else amp.merge(f, t.amplification(), (a, b) -> a * b);
+                add.merge(f, t.tier(), Integer::sum);
             }
         }
-        // 2) effective, only where a base mod actually exists ("base = free, amplification = rented"). A
-        //    SELECTOR augment (Nature: level = a catalog index) passes through raw - scaling a choice is
-        //    meaningless and would corrupt the index (Adamant×2 → a different nature).
+        // 2) effective = base + levels × step, only where a base mod actually exists ("base = free,
+        //    amplification = rented"). A SELECTOR augment (Nature: level = a catalog index) passes through
+        //    raw - scaling a choice is meaningless and would corrupt the index.
         Map<AugmentFunction, Double> eff = new EnumMap<>(AugmentFunction.class);
         if (base != null) {
             base.forEach((f, lvl) -> {
                 if (f == null || lvl == null || lvl <= 0) return;
-                double v;
-                if (f.selector) v = lvl;
-                else if (f.discrete) v = lvl + add.getOrDefault(f, 0);
-                else v = lvl * amp.getOrDefault(f, 1.0);
+                double v = f.selector ? lvl : lvl + (double) add.getOrDefault(f, 0) * f.tetherStep;
                 eff.put(f, v);
             });
         }
@@ -75,15 +71,17 @@ public final class EffectiveAugments {
         return pct <= 0.0 ? 1.0 : 1.0 + pct / 100.0;
     }
 
-    /** Speed augment level (rounded, clamped 0..3 - the cadence ladder's top) - drives the breeding-cadence
-     *  reduction. A discrete function: a fed Speed Tether ADDS flat levels (+tier), it never multiplies. */
+    /** Speed augment level (rounded, clamped 0..6) - drives the breeding-cadence reduction. Levels 4-6 are
+     *  TETHER-ONLY territory (a fed Speed Tether adds +tier levels past the rollable max); the breeder's
+     *  2.5-min interval floor still bounds the actual cadence. */
     public int speedLevel() {
-        return Math.min(3, (int) Math.round(magnitude(AugmentFunction.SPEED)));
+        return Math.min(6, (int) Math.round(magnitude(AugmentFunction.SPEED)));
     }
 
-    /** Hatch Haste level (rounded, clamped 0..3) - scales the bred egg's Cobbreeding TIMER at build. */
+    /** Hatch Haste level (rounded, clamped 0..6) - scales the bred egg's Cobbreeding TIMER at build.
+     *  Levels 4-6 are tether-only; the 1-second timer floor keeps a hatch witnessed regardless. */
     public int hatchLevel() {
-        return Math.min(3, (int) Math.round(magnitude(AugmentFunction.HATCH)));
+        return Math.min(6, (int) Math.round(magnitude(AugmentFunction.HATCH)));
     }
 
     /** Drop-rate bonus as a 0..1 fraction ADDED to the Harvester's per-mon proc. Stored in centipercent

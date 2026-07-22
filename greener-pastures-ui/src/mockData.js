@@ -85,10 +85,11 @@ export const MOCK = {
       id,
       label: { shiny: 'Shiny', speed: 'Speed', enrichment: 'Enrichment', drop_rate: 'Drop Rate', drop_yield: 'Drop Yield', hatch: 'Hatch Haste' }[id],
       cls: ['speed', 'enrichment', 'drop_rate', 'drop_yield', 'hatch'].includes(id) ? 'throughput' : 'quality',
-      // discrete (leveled) mods: flat +tier levels; percent mods: ×1.5/×2/×2.5
-      tiers: [1, 2, 3].map((t) => ['speed', 'drop_yield', 'hatch'].includes(id)
-        ? { tier: t, cost: t * t * 100, mode: 'levels', amp: t, burn: 3 * t }
-        : { tier: t, cost: t * t * 100, mode: 'pct', ampPct: 50 * t, burn: (id === 'shiny' ? 8 : 3) * t }),
+      // every tier ADDS flat levels past the augment max; boost = server-formatted label (one truth)
+      tiers: [1, 2, 3].map((t) => ({
+        tier: t, cost: t * t * 100, burn: (id === 'shiny' ? 8 : 3) * t,
+        boost: { shiny: `+${15 * t}% shiny`, enrichment: `+${10 * t}% render value`, drop_rate: `+${t.toFixed(2)}% drops` }[id] || `+${t} level${t > 1 ? 's' : ''}`,
+      })),
     })),
     refunds: [0, 50, 200, 450],
   },

@@ -17,46 +17,63 @@ package com.greenerpastures.economy;
  * {@code EffectiveAugments} never runs a selector through tether amplification.
  */
 public enum AugmentFunction {
-    SHINY     ("shiny",      "Shiny",          TetherClass.QUALITY),
-    SPEED     ("speed",      "Speed",          TetherClass.THROUGHPUT, false, true),
-    IV_FLOOR  ("iv_floor",   "IV Floor",       TetherClass.QUALITY),
-    EV        ("ev",         "Fine-Tune (EV)", TetherClass.QUALITY),
-    ENRICHMENT("enrichment", "Enrichment",     TetherClass.THROUGHPUT),
-    DROP_RATE ("drop_rate",  "Drop Rate",      TetherClass.THROUGHPUT),
-    DROP_YIELD("drop_yield", "Drop Yield",     TetherClass.THROUGHPUT, false, true),
-    NATURE    ("nature",     "Nature",         TetherClass.QUALITY, true, false),
-    BALL      ("ball",       "Poké Ball",      TetherClass.QUALITY, true, false),
-    ABILITY   ("ability",    "Hidden Ability", TetherClass.QUALITY, true, false),
-    EGG_MOVE  ("egg_move",   "Egg Moves",      TetherClass.QUALITY, true, false),
-    HATCH     ("hatch",      "Hatch Haste",    TetherClass.THROUGHPUT, false, true);   // egg TIMER scaling: I ×0.5 · II ×0.25 · III ×0.1
+    SHINY     ("shiny",      "Shiny",          TetherClass.QUALITY,    15),
+    SPEED     ("speed",      "Speed",          TetherClass.THROUGHPUT,  1),
+    IV_FLOOR  ("iv_floor",   "IV Floor",       TetherClass.QUALITY,     0),   // retired tether target (Deuce, 2026-07-21)
+    EV        ("ev",         "Fine-Tune (EV)", TetherClass.QUALITY,     0),   // retired: no consumers since the EV-spread rework
+    ENRICHMENT("enrichment", "Enrichment",     TetherClass.THROUGHPUT, 10),
+    DROP_RATE ("drop_rate",  "Drop Rate",      TetherClass.THROUGHPUT, 100),  // centipercent: +1.00% per tether level
+    DROP_YIELD("drop_yield", "Drop Yield",     TetherClass.THROUGHPUT,  1),
+    NATURE    ("nature",     "Nature",         TetherClass.QUALITY, true),
+    BALL      ("ball",       "Poké Ball",      TetherClass.QUALITY, true),
+    ABILITY   ("ability",    "Hidden Ability", TetherClass.QUALITY, true),
+    EGG_MOVE  ("egg_move",   "Egg Moves",      TetherClass.QUALITY, true),
+    HATCH     ("hatch",      "Hatch Haste",    TetherClass.THROUGHPUT,  1);   // egg TIMER scaling: ladder extends past III via tethers
 
     public final String id;
     public final String label;
     public final TetherClass cls;
     /** A choice-encoding augment (level = catalog index), never tether-amplified. False for magnitude augments. */
     public final boolean selector;
-    /** A small-integer LEVEL augment (Speed 0-3, Drop Yield, Hatch 0-3). A tether adds flat levels
-     *  (+tier) instead of multiplying - multiply-then-round on a 1..3 level ate whole tiers
-     *  (Deuce QA 2026-07-21: every break point must produce something that can be felt). */
-    public final boolean discrete;
+    /** The magnitude ONE tether level adds on top of the Kernel's stored mod (Deuce, 2026-07-21: tethers
+     *  are flat, ADDITIVE, stack, and deliberately push PAST the augment's rollable max - that's what the
+     *  rent buys). Each step = half the augment's level-I value, continuing the exact I→II→III install
+     *  ladder ({@code AugmentType}: II = +½ base, III = +½ more). Units are the function's own
+     *  (% · level · centipercent · budget). {@code 0} = not a tether target. */
+    public final int tetherStep;
 
-    AugmentFunction(String id, String label, TetherClass cls) {
-        this(id, label, cls, false, false);
+    AugmentFunction(String id, String label, TetherClass cls, int tetherStep) {
+        this.id = id;
+        this.label = label;
+        this.cls = cls;
+        this.selector = false;
+        this.tetherStep = tetherStep;
     }
 
-    AugmentFunction(String id, String label, TetherClass cls, boolean selector, boolean discrete) {
+    AugmentFunction(String id, String label, TetherClass cls, boolean selector) {
         this.id = id;
         this.label = label;
         this.cls = cls;
         this.selector = selector;
-        this.discrete = discrete;
+        this.tetherStep = 0;
     }
 
     /** Can a Soul Tether target this function at all? Selectors encode choices (nothing to scale), and
-     *  EV / IV Floor are retired tether targets (Deuce, 2026-07-21): EV's flat floor has no consumers
-     *  since the EV-spread rework, and IV Floor's rounding jank wasn't worth keeping. */
+     *  EV / IV Floor are retired targets (EV's flat floor lost its consumers to the spread rework). */
     public boolean tetherable() {
-        return !selector && this != EV && this != IV_FLOOR;
+        return tetherStep > 0;
+    }
+
+    /** Player-facing boost label for {@code levels} tether levels ("+3.00% drops" · "+45% shiny" ·
+     *  "+2 levels") - ONE formatter so the Loom, tooltips, and logs never disagree. */
+    public String boostLabel(int levels) {
+        int mag = tetherStep * Math.max(0, levels);
+        return switch (this) {
+            case DROP_RATE  -> "+" + String.format("%.2f", mag / 100.0) + "% drops";
+            case SHINY      -> "+" + mag + "% shiny";
+            case ENRICHMENT -> "+" + mag + "% render value";
+            default         -> "+" + levels + " level" + (levels == 1 ? "" : "s");
+        };
     }
 
     /** Look up a function by its stable id (e.g. a tether's {@code function} string); null if unknown. */

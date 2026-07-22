@@ -20,10 +20,10 @@ public record SoulTether(String function, TetherClass cls, int tier) {
 
     public boolean isBlank() { return tier <= 0 || function == null || function.isBlank(); }
 
-    /** Multiplier applied to the Kernel's matching CONTINUOUS mod: ×1.5 / ×2.0 / ×2.5 by tier (1.0 when
-     *  blank). Bumped from +10/20/30% (Deuce QA 2026-07-21): a rented amplifier must be FELT. Discrete
-     *  (leveled) mods don't use this - they get flat +tier levels in {@code EffectiveAugments}. */
-    public double amplification() { return isBlank() ? 1.0 : 1.0 + 0.50 * tier; }
+    /** Tether LEVELS this adds to its Kernel's matching mod (= tier; 0 when blank). Flat + additive +
+     *  stacking, each level worth the function's {@code tetherStep} - deliberately able to push PAST the
+     *  augment's rollable max (Deuce, 2026-07-21: that's what the rent buys). */
+    public int levelsAdded() { return isBlank() ? 0 : tier; }
 
     /** Data burned per breeding cycle while powered - quality is expensive (sets the grid), throughput is
      *  cheap (pays for itself). 0 when blank/inert (a starved Daemon also makes this irrelevant). */

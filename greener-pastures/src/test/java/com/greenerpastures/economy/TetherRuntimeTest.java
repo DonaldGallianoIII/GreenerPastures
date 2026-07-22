@@ -23,7 +23,7 @@ class TetherRuntimeTest {
         TetherRuntime.Resolution r = TetherRuntime.resolve(SHINY5, List.of(shiny(2)), 100);
         assertTrue(r.amplified());
         assertEquals(16L, r.drain());
-        assertEquals(10.0, r.effective().magnitude(AugmentFunction.SHINY), 1e-9, "5 × 2.0 while fed");
+        assertEquals(35.0, r.effective().magnitude(AugmentFunction.SHINY), 1e-9, "5 + 2 levels × 15 while fed");
     }
 
     @Test
@@ -79,18 +79,18 @@ class TetherRuntimeTest {
         List<SoulTether> tethers = List.of(shiny(2), dropRate(2));   // burns: shiny 16 (quality), drop_rate 6 (throughput)
         long balance = 1000;
 
-        // Harvester resolves only DROP_RATE → drains 6, amplifies drop-rate (25×2.0=50), leaves shiny at base
+        // Harvester resolves only DROP_RATE → drains 6, boosts drop-rate (25 + 2lv×100 = 225), leaves shiny at base
         TetherRuntime.Resolution drops =
                 TetherRuntime.resolveFor(base, tethers, balance, EnumSet.of(AugmentFunction.DROP_RATE));
         assertEquals(6L, drops.drain(), "only the drop-rate tether's burn");
-        assertEquals(50.0, drops.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9);
+        assertEquals(225.0, drops.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9);
         assertEquals(5.0, drops.effective().magnitude(AugmentFunction.SHINY), 1e-9, "shiny is the breeder's - not amplified here");
 
         // breeder resolves only SHINY → drains 16, amplifies shiny, leaves drop-rate at base
         TetherRuntime.Resolution breed =
                 TetherRuntime.resolveFor(base, tethers, balance, EnumSet.of(AugmentFunction.SHINY));
         assertEquals(16L, breed.drain(), "only the shiny tether's burn");
-        assertEquals(10.0, breed.effective().magnitude(AugmentFunction.SHINY), 1e-9);
+        assertEquals(35.0, breed.effective().magnitude(AugmentFunction.SHINY), 1e-9);
         assertEquals(25.0, breed.effective().magnitude(AugmentFunction.DROP_RATE), 1e-9);
 
         // disjoint sets ⇒ each tether billed exactly once across the two clocks (no double-charge, no gap)
@@ -111,10 +111,10 @@ class TetherRuntimeTest {
     void resolveForAmplifiesEnrichmentMultiplierForTheRenderer() {
         // the Renderer's exact path: resolveFor({ENRICHMENT}) → effective().enrichmentMultiplier()
         Map<AugmentFunction, Integer> base = Map.of(AugmentFunction.ENRICHMENT, 20);          // +20% base → 1.20×
-        SoulTether enrich = new SoulTether("enrichment", TetherClass.THROUGHPUT, 1);          // ×1.5, burn 3
+        SoulTether enrich = new SoulTether("enrichment", TetherClass.THROUGHPUT, 1);          // +10%, burn 3
         TetherRuntime.Resolution r =
                 TetherRuntime.resolveFor(base, List.of(enrich), 100, EnumSet.of(AugmentFunction.ENRICHMENT));
         assertEquals(3L, r.drain(), "only the enrichment tether's burn");
-        assertEquals(1.30, r.effective().enrichmentMultiplier(), 1e-9, "20 × 1.5 = 30% → 1.30×");
+        assertEquals(1.30, r.effective().enrichmentMultiplier(), 1e-9, "20 + 1lv×10 = 30% → 1.30×");
     }
 }

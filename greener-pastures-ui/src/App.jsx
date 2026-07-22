@@ -1934,11 +1934,11 @@ function LoomTab() {
         <span className="dim mono" style={{ fontSize: 10 }}>◈ {balance.toLocaleString()} Data</span>
       </div>
       <div className="dim" style={{ fontSize: 11, marginBottom: 10, lineHeight: 1.5 }}>
-        Inscribe a <b>Soul Tether</b> with [function · tier], paid in Data. A slotted tether boosts its
-        pasture Kernel's MATCHING mod: percent mods get ×1.5 / ×2 / ×2.5 by tier, leveled mods (Speed,
-        Drop Yield, Hatch) get flat +1 / +2 / +3 levels. It burns Data per breeding cycle while your Daemon
-        is fed. Re-inscribing refunds half the old tier - you can experiment, never profit. Slot inscribed
-        tethers on a pasture's config screen, next to the Kernel.
+        Inscribe a <b>Soul Tether</b> with [function · tier], paid in Data. A slotted tether ADDS flat,
+        stacking levels on top of its pasture Kernel's MATCHING mod - deliberately past the augment's
+        normal max (a Kernel maxes Drop Rate at level II? a tether keeps climbing). Rent: it burns Data
+        per breeding cycle while your Daemon is fed. Re-inscribing refunds half the old tier - you can
+        experiment, never profit. Slot inscribed tethers on a pasture's config screen, next to the Kernel.
       </div>
       {tethers.length === 0 ? (
         <div className="dim" style={{ fontSize: 11 }}>
@@ -1986,12 +1986,11 @@ function LoomTab() {
                 const net = ti.cost - (refunds[selT.tier] || 0)
                 const same = selT.fn === f.id && selT.tier === ti.tier
                 const afford = net <= balance
-                const boost = ti.mode === 'levels' ? `+${ti.amp} level${ti.amp > 1 ? 's' : ''} on` : `×${(1 + ti.ampPct / 100).toFixed(1)}`
                 return (
                   <button key={ti.tier} className="btn" disabled={same || !afford}
-                    title={same ? 'already inscribed' : `${boost} the Kernel's ${f.label} mod · burns ${ti.burn} Data/cycle · net ${net >= 0 ? '-' : '+'}${Math.abs(net)} Data${afford ? '' : ' - not enough Data'}`}
+                    title={same ? 'already inscribed' : `${ti.boost} on top of the Kernel's ${f.label} mod, past its normal max · burns ${ti.burn} Data/cycle · net ${net >= 0 ? '-' : '+'}${Math.abs(net)} Data${afford ? '' : ' - not enough Data'}`}
                     onClick={() => send('loom', 'INSCRIBE_TETHER', { fn: f.id, tier: ti.tier, slot: selT.slot })}>
-                    {TIER_ROMAN[ti.tier]} <span className="dim" style={{ fontSize: 9 }}>{ti.mode === 'levels' ? `+${ti.amp}lv` : `×${(1 + ti.ampPct / 100).toFixed(1)}`} · {net >= 0 ? `-${net}` : `+${-net}`}◈</span>
+                    {TIER_ROMAN[ti.tier]} <span className="dim" style={{ fontSize: 9 }}>{ti.boost} · {net >= 0 ? `-${net}` : `+${-net}`}◈</span>
                   </button>
                 )
               })}
@@ -3071,10 +3070,11 @@ catch up the moment you return (12h cap, online time only).`],
   ['🧬 Kernels & the Augmenter', `Hold a Kernel near the Augmenter tab. Installs cost GPU (quality 2 ◈ ·
 throughput 1 ◈) plus a slot; picking a different nature/ball/EV spread later is FREE - the augment is yours.
 Nature Lock and Ball Lock force every egg; the EV Primer applies a full 510-budget spread; IV Floor guarantees
-perfect stats; Ability Splice forces the hidden ability. SOUL TETHERS amplify installed augments - for rent,
-paid in Data: inscribe [function · tier] at the LOOM tab (percent mods ×1.5/×2/×2.5; Speed, Drop Yield and
-Hatch get flat +1/+2/+3 levels), then slot them on the pasture's config screen next to the Kernel. They burn
-Data per cycle only while your Daemon is fed; wiping refunds half.`],
+perfect stats; Ability Splice forces the hidden ability. SOUL TETHERS are rented headroom, paid in Data:
+inscribe [function · tier] at the LOOM tab, slot them next to the Kernel on the pasture screen, and each
+tier ADDS flat stacking levels on top of the matching mod - deliberately PAST the augment's normal max
+(a tether keeps climbing where the Augmenter stops). They burn Data per cycle only while your Daemon is
+fed; wiping refunds half.`],
   ['👾 The Daemon & Data', `Eggs your graph declines don't vanish - they RENDER into Data, credited to you.
 The Daemon spends it: compile buffs onto it (2 ◈ per tier) and switch it on - it drains Data per second while
 granting its loadout. Starved Daemon = buffs sleep, base augments keep working. Nothing is ever destroyed
