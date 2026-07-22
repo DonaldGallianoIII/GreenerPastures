@@ -1,4 +1,60 @@
-# 🎯 PICKUP_HERE — updated 2026-07-14: BUILDING the Display Suite, right now, with Deuce
+# 🎯 PICKUP_HERE — updated 2026-07-22 ~23:20: QA NIGHT LANDED - resume tomorrow's QA list below
+
+> **⚡ SESSION 2026-07-21→22 (the big live-QA night). ALL DEPLOYED: jar `15b5e343` on all 4 installs,
+> QA server BOUNCED + RESTARTED on it (port 25565; Deuce connects via WSL IP - `localhost` forwarding
+> was broken, re-check `hostname -I` if it changes). 9 commits on dev tonight:**
+> 1. **Compression Press** (personal ×1.05/100 eggs, stacking) + **server press** (communal 1000=+1%,
+>    "more" mult) + **donation feed** (Inbox section, 24h window) - LIVE-VERIFIED: presses to ×1.15,
+>    donate 100 froakie pool, `comp on` sweeps. BioBank cap 1024.
+> 2. **The Loom** (tether bench: inscribe/wipe/rename) - LIVE-VERIFIED incl. re-inscribe refund math.
+> 3. **TETHERS row** on pasture screen - LIVE-VERIFIED slotting.
+> 4. **Egg fix**: shop eggs (Mystery+Prime) hatch BASE forms only (Deuce pulled a POLITOED).
+> 5. **EV + IV Floor tether targets RETIRED** (EV had zero consumers since the spread rework).
+> 6. **Additive tether model**: +tier LEVELS stacking PAST the augment cap (each level = ½ a level-I
+>    install: shiny +15%/lv · drop +1.00%/lv · enrich +10%/lv · speed/yield/hatch +1lv; speed/hatch
+>    ladders extended to 6 = tether-only territory). Deuce thinks in PoE increased/more terms.
+> 7. **TETHER FX row** (before→after per mod + STARVED dim + "idle - install the matching augment" warn).
+> 8. **Rent model**: per-SECOND rent (quality 0.5×tier/s · throughput 0.2×tier/s) on the TetherUpkeep
+>    clock, ONLY linked+occupied+loaded; away windows **PRE-PAID by the consumers' catch-ups** - check
+>    Data first, THEN buff; can't pay = zero debit + base-mod burst (`rent_catchup`/`rent_unpaid` logs).
+>    Old per-cycle burn deleted. 406 tests green.
+> 9. **Drops audit** → `cobblemon-drops-ref/UNDERREPRESENTED_DROPS.md`: gold = Meowth/Persian nuggets
+>    ONLY in all of Cobblemon (Gholdengo drops no gold!), single-family bottlenecks (redstone=Electabuzz,
+>    gunpowder=Voltorb...), zero-source list. 3-tier fix proposal written; **Deuce owes: which tiers +
+>    gold flavor (Gholdengo-only vs steel trickle) + are diamond/emerald scarcities intentional.**
+>
+> **⚠ Caveats:** server stop was SIGTERM via TaskStop - no explicit "Stopping server" seen in log; if the
+> QA world lost the last ~minutes before 22:47, that's why. His QA-era EV(×1)/IV(×1) tethers are now
+> INERT - wipe at the Loom refunds 450 each. Old jar's Drop Yield III tether behavior changed under him
+> mid-session (by design).
+>
+> ## 📋 TOMORROW'S QA LIST (new build - tether QA is a full RERUN, the model changed twice tonight)
+> 1. **Persistence across the bounce FIRST**: Bulbasaur ×1.15 / Froakie ×1.05 chips survived? Slotted
+>    Drop Yield III still in the pasture? Tether names survive? Donation feed EMPTY (correct - 24h
+>    in-memory window).
+> 2. **Egg fix**: buy several Mystery/Prime eggs → base forms only, never evolved.
+> 3. **Loom v2**: EV + IV Floor gone from catalog; tier buttons show `+N%`/`+Nlv` + `rent /s`; wipe the
+>    dead EV/IV tethers (+450 each).
+> 4. **TETHER FX row**: idle warning on the yield tether (no yield augment installed) → install Drop
+>    Yield augment at the Augmenter → FX flips to `yield +N → +N+3`; slot a Drop Rate tether on the
+>    compression pasture → `proc_pct` jumps by +3.00% (tier III); speed tether past cap (lv 4+ cadence).
+> 5. **Rent**: `tether/rent` JSONL events ~per second only while linked+occupied; empty pen / unlinked /
+>    tether in inventory = NO rent; drain balance to 0 → FX dims STARVED + boosts stop + billing stops.
+> 6. **Pre-paid catch-up**: tethered pasture, leave chunk ~10 min: (a) with Data → return → one
+>    `rent_catchup` debit + amplified burst; (b) spend Data to ~0 first → return → `rent_unpaid`, ZERO
+>    debited, burst at base mods.
+> 7. **Compression proc evidence**: `/gp harvest interval 5`, pressed species tethered → `comp_x 1.05+`
+>    proc lines (never observed tonight - math verified, visual pending). Donation feed UI check +
+>    tier-up pink ▲ at 1000 (needs 10 donates) + two-account chip/feed refresh.
+> 8. **Rename round-trip**: named tether slot→unslot keeps name; stack rename = all copies.
+> 9. Backlog rides along: **Display Suite in-game smoke** (Exhibit Pen/Statue, spec §4) + statue FEEL
+>    PASS; NeoForge fold-back; Tinderbeef beta.2 repro.
+>
+> **Also pending decisions:** drops tiers (above) · separate battle-display mod (Discord request:
+> battleable display units + custom drops + patrol paths + selector permissions; name candidates
+> Set Piece / Gauntlet / Menagerie / Field Museum - awaiting requester confirmation via Deuce).
+
+# (older) PICKUP_HERE — updated 2026-07-14: BUILDING the Display Suite, right now, with Deuce
 
 > **⚡ 2026-07-20 (same QA day, after the press): SOUL TETHERS WERE DEAD - now revived via the LOOM.**
 > Deuce's live QA find: beta.1 shipped tethers with NO inscribe path (TetherInscription was never

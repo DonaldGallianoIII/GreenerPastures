@@ -15,6 +15,23 @@
   runtime (amplification, Data burn while the Daemon is fed, drain billing) lights up unchanged.
 - Tether tooltips now tell the truth about where to go.
 
+### Soul Tether economy v2 (same dev cycle, after live QA)
+- **Additive, past the cap**: a Tier-N tether now ADDS N flat levels on top of its Kernel's matching
+  mod - deliberately beyond the augment's rollable max, stacking across tethers (each level = half a
+  level-I install: Shiny +15%/lv, Drop Rate +1.00%/lv, Enrichment +10%/lv, Speed/Yield/Hatch +1 level;
+  Speed and Hatch ladders extend to 6, tether-only territory). EV and IV Floor retired as targets.
+- **Rent, per second**: quality 0.5 × tier, throughput 0.2 × tier Data/s - charged only while the
+  tether sits on a linked pasture with mons inside a loaded chunk. Away catch-ups are PRE-PAID: the
+  window's rent is checked and debited BEFORE the boost applies; can't pay = nothing charged, the
+  burst runs at base mods. No surprise bills, no debt, no free boosts.
+- **TETHER FX row** on the pasture screen: before → after per affected mod, a STARVED dim when Data
+  can't cover the rent, and an explicit "idle - install the matching augment" warning.
+- Soul Tethers are **nameable** at the Loom (like Kernels); names show everywhere the tether does.
+
+### Fixes
+- Shop eggs (Mystery Egg + Prime Egg) now always hatch **base evolution forms** - no more Politoeds
+  out of the incubator; pool deduped per line, filters applied to what actually hatches.
+
 ### The Compression Press
 - **New BioBank mechanic**: press **100 banked eggs of one species** into a permanent
   **+5% drop rate** for that species across every pasture you own - and it **stacks forever**
