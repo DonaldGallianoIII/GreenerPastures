@@ -147,6 +147,7 @@ public final class NotebookNet {
     public static void init() {
         PayloadTypeRegistry.playC2S().register(NotebookRequestC2S.ID, NotebookRequestC2S.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookActionC2S.ID, NotebookActionC2S.CODEC);
+        PayloadTypeRegistry.playC2S().register(NotebookDisplayActionC2S.ID, NotebookDisplayActionC2S.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookStatusS2C.ID, NotebookStatusS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookStorageS2C.ID, NotebookStorageS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookCompilerS2C.ID, NotebookCompilerS2C.CODEC);
@@ -177,6 +178,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookTagS2C.ID, NotebookTagS2C.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NotebookRequestC2S.ID, NotebookNet::onRequest);
         ServerPlayNetworking.registerGlobalReceiver(NotebookActionC2S.ID, NotebookNet::onAction);
+        ServerPlayNetworking.registerGlobalReceiver(NotebookDisplayActionC2S.ID, NotebookNet::onDisplayAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookPastureActionC2S.ID, NotebookNet::onPastureAction);
         ServerPlayNetworking.registerGlobalReceiver(NotebookInvSwapC2S.ID, NotebookNet::onInvSwap);
         ServerPlayNetworking.registerGlobalReceiver(NotebookGraphSaveC2S.ID, NotebookNet::onGraphSave);
@@ -401,6 +403,40 @@ public final class NotebookNet {
         } catch (Throwable t) {
             GpLog.w("display", "push_fail", "err", String.valueOf(t));
         }
+    }
+
+    /** Apply a Display-tab edit (Display Suite v2 §2): validate reach + block type, mutate, mirror into the
+     *  owner's {@link com.greenerpastures.display.ExhibitStore} directory, then re-push the tab. */
+    private static void onDisplayAction(NotebookDisplayActionC2S payload, ServerPlayNetworking.Context ctx) {
+        ServerPlayerEntity player = ctx.player();
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        server.execute(() -> {
+            ServerWorld world = player.getServerWorld();
+            if (world == null) return;
+            BlockPos pos = BlockPos.fromLong(payload.pos());
+            if (player.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0 * 64.0) return;
+            net.minecraft.block.entity.BlockEntity be = world.getBlockEntity(pos);
+            String dim = world.getRegistryKey().getValue().toString();
+            if ("RENAME".equals(payload.action())) {
+                String name = payload.arg() == null ? "" : payload.arg();
+                if (name.length() > 48) name = name.substring(0, 48);
+                java.util.UUID owner = null;
+                if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) {
+                    pen.setName(name); owner = pen.getOwner();
+                } else if (be instanceof com.greenerpastures.display.StatueBlockEntity statue) {
+                    statue.setName(name); owner = statue.getOwner();
+                } else {
+                    return;   // no phantom edits at an arbitrary non-display block
+                }
+                if (owner != null) {
+                    com.greenerpastures.display.ExhibitStore.get(server)
+                            .rename(owner, dim, pos.getX(), pos.getY(), pos.getZ(), name);
+                }
+                GpLog.i("display", "rename", "pos", pos.toShortString(), "name", name);
+            }
+            pushDisplay(player, pos);
+        });
     }
 
     /** Loom rename (Deuce, 2026-07-20: "name soul tethers just like kernels, otherwise it gets hard to

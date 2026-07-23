@@ -96,6 +96,7 @@ public final class DsBridge {
                 if ("PASTURE_READY".equals(action)) { NotebookBrowserScreen.pastureReady(); return; }   // React painted the pasture view → lift the loading overlay
                 if ("pasture".equals(channel)) { handlePastureAction(action, p); return; }
                 if ("goals".equals(channel)) { handleGoalAction(action, p); return; }
+                if ("display".equals(channel)) { handleDisplayAction(action, p); return; }
                 NotebookActionC2S packet = mapAction(action, p);
                 if (packet == null) {
                     GpLog.d("bridge", "action_unmapped", "channel", String.valueOf(channel), "action", String.valueOf(action));
@@ -208,6 +209,16 @@ public final class DsBridge {
             spec.put("count", (int) num(p, "count", 1));
         }
         ClientPlayNetworking.send(new NotebookGoalC2S(GSON.toJson(spec)));
+    }
+
+    /** Display Suite v2 §2: a Display-tab edit (RENAME now; DISGUISE later) → the block's action packet.
+     *  The name rides in "name"; other actions can carry their arg in "arg". */
+    private static void handleDisplayAction(String action, Map<String, Object> p) {
+        if (MinecraftClient.getInstance().getNetworkHandler() == null) return;
+        long pos = (long) num(p, "pos", 0);
+        String arg = str(p, "name", str(p, "arg", ""));
+        ClientPlayNetworking.send(
+                new com.greenerpastures.notebook.net.NotebookDisplayActionC2S(pos, action, arg));
     }
 
     /** Force an immediate broadcast - used when a pasture is right-clicked so its config view appears at once,
