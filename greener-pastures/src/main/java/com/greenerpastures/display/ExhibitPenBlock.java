@@ -52,6 +52,12 @@ public class ExhibitPenBlock extends BlockWithEntity {
         if (!world.isClient && placer instanceof PlayerEntity player
                 && world.getBlockEntity(pos) instanceof ExhibitPenBlockEntity pen) {
             pen.setOwner(player.getUuid());
+            if (world.getServer() != null) {
+                ExhibitStore.get(world.getServer()).register(player.getUuid(),
+                        ExhibitStore.entryFor(world, pos, "Exhibit Pen", ""));
+                com.greenerpastures.core.GpLog.i("display", "registered", "type", "Exhibit Pen",
+                        "pos", pos.toShortString(), "owner", player.getUuid().toString());
+            }
         }
     }
 
@@ -84,6 +90,12 @@ public class ExhibitPenBlock extends BlockWithEntity {
     protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         if (!state.isOf(newState.getBlock()) && !world.isClient
                 && world.getBlockEntity(pos) instanceof ExhibitPenBlockEntity pen) {
+            if (world.getServer() != null && pen.getOwner() != null) {
+                ExhibitStore.get(world.getServer()).deregister(pen.getOwner(),
+                        world.getRegistryKey().getValue().toString(), pos.getX(), pos.getY(), pos.getZ());
+                com.greenerpastures.core.GpLog.i("display", "deregistered", "type", "Exhibit Pen",
+                        "pos", pos.toShortString());
+            }
             pen.onBroken();
         }
         super.onStateReplaced(state, world, pos, newState, moved);

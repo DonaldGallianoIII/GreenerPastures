@@ -52,6 +52,12 @@ public class StatueBlock extends BlockWithEntity {
         if (!world.isClient && placer instanceof PlayerEntity player
                 && world.getBlockEntity(pos) instanceof StatueBlockEntity statue) {
             statue.setOwner(player.getUuid());
+            if (world.getServer() != null) {
+                ExhibitStore.get(world.getServer()).register(player.getUuid(),
+                        ExhibitStore.entryFor(world, pos, "Specimen Statue", ""));
+                com.greenerpastures.core.GpLog.i("display", "registered", "type", "Specimen Statue",
+                        "pos", pos.toShortString(), "owner", player.getUuid().toString());
+            }
         }
     }
 
@@ -91,6 +97,12 @@ public class StatueBlock extends BlockWithEntity {
     protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         if (!state.isOf(newState.getBlock()) && !world.isClient
                 && world.getBlockEntity(pos) instanceof StatueBlockEntity statue) {
+            if (world.getServer() != null && statue.getOwner() != null) {
+                ExhibitStore.get(world.getServer()).deregister(statue.getOwner(),
+                        world.getRegistryKey().getValue().toString(), pos.getX(), pos.getY(), pos.getZ());
+                com.greenerpastures.core.GpLog.i("display", "deregistered", "type", "Specimen Statue",
+                        "pos", pos.toShortString());
+            }
             statue.onBroken();
         }
         super.onStateReplaced(state, world, pos, newState, moved);

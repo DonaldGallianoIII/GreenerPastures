@@ -63,6 +63,12 @@ public class ExhibitPenBlockEntity extends BlockEntity {
         markDirty();
     }
 
+    /** The placer UUID (may be null on a legacy/command-placed block) - used to deregister from the owner's
+     *  {@link ExhibitStore} directory on break. */
+    public UUID getOwner() {
+        return owner;
+    }
+
     // ── player interactions (called by ExhibitPenBlock, server side only) ──
 
     /** Right-click with a specimen disk: gate through {@link ExhibitRules}, store ONE disk, project. */

@@ -44,6 +44,11 @@ public class StatueBlockEntity extends BlockEntity {
         markDirty();
     }
 
+    /** The placer UUID - used to deregister from the owner's {@link ExhibitStore} directory on break. */
+    public UUID getOwner() {
+        return owner;
+    }
+
     public RenderSpec renderSpec() {
         return spec;
     }
