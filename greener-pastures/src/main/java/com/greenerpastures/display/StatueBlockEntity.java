@@ -30,6 +30,7 @@ public class StatueBlockEntity extends BlockEntity {
 
     private ItemStack disk = ItemStack.EMPTY;   // never synced - see toInitialChunkDataNbt
     private UUID owner;
+    private String name = "";   // player-given name (Display Suite v2 §2.1); blank → coord default
     private UUID inserter;
     private RenderSpec spec = RenderSpec.EMPTY;
     private StatueTransform transform = StatueTransform.DEFAULT;
@@ -47,6 +48,17 @@ public class StatueBlockEntity extends BlockEntity {
     /** The placer UUID - used to deregister from the owner's {@link ExhibitStore} directory on break. */
     public UUID getOwner() {
         return owner;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    /** Set the display name (blank clears to the coord default). The RENAME net action mirrors it into the
+     *  owner's {@link ExhibitStore} directory. */
+    public void setName(String name) {
+        this.name = name == null ? "" : name.strip();
+        markDirty();
     }
 
     public RenderSpec renderSpec() {
@@ -198,6 +210,7 @@ public class StatueBlockEntity extends BlockEntity {
         super.writeNbt(nbt, registries);
         if (!disk.isEmpty()) nbt.put("Disk", disk.encode(registries));
         if (owner != null) nbt.putUuid("Owner", owner);
+        if (!name.isBlank()) nbt.putString("Name", name);
         if (inserter != null) nbt.putUuid("Inserter", inserter);
         nbt.putInt("NudgeAxis", nudgeAxis.ordinal());
         writeClientNbt(nbt);
@@ -224,6 +237,7 @@ public class StatueBlockEntity extends BlockEntity {
             disk = ItemStack.fromNbt(registries, nbt.getCompound("Disk")).orElse(ItemStack.EMPTY);
         }
         if (nbt.containsUuid("Owner")) owner = nbt.getUuid("Owner");
+        name = nbt.getString("Name");
         if (nbt.containsUuid("Inserter")) inserter = nbt.getUuid("Inserter");
         if (nbt.contains("NudgeAxis")) {
             nudgeAxis = StatueTransform.Axis.values()[Math.floorMod(nbt.getInt("NudgeAxis"), 3)];

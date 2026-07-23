@@ -52,6 +52,7 @@ public class ExhibitPenBlockEntity extends BlockEntity {
 
     private final List<Resident> residents = new ArrayList<>();
     private UUID owner;         // placer - may eject anything (spec §0 ownership)
+    private String name = "";   // player-given name (Display Suite v2 §2.1); blank → coord default in the directory
     private int sweepClock;
 
     public ExhibitPenBlockEntity(BlockPos pos, BlockState state) {
@@ -67,6 +68,17 @@ public class ExhibitPenBlockEntity extends BlockEntity {
      *  {@link ExhibitStore} directory on break. */
     public UUID getOwner() {
         return owner;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    /** Set the block's display name (blank clears it back to the coord default). Persists; the RENAME net
+     *  action mirrors this into the owner's {@link ExhibitStore} directory so the "My Exhibits" list matches. */
+    public void setName(String name) {
+        this.name = name == null ? "" : name.strip();
+        markDirty();
     }
 
     // ── player interactions (called by ExhibitPenBlock, server side only) ──
@@ -191,6 +203,7 @@ public class ExhibitPenBlockEntity extends BlockEntity {
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         super.writeNbt(nbt, registries);
         if (owner != null) nbt.putUuid("Owner", owner);
+        if (!name.isBlank()) nbt.putString("Name", name);
         NbtList list = new NbtList();
         for (Resident resident : residents) {
             NbtCompound entry = new NbtCompound();
@@ -205,6 +218,7 @@ public class ExhibitPenBlockEntity extends BlockEntity {
     protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         super.readNbt(nbt, registries);
         owner = nbt.containsUuid("Owner") ? nbt.getUuid("Owner") : null;
+        name = nbt.getString("Name");
         residents.clear();
         for (NbtElement element : nbt.getList("Residents", NbtElement.COMPOUND_TYPE)) {
             NbtCompound entry = (NbtCompound) element;
