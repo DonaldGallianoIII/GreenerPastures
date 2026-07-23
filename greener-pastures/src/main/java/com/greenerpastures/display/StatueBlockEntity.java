@@ -268,7 +268,13 @@ public class StatueBlockEntity extends BlockEntity
         }
         if (nbt.containsUuid("Owner")) owner = nbt.getUuid("Owner");
         name = nbt.getString("Name");
+        String prevDisguise = disguiseId;
         disguiseId = nbt.getString("Disguise");
+        // Client re-mesh on a disguise change - the wrapped plinth baked model only re-reads its render
+        // attachment on a chunk rebuild (the BER handles the mon, but not the block model swap).
+        if (world != null && world.isClient && !prevDisguise.equals(disguiseId)) {
+            world.updateListeners(pos, getCachedState(), getCachedState(), net.minecraft.block.Block.NOTIFY_ALL);
+        }
         if (nbt.containsUuid("Inserter")) inserter = nbt.getUuid("Inserter");
         if (nbt.contains("NudgeAxis")) {
             nudgeAxis = StatueTransform.Axis.values()[Math.floorMod(nbt.getInt("NudgeAxis"), 3)];

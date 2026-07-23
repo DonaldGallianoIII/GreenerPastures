@@ -274,7 +274,13 @@ public class ExhibitPenBlockEntity extends BlockEntity
         super.readNbt(nbt, registries);
         owner = nbt.containsUuid("Owner") ? nbt.getUuid("Owner") : null;
         name = nbt.getString("Name");
+        String prevDisguise = disguiseId;
         disguiseId = nbt.getString("Disguise");
+        // A disguise change arriving via the BE update packet needs a CLIENT re-mesh - the camouflage baked
+        // model only re-reads the render attachment on a chunk rebuild (unlike the statue's live BER).
+        if (world != null && world.isClient && !prevDisguise.equals(disguiseId)) {
+            world.updateListeners(pos, getCachedState(), getCachedState(), net.minecraft.block.Block.NOTIFY_ALL);
+        }
         residents.clear();
         for (NbtElement element : nbt.getList("Residents", NbtElement.COMPOUND_TYPE)) {
             NbtCompound entry = (NbtCompound) element;

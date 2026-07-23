@@ -44,7 +44,28 @@ public class DisguiseModel extends ForwardingBakedModel {
         }
         if (disguise != null) {
             BakedModel dm = MinecraftClient.getInstance().getBlockRenderManager().getModel(disguise);
+            // Apply the disguise block's BIOME TINT (grass green, foliage, water, ...) - the render context
+            // tints for OUR block (untinted), so tinted quads would come out grey without this. ARGB quads.
+            final BlockState tintState = disguise;
+            net.minecraft.client.color.block.BlockColors colors = MinecraftClient.getInstance().getBlockColors();
+            context.pushTransform(quad -> {
+                int ti = quad.colorIndex();
+                if (ti != -1) {
+                    int tint = colors.getColor(tintState, blockView, pos, ti);   // 0xRRGGBB, or -1 (white) if none
+                    int tr = (tint >> 16) & 0xFF, tg = (tint >> 8) & 0xFF, tb = tint & 0xFF;
+                    for (int i = 0; i < 4; i++) {
+                        int c = quad.color(i);
+                        int a = (c >>> 24) & 0xFF;
+                        int r = ((c >> 16) & 0xFF) * tr / 255;
+                        int g = ((c >> 8) & 0xFF) * tg / 255;
+                        int b = (c & 0xFF) * tb / 255;
+                        quad.color(i, (a << 24) | (r << 16) | (g << 8) | b);
+                    }
+                }
+                return true;
+            });
             dm.emitBlockQuads(blockView, disguise, pos, randomSupplier, context);   // draw the mimicked block
+            context.popTransform();
             return;
         }
         super.emitBlockQuads(blockView, state, pos, randomSupplier, context);       // undisguised → our own model
