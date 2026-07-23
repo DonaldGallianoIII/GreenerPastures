@@ -215,10 +215,10 @@ public final class DsBridge {
      *  The name rides in "name"; other actions can carry their arg in "arg". */
     private static void handleDisplayAction(String action, Map<String, Object> p) {
         if (MinecraftClient.getInstance().getNetworkHandler() == null) return;
-        long pos = (long) num(p, "pos", 0);
+        int x = (int) num(p, "x", 0), y = (int) num(p, "y", 0), z = (int) num(p, "z", 0);
         String arg = str(p, "name", str(p, "arg", ""));
         ClientPlayNetworking.send(
-                new com.greenerpastures.notebook.net.NotebookDisplayActionC2S(pos, action, arg));
+                new com.greenerpastures.notebook.net.NotebookDisplayActionC2S(x, y, z, action, arg));
     }
 
     /** Force an immediate broadcast - used when a pasture is right-clicked so its config view appears at once,

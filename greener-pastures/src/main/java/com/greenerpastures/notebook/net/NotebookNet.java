@@ -380,7 +380,24 @@ public final class NotebookNet {
                     block.add("residents", res);
                 }
                 if (block != null) {
-                    block.addProperty("pos", pos.asLong());
+                    // position rides as x/y/z ints - a packed asLong() loses low bits across the JS bridge
+                    block.addProperty("x", pos.getX());
+                    block.addProperty("y", pos.getY());
+                    block.addProperty("z", pos.getZ());
+                    // Lazy-register a block placed before the registry existed (legacy beta.2), so it appears in
+                    // "My Exhibits" and its rename actually lands - only for its own owner viewing it.
+                    java.util.UUID owner = (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity po) ? po.getOwner()
+                            : (be instanceof com.greenerpastures.display.StatueBlockEntity so) ? so.getOwner() : null;
+                    if (owner != null && owner.equals(player.getUuid())) {
+                        String dimId = world.getRegistryKey().getValue().toString();
+                        com.greenerpastures.display.ExhibitStore store = com.greenerpastures.display.ExhibitStore.get(server);
+                        if (store.of(owner).at(dimId, pos.getX(), pos.getY(), pos.getZ()) == null) {
+                            String btype = (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity) ? "Exhibit Pen" : "Specimen Statue";
+                            String bname = (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pn) ? pn.getName()
+                                    : ((com.greenerpastures.display.StatueBlockEntity) be).getName();
+                            store.register(owner, com.greenerpastures.display.ExhibitStore.entryFor(world, pos, btype, bname));
+                        }
+                    }
                     // disguise (§2.2): current disguise id + the adjacent blocks the player can mimic in one click
                     String disId = "";
                     if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen2) disId = pen2.getDisguiseId();
@@ -391,8 +408,9 @@ public final class NotebookNet {
                         BlockPos np = pos.offset(d);
                         net.minecraft.block.BlockState nb = world.getBlockState(np);
                         if (nb.isAir()) continue;
-                        if (world.getBlockEntity(np) instanceof com.greenerpastures.display.ExhibitPenBlockEntity
-                                || world.getBlockEntity(np) instanceof com.greenerpastures.display.StatueBlockEntity) continue;
+                        net.minecraft.block.entity.BlockEntity nbe = world.getBlockEntity(np);   // hoisted: one lookup, not two
+                        if (nbe instanceof com.greenerpastures.display.ExhibitPenBlockEntity
+                                || nbe instanceof com.greenerpastures.display.StatueBlockEntity) continue;
                         JsonObject n = new JsonObject();
                         n.addProperty("dir", d.name());
                         n.addProperty("id", net.minecraft.registry.Registries.BLOCK.getId(nb.getBlock()).toString());
@@ -433,44 +451,51 @@ public final class NotebookNet {
         server.execute(() -> {
             ServerWorld world = player.getServerWorld();
             if (world == null) return;
-            BlockPos pos = BlockPos.fromLong(payload.pos());
+            BlockPos pos = new BlockPos(payload.x(), payload.y(), payload.z());   // x/y/z, not a lossy packed long
             if (player.squaredDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0 * 64.0) return;
             net.minecraft.block.entity.BlockEntity be = world.getBlockEntity(pos);
+            // Resolve the block + its owner. Only the OWNER may EDIT config via the Notebook (mirrors the
+            // direct-interaction owner gate) - stops a passer-by renaming/disguising someone else's gym and
+            // cross-writing their "My Exhibits" directory. Anyone may still LOOK (pushDisplay is read-only).
+            java.util.UUID owner;
+            if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen0) owner = pen0.getOwner();
+            else if (be instanceof com.greenerpastures.display.StatueBlockEntity statue0) owner = statue0.getOwner();
+            else return;   // not a display block - no phantom edits at an arbitrary pos
+            if (owner != null && !owner.equals(player.getUuid())) {
+                player.sendMessage(net.minecraft.text.Text.literal(
+                        "§c[Greener Pastures]§r That display block isn't yours to edit."), false);
+                return;
+            }
             String dim = world.getRegistryKey().getValue().toString();
             if ("RENAME".equals(payload.action())) {
                 String name = payload.arg() == null ? "" : payload.arg();
                 if (name.length() > 48) name = name.substring(0, 48);
-                java.util.UUID owner = null;
-                if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) {
-                    pen.setName(name); owner = pen.getOwner();
-                } else if (be instanceof com.greenerpastures.display.StatueBlockEntity statue) {
-                    statue.setName(name); owner = statue.getOwner();
-                } else {
-                    return;   // no phantom edits at an arbitrary non-display block
-                }
+                if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) pen.setName(name);
+                else if (be instanceof com.greenerpastures.display.StatueBlockEntity statue) statue.setName(name);
                 if (owner != null) {
                     com.greenerpastures.display.ExhibitStore.get(server)
                             .rename(owner, dim, pos.getX(), pos.getY(), pos.getZ(), name);
                 }
                 GpLog.i("display", "rename", "pos", pos.toShortString(), "name", name);
             } else if ("DISGUISE".equals(payload.action())) {
-                // arg = an adjacent Direction to mimic (copies that neighbor's exact state); "" / "CLEAR" reveals.
+                // arg = an adjacent Direction to mimic (copies that neighbor's block); "" / "CLEAR" reveals.
                 net.minecraft.block.BlockState newDisguise = null;
                 String a = payload.arg() == null ? "" : payload.arg();
                 if (!a.isBlank() && !"CLEAR".equalsIgnoreCase(a)) {
                     try {
                         net.minecraft.util.math.Direction d =
                                 net.minecraft.util.math.Direction.valueOf(a.toUpperCase(java.util.Locale.ROOT));
-                        net.minecraft.block.BlockState nb = world.getBlockState(pos.offset(d));
-                        if (!nb.isAir() && !(world.getBlockEntity(pos.offset(d)) instanceof com.greenerpastures.display.ExhibitPenBlockEntity)
-                                && !(world.getBlockEntity(pos.offset(d)) instanceof com.greenerpastures.display.StatueBlockEntity)) {
+                        BlockPos np = pos.offset(d);
+                        net.minecraft.block.BlockState nb = world.getBlockState(np);
+                        net.minecraft.block.entity.BlockEntity nbe = world.getBlockEntity(np);   // hoisted
+                        if (!nb.isAir() && !(nbe instanceof com.greenerpastures.display.ExhibitPenBlockEntity)
+                                && !(nbe instanceof com.greenerpastures.display.StatueBlockEntity)) {
                             newDisguise = nb;
                         }
                     } catch (IllegalArgumentException ignored) { /* bad direction → treat as reveal */ }
                 }
                 if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) pen.setDisguise(newDisguise);
                 else if (be instanceof com.greenerpastures.display.StatueBlockEntity statue) statue.setDisguise(newDisguise);
-                else return;
                 GpLog.i("display", "disguise", "pos", pos.toShortString(),
                         "as", newDisguise == null ? "none" : net.minecraft.registry.Registries.BLOCK.getId(newDisguise.getBlock()).toString());
             }

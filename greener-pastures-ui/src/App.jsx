@@ -3154,7 +3154,7 @@ function DisplayTab() {
               onChange={(e) => setNameDraft(e.target.value)}
               onBlur={() => send('console', 'INPUT_FOCUS', { v: false })} />
             <button className="btn" title="name this block so you can find it in My Exhibits (even if disguised)"
-              onClick={() => send('display', 'RENAME', { pos: block.pos, name: nameDraft })}>rename</button>
+              onClick={() => send('display', 'RENAME', { x: block.x, y: block.y, z: block.z, name: nameDraft })}>rename</button>
           </div>
           <div className="dim" style={{ fontSize: 11, marginBottom: 4 }}>
             {block.residents?.length ? 'Residents' : 'No residents yet — right-click with a specimen disk.'}
@@ -3172,10 +3172,10 @@ function DisplayTab() {
             {(block.neighbors || []).map((n, i) => (
               <button key={i} className="btn" style={{ fontSize: 10, padding: '2px 6px' }}
                 title={`look like the ${n.label} to the ${String(n.dir).toLowerCase()}`}
-                onClick={() => send('display', 'DISGUISE', { pos: block.pos, arg: n.dir })}>{n.label}</button>
+                onClick={() => send('display', 'DISGUISE', { x: block.x, y: block.y, z: block.z, arg: n.dir })}>{n.label}</button>
             ))}
             {block.disguise && <button className="btn" style={{ fontSize: 10, padding: '2px 6px', borderColor: 'var(--amber)', color: 'var(--amber)' }}
-              onClick={() => send('display', 'DISGUISE', { pos: block.pos, arg: 'CLEAR' })}>reveal</button>}
+              onClick={() => send('display', 'DISGUISE', { x: block.x, y: block.y, z: block.z, arg: 'CLEAR' })}>reveal</button>}
             {(!block.neighbors || block.neighbors.length === 0) && !block.disguise &&
               <span className="muted" style={{ fontSize: 10 }}>place a block against this one, then pick it here to blend in</span>}
           </div>
