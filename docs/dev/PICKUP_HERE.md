@@ -1,4 +1,28 @@
-# 🎯 PICKUP_HERE — updated 2026-07-22 (late): DISPLAY SUITE v2 PHASE A DONE — next up: Phase B
+# 🎯 PICKUP_HERE — updated 2026-07-23: DISPLAY SUITE v2 PHASE B CODE-COMPLETE — next up: live QA
+
+> **⚡ SESSION (Display Suite v2 Phase B — patrol pathing, 2026-07-23). Still `1.0.0-beta.2`. Full build
+> green (11 new `PatrolPathTest`); `greenerpastures-1.0.0-beta.2.jar` built + zip-verified. NOT deployed yet
+> (MC was open). 4 commits `f8a79dd..c0fe04e` on `dev`. FULL detail + QA checklist in the plan's TOP
+> "⚑ STATUS" block — READ IT.**
+>
+> **What Phase B built (all `§3` of the plan):** MC-free `PatrolPath` state machine (loop / ping-pong /
+> dwell) + `RelPos` + `PatrolMode` · per-resident config + NBT (`PatrolNbt`; cursor re-derives on reload) ·
+> `PatrolDriver` goal driven from the pen's `serverTick` (moves via the mon's own navigation, re-asserts only
+> when idle) · authoring GUI in the Notebook Display tab (mode toggle · "record here" waypoint · clear/undo ·
+> loop↔ping-pong · dwell ± · speed) wired through the existing `display` channel (`PATROL_*` verbs,
+> owner-gated). Logs: `patrol_set` / `patrol_step` on the `display` channel.
+>
+> **⚠ QA WATCH #1 — Cobblemon AI vs our navigation.** Projection is a live `PokemonEntity` with its own
+> wander AI; if it fights us / stutters / won't follow, fallback = suppress its wander (setNoAi / brain) or
+> scripted move. Can't test the feel headless — this is the thing to watch first.
+>
+> **NEXT: deploy (server bounce + 4 client swaps, MC closed) + live QA Phase B** per the plan's checklist,
+> AND fold in the still-pending scale-tweak re-QA (`2a653ee` rides in this same jar now). Then Phase C
+> (branching VN dialogue + template-copy rewards); Phase D (battle) DEFERRED to its own visual-scripting spec.
+
+---
+
+## (older) PICKUP_HERE — updated 2026-07-22 (late): DISPLAY SUITE v2 PHASE A DONE — next up: Phase B
 
 > **⚡ SESSION (Display Suite v2, 2026-07-22 evening→late). Version `1.0.0-beta.2` (bumped from beta.1;
 > CHANGELOG stamped for the gold-drops/compression release earlier this session). ~438 tests green.**

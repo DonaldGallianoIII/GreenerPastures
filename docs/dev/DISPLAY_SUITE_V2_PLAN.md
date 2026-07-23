@@ -11,7 +11,36 @@
 
 ---
 
-## ⚑ STATUS (2026-07-22, end of session — read this first on resume)
+## ⚑ STATUS (2026-07-23 — read this first on resume)
+
+**Phase B: CODE-COMPLETE, awaiting live QA.** 4 commits `f8a79dd..c0fe04e` on `dev`. Full build green
+(tests incl. 11 new `PatrolPathTest`); `greenerpastures-1.0.0-beta.2.jar` built + zip-verified. Not yet
+deployed (MC was open). What shipped this session:
+- **§3 MC-free `PatrolPath` core** — immutable/sanitizing state machine (loop / ping-pong / dwell), + `RelPos`
+  (block-local, leash-clamped waypoint) + `PatrolMode` (WANDER/PATROL/STATIONARY). 11 tests.
+- **Per-resident config + NBT** — each pen resident carries mode + `PatrolPath` (persisted; cursor re-derived
+  at `start()` on reload). `PatrolNbt` keeps the core MC-free. Edit surface: setResidentMode / addWaypoint /
+  removeWaypoint / clearWaypoints / setPatrolTiming + `patrolViews()`.
+- **`PatrolDriver` goal** — thin shell driven every tick from the pen's `serverTick`; owns only entity +
+  arrival check, delegates sequencing to the core; moves via the mon's own navigation (re-asserts only when
+  idle, so a dwell holds it still). STATIONARY collapses to a hold-point. Leash now WANDER-only.
+- **Authoring GUI + net** — display-tab per-resident controls (mode / "record here" / clear / undo / loop↔
+  ping-pong / dwell ± / speed); `PATROL_*` verbs owner-gated in `applyPatrolAction`, riding the existing
+  `display` channel as `slot|payload` in `arg`. `patrol_set`/`patrol_step` logs on the `display` channel.
+
+**⚠ QA WATCH #1 — Cobblemon AI vs our navigation.** The projection is a live `PokemonEntity` with its own
+wander behaviour; `PatrolDriver` re-issues `startMovingTo` only when nav is idle. If the mon fights us /
+stutters / won't follow the path, the fallback is to suppress its wander (setNoAi or brain edit) or move it
+scripted. This is the #1 thing to watch in the QA pass — I can't test the feel headless.
+
+**QA checklist for Phase B:** place pen → insert disk → open Notebook → set PATROL → walk to spots and
+"record here" a few → confirm the mon walks the loop, dwells, reverses in ping-pong, respects speed; break +
+replace the block (chunk reload) → path persists and resumes; STATIONARY = greeter stands put; WANDER
+unchanged. Tail the `display` channel for `patrol_step`.
+
+---
+
+## ⚑ STATUS (2026-07-22 — Phase A)
 
 **Phase 0 + A: DONE and live-QA'd on the `gp-qa-server` + 4 clients.** 14 commits `bd7a720..2a653ee` on
 `dev`. All green (~438 tests). Deuce signed off: *"works perfectly! all qa done on phase a."*
