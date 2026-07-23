@@ -66,9 +66,19 @@ public class ExhibitPenBlockEntity extends BlockEntity
         final UUID inserter;
         UUID projection;   // null until the sweep/insert projects it
 
+        // ── Phase B patrol config (§3): mode + authored path persist; the cursor is transient ──
+        PatrolMode mode = PatrolMode.WANDER;
+        PatrolPath path = PatrolPath.EMPTY;
+        PatrolPath.Progress progress = PatrolPath.EMPTY.start();   // re-derived on reload/re-project
+
         Resident(ItemStack disk, UUID inserter) {
             this.disk = disk;
             this.inserter = inserter;
+        }
+
+        /** Re-arm the cursor to the head of the (possibly changed) path - called whenever mode/path edits. */
+        void restartPatrol() {
+            this.progress = path.start();
         }
     }
 
@@ -107,6 +117,80 @@ public class ExhibitPenBlockEntity extends BlockEntity
             out.add(s != null ? s : new com.greenerpastures.specimen.SpecimenSummary("?", 0, false, ""));
         }
         return out;
+    }
+
+    // ── Phase B patrol config: read + edit surface for the Notebook display tab (§3) ──
+
+    /** A resident's patrol config, flattened for the Notebook display tab. Waypoints are block-local. */
+    public record PatrolView(int slot, String mode, int waypointCount,
+                             boolean pingPong, int dwellTicks, double speed) {}
+
+    /** One {@link PatrolView} per resident, in slot order - what the display tab renders per mon. */
+    public List<PatrolView> patrolViews() {
+        List<PatrolView> out = new ArrayList<>();
+        for (int i = 0; i < residents.size(); i++) {
+            Resident r = residents.get(i);
+            out.add(new PatrolView(i, r.mode.name(), r.path.size(),
+                    r.path.pingPong(), r.path.dwellTicks(), r.path.speed()));
+        }
+        return out;
+    }
+
+    /** Switch a resident's movement mode (WANDER/PATROL/STATIONARY); re-arms the cursor. No-op off-range. */
+    public void setResidentMode(int slot, PatrolMode mode) {
+        Resident r = residentAt(slot);
+        if (r == null) return;
+        r.mode = mode;
+        r.restartPatrol();
+        markDirty();
+        GpLog.d("display", "patrol_mode", "pos", pos.toShortString(), "slot", slot, "mode", mode.name());
+    }
+
+    /** Append a block-local waypoint to a resident's path (capped inside {@link PatrolPath}). */
+    public void addWaypoint(int slot, RelPos waypoint) {
+        Resident r = residentAt(slot);
+        if (r == null) return;
+        List<RelPos> next = new ArrayList<>(r.path.waypoints());
+        next.add(waypoint);
+        rebuildPath(r, next, r.path.pingPong(), r.path.dwellTicks(), r.path.speed());
+        GpLog.i("display", "patrol_set", "pos", pos.toShortString(), "slot", slot, "waypoints", r.path.size());
+    }
+
+    /** Drop one waypoint by index from a resident's path (no-op if either index is off-range). */
+    public void removeWaypoint(int slot, int waypointIndex) {
+        Resident r = residentAt(slot);
+        if (r == null || waypointIndex < 0 || waypointIndex >= r.path.size()) return;
+        List<RelPos> next = new ArrayList<>(r.path.waypoints());
+        next.remove(waypointIndex);
+        rebuildPath(r, next, r.path.pingPong(), r.path.dwellTicks(), r.path.speed());
+        GpLog.i("display", "patrol_set", "pos", pos.toShortString(), "slot", slot, "waypoints", r.path.size());
+    }
+
+    /** Wipe a resident's whole path (keeps mode - an empty PATROL simply falls back to wander). */
+    public void clearWaypoints(int slot) {
+        Resident r = residentAt(slot);
+        if (r == null) return;
+        rebuildPath(r, List.of(), r.path.pingPong(), r.path.dwellTicks(), r.path.speed());
+        GpLog.i("display", "patrol_set", "pos", pos.toShortString(), "slot", slot, "waypoints", 0);
+    }
+
+    /** Retune a resident's timing without touching its waypoints (loop↔ping-pong, dwell, speed). */
+    public void setPatrolTiming(int slot, boolean pingPong, int dwellTicks, double speed) {
+        Resident r = residentAt(slot);
+        if (r == null) return;
+        rebuildPath(r, r.path.waypoints(), pingPong, dwellTicks, speed);
+        GpLog.d("display", "patrol_timing", "pos", pos.toShortString(), "slot", slot,
+                "pingPong", pingPong, "dwell", r.path.dwellTicks(), "speed", r.path.speed());
+    }
+
+    private void rebuildPath(Resident r, List<RelPos> waypoints, boolean pingPong, int dwellTicks, double speed) {
+        r.path = new PatrolPath(waypoints, pingPong, dwellTicks, speed);
+        r.restartPatrol();
+        markDirty();
+    }
+
+    private Resident residentAt(int slot) {
+        return slot >= 0 && slot < residents.size() ? residents.get(slot) : null;
     }
 
     /** Set the block's display name (blank clears it back to the coord default). Persists; the RENAME net
@@ -264,6 +348,7 @@ public class ExhibitPenBlockEntity extends BlockEntity
             NbtCompound entry = new NbtCompound();
             entry.put("Disk", resident.disk.encode(registries));
             entry.putUuid("By", resident.inserter);
+            PatrolNbt.write(entry, resident.mode, resident.path);   // §3: mode + authored path
             list.add(entry);
         }
         nbt.put("Residents", list);
@@ -286,7 +371,11 @@ public class ExhibitPenBlockEntity extends BlockEntity
             NbtCompound entry = (NbtCompound) element;
             ItemStack disk = ItemStack.fromNbt(registries, entry.getCompound("Disk")).orElse(ItemStack.EMPTY);
             if (disk.isEmpty() || !entry.containsUuid("By")) continue;
-            residents.add(new Resident(disk, entry.getUuid("By")));
+            Resident resident = new Resident(disk, entry.getUuid("By"));
+            resident.mode = PatrolNbt.readMode(entry);          // §3: restore patrol config
+            resident.path = PatrolNbt.readPath(entry);
+            resident.restartPatrol();                           // cursor re-derives from head
+            residents.add(resident);
         }
         // projections intentionally not restored - the next sweep re-derives them from the disks
     }
