@@ -26,7 +26,15 @@ import java.util.UUID;
  * {@link StatueTransform} pose. Zero lifecycle - no entity exists anywhere; the client BER re-renders
  * from the synced spec whenever the chunk is visible. Persistence is trivial by design.
  */
-public class StatueBlockEntity extends BlockEntity {
+public class StatueBlockEntity extends BlockEntity
+        implements net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity {
+
+    /** §2.2: the disguise state the camouflage baked model reads (null when undisguised). */
+    @Override
+    public Object getRenderAttachmentData() {
+        return getDisguise();
+    }
+
 
     private ItemStack disk = ItemStack.EMPTY;   // never synced - see toInitialChunkDataNbt
     private UUID owner;
@@ -249,6 +257,7 @@ public class StatueBlockEntity extends BlockEntity {
         nbt.putDouble("OffY", transform.offsetY());
         nbt.putDouble("OffZ", transform.offsetZ());
         nbt.putInt("Scale", transform.scaleIndex());
+        if (!disguiseId.isBlank()) nbt.putString("Disguise", disguiseId);   // §2.2: sync to the camouflage model
     }
 
     @Override

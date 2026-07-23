@@ -55,6 +55,18 @@ public final class GreenerPasturesClient implements ClientModInitializer {
                 com.greenerpastures.display.DisplaySuite.SPECIMEN_STATUE_BE,
                 ctx -> new com.greenerpastures.client.display.StatueRenderer());
 
+        // Disguise render (§2.2): wrap the Exhibit Pen + Specimen Statue baked models so a disguised block
+        // emits its mimicked block's quads instead of its own. Matches every blockstate variant of the two.
+        net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin.register(pluginCtx ->
+                pluginCtx.modifyModelAfterBake().register((model, modelCtx) -> {
+                    if (model == null || modelCtx.topLevelId() == null) return model;
+                    String id = modelCtx.topLevelId().toString();   // e.g. greenerpastures:exhibit_pen#facing=north
+                    if (id.contains("greenerpastures:exhibit_pen") || id.contains("greenerpastures:specimen_statue")) {
+                        return new com.greenerpastures.client.display.DisguiseModel(model);
+                    }
+                    return model;
+                }));
+
         // notebook/ console - client-side open hook for the Notebook item (air / non-pasture right-click).
         // With MCEF installed → the React console in-game (Chromium); otherwise an install-MCEF prompt.
         // Kernel right-click → rename screen (QoL: label your kernels)

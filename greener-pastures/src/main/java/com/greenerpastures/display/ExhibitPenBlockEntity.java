@@ -33,7 +33,29 @@ import java.util.UUID;
  * (chunk cycled, /kill, despawn edge case), and walk home any resident that strayed past Cobblemon's
  * pasture wander distance. Belt-and-suspenders by design - the steady state is self-healing.
  */
-public class ExhibitPenBlockEntity extends BlockEntity {
+public class ExhibitPenBlockEntity extends BlockEntity
+        implements net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity {
+
+    /** §2.2: the disguise state the camouflage baked model reads (null when undisguised). */
+    @Override
+    public Object getRenderAttachmentData() {
+        return getDisguise();
+    }
+
+    /** Sync ONLY the disguise to clients (residents/disks stay server-side) - the camouflage model needs it.
+     *  A disguise change re-meshes the chunk via the block update in {@link #setDisguise}. */
+    @Override
+    public net.minecraft.network.packet.Packet<net.minecraft.network.listener.ClientPlayPacketListener> toUpdatePacket() {
+        return net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket.create(this);
+    }
+
+    @Override
+    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
+        NbtCompound nbt = new NbtCompound();
+        if (!getDisguiseId().isBlank()) nbt.putString("Disguise", getDisguiseId());
+        return nbt;
+    }
+
 
     private static final int SWEEP_TICKS = 40;
 
