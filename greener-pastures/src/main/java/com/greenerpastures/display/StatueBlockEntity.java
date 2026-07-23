@@ -31,6 +31,7 @@ public class StatueBlockEntity extends BlockEntity {
     private ItemStack disk = ItemStack.EMPTY;   // never synced - see toInitialChunkDataNbt
     private UUID owner;
     private String name = "";   // player-given name (Display Suite v2 §2.1); blank → coord default
+    private String disguiseId = "";   // §2.2: block registry id to render the plinth AS; blank = undisguised
     private UUID inserter;
     private RenderSpec spec = RenderSpec.EMPTY;
     private StatueTransform transform = StatueTransform.DEFAULT;
@@ -59,6 +60,25 @@ public class StatueBlockEntity extends BlockEntity {
     public void setName(String name) {
         this.name = name == null ? "" : name.strip();
         markDirty();
+    }
+
+    /** The registry id of the block the plinth renders AS (§2.2), or "" when undisguised. */
+    public String getDisguiseId() {
+        return disguiseId;
+    }
+
+    /** The disguise as a {@link net.minecraft.block.BlockState} (default state), or null when undisguised. */
+    public net.minecraft.block.BlockState getDisguise() {
+        if (disguiseId.isBlank()) return null;
+        net.minecraft.block.Block b = net.minecraft.registry.Registries.BLOCK.get(net.minecraft.util.Identifier.of(disguiseId));
+        return b == net.minecraft.block.Blocks.AIR ? null : b.getDefaultState();
+    }
+
+    /** Disguise the plinth as {@code state}'s block (null → reveal). Persists + re-syncs. */
+    public void setDisguise(net.minecraft.block.BlockState state) {
+        this.disguiseId = state == null ? "" : net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).toString();
+        markDirty();
+        if (world != null && !world.isClient) world.updateListeners(pos, getCachedState(), getCachedState(), 3);
     }
 
     public RenderSpec renderSpec() {
@@ -211,6 +231,7 @@ public class StatueBlockEntity extends BlockEntity {
         if (!disk.isEmpty()) nbt.put("Disk", disk.encode(registries));
         if (owner != null) nbt.putUuid("Owner", owner);
         if (!name.isBlank()) nbt.putString("Name", name);
+        if (!disguiseId.isBlank()) nbt.putString("Disguise", disguiseId);
         if (inserter != null) nbt.putUuid("Inserter", inserter);
         nbt.putInt("NudgeAxis", nudgeAxis.ordinal());
         writeClientNbt(nbt);
@@ -238,6 +259,7 @@ public class StatueBlockEntity extends BlockEntity {
         }
         if (nbt.containsUuid("Owner")) owner = nbt.getUuid("Owner");
         name = nbt.getString("Name");
+        disguiseId = nbt.getString("Disguise");
         if (nbt.containsUuid("Inserter")) inserter = nbt.getUuid("Inserter");
         if (nbt.contains("NudgeAxis")) {
             nudgeAxis = StatueTransform.Axis.values()[Math.floorMod(nbt.getInt("NudgeAxis"), 3)];

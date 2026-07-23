@@ -381,6 +381,25 @@ public final class NotebookNet {
                 }
                 if (block != null) {
                     block.addProperty("pos", pos.asLong());
+                    // disguise (§2.2): current disguise id + the adjacent blocks the player can mimic in one click
+                    String disId = "";
+                    if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen2) disId = pen2.getDisguiseId();
+                    else if (be instanceof com.greenerpastures.display.StatueBlockEntity st2) disId = st2.getDisguiseId();
+                    block.addProperty("disguise", disId);
+                    JsonArray neighbors = new JsonArray();
+                    for (net.minecraft.util.math.Direction d : net.minecraft.util.math.Direction.values()) {
+                        BlockPos np = pos.offset(d);
+                        net.minecraft.block.BlockState nb = world.getBlockState(np);
+                        if (nb.isAir()) continue;
+                        if (world.getBlockEntity(np) instanceof com.greenerpastures.display.ExhibitPenBlockEntity
+                                || world.getBlockEntity(np) instanceof com.greenerpastures.display.StatueBlockEntity) continue;
+                        JsonObject n = new JsonObject();
+                        n.addProperty("dir", d.name());
+                        n.addProperty("id", net.minecraft.registry.Registries.BLOCK.getId(nb.getBlock()).toString());
+                        n.addProperty("label", nb.getBlock().getName().getString());
+                        neighbors.add(n);
+                    }
+                    block.add("neighbors", neighbors);
                     root.add("block", block);
                 }
             }
@@ -434,6 +453,26 @@ public final class NotebookNet {
                             .rename(owner, dim, pos.getX(), pos.getY(), pos.getZ(), name);
                 }
                 GpLog.i("display", "rename", "pos", pos.toShortString(), "name", name);
+            } else if ("DISGUISE".equals(payload.action())) {
+                // arg = an adjacent Direction to mimic (copies that neighbor's exact state); "" / "CLEAR" reveals.
+                net.minecraft.block.BlockState newDisguise = null;
+                String a = payload.arg() == null ? "" : payload.arg();
+                if (!a.isBlank() && !"CLEAR".equalsIgnoreCase(a)) {
+                    try {
+                        net.minecraft.util.math.Direction d =
+                                net.minecraft.util.math.Direction.valueOf(a.toUpperCase(java.util.Locale.ROOT));
+                        net.minecraft.block.BlockState nb = world.getBlockState(pos.offset(d));
+                        if (!nb.isAir() && !(world.getBlockEntity(pos.offset(d)) instanceof com.greenerpastures.display.ExhibitPenBlockEntity)
+                                && !(world.getBlockEntity(pos.offset(d)) instanceof com.greenerpastures.display.StatueBlockEntity)) {
+                            newDisguise = nb;
+                        }
+                    } catch (IllegalArgumentException ignored) { /* bad direction → treat as reveal */ }
+                }
+                if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) pen.setDisguise(newDisguise);
+                else if (be instanceof com.greenerpastures.display.StatueBlockEntity statue) statue.setDisguise(newDisguise);
+                else return;
+                GpLog.i("display", "disguise", "pos", pos.toShortString(),
+                        "as", newDisguise == null ? "none" : net.minecraft.registry.Registries.BLOCK.getId(newDisguise.getBlock()).toString());
             }
             pushDisplay(player, pos);
         });

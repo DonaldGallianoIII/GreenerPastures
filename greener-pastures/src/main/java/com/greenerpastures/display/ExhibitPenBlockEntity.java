@@ -53,6 +53,7 @@ public class ExhibitPenBlockEntity extends BlockEntity {
     private final List<Resident> residents = new ArrayList<>();
     private UUID owner;         // placer - may eject anything (spec §0 ownership)
     private String name = "";   // player-given name (Display Suite v2 §2.1); blank → coord default in the directory
+    private String disguiseId = "";   // §2.2: block registry id to render AS; blank = undisguised
     private int sweepClock;
 
     public ExhibitPenBlockEntity(BlockPos pos, BlockState state) {
@@ -91,6 +92,25 @@ public class ExhibitPenBlockEntity extends BlockEntity {
     public void setName(String name) {
         this.name = name == null ? "" : name.strip();
         markDirty();
+    }
+
+    /** The registry id of the block this pen renders AS (§2.2), or "" when undisguised. */
+    public String getDisguiseId() {
+        return disguiseId;
+    }
+
+    /** The disguise as a {@link net.minecraft.block.BlockState} (default state), or null when undisguised. */
+    public net.minecraft.block.BlockState getDisguise() {
+        if (disguiseId.isBlank()) return null;
+        net.minecraft.block.Block b = net.minecraft.registry.Registries.BLOCK.get(net.minecraft.util.Identifier.of(disguiseId));
+        return b == net.minecraft.block.Blocks.AIR ? null : b.getDefaultState();
+    }
+
+    /** Disguise the pen as {@code state}'s block (null → reveal). Persists + re-syncs so the swap shows. */
+    public void setDisguise(net.minecraft.block.BlockState state) {
+        this.disguiseId = state == null ? "" : net.minecraft.registry.Registries.BLOCK.getId(state.getBlock()).toString();
+        markDirty();
+        if (world != null && !world.isClient) world.updateListeners(pos, getCachedState(), getCachedState(), 3);
     }
 
     // ── player interactions (called by ExhibitPenBlock, server side only) ──
@@ -216,6 +236,7 @@ public class ExhibitPenBlockEntity extends BlockEntity {
         super.writeNbt(nbt, registries);
         if (owner != null) nbt.putUuid("Owner", owner);
         if (!name.isBlank()) nbt.putString("Name", name);
+        if (!disguiseId.isBlank()) nbt.putString("Disguise", disguiseId);
         NbtList list = new NbtList();
         for (Resident resident : residents) {
             NbtCompound entry = new NbtCompound();
@@ -231,6 +252,7 @@ public class ExhibitPenBlockEntity extends BlockEntity {
         super.readNbt(nbt, registries);
         owner = nbt.containsUuid("Owner") ? nbt.getUuid("Owner") : null;
         name = nbt.getString("Name");
+        disguiseId = nbt.getString("Disguise");
         residents.clear();
         for (NbtElement element : nbt.getList("Residents", NbtElement.COMPOUND_TYPE)) {
             NbtCompound entry = (NbtCompound) element;
