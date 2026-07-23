@@ -71,6 +71,9 @@ public class ExhibitPenBlockEntity extends BlockEntity
         PatrolPath path = PatrolPath.EMPTY;
         PatrolPath.Progress progress = PatrolPath.EMPTY.start();   // re-derived on reload/re-project
 
+        /** Per-resident render size (life-size = 1.0); default matches the roaming-exhibit look. */
+        float scale = CobblemonProjector.EXHIBIT_SCALE;
+
         Resident(ItemStack disk, UUID inserter) {
             this.disk = disk;
             this.inserter = inserter;
@@ -189,6 +192,40 @@ public class ExhibitPenBlockEntity extends BlockEntity
         markDirty();
     }
 
+    /** This resident's current render size (life-size = 1.0), for the display tab. */
+    public float residentScale(int slot) {
+        Resident r = residentAt(slot);
+        return r == null ? CobblemonProjector.EXHIBIT_SCALE : r.scale;
+    }
+
+    /** Bump a resident to the next size preset (wraps), re-projecting so the new size renders at once.
+     *  Shares the Statue's preset ladder (0.25×…3×) so pen + plinth size the same way. */
+    public void cycleResidentScale(int slot) {
+        Resident r = residentAt(slot);
+        if (r == null) return;
+        double[] presets = StatueTransform.SCALE_PRESETS;
+        int idx = 0;
+        double best = Double.MAX_VALUE;
+        for (int i = 0; i < presets.length; i++) {
+            double d = Math.abs(presets[i] - r.scale);
+            if (d < best) { best = d; idx = i; }
+        }
+        r.scale = (float) presets[(idx + 1) % presets.length];
+        markDirty();
+        if (world instanceof ServerWorld sw) reproject(sw, r);
+        GpLog.d("display", "resident_scale", "pos", pos.toShortString(), "slot", slot, "scale", r.scale);
+    }
+
+    /** Kill + respawn a resident's projection so a size (or other spawn-time) change takes effect immediately. */
+    private void reproject(ServerWorld sw, Resident r) {
+        discardProjection(r);
+        NbtCompound specimen = r.disk.get(GpComponents.SPECIMEN);
+        if (specimen != null) {
+            r.projection = CobblemonProjector.project(sw, pos, specimen, r.scale);
+            r.restartPatrol();   // fresh entity starts the path from the head
+        }
+    }
+
     private Resident residentAt(int slot) {
         return slot >= 0 && slot < residents.size() ? residents.get(slot) : null;
     }
@@ -247,7 +284,7 @@ public class ExhibitPenBlockEntity extends BlockEntity
         ItemStack stored = held.copyWithCount(1);
         held.decrement(1);
         Resident resident = new Resident(stored, player.getUuid());
-        resident.projection = CobblemonProjector.project(sw, pos, specimen);
+        resident.projection = CobblemonProjector.project(sw, pos, specimen, resident.scale);
         residents.add(resident);
         markDirty();
 
@@ -310,12 +347,18 @@ public class ExhibitPenBlockEntity extends BlockEntity
         Vec3d origin = Vec3d.ofBottomCenter(pos.up());
         for (int i = 0; i < residents.size(); i++) {
             Resident r = residents.get(i);
-            if (r.mode == PatrolMode.WANDER || r.projection == null) continue;
+            if (r.projection == null) continue;
             Entity e = sw.getEntity(r.projection);
             if (!(e instanceof com.cobblemon.mod.common.entity.pokemon.PokemonEntity mon)
                     || e.isRemoved() || !CobblemonProjector.isProjection(e)) continue;
-            PatrolPath effective = effectivePath(r);
-            if (effective.isEmpty()) continue;      // PATROL with no waypoints yet - let it wander
+            // A resident is "driven" only when it has a non-empty patrol; otherwise Cobblemon keeps the wheel.
+            PatrolPath effective = r.mode == PatrolMode.WANDER ? null : effectivePath(r);
+            boolean driven = effective != null && !effective.isEmpty();
+            if (!driven) {
+                PatrolDriver.releaseControl(mon);   // WANDER or empty PATROL → hand the mon back to its own AI
+                continue;
+            }
+            PatrolDriver.takeControl(mon);          // suppress Cobblemon's wander so nothing fights our path
             int before = r.progress.index();
             r.progress = PatrolDriver.drive(origin.x, origin.y, origin.z, mon, effective, r.progress);
             if (r.progress.index() != before) {
@@ -343,7 +386,7 @@ public class ExhibitPenBlockEntity extends BlockEntity
             if (entity == null || entity.isRemoved() || !CobblemonProjector.isProjection(entity)) {
                 NbtCompound specimen = resident.disk.get(GpComponents.SPECIMEN);
                 if (specimen == null) continue;   // never happens (gated at insert); refuse to guess
-                resident.projection = CobblemonProjector.project(sw, pos, specimen);
+                resident.projection = CobblemonProjector.project(sw, pos, specimen, resident.scale);
                 if (resident.projection != null) {
                     GpLog.d("display", "exhibit_project", "pos", pos.toShortString(), "dim", dim(),
                             "entity", resident.projection.toString(), "reason", "sweep_respawn");
@@ -381,6 +424,7 @@ public class ExhibitPenBlockEntity extends BlockEntity
             NbtCompound entry = new NbtCompound();
             entry.put("Disk", resident.disk.encode(registries));
             entry.putUuid("By", resident.inserter);
+            if (resident.scale != CobblemonProjector.EXHIBIT_SCALE) entry.putFloat("Scale", resident.scale);
             PatrolNbt.write(entry, resident.mode, resident.path);   // §3: mode + authored path
             list.add(entry);
         }
@@ -405,6 +449,7 @@ public class ExhibitPenBlockEntity extends BlockEntity
             ItemStack disk = ItemStack.fromNbt(registries, entry.getCompound("Disk")).orElse(ItemStack.EMPTY);
             if (disk.isEmpty() || !entry.containsUuid("By")) continue;
             Resident resident = new Resident(disk, entry.getUuid("By"));
+            if (entry.contains("Scale")) resident.scale = entry.getFloat("Scale");
             resident.mode = PatrolNbt.readMode(entry);          // §3: restore patrol config
             resident.path = PatrolNbt.readPath(entry);
             resident.restartPatrol();                           // cursor re-derives from head

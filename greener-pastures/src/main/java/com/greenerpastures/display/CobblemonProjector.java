@@ -51,13 +51,14 @@ final class CobblemonProjector {
         }
     }
 
-    /** Deserialize the disk and spawn its projection beside the pen. Returns the entity UUID, or null
-     *  if the payload refuses to load (pen keeps the disk; the sweep will retry next pass). */
-    static UUID project(ServerWorld world, BlockPos penPos, NbtCompound specimenNbt) {
+    /** Deserialize the disk and spawn its projection beside the pen, rendered at {@code scale} (life-size =
+     *  1.0). Returns the entity UUID, or null if the payload refuses to load (pen keeps the disk; the sweep
+     *  will retry next pass). */
+    static UUID project(ServerWorld world, BlockPos penPos, NbtCompound specimenNbt, float scale) {
         try {
             Pokemon mon = new Pokemon().loadFromNBT(world.getRegistryManager(), specimenNbt);
             UncatchableProperty.INSTANCE.uncatchable().apply(mon);   // thrown balls refuse - projection copy only, the disk is untouched
-            mon.setScaleModifier(EXHIBIT_SCALE);                     // roaming exhibits render a touch smaller than life-size (Deuce, 2026-07-22)
+            mon.setScaleModifier(scale > 0 ? scale : EXHIBIT_SCALE);  // per-resident size (Deuce, 2026-07-23); 0 → default
 
             PokemonEntity entity = new PokemonEntity(world, mon, CobblemonEntities.POKEMON);
             entity.setInvulnerable(true);

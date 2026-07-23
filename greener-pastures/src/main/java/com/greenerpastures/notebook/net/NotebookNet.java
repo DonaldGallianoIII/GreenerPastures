@@ -367,6 +367,7 @@ public final class NotebookNet {
                         o.addProperty("slot", i);
                         o.addProperty("species", s.species());
                         o.addProperty("shiny", s.shiny());
+                        o.addProperty("scale", pen.residentScale(i));
                         if (i < patrols.size()) {
                             com.greenerpastures.display.ExhibitPenBlockEntity.PatrolView pv = patrols.get(i);
                             o.addProperty("mode", pv.mode());
@@ -515,6 +516,10 @@ public final class NotebookNet {
                     && be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) {
                 // §3: per-resident patrol edits. arg = "slot" or "slot|extra…" - slot is which mon in the pen.
                 applyPatrolAction(player, pen, pos, payload.action(), payload.arg() == null ? "" : payload.arg());
+            } else if ("RESIDENT_SCALE".equals(payload.action())
+                    && be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) {
+                // arg = slot; cycles that resident's render size to the next preset.
+                pen.cycleResidentScale(parseIntOr(payload.arg() == null ? "" : payload.arg(), -1));
             }
             pushDisplay(player, pos);
         });

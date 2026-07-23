@@ -3171,9 +3171,12 @@ function DisplayTab() {
             const timing = (pp, dw, sp) => dp('PATROL_TIMING', `${slot}|${pp ? 1 : 0}|${dw}|${sp}`)
             return (
               <div key={i} className="card inset" style={{ padding: '6px 8px', marginBottom: 4 }}>
-                <div className="row" style={{ fontSize: 12, gap: 6 }}>
+                <div className="row" style={{ fontSize: 12, gap: 6, alignItems: 'center' }}>
                   {r.shiny && <span className="amb">★</span>}
                   <span className="mono">{cap(r.species)}</span>
+                  {isPen && <button className="btn" style={{ fontSize: 9, padding: '2px 6px', marginLeft: 'auto' }}
+                    title="cycle this exhibit's display size"
+                    onClick={() => dp('RESIDENT_SCALE', `${slot}`)}>{(r.scale ?? 0.75)}× size</button>}
                 </div>
                 {isPen && (
                   <>
