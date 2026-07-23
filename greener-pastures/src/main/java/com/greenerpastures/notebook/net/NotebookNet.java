@@ -358,10 +358,23 @@ public final class NotebookNet {
                     block.addProperty("type", "Exhibit Pen");
                     block.addProperty("name", pen.getName());
                     JsonArray res = new JsonArray();
-                    for (com.greenerpastures.specimen.SpecimenSummary s : pen.residentSummaries()) {
+                    // §3: patrol config rides alongside each resident, aligned by slot order
+                    List<com.greenerpastures.specimen.SpecimenSummary> summaries = pen.residentSummaries();
+                    List<com.greenerpastures.display.ExhibitPenBlockEntity.PatrolView> patrols = pen.patrolViews();
+                    for (int i = 0; i < summaries.size(); i++) {
+                        com.greenerpastures.specimen.SpecimenSummary s = summaries.get(i);
                         JsonObject o = new JsonObject();
+                        o.addProperty("slot", i);
                         o.addProperty("species", s.species());
                         o.addProperty("shiny", s.shiny());
+                        if (i < patrols.size()) {
+                            com.greenerpastures.display.ExhibitPenBlockEntity.PatrolView pv = patrols.get(i);
+                            o.addProperty("mode", pv.mode());
+                            o.addProperty("waypoints", pv.waypointCount());
+                            o.addProperty("pingPong", pv.pingPong());
+                            o.addProperty("dwell", pv.dwellTicks());
+                            o.addProperty("speed", pv.speed());
+                        }
                         res.add(o);
                     }
                     block.add("residents", res);
@@ -498,9 +511,56 @@ public final class NotebookNet {
                 else if (be instanceof com.greenerpastures.display.StatueBlockEntity statue) statue.setDisguise(newDisguise);
                 GpLog.i("display", "disguise", "pos", pos.toShortString(),
                         "as", newDisguise == null ? "none" : net.minecraft.registry.Registries.BLOCK.getId(newDisguise.getBlock()).toString());
+            } else if (payload.action().startsWith("PATROL_")
+                    && be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) {
+                // §3: per-resident patrol edits. arg = "slot" or "slot|extra…" - slot is which mon in the pen.
+                applyPatrolAction(player, pen, pos, payload.action(), payload.arg() == null ? "" : payload.arg());
             }
             pushDisplay(player, pos);
         });
+    }
+
+    /** §3: apply one per-resident patrol edit from the Display tab. {@code arg} is pipe-delimited, always
+     *  leading with the resident slot. A PATROL_ADD captures the player's CURRENT position as a block-local
+     *  waypoint (the "record where I stand" UX), relative to the projection origin (the block above the pen).
+     *  All bounds/sanitizing live in the pen + {@link com.greenerpastures.display.PatrolPath} core. */
+    private static void applyPatrolAction(ServerPlayerEntity player,
+                                          com.greenerpastures.display.ExhibitPenBlockEntity pen,
+                                          BlockPos pos, String action, String arg) {
+        String[] parts = arg.split("\\|");
+        int slot = parseIntOr(parts.length > 0 ? parts[0] : "", -1);
+        if (slot < 0) return;
+        switch (action) {
+            case "PATROL_MODE" -> {
+                String modeId = parts.length > 1 ? parts[1] : "WANDER";
+                pen.setResidentMode(slot, com.greenerpastures.display.PatrolMode.fromId(modeId));
+            }
+            case "PATROL_ADD" -> {
+                // origin = bottom-center of the block above the pen (where projections spawn / live)
+                double ox = pos.getX() + 0.5, oy = pos.getY() + 1, oz = pos.getZ() + 0.5;
+                com.greenerpastures.display.RelPos wp = new com.greenerpastures.display.RelPos(
+                        player.getX() - ox, player.getY() - oy, player.getZ() - oz);
+                pen.addWaypoint(slot, wp);
+                player.sendMessage(Text.literal("§a[Greener Pastures]§r Waypoint recorded where you're standing."), true);
+            }
+            case "PATROL_REMOVE" -> pen.removeWaypoint(slot, parseIntOr(parts.length > 1 ? parts[1] : "", -1));
+            case "PATROL_CLEAR" -> pen.clearWaypoints(slot);
+            case "PATROL_TIMING" -> {
+                boolean pingPong = parts.length > 1 && "1".equals(parts[1]);
+                int dwell = parseIntOr(parts.length > 2 ? parts[2] : "", 0);
+                double speed = parseDoubleOr(parts.length > 3 ? parts[3] : "", com.greenerpastures.display.PatrolPath.DEFAULT_SPEED);
+                pen.setPatrolTiming(slot, pingPong, dwell, speed);
+            }
+            default -> { }
+        }
+    }
+
+    private static int parseIntOr(String s, int fallback) {
+        try { return Integer.parseInt(s.trim()); } catch (NumberFormatException e) { return fallback; }
+    }
+
+    private static double parseDoubleOr(String s, double fallback) {
+        try { return Double.parseDouble(s.trim()); } catch (NumberFormatException e) { return fallback; }
     }
 
     /** Loom rename (Deuce, 2026-07-20: "name soul tethers just like kernels, otherwise it gets hard to

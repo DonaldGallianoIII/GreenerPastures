@@ -3160,12 +3160,65 @@ function DisplayTab() {
           <div className="dim" style={{ fontSize: 11, marginBottom: 4 }}>
             {block.residents?.length ? 'Residents' : 'No residents yet — right-click with a specimen disk.'}
           </div>
-          {(block.residents || []).map((r, i) => (
-            <div key={i} className="row" style={{ fontSize: 12, gap: 6 }}>
-              {r.shiny && <span className="amb">★</span>}
-              <span className="mono">{cap(r.species)}</span>
-            </div>
-          ))}
+          {(block.residents || []).map((r, i) => {
+            const slot = r.slot ?? i
+            const isPen = block.type === 'Exhibit Pen'
+            const dp = (a, arg) => send('display', a, { x: block.x, y: block.y, z: block.z, arg })
+            const mode = r.mode || 'WANDER'
+            const dwell = r.dwell || 0, speed = r.speed || 0.35
+            const SPEEDS = [0.2, 0.35, 0.5]
+            const nextSpeed = SPEEDS[(SPEEDS.findIndex(s => Math.abs(s - speed) < 0.03) + 1) % SPEEDS.length]
+            const timing = (pp, dw, sp) => dp('PATROL_TIMING', `${slot}|${pp ? 1 : 0}|${dw}|${sp}`)
+            return (
+              <div key={i} className="card inset" style={{ padding: '6px 8px', marginBottom: 4 }}>
+                <div className="row" style={{ fontSize: 12, gap: 6 }}>
+                  {r.shiny && <span className="amb">★</span>}
+                  <span className="mono">{cap(r.species)}</span>
+                </div>
+                {isPen && (
+                  <>
+                    <div className="row" style={{ gap: 4, marginTop: 6 }}>
+                      {['WANDER', 'PATROL', 'STATIONARY'].map(m => (
+                        <button key={m} className="btn" style={{ fontSize: 9, padding: '2px 6px',
+                          borderColor: mode === m ? 'var(--grn)' : undefined, color: mode === m ? 'var(--grn)' : undefined }}
+                          title={m === 'WANDER' ? 'roam freely (default)' : m === 'PATROL' ? 'walk recorded waypoints' : 'stand at one spot'}
+                          onClick={() => dp('PATROL_MODE', `${slot}|${m}`)}>{m.toLowerCase()}</button>
+                      ))}
+                    </div>
+                    {mode !== 'WANDER' && (
+                      <div className="row" style={{ gap: 4, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <button className="btn" style={{ fontSize: 9, padding: '2px 6px' }}
+                          title="record a waypoint where you're standing right now"
+                          onClick={() => dp('PATROL_ADD', `${slot}`)}>◉ record here</button>
+                        <span className="muted" style={{ fontSize: 10 }}>{r.waypoints || 0} pts</span>
+                        {(r.waypoints > 0) && <button className="btn" style={{ fontSize: 9, padding: '2px 6px' }}
+                          onClick={() => dp('PATROL_CLEAR', `${slot}`)}>clear</button>}
+                        {(r.waypoints > 0) && <button className="btn" style={{ fontSize: 9, padding: '2px 6px' }}
+                          title="remove the last waypoint"
+                          onClick={() => dp('PATROL_REMOVE', `${slot}|${(r.waypoints || 1) - 1}`)}>undo</button>}
+                      </div>
+                    )}
+                    {mode === 'PATROL' && (
+                      <div className="row" style={{ gap: 4, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <button className="btn" style={{ fontSize: 9, padding: '2px 6px' }}
+                          title="loop back to the start, or ping-pong along the path"
+                          onClick={() => timing(!r.pingPong, dwell, speed)}>{r.pingPong ? 'ping-pong' : 'loop'}</button>
+                        <span className="muted" style={{ fontSize: 10 }}>dwell</span>
+                        <button className="btn" style={{ fontSize: 9, padding: '2px 5px' }}
+                          onClick={() => timing(r.pingPong, Math.max(0, dwell - 10), speed)}>−</button>
+                        <span className="mono" style={{ fontSize: 10 }}>{(dwell / 20).toFixed(1)}s</span>
+                        <button className="btn" style={{ fontSize: 9, padding: '2px 5px' }}
+                          onClick={() => timing(r.pingPong, dwell + 10, speed)}>+</button>
+                        <button className="btn" style={{ fontSize: 9, padding: '2px 6px' }}
+                          title="how fast it walks between waypoints"
+                          onClick={() => timing(r.pingPong, dwell, nextSpeed)}>{speed <= 0.25 ? 'slow' : speed >= 0.45 ? 'fast' : 'normal'}</button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
           <div className="dim" style={{ fontSize: 11, margin: '12px 0 4px' }}>
             Disguise{block.disguise && <span className="grn"> · as {String(block.disguise).split(':').pop().replace(/_/g, ' ')}</span>}
           </div>
