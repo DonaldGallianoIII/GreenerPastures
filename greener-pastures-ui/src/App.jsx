@@ -472,6 +472,7 @@ const TABS = [
   { id: 'inbox',     label: 'Inbox',     path: 'gp://inbox' },
   { id: 'rituals',   label: 'Rituals',   path: 'gp://rituals' },
   { id: 'specimens', label: 'Specimens', path: 'gp://specimens' },
+  { id: 'display',   label: 'Display',   path: 'gp://display' },
   { id: 'gamecorner', label: 'Game Corner', path: 'gp://gamecorner' },
   { id: 'guide',     label: 'Guide',     path: 'gp://guide' },
 ]
@@ -545,6 +546,7 @@ export default function App() {
           {tab === 'inbox' && <InboxTab />}
           {tab === 'rituals' && <RitualsTab />}
           {tab === 'specimens' && <SpecimensTab />}
+          {tab === 'display' && <DisplayTab />}
           {tab === 'gamecorner' && <GameCorner />}
           {tab === 'guide' && <GuideTab />}
         </div>
@@ -3130,6 +3132,65 @@ farmable. Rates are baked into the mod ON PURPOSE: no server config can zero you
 // When Deuce sets up a donation page (Ko-fi etc.), paste the URL here and the About card grows a support line.
 const DONATE_URL = 'ko-fi.com/donaldgallianoiii'
 
+// ── Display tab (Display Suite v2 §2): configure the block you opened + the "My Exhibits" directory ──
+function DisplayTab() {
+  const d = useChannel('display')
+  const block = d?.block
+  const dir = d?.directory || []
+  const [nameDraft, setNameDraft] = useState('')
+  useEffect(() => { setNameDraft(block?.name || '') }, [block?.pos])
+  return (
+    <div className="pane" style={{ overflow: 'auto' }}>
+      <div className="h" style={{ marginBottom: 6 }}>Display</div>
+      {block ? (
+        <div className="card" style={{ padding: 12, marginBottom: 14 }}>
+          <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
+            <span className="grn">{block.type}</span>
+          </div>
+          <div className="row" style={{ gap: 6, marginBottom: 10 }}>
+            <input className="gp-input" value={nameDraft} maxLength={48} placeholder="name this block…"
+              style={{ flex: 1 }}
+              onFocus={() => send('console', 'INPUT_FOCUS', { v: true })}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onBlur={() => send('console', 'INPUT_FOCUS', { v: false })} />
+            <button className="btn" title="name this block so you can find it in My Exhibits (even if disguised)"
+              onClick={() => send('display', 'RENAME', { pos: block.pos, name: nameDraft })}>rename</button>
+          </div>
+          <div className="dim" style={{ fontSize: 11, marginBottom: 4 }}>
+            {block.residents?.length ? 'Residents' : 'No residents yet — right-click with a specimen disk.'}
+          </div>
+          {(block.residents || []).map((r, i) => (
+            <div key={i} className="row" style={{ fontSize: 12, gap: 6 }}>
+              {r.shiny && <span className="amb">★</span>}
+              <span className="mono">{cap(r.species)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="muted" style={{ fontSize: 12, marginBottom: 14 }}>
+          Right-click an Exhibit Pen or Specimen Statue with the Notebook to configure it.
+        </div>
+      )}
+
+      <div className="h" style={{ fontSize: 13, marginBottom: 6 }}>My Exhibits <span className="dim">· {dir.length}</span></div>
+      {dir.length === 0 ? (
+        <div className="muted" style={{ fontSize: 11 }}>No display blocks placed yet. They register here on place — so a disguised block is never lost.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {dir.map((e, i) => (
+            <div key={i} className="card inset" style={{ padding: '6px 8px' }}>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <span className="mono" style={{ fontSize: 12 }}>{e.display}</span>
+                <span className="muted" style={{ fontSize: 10 }}>{e.type}</span>
+              </div>
+              <div className="muted" style={{ fontSize: 10 }}>{e.x}, {e.y}, {e.z}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 function GuideTab() {
   const about = useChannel('about')
   return (
