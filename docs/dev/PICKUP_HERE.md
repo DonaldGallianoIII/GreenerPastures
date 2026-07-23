@@ -1,4 +1,33 @@
-# 🎯 PICKUP_HERE — updated 2026-07-23: DISPLAY SUITE v2 PHASE B CODE-COMPLETE — next up: live QA
+# 🎯 PICKUP_HERE — updated 2026-07-23 (night): PHASE B CODE-COMPLETE — resume at DEPLOY + QA
+
+> **⚡ END-OF-NIGHT STATE (2026-07-23). Phase B is CODE-COMPLETE + committed; what's left is deploy + live
+> QA sign-off + feel-tuning — NOT building. Latest commit `51d9814` on `dev`. Build green, jar
+> `greenerpastures-1.0.0-beta.2.jar` built + zip-verified. QA server STOPPED cleanly for the night (world
+> saved). All work committed (repo clean except the long-standing hydrogrid/battleloop/neoforge untracked
+> dirs — not ours).**
+>
+> **🔧 RESUME HERE tomorrow — two things to deploy + QA (needs MC fully closed):**
+> 1. **DEPLOY the size feature** (commit `51d9814`): per-resident exhibit SIZE button in the Display tab
+>    (`<n>× size`, cycles 0.25×–3× like the statue). This changed the **client UI** (index.html in the jar)
+>    → must swap the **2 client installs** (`Claude Development`, `Greener Pastures Test`) AND bounce the
+>    server. Deploy cmd pattern is below in the older entries.
+> 2. **QA the patrol-movement fix** (already LIVE on the server from tonight's bounce, but UNCONFIRMED): the
+>    driver was rewritten from navigation → **scripted**. Cobblemon's pasture-wander AI was fighting our
+>    navigation every tick (`patrol_step` log showed 29s stalls = "sometimes he walks it, sometimes he
+>    wanders off"). Now `PatrolDriver.takeControl()` disables the mon's AI + gravity and steps it straight
+>    to each waypoint; `releaseControl()` restores for WANDER. Deterministic. **WATCH:** (a) walk animation —
+>    he may MOONWALK/slide since we move him directly (cosmetic; fix ready if so); (b) no pathfinding — he
+>    goes straight to each waypoint, so record waypoints ON stairs/terrain, not across a wall.
+>
+> **QA checklist (Phase B sign-off):** patrol walks/dwells/ping-pongs steadily · size button resizes + persists ·
+> break+replace pen (reload) → path & size persist · STATIONARY = greeter stands put · WANDER = normal AI back.
+> Then Phase B DONE → **Phase C** (branching VN dialogue + template-copy rewards, `DISPLAY_SUITE_V2_PLAN.md §4`).
+>
+> **Tail the display log:** `tail -f gp-qa-server/gp-logs/latest.log | grep -E 'patrol|resident_scale|exhibit'`
+
+---
+
+## (earlier 2026-07-23) PHASE B CODE-COMPLETE — next up: live QA
 
 > **⚡ SESSION (Display Suite v2 Phase B — patrol pathing, 2026-07-23). Still `1.0.0-beta.2`. Full build
 > green (11 new `PatrolPathTest`); `greenerpastures-1.0.0-beta.2.jar` built + zip-verified. NOT deployed yet

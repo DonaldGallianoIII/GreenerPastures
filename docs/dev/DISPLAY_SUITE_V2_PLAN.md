@@ -11,7 +11,26 @@
 
 ---
 
-## ⚑ STATUS (2026-07-23 — read this first on resume)
+## ⚑ STATUS (2026-07-23 night — read this first on resume)
+
+**Phase B: CODE-COMPLETE + committed. Resume at DEPLOY + QA sign-off (not building).** Latest `51d9814`.
+Two tonight-QA fixes on top of the original 4 commits:
+- **Patrol movement rewritten navigation → SCRIPTED** (`PatrolDriver`). Cobblemon's wander AI fought our
+  navigation (`patrol_step` log: 29s stalls, "sometimes walks it, sometimes wanders off"). Now
+  `takeControl()` disables the mon's AI + gravity and steps it straight to each waypoint; `releaseControl()`
+  restores for WANDER. **LIVE on the server (server-side), UNCONFIRMED.** Watch: moonwalk/slide animation
+  (cosmetic, fix ready) + no pathfinding (straight-line; record waypoints on terrain).
+- **Per-resident SIZE** (was hardcoded 0.75×): Display-tab `<n>× size` button, cycles the Statue ladder
+  (0.25×–3×), persists, re-projects live. **BUILT + jar ready, NOT deployed** (changed client UI → needs
+  MC closed + 2 client swaps + server bounce).
+
+QA server STOPPED cleanly for the night. **Next session: deploy size (server + `Claude Development` +
+`Greener Pastures Test`), then QA sign-off** (patrol feel · size · reload-persist · stationary · wander),
+tune, → Phase B DONE → Phase C (§4).
+
+---
+
+## ⚑ STATUS (2026-07-23 earlier — code-complete)
 
 **Phase B: CODE-COMPLETE, awaiting live QA.** 4 commits `f8a79dd..c0fe04e` on `dev`. Full build green
 (tests incl. 11 new `PatrolPathTest`); `greenerpastures-1.0.0-beta.2.jar` built + zip-verified. Not yet
