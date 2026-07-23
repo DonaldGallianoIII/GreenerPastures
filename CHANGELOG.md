@@ -1,6 +1,6 @@
 # Changelog - Greener Pastures
 
-## Unreleased (dev)
+## 1.0.0-beta.2 (2026-07-22)
 
 ### Soul Tethers actually work now (the Loom)
 - **beta.1 shipped Soul Tethers with no way to use them** - craftable, but nothing could inscribe
@@ -49,6 +49,31 @@
 - **The donation feed**: no chat spam - donations land in a separate section of the Inbox tab
   (who fed what, tier crossings highlighted with the donator's name). A global 24h rolling
   window, hard-capped in memory; go look when you want to, ignore it when you don't.
+
+### Drops - gold for the gold Pokémon, and a Drop Yield that actually pays
+- **Gimmighoul, Gholdengo and Persian now drop real gold.** A new per-species drop overlay layers
+  `gold_ingot` onto their tables (Gimmighoul 1-2, Gholdengo & Persian 0-1) - the literal gold Pokémon
+  dropped only relic_coin before, and gold was the single biggest farmability hole in a vanilla-mob-free
+  world. Persian's ingot rides alongside its native gold_nugget; both obey Drop Rate and Drop Yield.
+- **Drop Yield now widens EVERY drop's quantity**, including fixed percentage-only entries. A 5%-chance
+  single Quick Claw now rolls a range when it procs instead of a flat 1 - every entry's ceiling lifts by
+  the yield bonus, the floor never moves (only ever a chance at MORE).
+- **Fix:** a Drop Yield augment at level II no longer misreads as the corruption-only tier III (its
+  level-II and level-III magnitudes collided and painted a perfectly good Kernel "corrupted").
+
+### Compression - bulk presses, whole evolution lines, and a smarter split
+- **Compress All / Donate All** - one click clears every full 100-egg batch of a species instead of
+  100-at-a-time; the single-100 buttons stay. All-or-nothing per batch, so nothing is ever half-eaten.
+- **Presses now count for the whole EVOLUTION LINE.** Eggs are always base-form, so a Meowth press now
+  boosts a tethered Persian, Gastly boosts Haunter and Gengar, every Eeveelution rides its Eevee press.
+- **The press bonus is split 50/50** - half amplifies drop RATE (how often, capped at certainty), half
+  amplifies drop YIELD (how much, uncapped) - so a hyper-compressed species keeps paying after the
+  100%-per-sweep rate wall. A 2× press = ×1.5 more often AND ×1.5 bigger, expected-value rounded.
+
+### Field Guide
+- New **"Drop rate, yield & the cap"** card - the once-a-minute sweep, the per-mon drop chance, the
+  100% cap, and how Drop Yield and the compression split get around it, in plain terms.
+- Compression card corrected: the +5% now reads as an evolution-line bonus split across rate and yield.
 
 ## 1.0.0-beta.1 (first public release)
 

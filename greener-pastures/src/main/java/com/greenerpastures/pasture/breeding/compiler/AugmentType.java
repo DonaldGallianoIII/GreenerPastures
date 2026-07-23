@@ -103,7 +103,11 @@ public enum AugmentType {
      *  (Deuce 2026-07-05): {@code maxLevel} stays 2 for the Augmenter, but a Vaal-blessed kernel can carry
      *  III - detection must still read it. */
     public static int levelOf(int effectiveMagnitude, int v1, int v2, int v3, int maxLevel) {
-        if (maxLevel > 1 && effectiveMagnitude >= v3) return 3;
+        // III only when its magnitude is genuinely ABOVE II. Drop Yield's tiny base (1) makes valueAt(2)
+        // (round 1.5 → 2) and valueAt(3) (1×2 → 2) collide, so a legit level-II yield used to read as the
+        // corruption-only tier III and paint the Kernel "corrupted" (Deuce, 2026-07-22). When v3 == v2, III
+        // is magnitude-indistinguishable from II - true corruption is carried by the CORRUPTED flag anyway.
+        if (maxLevel > 1 && v3 > v2 && effectiveMagnitude >= v3) return 3;
         if (maxLevel > 1 && effectiveMagnitude >= v2) return 2;
         return effectiveMagnitude >= v1 ? 1 : 0;
     }

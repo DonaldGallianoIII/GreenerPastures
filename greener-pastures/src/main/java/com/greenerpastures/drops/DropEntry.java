@@ -25,4 +25,11 @@ public record DropEntry(String itemId, double chance, int min, int max) {
         int q = min + (int) Math.floor(roll * (max - min + 1));
         return Math.min(q, max);   // guard the roll == 1.0 edge
     }
+
+    /** A copy with the quantity ceiling raised by {@code bonus} (floor unchanged) - the Drop Yield lever,
+     *  mirroring {@link DropsBridge#widenAmount} for native drops: only ever a chance at MORE, never fewer.
+     *  {@code bonus <= 0} is a no-op. */
+    public DropEntry widenedBy(int bonus) {
+        return bonus <= 0 ? this : new DropEntry(itemId, chance, min, max + bonus);
+    }
 }

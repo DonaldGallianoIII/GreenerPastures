@@ -49,8 +49,8 @@ public record NotebookActionC2S(int action, String arg, int amount) implements C
     public static final int TAG_NEW = 32;          // Game Corner cabinet 6: release the crowd
     public static final int TAG_CLICK = 33;        // Game Corner cabinet 6: the player clicked the target
     public static final int HR_BUY = 34;           // High Roller Room: amount = fixed shelf slot
-    public static final int COMPRESS_EGGS = 35;    // BioBank press: arg = species key → 100 worst non-shiny eggs → permanent +5% drops
-    public static final int COMPRESS_SERVER = 36;  // BioBank press: arg = species key → donate 100 eggs to the communal pool (1000 = +1% for everyone)
+    public static final int COMPRESS_EGGS = 35;    // BioBank press: arg = species key, amount = # of 100-batches (-1 = ALL banked) → permanent +5%/batch drops
+    public static final int COMPRESS_SERVER = 36;  // BioBank press: arg = species key, amount = # of 100-batches (-1 = ALL banked) → communal pool (1000 = +1% for everyone)
     public static final int INSCRIBE_TETHER = 37;  // Loom: arg = "functionId:tier" ("wipe:0" = wipe), amount = main-inventory slot of the tether
     public static final int RENAME_TETHER = 38;    // Loom: arg = display name (empty clears), amount = main-inventory slot of the tether
 

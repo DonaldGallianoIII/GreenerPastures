@@ -119,8 +119,8 @@ public final class DsBridge {
             case "APPLY_AUGMENT"  -> new NotebookActionC2S(NotebookActionC2S.APPLY_AUGMENT, str(p, "type", ""), 0);
             case "REMOVE_AUGMENT" -> new NotebookActionC2S(NotebookActionC2S.REMOVE_AUGMENT, str(p, "type", ""), 0);
             case "WITHDRAW"       -> new NotebookActionC2S(NotebookActionC2S.WITHDRAW, "", (int) num(p, "index", 0));
-            case "COMPRESS"       -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_EGGS, str(p, "species", ""), 0);
-            case "COMPRESS_SERVER" -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_SERVER, str(p, "species", ""), 0);
+            case "COMPRESS"       -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_EGGS, str(p, "species", ""), (int) num(p, "amount", 1));
+            case "COMPRESS_SERVER" -> new NotebookActionC2S(NotebookActionC2S.COMPRESS_SERVER, str(p, "species", ""), (int) num(p, "amount", 1));
             case "INSCRIBE_TETHER" -> new NotebookActionC2S(NotebookActionC2S.INSCRIBE_TETHER,
                     str(p, "fn", "wipe") + ":" + (int) num(p, "tier", 0), (int) num(p, "slot", -1));
             case "RENAME_TETHER" -> new NotebookActionC2S(NotebookActionC2S.RENAME_TETHER,

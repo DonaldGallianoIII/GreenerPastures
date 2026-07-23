@@ -24,6 +24,9 @@ import java.util.Random;
 public final class DropsBridge {
     private DropsBridge() {}
 
+    /** GP-authored extra drops layered on top of each mon's native table (gold for the gold Pokémon, etc.). */
+    private static final SpeciesDropOverlay OVERLAY = SpeciesDropOverlay.defaults();
+
     /** Convert a species' Cobblemon drops into our {@link DropTable} - for the planned override / easter-egg
      *  overlay (inspect or extend a mon's base table). Never throws. (The base harvest rolls Cobblemon's
      *  {@code getDrops} directly; this is the toolkit for custom / combo tables.) */
@@ -90,16 +93,30 @@ public final class DropsBridge {
                 if (p == null) continue;
                 String species;
                 try { species = p.getSpecies().getName(); } catch (Throwable ex) { species = "?"; }
+                // Compression is keyed by the FAMILY BASE species (eggs are always the base form), so a
+                // Meowth press must apply to a tethered Persian, Gastly to Haunter/Gengar, etc. Resolve the
+                // mon down its pre-evolution chain for the lookup; the display name still logs as-is.
+                String base;
+                try { base = baseSpeciesName(p); } catch (Throwable ex) { base = species; }
                 double mult;
-                try { mult = Math.max(1.0, scale.scale(species)); } catch (Throwable ex) { mult = 1.0; }
-                double proc = Math.min(1.0, procChance * mult);
-                if (rng.nextDouble() >= proc) continue;     // this mon didn't proc a drop this tick
+                try { mult = Math.max(1.0, scale.scale(base)); } catch (Throwable ex) { mult = 1.0; }
+                // Split compression 50/50 (Deuce, 2026-07-22): half the bonus to proc CADENCE (capped at
+                // certainty), half to a per-species YIELD multiplier (uncapped) - so compression keeps paying
+                // after the frequency wall. lever = 1 + (M-1)/2, e.g. a 2× press → ×1.5 freq + ×1.5 yield.
+                double lever = CompressionSplit.lever(mult);
+                double proc = Math.min(1.0, procChance * lever);
+                if (rng.nextDouble() >= proc) continue;     // FREQUENCY half - this mon didn't proc this tick
                 Map<String, Integer> rolled = rollEvent(p, rng, yieldBonus);
+                if (lever > 1.0) rolled = CompressionSplit.inflate(rolled, lever, rng::nextDouble);   // YIELD half
                 // per-proc audit line: the proc HAPPENED - an empty roll means the species' drop table came up
-                // dry (all low-% entries missed), which drop-rate QA must see distinctly from "no proc".
+                // dry (all low-% entries missed), which drop-rate QA must see distinctly from "no proc". When
+                // the mon is an evolution, `base` names the family root the compression multiplier came from.
                 if (com.greenerpastures.core.GpLog.on(com.greenerpastures.core.GpLog.Level.DEBUG)) {
+                    String baseKey = base;
                     com.greenerpastures.core.GpLog.d("harvest", "proc", "species", species,
+                            "base", (baseKey != null && !baseKey.equalsIgnoreCase(species)) ? baseKey : "-",
                             "comp_x", mult > 1.0 ? String.format("%.2f", mult) : "1",
+                            "split", lever > 1.0 ? String.format("f%.2f/y%.2f", lever, lever) : "-",
                             "items", rolled.isEmpty() ? "dry" : rolled.toString());
                 }
                 rolled.forEach((id, n) -> out.merge(id, n, Integer::sum));
@@ -108,6 +125,25 @@ public final class DropsBridge {
             GreenerPastures.LOG.debug("[harvester] harvest failed", ex);
         }
         return out;
+    }
+
+    /** Walk a mon's pre-evolution chain to its family BASE species name (Persian→Meowth, Gengar→Haunter→Gastly)
+     *  so a Compression press - always fed from base-form eggs - applies to EVERY evolution of that line, not
+     *  just the base. Bounded against a malformed cyclic chain; falls back to the mon's own name if the graph
+     *  is unreadable. (MC-coupled: exercised by in-game QA, not the headless suite.) */
+    static String baseSpeciesName(Pokemon pokemon) {
+        Species s = pokemon.getSpecies();
+        Species base = s;
+        try {
+            for (int i = 0; i < 8 && s != null; i++) {   // real chains are ≤3; the bound just guards cycles
+                var pre = s.getPreEvolution();
+                if (pre == null) break;
+                Species next = pre.getSpecies();
+                if (next == null || next == s) break;
+                base = s = next;
+            }
+        } catch (Throwable ignored) { /* unreadable evolution graph → fall back to the mon's own species */ }
+        return base != null ? base.getName() : pokemon.getSpecies().getName();
     }
 
     /** One drop EVENT via Cobblemon's faithful {@code getDrops} (amount budget + per-entry % + canDrop);
@@ -122,9 +158,15 @@ public final class DropsBridge {
                 if (!(e instanceof ItemDropEntry item)) continue;
                 Identifier id = item.getItem();
                 if (id == null) continue;
-                int qty = rollQty(item, rng);
+                int qty = rollQty(item, rng, yieldBonus);
                 if (qty > 0) out.merge(id.toString(), qty, Integer::sum);
             }
+            // GP overlay: extra entries this species carries beyond its native table. Same proc EVENT (so
+            // Drop Rate already gated it) AND the same yieldBonus widens its ceiling (so Drop Yield boosts it
+            // just like native drops). Fills farmability holes - chiefly gold. Never fails the harvest.
+            String species;
+            try { species = pokemon.getSpecies().getName(); } catch (Throwable t) { species = null; }
+            OVERLAY.roll(species, rng, yieldBonus).forEach((id, n) -> out.merge(id, n, Integer::sum));
         } catch (Throwable t) {
             // one mon's odd drop table must not abort the whole pasture's harvest
         }
@@ -138,12 +180,19 @@ public final class DropsBridge {
         return new kotlin.ranges.IntRange(base.getFirst(), base.getLast() + yieldBonus);
     }
 
-    /** An item entry's quantity, resolved exactly as Cobblemon: uniform over its range, else its fixed qty. */
-    private static int rollQty(ItemDropEntry item, Random rng) {
+    /** An item entry's quantity, resolved as Cobblemon does (uniform over its range, else its fixed qty), then
+     *  WIDENED by Drop Yield: the ceiling rises by {@code yieldBonus} for EVERY entry - so even a
+     *  percentage-only, fixed-quantity drop (e.g. a 5%-chance single {@code quick_claw}) rolls a range
+     *  {@code [qty, qty + yield]} when it procs, instead of a flat 1 (Deuce, 2026-07-22). The floor is
+     *  untouched: Drop Yield is only ever a <i>chance</i> at more, never fewer. Reuses the same tested
+     *  {@link DropEntry#widenedBy}/{@link DropEntry#quantityAt} math the overlay gold uses. */
+    private static int rollQty(ItemDropEntry item, Random rng, int yieldBonus) {
         kotlin.ranges.IntRange r = item.getQuantityRange();
-        if (r == null) return item.getQuantity();
-        int min = r.getFirst(), max = r.getLast();
-        if (max <= min) return Math.max(0, min);
-        return min + rng.nextInt(max - min + 1);
+        int min, max;
+        if (r == null) { min = max = item.getQuantity(); }   // fixed-quantity (%-only) entry
+        else { min = r.getFirst(); max = r.getLast(); }
+        return new DropEntry(item.getItem().toString(), 1.0, min, max)
+                .widenedBy(Math.max(0, yieldBonus))
+                .quantityAt(rng.nextDouble());
     }
 }

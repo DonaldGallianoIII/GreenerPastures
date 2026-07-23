@@ -713,6 +713,7 @@ function BioBank() {
 function PressModal({ sp, eggs, presses, svEggs, onClose }) {
   const eligible = eggs.filter(({ e }) => !e.shiny).length
   const ready = eligible >= PRESS_BATCH
+  const batches = Math.floor(eligible / PRESS_BATCH)   // how many FULL presses "ALL" would run
   const cur = 1 + PRESS_BONUS * presses
   const next = cur + PRESS_BONUS
   const svMult = 1 + SERVER_BONUS * Math.floor(svEggs / SERVER_BATCH)
@@ -744,14 +745,18 @@ function PressModal({ sp, eggs, presses, svEggs, onClose }) {
         </div>
         <div className="row" style={{ fontSize: 11, marginBottom: 12 }}>
           <span className={ready ? 'grn' : 'amb'}>{eligible} non-shiny banked</span>
-          <span className="dim" style={{ marginLeft: 4 }}>· {PRESS_BATCH} needed per pull</span>
+          <span className="dim" style={{ marginLeft: 4 }}>· {PRESS_BATCH} per pull{batches > 1 ? ` · ${batches} full presses ready` : ''}</span>
         </div>
-        <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+        <div className="row" style={{ justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn" onClick={onClose}>cancel</button>
           <button className="btn" disabled={!ready} title={notReadyTip ?? `donate ${PRESS_BATCH} eggs to the communal pool`}
-            onClick={() => { send('biobank', 'COMPRESS_SERVER', { species: sp }); onClose() }}>⛃ DONATE {PRESS_BATCH}</button>
+            onClick={() => { send('biobank', 'COMPRESS_SERVER', { species: sp, amount: 1 }); onClose() }}>⛃ DONATE {PRESS_BATCH}</button>
           <button className="btn" disabled={!ready} title={notReadyTip}
-            onClick={() => { send('biobank', 'COMPRESS', { species: sp }); onClose() }}>⭓ COMPRESS {PRESS_BATCH}</button>
+            onClick={() => { send('biobank', 'COMPRESS', { species: sp, amount: 1 }); onClose() }}>⭓ COMPRESS {PRESS_BATCH}</button>
+          {batches > 1 && <button className="btn" title={`donate ALL ${batches} full pulls (${batches * PRESS_BATCH} eggs) to the communal pool at once`}
+            onClick={() => { send('biobank', 'COMPRESS_SERVER', { species: sp, amount: -1 }); onClose() }}>⛃ DONATE ALL ×{batches}</button>}
+          {batches > 1 && <button className="btn" style={{ borderColor: 'var(--green)', color: 'var(--green)' }} title={`compress ALL ${batches} full presses (${batches * PRESS_BATCH} eggs) at once`}
+            onClick={() => { send('biobank', 'COMPRESS', { species: sp, amount: -1 }); onClose() }}>⭓ COMPRESS ALL ×{batches}</button>}
         </div>
       </div>
     </div>
@@ -3090,10 +3095,20 @@ silently: shiny or unreadable eggs are ALWAYS kept, and the void log shows every
   ['🏦 BioBank & the Graph', `The BioBank holds 1024 eggs per species as data - sort by IVs, shininess, stats.
 The node graph (per breeding line) decides each egg's fate: IV/EV/nature/shiny filters → keep or render.
 Withdrawing checks your inventory first; the bank never deletes - except the COMPRESSION PRESS, which you
-pull yourself: 100 banked eggs of one species → a permanent +5% drop rate for that species in your pastures,
-stacking forever. Or DONATE the 100 to the SERVER press instead - every 1000 pooled eggs (from anyone) is
-+1% for EVERYONE, multiplied on top of your own presses. Either way the press eats the worst eggs
-(lowest IV total) and never touches a shiny.`],
+pull yourself: 100 banked eggs of one species → a permanent +5% drop bonus for that whole EVOLUTION LINE
+(press Meowth eggs, your Persian benefits), stacking forever - and COMPRESS/DONATE ALL clears every full
+100 at once. Or DONATE to the SERVER press instead - every 1000 pooled eggs (from anyone) is +1% for
+EVERYONE, multiplied on top of your own presses. Either way the press eats the worst eggs (lowest IV total)
+and never touches a shiny. See the drops card for how that bonus is split.`],
+  ['🎲 Drop rate, yield & the cap', `Every linked pasture runs a HARVEST SWEEP once a real minute. On each
+sweep, every tethered mon rolls ONE chance to drop something: 3% base + its Kernel tier (Copper +0.5% …
+Greener +5%) + any Drop Rate augment (+2% / +3%) or tether (+1% per level). That chance CAPS at 100% - a mon
+can't drop more than once per sweep, so past 100% extra Drop Rate does nothing. DROP YIELD is the other lever:
+it makes each drop BIGGER (widens every item's count, even a fixed 5%-chance Quick Claw) and has NO cap.
+COMPRESSION is split 50/50 across both - a 2× press = ×1.5 more OFTEN and ×1.5 BIGGER - so it keeps paying
+even after the rate cap. A press scales the WHOLE drop table evenly: more of everything in the same ratios,
+never singling out one item. Want a specific item more often? That's the mon's own Cobblemon loot table, not
+a lever - stack YIELD to get more per drop instead.`],
   ['🍰 Snack Science', `ULTRA COMPRESSED SNACK: craft several poke snacks together - up to 9 effects, 6 copies
 each. SNACK REPEL: craft a can (6 glass + 2 iron ingots + nether wart), charge it with 1-6 berries of the type
 you DON'T want, then bake the charged can into an Ultra snack - that type's snack spawns divide by the charge.

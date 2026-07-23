@@ -53,6 +53,25 @@ class AugmentLevelTest {
     }
 
     @Test
+    void dropYieldLevelTwoIsNotMisreadAsCorruptedTierThree() {
+        // Drop Yield value 1 → valueAt(2)=round(1.5)=2 collides with valueAt(3)=1×2=2. A legit level-II
+        // install (magnitude 2) must read as II, NOT the corruption-only III (Deuce's "shows corrupted" bug).
+        assertEquals(2, AugmentType.DROP_YIELD.valueAt(2));
+        assertEquals(2, AugmentType.DROP_YIELD.valueAt(3), "the collision that caused the bug");
+        int v1 = AugmentType.DROP_YIELD.value, v2 = AugmentType.DROP_YIELD.valueAt(2), v3 = AugmentType.DROP_YIELD.valueAt(3);
+        assertEquals(0, AugmentType.levelOf(0, v1, v2, v3, 2));
+        assertEquals(1, AugmentType.levelOf(1, v1, v2, v3, 2), "one install = level I");
+        assertEquals(2, AugmentType.levelOf(2, v1, v2, v3, 2), "level II must NOT read as corrupted III");
+    }
+
+    @Test
+    void tierThreeStillReadsWhenGenuinelyHigher() {
+        // guard: the v3>v2 fix must not suppress III for augments whose curve DOES separate (shiny 45→60)
+        assertEquals(3, AugmentType.levelOf(60, 30, 45, 60, 2), "shiny III still detected");
+        assertEquals(3, AugmentType.levelOf(400, 200, 300, 400, 2), "drop-rate III still detected");
+    }
+
+    @Test
     void tierThreeIsCorruptionOnlyAndDoubleBase() {
         assertEquals(60, AugmentType.SHINY.valueAt(3), "III = 2× base");
         assertEquals(400, AugmentType.DROP_RATE.valueAt(3));

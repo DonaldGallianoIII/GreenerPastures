@@ -494,8 +494,8 @@ public final class NotebookNet {
                 case NotebookActionC2S.APPLY_AUGMENT -> { applyAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.REMOVE_AUGMENT -> { removeAugment(player, p.arg()); pushAugmenter(player); }
                 case NotebookActionC2S.WITHDRAW -> { withdrawEgg(player, p.amount()); pushBiobank(player, true); }
-                case NotebookActionC2S.COMPRESS_EGGS -> { compressEggs(player, p.arg()); pushBiobank(player, true); }
-                case NotebookActionC2S.COMPRESS_SERVER -> { donateEggs(player, p.arg()); pushBiobank(player, true); }
+                case NotebookActionC2S.COMPRESS_EGGS -> { compressEggs(player, p.arg(), p.amount()); pushBiobank(player, true); }
+                case NotebookActionC2S.COMPRESS_SERVER -> { donateEggs(player, p.arg(), p.amount()); pushBiobank(player, true); }
                 case NotebookActionC2S.INSCRIBE_TETHER -> { inscribeTether(player, p.arg(), p.amount()); pushLoom(player); pushStatus(player); }
                 case NotebookActionC2S.RENAME_TETHER -> { renameTether(player, p.arg(), p.amount()); pushLoom(player); }
                 case NotebookActionC2S.WRITE_DISK -> { writeDisk(player, p.arg()); pushStorage(player); }
@@ -1289,52 +1289,57 @@ public final class NotebookNet {
      *  +5% drop-proc multiplier for that species across every pasture the player owns. Shinies are never
      *  eligible (SACRED, the same rule as the egg pipeline) and the WORST eggs (lowest total IV) feed first,
      *  so the press eats the culls and the keepers stay banked. All-or-nothing: under 100 eligible = no-op. */
-    private static void compressEggs(ServerPlayerEntity player, String species) {
+    private static void compressEggs(ServerPlayerEntity player, String species, int batches) {
         MinecraftServer server = player.getServer();
         if (server == null || species == null || species.isBlank()) return;
-        int eaten = sacrificeWorst(server, player, species);
-        if (eaten <= 0) return;
+        int eaten = sacrificeBatches(server, player, species, batches);   // batches < 0 = ALL banked (Deuce, 2026-07-22)
+        if (eaten <= 0) { pressShortfall(player, species); return; }
         com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
         comp.record(player.getUuid(), species, eaten);
         double mult = comp.get(player.getUuid()).multiplierOf(species);
+        int n = eaten / com.greenerpastures.biobank.CompressionLedger.BATCH;
         player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r COMPRESSED: " + eaten + " "
-                + capFirst(species) + " eggs pressed into a permanent +5% drop bonus - now ×"
+                + capFirst(species) + " eggs" + (n > 1 ? " (" + n + " presses)" : "")
+                + " pressed into a permanent drop bonus - now ×"
                 + String.format("%.2f", mult) + " on all your pastures."), false);
         GpLog.i("compression", "press", "player", player.getUuid().toString(), "species", species,
-                "eggs", Integer.toString(eaten), "mult", String.format("%.2f", mult));
+                "eggs", Integer.toString(eaten), "presses", Integer.toString(n), "mult", String.format("%.2f", mult));
     }
 
     /** Donate 100 eggs into the COMMUNAL server press (Deuce, 2026-07-19): every 1000 pooled eggs of a
      *  species = a further +1% drop rate for EVERYONE's pastures - a "more" multiplier the harvest applies
      *  on top of each owner's personal ledger. Same feed rules as the personal press (worst first, shinies
      *  never, all-or-nothing). A tier crossing is broadcast: the whole server should see the bar fill. */
-    private static void donateEggs(ServerPlayerEntity player, String species) {
+    private static void donateEggs(ServerPlayerEntity player, String species, int batches) {
         MinecraftServer server = player.getServer();
         if (server == null || species == null || species.isBlank()) return;
-        int eaten = sacrificeWorst(server, player, species);
-        if (eaten <= 0) return;
         com.greenerpastures.biobank.CompressionStore comp = com.greenerpastures.biobank.CompressionStore.get(server);
         long tiersBefore = comp.server().pressesOf(species);
+        int eaten = sacrificeBatches(server, player, species, batches);   // batches < 0 = ALL banked
+        if (eaten <= 0) { pressShortfall(player, species); return; }
         comp.recordServer(species, eaten);
         boolean tierUp = comp.server().pressesOf(species) > tiersBefore;
         double mult = comp.server().multiplierOf(species);
         long toNext = comp.server().toNextPress(species);
+        int n = eaten / com.greenerpastures.biobank.CompressionLedger.BATCH;
         // No chat broadcast (Deuce, 2026-07-19): donations land in the Inbox tab's DONATION FEED instead -
         // a global 24h rolling window anyone can go read. The donator still gets their private confirm.
         com.greenerpastures.notify.DonationFeed.push(player.getName().getString(), species, eaten, mult, tierUp);
         player.sendMessage(net.minecraft.text.Text.literal("§a[Greener Pastures]§r DONATED: " + eaten + " "
-                + capFirst(species) + " eggs to the server press - " + (tierUp
-                ? "that pull tipped it to ×" + String.format("%.2f", mult) + " for everyone!"
+                + capFirst(species) + " eggs" + (n > 1 ? " (" + n + " pulls)" : "") + " to the server press - " + (tierUp
+                ? "that tipped it to ×" + String.format("%.2f", mult) + " for everyone!"
                 : toNext + " more to the next +1% for everyone (now ×" + String.format("%.2f", mult) + ").")), false);
         GpLog.i("compression", "donate", "player", player.getUuid().toString(), "species", species,
-                "eggs", Integer.toString(eaten), "server_mult", String.format("%.2f", mult),
+                "eggs", Integer.toString(eaten), "pulls", Integer.toString(n), "server_mult", String.format("%.2f", mult),
                 "to_next", Long.toString(toNext), "tier_up", Boolean.toString(tierUp));
     }
 
-    /** The shared press feed: remove exactly one BATCH of {@code species} from the player's BioBank -
-     *  worst total-IV first, shinies never eligible, all-or-nothing. Returns eggs eaten (0 = refused,
-     *  with the reason messaged). */
-    private static int sacrificeWorst(MinecraftServer server, ServerPlayerEntity player, String species) {
+    /** The shared press feed: eat up to {@code maxBatches} full presses of {@code species} from the player's
+     *  BioBank - each an all-or-nothing BATCH, worst total-IV first, shinies never eligible. {@code maxBatches
+     *  < 0} = ALL full batches banked (the "compress/donate all" path, Deuce 2026-07-22); a positive value
+     *  caps it (1 = the classic single press). QUIET - returns total eggs eaten (0 = not even one full batch);
+     *  the caller messages the shortfall / success. */
+    private static int sacrificeBatches(MinecraftServer server, ServerPlayerEntity player, String species, int maxBatches) {
         java.util.function.Predicate<ItemStack> eligible = egg -> {
             EggCard c = EggReader.card(egg);
             return c == null || !c.shiny();
@@ -1343,15 +1348,23 @@ public final class NotebookNet {
             EggCard c = EggReader.card(egg);
             return c == null ? -1 : c.ivTotal();      // unreadable = worthless = first into the press
         });
-        int eaten = BioBankStore.get(server).sacrifice(player.getUuid(), species,
-                com.greenerpastures.biobank.CompressionLedger.BATCH, eligible, worstFirst);
-        if (eaten < com.greenerpastures.biobank.CompressionLedger.BATCH) {
-            player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r The press needs "
-                    + com.greenerpastures.biobank.CompressionLedger.BATCH + " non-shiny "
-                    + capFirst(species) + " eggs in the BioBank."), false);
-            return 0;
+        int cap = maxBatches < 0 ? Integer.MAX_VALUE : Math.max(1, maxBatches);
+        int total = 0;
+        for (int b = 0; b < cap; b++) {
+            // each call is all-or-nothing for one BATCH: eats the worst 100, or 0 (and stops the run)
+            int eaten = BioBankStore.get(server).sacrifice(player.getUuid(), species,
+                    com.greenerpastures.biobank.CompressionLedger.BATCH, eligible, worstFirst);
+            if (eaten <= 0) break;
+            total += eaten;
         }
-        return eaten;
+        return total;
+    }
+
+    /** The "not even one full press banked" refusal, shared by the personal + server presses. */
+    private static void pressShortfall(ServerPlayerEntity player, String species) {
+        player.sendMessage(net.minecraft.text.Text.literal("§c[Greener Pastures]§r The press needs "
+                + com.greenerpastures.biobank.CompressionLedger.BATCH + " non-shiny "
+                + capFirst(species) + " eggs in the BioBank."), false);
     }
 
     private static String capFirst(String s) {

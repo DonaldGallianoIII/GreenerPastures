@@ -22,6 +22,15 @@ public record DropTable(List<DropEntry> entries) {
         return entries.isEmpty();
     }
 
+    /** A copy with every entry's quantity ceiling raised by {@code bonus} (the Drop Yield lever - see
+     *  {@link DropEntry#widenedBy}). {@code bonus <= 0} returns this table unchanged. */
+    public DropTable widenedBy(int bonus) {
+        if (bonus <= 0 || entries.isEmpty()) return this;
+        java.util.List<DropEntry> w = new java.util.ArrayList<>(entries.size());
+        for (DropEntry e : entries) w.add(e.widenedBy(bonus));
+        return new DropTable(w);
+    }
+
     /** Roll the whole table once → {@code item id → total count} (entries that don't fire are absent). */
     public Map<String, Integer> roll(Random rng) {
         Map<String, Integer> out = new LinkedHashMap<>();

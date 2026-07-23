@@ -124,19 +124,22 @@ export function applyMock(state, channel, action, payload) {
       addItem(inv, 'cobbreeding:pokemon_egg', 1)
       out.biobank = b
       out.inventory = inv
-    } else if (action === 'COMPRESS' || action === 'COMPRESS_SERVER') {          // press/donate 100 worst non-shiny eggs
+    } else if (action === 'COMPRESS' || action === 'COMPRESS_SERVER') {          // press/donate worst non-shiny eggs (amount = # batches, -1 = ALL)
       const b = clone(state.biobank)
       const sp = payload.species
       const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
       const eligible = b.entries.map((e, i) => ({ e, i })).filter(({ e }) => e.species === sp && !e.shiny)
-      if (eligible.length < 100) return {}
+      const avail = Math.floor(eligible.length / 100)
+      if (avail < 1) return {}
+      const want = payload.amount < 0 ? avail : Math.min(Math.max(1, payload.amount | 0), avail)
+      const eatCount = want * 100
       eligible.sort((a, z) => a.e.ivs.reduce((x, y) => x + y, 0) - z.e.ivs.reduce((x, y) => x + y, 0))
-      const eaten = new Set(eligible.slice(0, 100).map(({ i }) => i))
+      const eaten = new Set(eligible.slice(0, eatCount).map(({ i }) => i))
       b.entries = b.entries.filter((_, i) => !eaten.has(i))
-      b.total = Math.max(0, b.total - 100)
+      b.total = Math.max(0, b.total - eatCount)
       const field = action === 'COMPRESS' ? 'compression' : 'serverCompression'  // server pool: 1000 = +1% for everyone
       b[field] = { ...(b[field] || {}) }
-      b[field][norm(sp)] = (b[field][norm(sp)] || 0) + 100
+      b[field][norm(sp)] = (b[field][norm(sp)] || 0) + eatCount
       out.biobank = b
     }
   }
