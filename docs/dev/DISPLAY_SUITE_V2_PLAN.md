@@ -11,6 +11,36 @@
 
 ---
 
+## ⚑ STATUS (2026-07-22, end of session — read this first on resume)
+
+**Phase 0 + A: DONE and live-QA'd on the `gp-qa-server` + 4 clients.** 14 commits `bd7a720..2a653ee` on
+`dev`. All green (~438 tests). Deuce signed off: *"works perfectly! all qa done on phase a."*
+
+Shipped + verified in-game:
+- **§0 shiny statue fix** — statue renders shiny + forms (forced aspect set).
+- **§2 Notebook Display tab** — right-click a display block with the Notebook opens its config tab
+  (`NotebookDisplayS2C` / `NotebookDisplayActionC2S` / DsBridge `display` channel / React `DisplayTab`).
+- **§2.1 naming + "My Exhibits" registry** — `ExhibitEntry`/`ExhibitRegistry` (MC-free, tested) +
+  `ExhibitStore` (PersistentState) + place/break hooks + lazy-register for legacy blocks. RENAME wired.
+- **§2.2 disguise — CONFIG + RENDER both done.** `DisguiseModel` (ForwardingBakedModel) draws the mimicked
+  block's quads with correct **biome tint**; live re-mesh on change (BE `readNbt` → `updateListeners`);
+  render data via `RenderAttachmentBlockEntity.getRenderAttachmentData()` → disguise BlockState.
+- **Real block art** ported from `~/CodexHangout/staged-mon-blocks` (namespace → `greenerpastures`):
+  plinth → Statue, deepslate trigger-core → Exhibit Pen (+ horizontal FACING). 11 textures + animated energy.
+- **Scale tweaks** — statue presets `0.25/0.5/0.75/1/1.5/2/2.5/3`; roaming pen mons at `0.75×`
+  (`CobblemonProjector.EXHIBIT_SCALE`, `Pokemon.setScaleModifier`).
+
+**Two open follow-ups (non-blocking):** roaming-mon `0.75×` is a starting guess — Deuce may want it
+smaller; plinth wants a custom collision/outline shape (14/16 tall) + the energy texture isn't emissive yet.
+
+**⚠ Pending deploy:** the scale-tweak commit `2a653ee` is committed but NOT yet on the running server/clients
+(needs a bounce + client swap; MC was open). Redeploy before Deuce re-QAs the scale.
+
+**NEXT: Phase B — Patrol pathing (§3 below).** Start with the MC-free `PatrolPath` core + tests, then the
+GUI waypoint UX + the server goal. Everything routes through the Display tab / data model already built.
+
+---
+
 ## 0 · Bug fix (immediate, ships first)
 
 ### Statue does not render shiny

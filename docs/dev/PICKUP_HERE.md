@@ -1,4 +1,36 @@
-# 🎯 PICKUP_HERE — updated 2026-07-22 ~23:20: QA NIGHT LANDED - resume tomorrow's QA list below
+# 🎯 PICKUP_HERE — updated 2026-07-22 (late): DISPLAY SUITE v2 PHASE A DONE — next up: Phase B
+
+> **⚡ SESSION (Display Suite v2, 2026-07-22 evening→late). Version `1.0.0-beta.2` (bumped from beta.1;
+> CHANGELOG stamped for the gold-drops/compression release earlier this session). ~438 tests green.**
+>
+> **First half of session — gold + compression (all live-QA'd, in `beta.2`):** gold_ingot overlay for
+> Gimmighoul/Gholdengo/Persian (`SpeciesDropOverlay`); Drop Yield now widens native per-entry quantities;
+> Drop-Yield-lvl-II-reads-as-corrupted fix; **Compress All / Donate All**; compression applies across the
+> **evolution line** (Meowth press boosts a tethered Persian — `DropsBridge.baseSpeciesName`); compression
+> **split 50/50 rate↔yield** (`CompressionSplit`, uncapped yield past the 100%/sweep proc cap); FAQ card.
+> Then version bump → **1.0.0-beta.2** + release-prep commit.
+>
+> **Second half — DISPLAY SUITE v2 PHASE A (the big build, full plan in `docs/dev/DISPLAY_SUITE_V2_PLAN.md`
+> — READ ITS "⚑ STATUS" BLOCK).** 14 commits `bd7a720..2a653ee`. Deuce: *"works perfectly! all qa done on
+> phase a."* Delivered + live-verified: shiny statue fix · **Notebook Display tab** (right-click a display
+> block → config) · **naming + "My Exhibits" registry** (findable/locatable) · **disguise** (config +
+> camouflage-model RENDER with biome tint + live re-mesh) · **real block art** (plinth Statue + deepslate
+> trigger-cage Pen, ported from `~/CodexHangout/staged-mon-blocks`, namespace→greenerpastures) · finer
+> **statue scale** stages + **0.75× roaming** pen mons.
+>
+> **⚠ PENDING DEPLOY:** scale-tweak commit `2a653ee` is committed but NOT on the running server/clients yet
+> (needs bounce + client swap — MC was open when we compacted). Redeploy before Deuce re-QAs the scale.
+> **QA server:** `gp-qa-server/` (WSL), `java -Xms2G -Xmx6G -jar server.jar nogui` on port 25565, Deuce
+> connects via WSL IP (`hostname -I`, currently 172.17.176.195). Deploy to server mods + 4 client installs
+> (Claude Development, Greener Pastures Test, GP-Masuda-QA, GP-Masuda-QA-2). Clean stop via the stdin FIFO.
+>
+> **NEXT: Phase B — Patrol pathing** (`DISPLAY_SUITE_V2_PLAN.md §3`): MC-free `PatrolPath` core + tests
+> first, then GUI waypoint UX + server goal; routes through the Display tab already built. Then Phase C
+> (branching VN dialogue + template-copy rewards), Phase D (battle) DEFERRED to its own visual-scripting spec.
+
+---
+
+## (older) PICKUP_HERE — updated 2026-07-22 ~23:20: QA NIGHT LANDED - resume tomorrow's QA list below
 
 > **⚡ SESSION 2026-07-21→22 (the big live-QA night). ALL DEPLOYED: jar `15b5e343` on all 4 installs,
 > QA server BOUNCED + RESTARTED on it (port 25565; Deuce connects via WSL IP - `localhost` forwarding
