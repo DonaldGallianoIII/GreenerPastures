@@ -344,6 +344,16 @@ public final class NotebookState {
         return changed;
     }
 
+    /** Display Suite v2 §2 - the display tab's JSON (opened block + "My Exhibits" directory). */
+    public static volatile String displayJson = "";
+
+    public static boolean applyDisplay(com.greenerpastures.notebook.net.NotebookDisplayS2C p) {
+        String j = p.json() == null ? "" : p.json();
+        boolean changed = !displayJson.equals(j);
+        displayJson = j;
+        return changed;
+    }
+
     public static boolean applyDashboard(NotebookDashboardS2C p) {
         String j = p.json() == null ? "" : p.json();
         boolean changed = !dashboardJson.equals(j);
@@ -371,7 +381,7 @@ public final class NotebookState {
         augHasKernel = false; augTier = ""; augSlotsUsed = 0; augSlotCap = 0; augCatalog = List.of(); augMetaJson = "";
         biobankTotal = 0; biobank = List.of(); biobankPresses = List.of(); biobankServerPresses = List.of();
         eggKept = 0L; eggVoided = 0L; eggLog = List.of();
-        dashboardJson = ""; goalsJson = ""; notifsJson = ""; loomJson = ""; ritualsJson = ""; specimensJson = ""; arcadeJson = ""; treelineJson = ""; topdeckJson = ""; slotsJson = ""; vibeJson = ""; tagJson = "";
+        dashboardJson = ""; goalsJson = ""; notifsJson = ""; loomJson = ""; displayJson = ""; ritualsJson = ""; specimensJson = ""; arcadeJson = ""; treelineJson = ""; topdeckJson = ""; slotsJson = ""; vibeJson = ""; tagJson = "";
         navTab = ""; navSeq = 0;
     }
 }

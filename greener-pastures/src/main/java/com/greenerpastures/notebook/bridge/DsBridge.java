@@ -244,6 +244,7 @@ public final class DsBridge {
         push("goals", jsonChannel(NotebookState.goalsJson));
         push("notifications", jsonChannel(NotebookState.notifsJson));
         push("loom", jsonChannel(NotebookState.loomJson));
+        push("display", jsonChannel(NotebookState.displayJson));
         push("rituals", jsonChannel(NotebookState.ritualsJson));
         push("specimens", jsonChannel(NotebookState.specimensJson));
         push("arcade", jsonChannel(NotebookState.arcadeJson));

@@ -92,6 +92,11 @@ public final class GreenerPasturesClient implements ClientModInitializer {
             DsBridge.pushNow();
             openConsole();
         };
+        NotebookItem.DISPLAY_OPENER = (pos) -> {   // Display Suite v2 §2: right-click a display block → Display tab
+            NotebookState.navigate("display");     // React switches to the Display tab; the server push fills it in
+            DsBridge.pushNow();
+            openConsole();
+        };
 
         // notebook/ console sync - receive status pushes → cache + refresh the open console
         ClientPlayNetworking.registerGlobalReceiver(NotebookStatusS2C.ID, (payload, context) ->
@@ -145,6 +150,10 @@ public final class GreenerPasturesClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookLoomS2C.ID, (payload, context) ->
                 context.client().execute(() -> {
                     if (NotebookState.applyLoom(payload)) DsBridge.pushNow();
+                }));
+        ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookDisplayS2C.ID, (payload, context) ->
+                context.client().execute(() -> {
+                    if (NotebookState.applyDisplay(payload)) DsBridge.pushNow();
                 }));
         ClientPlayNetworking.registerGlobalReceiver(com.greenerpastures.notebook.net.NotebookPastureExtraS2C.ID, (payload, context) ->
                 context.client().execute(() -> {

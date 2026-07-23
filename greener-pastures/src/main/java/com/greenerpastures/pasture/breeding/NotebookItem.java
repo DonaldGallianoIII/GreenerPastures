@@ -48,6 +48,10 @@ public class NotebookItem extends Item {
      *  GreenerPasturesClient; the server-side branch pushes that pasture's {@code NotebookPastureConfigS2C}. */
     public static java.util.function.Consumer<BlockPos> PASTURE_OPENER = pos -> {};
 
+    /** Client-only hook: open the React console on the Display tab for this display block (Exhibit Pen /
+     *  Specimen Statue). Set in GreenerPasturesClient; the server branch pushes {@code NotebookDisplayS2C}. */
+    public static java.util.function.Consumer<BlockPos> DISPLAY_OPENER = pos -> {};
+
     public NotebookItem(Settings settings) {
         super(settings);
     }
@@ -57,6 +61,18 @@ public class NotebookItem extends Item {
         World world = ctx.getWorld();
         BlockPos pos = ctx.getBlockPos();
         BlockEntity be = world.getBlockEntity(pos);
+        // Display Suite v2: right-click a display block with the Notebook → its config tab (§2).
+        if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity
+                || be instanceof com.greenerpastures.display.StatueBlockEntity) {
+            if (world.isClient) {
+                DISPLAY_OPENER.accept(pos);
+                return ActionResult.SUCCESS;
+            }
+            if (ctx.getPlayer() instanceof ServerPlayerEntity sp) {
+                com.greenerpastures.notebook.net.NotebookNet.pushDisplay(sp, pos);
+            }
+            return ActionResult.SUCCESS;
+        }
         if (!(be instanceof PokemonPastureBlockEntity)) {
             be = world.getBlockEntity(pos.down());
         }
