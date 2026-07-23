@@ -73,8 +73,10 @@ public class StatueRenderer implements BlockEntityRenderer<StatueBlockEntity> {
         matrices.pop();
     }
 
-    /** Cosmetics in, dummy out. v1 renders species + shiny + gender; form aspects ride the spec for a
-     *  later pass. Returns null (renders nothing) rather than ever throwing into the render loop. */
+    /** Cosmetics in, dummy out. Renders species + shiny + form + gender by applying the FULL synced aspect
+     *  set - Cobblemon picks the model/texture from the ASPECT set, and {@code setShiny()} alone does NOT
+     *  propagate the shiny aspect into the render on a detached client Pokémon (the v1 shiny bug, fixed here,
+     *  Deuce 2026-07-22). Returns null (renders nothing) rather than ever throwing into the render loop. */
     private static PokemonEntity build(ClientWorld world, RenderSpec spec) {
         try {
             Species species = PokemonSpecies.getByName(spec.species());
@@ -87,8 +89,20 @@ public class StatueRenderer implements BlockEntityRenderer<StatueBlockEntity> {
             } catch (IllegalArgumentException unknownGender) {
                 // spec from an older save: default gender renders fine
             }
+            // Force the exact aspect set the server computed (species/form aspects + "shiny"). This is the
+            // render truth; setShiny above only fixes the data, not the model selection.
+            java.util.Set<String> aspectSet = new java.util.HashSet<>(spec.aspects());
+            if (spec.shiny()) aspectSet.add("shiny");
+            try {
+                pokemon.setForcedAspects(aspectSet);
+                pokemon.updateAspects();
+            } catch (Throwable ignored) {
+                // older Cobblemon aspect API - fall back to the shiny boolean already set above
+            }
             PokemonEntity entity = new PokemonEntity(world, pokemon, CobblemonEntities.POKEMON);
             entity.getDataTracker().set(PokemonEntity.getFREEZE_FRAME(), 0f);
+            // Belt-and-suspenders: the render path reads the entity's ASPECTS tracker, so set it directly too.
+            try { entity.getDataTracker().set(PokemonEntity.getASPECTS(), aspectSet); } catch (Throwable ignored) {}
             entity.bodyYaw = 0f;
             entity.prevBodyYaw = 0f;
             entity.headYaw = 0f;
