@@ -3138,7 +3138,8 @@ function DisplayTab() {
   const block = d?.block
   const dir = d?.directory || []
   const [nameDraft, setNameDraft] = useState('')
-  useEffect(() => { setNameDraft(block?.name || '') }, [block?.pos])
+  // reset the draft when the OPENED block changes (keyed on its coords - pos was removed in the x/y/z refactor)
+  useEffect(() => { setNameDraft(block?.name || '') }, [block?.x, block?.y, block?.z])
   return (
     <div className="pane" style={{ overflow: 'auto' }}>
       <div className="h" style={{ marginBottom: 6 }}>Display</div>
