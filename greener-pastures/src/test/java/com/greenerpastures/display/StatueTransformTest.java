@@ -50,7 +50,7 @@ class StatueTransformTest {
     @Test
     void scaleCyclesPresetsInOrderAndWraps() {
         StatueTransform t = StatueTransform.DEFAULT;   // 1.0×
-        double[] expected = {1.5, 2.0, 3.0, 0.5, 1.0};
+        double[] expected = {1.5, 2.0, 2.5, 3.0, 0.25, 0.5, 0.75, 1.0};
         for (double want : expected) {
             t = t.scaleCycled(3.0);
             assertEquals(want, t.scale());
@@ -59,8 +59,8 @@ class StatueTransformTest {
 
     @Test
     void scaleCycleHonorsServerClamp() {
-        StatueTransform t = new StatueTransform(0, 0, 0, 0, 3);   // 2.0×
-        assertEquals(0.5, t.scaleCycled(2.0).scale(), "3× skipped under statueMaxScale=2.0, wraps to smallest");
+        StatueTransform t = new StatueTransform(0, 0, 0, 0, 5);   // 2.0×
+        assertEquals(0.25, t.scaleCycled(2.0).scale(), "2.5× + 3× skipped under statueMaxScale=2.0, wraps to smallest");
 
         StatueTransform stuck = StatueTransform.DEFAULT;
         assertEquals(stuck, stuck.scaleCycled(0.1), "clamp below every preset changes nothing");
@@ -76,6 +76,6 @@ class StatueTransformTest {
         assertEquals(3.0, t.scale(), "scale index clamps to the largest preset");
 
         assertEquals(15, new StatueTransform(-1, 0, 0, 0, -5).yawStep(), "negative yaw wraps up, not crash");
-        assertEquals(0.5, new StatueTransform(-1, 0, 0, 0, -5).scale(), "negative index clamps to smallest");
+        assertEquals(0.25, new StatueTransform(-1, 0, 0, 0, -5).scale(), "negative index clamps to smallest");
     }
 }

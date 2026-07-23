@@ -31,6 +31,10 @@ import java.util.UUID;
 final class CobblemonProjector {
     private CobblemonProjector() {}
 
+    /** Render scale for a roaming exhibit projection - a touch under life-size so a pen reads as a diorama
+     *  rather than a wild encounter (Deuce, 2026-07-22). Statues stay independently scalable via the plinth. */
+    static final float EXHIBIT_SCALE = 0.75f;
+
     /** The insert-gate facts {@link ExhibitRules} wants, read without keeping the mon around. */
     record DiskPeek(boolean loads, boolean glitch, String species, boolean shiny) {}
 
@@ -53,6 +57,7 @@ final class CobblemonProjector {
         try {
             Pokemon mon = new Pokemon().loadFromNBT(world.getRegistryManager(), specimenNbt);
             UncatchableProperty.INSTANCE.uncatchable().apply(mon);   // thrown balls refuse - projection copy only, the disk is untouched
+            mon.setScaleModifier(EXHIBIT_SCALE);                     // roaming exhibits render a touch smaller than life-size (Deuce, 2026-07-22)
 
             PokemonEntity entity = new PokemonEntity(world, mon, CobblemonEntities.POKEMON);
             entity.setInvulnerable(true);

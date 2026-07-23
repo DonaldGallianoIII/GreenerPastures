@@ -16,10 +16,10 @@ public record StatueTransform(int yawStep, double offsetX, double offsetY, doubl
     public static final double NUDGE = 1.0 / 16.0;        // one pixel per tap
     public static final double MAX_HORIZONTAL = 0.5;      // stays over a 1-block plinth (spec §5 Q6, v1 call)
     public static final double MAX_VERTICAL = 1.0;
-    public static final double[] SCALE_PRESETS = {0.5, 1.0, 1.5, 2.0, 3.0};
+    public static final double[] SCALE_PRESETS = {0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0};
 
-    /** Fresh statue: centered, unrotated, life-size. */
-    public static final StatueTransform DEFAULT = new StatueTransform(0, 0.0, 0.0, 0.0, 1);
+    /** Fresh statue: centered, unrotated, life-size (index 3 = 1.0×). */
+    public static final StatueTransform DEFAULT = new StatueTransform(0, 0.0, 0.0, 0.0, 3);
 
     public StatueTransform {
         yawStep = Math.floorMod(yawStep, YAW_STEPS);
