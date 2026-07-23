@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "minecraft:block/chiseled_stone_bricks"
+      "model": "greenerpastures:block/mon_display_plinth"
     }
   }
 }

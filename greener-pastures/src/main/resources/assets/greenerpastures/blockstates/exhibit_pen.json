@@ -1,7 +1,8 @@
 {
   "variants": {
-    "": {
-      "model": "minecraft:block/composter"
-    }
+    "facing=south": { "model": "greenerpastures:block/mon_trigger_core" },
+    "facing=west":  { "model": "greenerpastures:block/mon_trigger_core", "y": 90 },
+    "facing=north": { "model": "greenerpastures:block/mon_trigger_core", "y": 180 },
+    "facing=east":  { "model": "greenerpastures:block/mon_trigger_core", "y": 270 }
   }
 }
