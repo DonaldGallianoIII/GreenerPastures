@@ -298,9 +298,41 @@ public class ExhibitPenBlockEntity extends BlockEntity
 
     public static void serverTick(World world, BlockPos pos, BlockState state, ExhibitPenBlockEntity be) {
         if (!(world instanceof ServerWorld sw)) return;
+        be.drivePatrols(sw);                        // §3: every tick - only PATROL/STATIONARY residents do work
         if (++be.sweepClock < SWEEP_TICKS) return;
         be.sweepClock = 0;
         be.sweep(sw);
+    }
+
+    /** §3: walk each patrolling resident's projection one step along its {@link PatrolPath}. WANDER residents
+     *  and un-projected slots are skipped; an empty PATROL path falls through to Cobblemon's own wander. */
+    private void drivePatrols(ServerWorld sw) {
+        Vec3d origin = Vec3d.ofBottomCenter(pos.up());
+        for (int i = 0; i < residents.size(); i++) {
+            Resident r = residents.get(i);
+            if (r.mode == PatrolMode.WANDER || r.projection == null) continue;
+            Entity e = sw.getEntity(r.projection);
+            if (!(e instanceof com.cobblemon.mod.common.entity.pokemon.PokemonEntity mon)
+                    || e.isRemoved() || !CobblemonProjector.isProjection(e)) continue;
+            PatrolPath effective = effectivePath(r);
+            if (effective.isEmpty()) continue;      // PATROL with no waypoints yet - let it wander
+            int before = r.progress.index();
+            r.progress = PatrolDriver.drive(origin.x, origin.y, origin.z, mon, effective, r.progress);
+            if (r.progress.index() != before) {
+                GpLog.d("display", "patrol_step", "pos", pos.toShortString(), "dim", dim(),
+                        "slot", i, "index", r.progress.index());
+            }
+        }
+    }
+
+    /** The path actually walked this tick: PATROL uses the authored path; STATIONARY collapses to a single
+     *  hold-point (the first waypoint, or the spawn spot if none) so a greeter stands put. */
+    private PatrolPath effectivePath(Resident r) {
+        if (r.mode == PatrolMode.STATIONARY) {
+            RelPos spot = r.path.isEmpty() ? new RelPos(0, 0, 0) : r.path.waypoints().get(0);
+            return new PatrolPath(java.util.List.of(spot), false, 0, r.path.speed());
+        }
+        return r.path;   // PATROL
     }
 
     private void sweep(ServerWorld sw) {
@@ -316,7 +348,8 @@ public class ExhibitPenBlockEntity extends BlockEntity
                     GpLog.d("display", "exhibit_project", "pos", pos.toShortString(), "dim", dim(),
                             "entity", resident.projection.toString(), "reason", "sweep_respawn");
                 }
-            } else if (entity.squaredDistanceTo(home) > leash * leash) {
+            } else if (resident.mode == PatrolMode.WANDER && entity.squaredDistanceTo(home) > leash * leash) {
+                // Patrolling residents own their own bounds (author-clamped waypoints); only stock wander gets leashed home.
                 entity.refreshPositionAndAngles(home.x, home.y, home.z, entity.getYaw(), 0f);
                 GpLog.d("display", "exhibit_leash", "pos", pos.toShortString(), "dim", dim(),
                         "entity", entity.getUuidAsString());
