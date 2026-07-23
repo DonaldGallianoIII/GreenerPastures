@@ -74,6 +74,18 @@ public class ExhibitPenBlockEntity extends BlockEntity {
         return name;
     }
 
+    /** Species + shiny of each resident, for the Notebook display tab. Read from each disk's
+     *  {@code SPECIMEN_SUMMARY} component; an unreadable disk contributes a {@code "?"} entry. */
+    public List<com.greenerpastures.specimen.SpecimenSummary> residentSummaries() {
+        List<com.greenerpastures.specimen.SpecimenSummary> out = new ArrayList<>();
+        for (Resident r : residents) {
+            com.greenerpastures.specimen.SpecimenSummary s =
+                    r.disk.get(com.greenerpastures.pasture.breeding.GpComponents.SPECIMEN_SUMMARY);
+            out.add(s != null ? s : new com.greenerpastures.specimen.SpecimenSummary("?", 0, false, ""));
+        }
+        return out;
+    }
+
     /** Set the block's display name (blank clears it back to the coord default). Persists; the RENAME net
      *  action mirrors this into the owner's {@link ExhibitStore} directory so the "My Exhibits" list matches. */
     public void setName(String name) {

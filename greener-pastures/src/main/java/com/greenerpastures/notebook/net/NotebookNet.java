@@ -161,6 +161,7 @@ public final class NotebookNet {
         PayloadTypeRegistry.playS2C().register(NotebookEggLogS2C.ID, NotebookEggLogS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookNotifsS2C.ID, NotebookNotifsS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookLoomS2C.ID, NotebookLoomS2C.CODEC);
+        PayloadTypeRegistry.playS2C().register(NotebookDisplayS2C.ID, NotebookDisplayS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookDashboardS2C.ID, NotebookDashboardS2C.CODEC);
         PayloadTypeRegistry.playS2C().register(NotebookGoalsS2C.ID, NotebookGoalsS2C.CODEC);
         PayloadTypeRegistry.playC2S().register(NotebookGoalC2S.ID, NotebookGoalC2S.CODEC);
@@ -335,6 +336,71 @@ public final class NotebookNet {
         }
         root.add("refunds", refunds);
         sendGated(player, "loom", new NotebookLoomS2C(GSON.toJson(root)));
+    }
+
+    /** Push the Display tab (Display Suite v2 §2): the block the player opened with the Notebook (if any) +
+     *  their whole "My Exhibits" directory. Called from {@code NotebookItem.useOnBlock} on a display block,
+     *  and re-called after a rename/disguise edit so the list refreshes. Never throws. */
+    public static void pushDisplay(ServerPlayerEntity player, BlockPos pos) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+        ServerWorld world = player.getServerWorld();
+        if (world == null) return;
+        try {
+            JsonObject root = new JsonObject();
+            if (pos != null) {
+                net.minecraft.block.entity.BlockEntity be = world.getBlockEntity(pos);
+                JsonObject block = null;
+                if (be instanceof com.greenerpastures.display.ExhibitPenBlockEntity pen) {
+                    block = new JsonObject();
+                    block.addProperty("type", "Exhibit Pen");
+                    block.addProperty("name", pen.getName());
+                    JsonArray res = new JsonArray();
+                    for (com.greenerpastures.specimen.SpecimenSummary s : pen.residentSummaries()) {
+                        JsonObject o = new JsonObject();
+                        o.addProperty("species", s.species());
+                        o.addProperty("shiny", s.shiny());
+                        res.add(o);
+                    }
+                    block.add("residents", res);
+                } else if (be instanceof com.greenerpastures.display.StatueBlockEntity statue) {
+                    block = new JsonObject();
+                    block.addProperty("type", "Specimen Statue");
+                    block.addProperty("name", statue.getName());
+                    JsonArray res = new JsonArray();
+                    com.greenerpastures.display.RenderSpec spec = statue.renderSpec();
+                    if (!spec.isEmpty()) {
+                        JsonObject o = new JsonObject();
+                        o.addProperty("species", spec.species());
+                        o.addProperty("shiny", spec.shiny());
+                        res.add(o);
+                    }
+                    block.add("residents", res);
+                }
+                if (block != null) {
+                    block.addProperty("pos", pos.asLong());
+                    root.add("block", block);
+                }
+            }
+            JsonArray dir = new JsonArray();
+            com.greenerpastures.display.ExhibitRegistry reg =
+                    com.greenerpastures.display.ExhibitStore.get(server).of(player.getUuid());
+            for (com.greenerpastures.display.ExhibitEntry e : reg.all()) {
+                JsonObject o = new JsonObject();
+                o.addProperty("dim", e.dimension());
+                o.addProperty("x", e.x());
+                o.addProperty("y", e.y());
+                o.addProperty("z", e.z());
+                o.addProperty("type", e.type());
+                o.addProperty("name", e.name());
+                o.addProperty("display", e.displayName());
+                dir.add(o);
+            }
+            root.add("directory", dir);
+            sendGated(player, "display", new NotebookDisplayS2C(GSON.toJson(root)));
+        } catch (Throwable t) {
+            GpLog.w("display", "push_fail", "err", String.valueOf(t));
+        }
     }
 
     /** Loom rename (Deuce, 2026-07-20: "name soul tethers just like kernels, otherwise it gets hard to
