@@ -26,6 +26,9 @@
 *.pt
 *.safetensors
 
+# ── Internal working docs (kept local, never published) ──
+docs/dev/
+
 # ── OS / misc ──
 .DS_Store
 Thumbs.db
