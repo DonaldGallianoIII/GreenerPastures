@@ -1,5 +1,5 @@
 # 🌱 Greener Pastures - Feature Showcase
-_Compiled from a full code survey; rev 2026-07-07 - 369 tests, post-adversarial-review + superfan feature audit + final pre-publish multi-agent audit (money paths, dupes, tick perf, lifecycle - all confirmed findings fixed). Claimed pastures are operator-locked on multiplayer. The share-with-people list._
+_A tour of what ships in the mod: 369 unit tests, server-authoritative economy, claimed pastures operator-locked on multiplayer, every money path audited for dupes and tick-perf before release._
 
 **One item is the whole mod: the Notebook.** Right-click → a real web app (React via MCEF/Chromium) running inside Minecraft. Every player gets one on first join.
 
@@ -84,7 +84,7 @@ _Compiled from a full code survey; rev 2026-07-07 - 369 tests, post-adversarial-
 - **Shiny-egg highlighter** (bundled): shiny eggs gold-glow in ANY container, a keybind dumps held-egg data, and a lifetime tally tracks your running "1 in N" shiny rate across everything you've ever scanned
 - **EggOracle** (bundled): in-game shiny-odds planner - eggs/hr, shinies/day, average-to-shiny from YOUR egg rate; Vanilla and Cobbreeding (Masuda ×4) presets
 - /gp perf self-profiling (flame graphs), JSONL observability log, 363 unit tests
-- **Adversarially reviewed pre-release**: six independent system audits (edge cases / perf / new-player UX); every finding fixed or consciously accepted (REVIEW_FINDINGS.md)
+- **Adversarially reviewed pre-release**: six independent system audits (edge cases / perf / new-player UX); every finding fixed or consciously accepted
 - New players land on the **Guide tab** first, new breeding lines come **pre-wired to the BioBank**, and full pastures send an Inbox warning - the sharp edges got sanded
 
 ## 🧩 Requirements & Compatibility

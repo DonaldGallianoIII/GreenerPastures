@@ -25,7 +25,7 @@ currency behind rented Daemon buffs, breeding augments, and 17 hidden rituals.
 - [Cobbreeding](https://modrinth.com/mod/cobbreeding) activates the breeding half (multi-pair Kernels, egg IV reads)
 - 369 unit tests on MC-free cores · server-authoritative arcade · adversarially reviewed pre-release
 
-Full feature tour: the Modrinth page, or [`docs/dev/SHOWCASE.md`](docs/dev/SHOWCASE.md).
+Full feature tour: the Modrinth page, or [`docs/SHOWCASE.md`](docs/SHOWCASE.md).
 Player-facing changelog: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Screenshots
@@ -50,7 +50,7 @@ This is a working monorepo - Greener Pastures is the headline, the rest is the w
 |---|---|
 | **`greener-pastures/`** | The mod (Fabric, Java 21) - `src/main/java/com/greenerpastures/` |
 | **`greener-pastures-ui/`** | The Notebook console (React + Vite, built into the jar as one HTML file) |
-| `docs/dev/` | Design specs, QA boards, and working docs - the mod's paper trail |
+| [`docs/SHOWCASE.md`](docs/SHOWCASE.md) | Full feature tour - the fastest way to see what the mod does |
 | `shedscope/`, `egg-oracle/`, `shiny-egg-*/`, `hydrogrid/`, `pasturekeeper/` | Sibling Cobblemon mods; several grew into Greener Pastures features |
 | `pokesnack/`, `pokesnack-planner/`, `analysis/`, `data/` | The origin story: the Python snack-odds engine this repo was named after |
 
